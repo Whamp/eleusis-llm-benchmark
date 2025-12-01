@@ -127,26 +127,9 @@ class RefereeClient:
 
     def check_rule_equivalence(self, rule1: str, rule2: str) -> tuple[bool, str]:
         """Check if two rules are logically equivalent."""
-        prompt = f"""You are a referee for the card game Eleusis.
-Your task is to determine if two rule descriptions are logically equivalent.
+        from eleusis.prompts import get_referee_comparison_prompt
 
-Two rules are equivalent if and only if they produce identical in/out judgments
-for every possible (card, mainline-state) pair.
-
-Rule 1: {rule1}
-
-Rule 2: {rule2}
-
-Analyze these rules carefully. Consider:
-1. Do they describe the same logical condition?
-2. Would they accept/reject the same cards in all possible scenarios?
-3. Are there any edge cases where they might differ?
-
-Respond with JSON in this format:
-{{
-    "equivalent": true or false,
-    "reasoning": "Detailed explanation of your analysis"
-}}"""
+        prompt = get_referee_comparison_prompt(rule1, rule2)
 
         message = self.client.messages.create(
             model=self.model,
@@ -155,10 +138,19 @@ Respond with JSON in this format:
         )
 
         response_text = message.content[0].text
+        logger.debug(f"Referee response: {response_text}")
 
-        # Parse JSON response
+        # Parse JSON from VERDICT tags
         try:
-            if "```json" in response_text:
+            import re
+
+            # Try to extract from <VERDICT> tags
+            pattern = r"<VERDICT>(.*?)</VERDICT>"
+            match = re.search(pattern, response_text, re.DOTALL | re.IGNORECASE)
+            if match:
+                json_text = match.group(1).strip()
+            # Fall back to code blocks
+            elif "```json" in response_text:
                 json_start = response_text.find("```json") + 7
                 json_end = response_text.find("```", json_start)
                 json_text = response_text[json_start:json_end].strip()

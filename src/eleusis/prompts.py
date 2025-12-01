@@ -321,10 +321,15 @@ YOUR OPTIONS:
 OUTPUT FORMAT:
 Think through the pattern, then wrap your decision in XML tags.
 
-IMPORTANT: You must ALWAYS provide a tentative_rule describing your current belief about
-the secret rule, even if you're not confident. This helps you track your evolving
-understanding. However, only set guess_rule_if_accepted to true when you're confident
-enough to officially propose your rule (since incorrect guesses incur a penalty).
+IMPORTANT ABOUT GUESSING:
+- You must ALWAYS provide a "tentative_rule" describing your current belief about the
+  secret rule, even if you're not confident. This helps track your evolving understanding.
+- Set "guess_rule_if_accepted" to true ONLY when you're confident in your tentative_rule.
+- If your action succeeds (card accepted or correct no-play) AND guess_rule_if_accepted
+  is true, your tentative_rule will be officially submitted to the referee.
+- **If your guess is CORRECT: You win the round immediately!**
+- **If your guess is INCORRECT: You draw 1 penalty card and continue playing.**
+- Since incorrect guesses have a penalty, only guess when you're reasonably confident.
 
 <ACTION>
 {{
@@ -348,45 +353,51 @@ Example:
 
 
 
-def get_guess_prompt(compact_board: str, hand_str: str, play_history: list[dict]) -> str:
-    """Generate prompt for LLM to decide whether and how to guess the rule."""
-    history_str = "\n".join(
-        [
-            f"- {h['card']}: {'✓ ACCEPTED' if h['accepted'] else '✗ REJECTED'}"
-            for h in play_history[-20:]
-        ]
-    )
 
+
+def get_referee_comparison_prompt(secret_rule: str, guessed_rule: str) -> str:
+    """Generate prompt for referee to compare two rules for equivalence."""
     return f"""{ELEUSIS_RULES}
 
-**YOU PLAY AS A SCIENTIST**
+**YOU PLAY AS THE REFEREE**
 
-=== GUESS THE RULE? ===
+=== YOUR TASK: DETERMINE RULE EQUIVALENCE ===
 
-You are a Scientist. You can now attempt to guess the secret rule.
+A Scientist is attempting to guess the secret rule. Your job is to determine if their
+guess is logically equivalent to the actual secret rule.
 
-CURRENT BOARD:
-{compact_board}
+**ACTUAL SECRET RULE:**
+{secret_rule}
 
-YOUR HAND: {hand_str}
+**SCIENTIST'S GUESSED RULE:**
+{guessed_rule}
 
-YOUR RECENT PLAYS:
-{history_str}
+**EQUIVALENCE DEFINITION:**
+Two rules are equivalent if and only if they produce identical IN/OUT judgments for
+EVERY possible (card, mainline-state) combination.
 
-Analyze the pattern. Do you want to guess the rule?
-- If CORRECT: You win!
-- If WRONG: You draw a penalty card
+**YOUR ANALYSIS SHOULD CONSIDER:**
+1. Do both rules describe the same logical condition?
+2. Would they accept/reject the same cards in all possible scenarios?
+3. Are there any edge cases where they might differ?
+4. Do they handle the first card (empty mainline) the same way?
+5. Are the wording differences merely stylistic, or do they change the meaning?
+
+**IMPORTANT:**
+- Equivalent rules may use different wording but must have identical behavior
+- Example: "Red cards only" ≡ "Card must be Hearts or Diamonds"
+- Example: "Even ranks" ≡ "Rank is 2, 4, 6, 8, 10, or 12"
+- Counter-example: "Alternating colors" ≠ "Red cards only"
 
 OUTPUT FORMAT:
-Think through the patterns, then wrap your decision in XML tags:
+Think through your analysis carefully, then wrap your verdict in XML tags:
 
-<GUESS>
+<VERDICT>
 {{
-    "should_guess": true or false,
-    "guess": "Your rule description" (required if should_guess is true),
-    "confidence": 0-100
+    "equivalent": true or false,
+    "reasoning": "Detailed explanation of why the rules are or are not equivalent"
 }}
-</GUESS>
+</VERDICT>
 """
 
 
