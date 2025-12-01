@@ -35,20 +35,47 @@ class HuggingFaceClient:
         self.client = InferenceClient(bill_to="huggingface")
 
     def generate(self, prompt: str, max_tokens: int = 8192) -> str:
-        """Generate text completion from prompt using chat completions API."""
+        """Generate text completion from prompt using chat completions API.
+
+        Automatically handles token limit by making continuation requests if needed.
+        """
         for attempt in range(self.max_retries):
             try:
-                completion = self.client.chat.completions.create(
-                    model=self.model_name,
-                    messages=[{"role": "user", "content": prompt}],
-                    max_tokens=max_tokens,
-                    temperature=self.temperature,
-                )
+                messages = [{"role": "user", "content": prompt}]
+                full_response = ""
 
-                response_text = completion.choices[0].message.content
-                logger.debug(f"LLM reasoning: {completion.choices[0].message.reasoning}...")
-                logger.debug(f"LLM response: {response_text}")
-                return response_text
+                # Continue until we get a complete response
+                while True:
+                    completion = self.client.chat.completions.create(
+                        model=self.model_name,
+                        messages=messages,
+                        max_tokens=max_tokens,
+                        temperature=self.temperature,
+                    )
+
+                    response_text = completion.choices[0].message.content
+                    finish_reason = completion.choices[0].finish_reason
+
+                    logger.debug(f"LLM reasoning: {completion.choices[0].message.reasoning}...")
+                    logger.debug(f"LLM response chunk: {response_text}")
+                    logger.debug(f"Finish reason: {finish_reason}")
+
+                    full_response += response_text
+
+                    # If we hit token limit, request continuation
+                    if finish_reason == "length":
+                        logger.info("Token limit reached, requesting continuation...")
+                        messages = [
+                            {"role": "user", "content": prompt},
+                            {"role": "assistant", "content": full_response},
+                            {"role": "user", "content": "Please continue."},
+                        ]
+                    else:
+                        # Response complete
+                        break
+
+                logger.debug(f"Final response: {full_response}")
+                return full_response
 
             except Exception as e:
                 logger.warning(f"Attempt {attempt + 1}/{self.max_retries} failed: {e}")
