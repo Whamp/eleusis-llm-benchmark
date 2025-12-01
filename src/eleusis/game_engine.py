@@ -100,8 +100,13 @@ class GameEngine:
         mainline_cards = self.state.mainline.get_all()
         return self.rule.evaluate(card, mainline_cards)
 
-    def play_turn(self, action: Action) -> dict:
-        """Process a player's action and update game state."""
+    def play_turn(self, action: Action, advance_turn: bool = True) -> dict:
+        """Process a player's action and update game state.
+
+        Args:
+            action: The action to process
+            advance_turn: Whether to advance turn after processing (default: True)
+        """
         current_player = self.state.get_current_player()
         result = {"player": current_player.name, "action": type(action).__name__}
 
@@ -114,8 +119,8 @@ class GameEngine:
         else:
             raise ValueError(f"Unknown action type: {type(action)}")
 
-        # Advance turn if game not over
-        if not self.state.game_over:
+        # Advance turn if game not over and advance_turn is True
+        if not self.state.game_over and advance_turn:
             self.state.advance_turn()
 
         return result

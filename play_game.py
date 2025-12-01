@@ -225,8 +225,14 @@ def play_full_game():
             logger.info(f"Will guess if accepted: {guess_if_accepted}")
             logger.info("")
 
-        # Play turn
-        play_result = engine.play_turn(action)
+        # Check if player wants to guess (before action is processed)
+        will_guess = (
+            player.last_action_response
+            and player.last_action_response.get("guess_rule_if_accepted", False)
+        )
+
+        # Play turn - don't auto-advance, we'll handle turn advancement ourselves
+        play_result = engine.play_turn(action, advance_turn=False)
 
         # Log result
         logger.info(f"Action: {play_result['action']}")
@@ -239,30 +245,27 @@ def play_full_game():
             if "forced_card" in play_result:
                 logger.info(f"Forced card: {play_result['forced_card']}")
 
-        # Check if player wants to guess after successful action
-        # (BEFORE clearing last_action_response)
-        should_guess = (
-            play_result.get("can_guess", False)
-            and player.last_action_response
-            and player.last_action_response.get("guess_rule_if_accepted", False)
-        )
+        # Check if guess should execute (action was successful and player wanted to guess)
+        should_guess = will_guess and play_result.get("can_guess", False)
         guess_text = (
             player.last_action_response.get("tentative_rule", "")
             if player.last_action_response
             else ""
         )
 
-        # Now record the play result (this clears last_action_response)
+        # Record the play result (this clears last_action_response)
         player.record_action_result(play_result)
 
-        # Execute the guess if needed (using saved values)
+        # Execute the guess if needed (will advance turn)
         if should_guess and guess_text:
             from eleusis.game_engine import GuessRuleAction
 
             logger.info("")
             logger.info(f"{player_name} is guessing the rule based on tentative_rule...")
-            result = engine.play_turn(GuessRuleAction(guess_text))
+            result = engine.play_turn(GuessRuleAction(guess_text))  # This will advance turn
         else:
+            # No guess - manually advance turn
+            game_state.advance_turn()
             result = play_result
 
         if "guess" in result:
