@@ -197,6 +197,9 @@ def play_full_game():
         # Play turn
         result = engine.play_turn(action)
 
+        # Record action result for learning
+        player.record_action_result(result)
+
         # Log result
         logger.info(f"Action: {result['action']}")
         if "card" in result:

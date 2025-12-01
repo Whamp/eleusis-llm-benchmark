@@ -50,6 +50,7 @@ class LLMScientist(Player):
         self.max_tokens = max_tokens
         self.successful_plays = 0
         self.play_history: list[dict] = []
+        self.last_action_response: dict | None = None  # Store LLM response for history
 
     def get_action(self, game_state: GameState, can_guess: bool = False) -> Action:
         """Get scientist's action using LLM."""
@@ -107,7 +108,9 @@ class LLMScientist(Player):
         hand_dicts = [c.to_dict() for c in hand_cards]
         compact_board = game_state.to_compact_string()
         deck_remaining = game_state.deck.remaining_count()
-        prompt = get_move_selection_prompt(compact_board, hand_dicts, deck_remaining)
+        prompt = get_move_selection_prompt(
+            compact_board, hand_dicts, deck_remaining, self.play_history
+        )
 
         for attempt in range(self.max_retries):
             try:
@@ -115,6 +118,9 @@ class LLMScientist(Player):
                     prompt, max_tokens=self.max_tokens, xml_tag="ACTION"
                 )
                 action_type = response.get("action", "").lower()
+
+                # Store response for history tracking
+                self.last_action_response = response
 
                 if action_type == "no_play":
                     logger.info(f"{self.name} declares no-play")
@@ -141,11 +147,32 @@ class LLMScientist(Player):
                 return card
         return None
 
-    def record_play(self, card: Card, accepted: bool) -> None:
-        """Record the result of a card play for learning."""
-        self.play_history.append({"card": str(card), "accepted": accepted})
-        if accepted:
-            self.successful_plays += 1
+    def record_action_result(self, result: dict) -> None:
+        """Record the action and its result for learning from history.
+
+        Args:
+            result: The result dictionary from game engine's play_turn()
+        """
+        if not self.last_action_response:
+            return
+
+        # Build history entry from LLM response and game result
+        history_entry = {
+            "action": self.last_action_response.get("action", "unknown"),
+            "reasoning": self.last_action_response.get("reasoning", ""),
+        }
+
+        # Add result-specific fields
+        if "card" in result:
+            history_entry["card"] = result["card"]
+            history_entry["accepted"] = result.get("accepted", False)
+            if result.get("accepted"):
+                self.successful_plays += 1
+        elif "correct" in result:
+            history_entry["correct"] = result["correct"]
+
+        self.play_history.append(history_entry)
+        self.last_action_response = None  # Clear for next turn
 
 
 class LLMRuleMaker:

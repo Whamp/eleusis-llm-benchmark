@@ -272,10 +272,32 @@ Examples:
 
 
 def get_move_selection_prompt(
-    compact_board: str, hand_cards: list[dict], deck_remaining: int
+    compact_board: str, hand_cards: list[dict], deck_remaining: int, play_history: list[dict]
 ) -> str:
     """Generate prompt for LLM to select a move as Scientist."""
     hand_str = ", ".join([c["symbol"] for c in hand_cards])
+
+    # Format play history
+    history_str = ""
+    if play_history:
+        history_str = "\n\nYOUR PREVIOUS ATTEMPTS:\n"
+        for entry in play_history[-10:]:  # Show last 10 attempts
+            action_type = entry.get("action", "unknown")
+            card = entry.get("card", "N/A")
+            reasoning = entry.get("reasoning", "")
+            accepted = entry.get("accepted")
+
+            if accepted is not None:
+                result = "✓ ACCEPTED" if accepted else "✗ REJECTED"
+                history_str += f"- {card}: {result}\n"
+                if reasoning:
+                    history_str += f"  Your reasoning: {reasoning}\n"
+            elif action_type == "no_play":
+                correct = entry.get("correct", False)
+                result = "✓ CORRECT" if correct else "✗ INCORRECT"
+                history_str += f"- NO-PLAY: {result}\n"
+                if reasoning:
+                    history_str += f"  Your reasoning: {reasoning}\n"
 
     return f"""{ELEUSIS_RULES}
 
@@ -291,7 +313,7 @@ played and rejected):
 
 YOUR HAND: {hand_str}
 DECK REMAINING: {deck_remaining} cards
-
+{history_str}
 YOUR OPTIONS:
 1. PLAY a card: Choose one card from your hand you think will be accepted
 2. NO-PLAY: Declare that no card in your hand will be accepted
@@ -299,7 +321,7 @@ YOUR OPTIONS:
 OUTPUT FORMAT:
 Think through the pattern, then wrap your decision in XML tags:
 
-<acACTION>
+<ACTION>
 {{
     "action": "play_card" or "no_play",
     "card": "5♥" (only if playing a card),
