@@ -144,14 +144,12 @@ def play_full_game():
     logger.info("")
 
     # Create scientist players dynamically
-    guess_threshold = config["game"]["scientist_guess_threshold"]
     max_llm_retries = config["game"]["max_llm_retries"]
     scientists = []
     for i, client in enumerate(scientist_clients, 1):
         scientist = LLMScientist(
             f"Scientist{i}",
             client,
-            guess_threshold=guess_threshold,
             max_retries=max_llm_retries,
             max_tokens=max_tokens,
         )
@@ -210,6 +208,18 @@ def play_full_game():
             logger.info(f"No-play: {'CORRECT ✓' if result['correct'] else 'INCORRECT ✗'}")
             if "forced_card" in result:
                 logger.info(f"Forced card: {result['forced_card']}")
+
+        # Check if player wants to guess after successful action
+        if result.get("can_guess", False) and player.should_guess_now():
+            guess_text = player.get_guess_from_last_action()
+            if guess_text:
+                from eleusis.game_engine import GuessRuleAction
+
+                logger.info("")
+                logger.info(f"{player_name} is guessing the rule based on tentative_rule...")
+                guess_action = GuessRuleAction(guess_text)
+                result = engine.play_turn(guess_action)
+                # Note: result is now the guess result, will be logged below
 
         if "guess" in result:
             logger.info("")

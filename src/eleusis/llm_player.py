@@ -5,11 +5,10 @@ import random
 from abc import ABC, abstractmethod
 
 from eleusis.cards import Card
-from eleusis.game_engine import Action, GuessRuleAction, NoPlayAction, PlayCardAction
+from eleusis.game_engine import Action, NoPlayAction, PlayCardAction
 from eleusis.game_state import GameState
 from eleusis.llm_client import HuggingFaceClient
 from eleusis.prompts import (
-    get_guess_prompt,
     get_move_selection_prompt,
     get_rule_generation_prompt,
 )
@@ -38,14 +37,12 @@ class LLMScientist(Player):
         self,
         name: str,
         llm_client: HuggingFaceClient,
-        guess_threshold: int = 5,
         max_retries: int = 3,
         max_tokens: int = 8192,
     ) -> None:
         """Initialize LLM scientist."""
         super().__init__(name)
         self.llm_client = llm_client
-        self.guess_threshold = guess_threshold
         self.max_retries = max_retries
         self.max_tokens = max_tokens
         self.successful_plays = 0
@@ -56,47 +53,21 @@ class LLMScientist(Player):
         """Get scientist's action using LLM."""
         current_player = game_state.get_current_player()
 
-        # Check if we should guess the rule
-        if can_guess and self._should_attempt_guess():
-            guess_action = self._try_guess(game_state)
-            if guess_action:
-                return guess_action
-
-        # Otherwise, select a move (play card or no-play)
+        # Select a move (play card or no-play)
+        # Note: guessing is now handled via guess_rule_if_accepted flag in the action
         return self._select_move(game_state, current_player)
 
-    def _should_attempt_guess(self) -> bool:
-        """Decide if we should try to guess the rule."""
-        # Simple heuristic: guess after several successful plays
-        return self.successful_plays >= self.guess_threshold
+    def should_guess_now(self) -> bool:
+        """Check if we should guess based on the last action's guess_rule_if_accepted flag."""
+        if not self.last_action_response:
+            return False
+        return self.last_action_response.get("guess_rule_if_accepted", False)
 
-    def _try_guess(self, game_state: GameState) -> GuessRuleAction | None:
-        """Attempt to guess the rule."""
-        compact_board = game_state.to_compact_string()
-        current_player = game_state.get_current_player()
-        hand_cards = current_player.hand.get_all_cards()
-        hand_str = ", ".join([str(c) for c in hand_cards])
-
-        prompt = get_guess_prompt(compact_board, hand_str, self.play_history)
-
-        for attempt in range(self.max_retries):
-            try:
-                response = self.llm_client.generate_structured(
-                    prompt, max_tokens=self.max_tokens, xml_tag="GUESS"
-                )
-
-                if response.get("should_guess", False):
-                    guess_text = response.get("guess", "")
-                    if guess_text:
-                        logger.info(f"{self.name} attempting rule guess: {guess_text}")
-                        return GuessRuleAction(guess_text)
-
-                return None
-
-            except Exception as e:
-                logger.warning(f"Guess attempt {attempt + 1} failed: {e}")
-
-        return None
+    def get_guess_from_last_action(self) -> str | None:
+        """Get the tentative_rule from the last action to use as a guess."""
+        if not self.last_action_response:
+            return None
+        return self.last_action_response.get("tentative_rule", "")
 
     def _select_move(self, game_state: GameState, current_player) -> Action:
         """Select a card to play or declare no-play."""

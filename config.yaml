@@ -31,7 +31,6 @@ models:
 # Game settings
 game:
   max_turns: 20
-  scientist_guess_threshold: 8  # Turns before scientist considers guessing
   pause_after_turn: true  # Wait for user input after each turn
 
   # Game parameters
