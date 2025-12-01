@@ -117,20 +117,28 @@ class LLMScientist(Player):
                 response = self.llm_client.generate_structured(
                     prompt, max_tokens=self.max_tokens, xml_tag="ACTION"
                 )
-                action_type = response.get("action", "").lower()
 
                 # Store response for history tracking
                 self.last_action_response = response
 
-                if action_type == "no_play":
+                # Parse action field (now contains card or "no_play")
+                action_value = response.get("action", "").strip()
+
+                if action_value.lower() == "no_play":
                     logger.info(f"{self.name} declares no-play")
+                    tentative = response.get("tentative_rule", "")
+                    if tentative:
+                        logger.debug(f"{self.name}'s tentative rule: {tentative}")
                     return NoPlayAction()
 
-                elif action_type == "play_card":
-                    card_str = response.get("card", "")
-                    card = self._parse_card(card_str, hand_cards)
+                else:
+                    # action_value should be a card string like "5♥"
+                    card = self._parse_card(action_value, hand_cards)
                     if card:
                         logger.info(f"{self.name} plays {card}")
+                        tentative = response.get("tentative_rule", "")
+                        if tentative:
+                            logger.debug(f"{self.name}'s tentative rule: {tentative}")
                         return PlayCardAction(card)
 
             except Exception as e:

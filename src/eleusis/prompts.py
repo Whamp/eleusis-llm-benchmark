@@ -315,17 +315,33 @@ YOUR HAND: {hand_str}
 DECK REMAINING: {deck_remaining} cards
 {history_str}
 YOUR OPTIONS:
-1. PLAY a card: Choose one card from your hand you think will be accepted
-2. NO-PLAY: Declare that no card in your hand will be accepted
+1. PLAY a card: Specify the card from your hand (e.g., "5♥")
+2. NO-PLAY: Use the value "no_play" if you believe no card in your hand will be accepted
 
 OUTPUT FORMAT:
-Think through the pattern, then wrap your decision in XML tags:
+Think through the pattern, then wrap your decision in XML tags.
+
+IMPORTANT: You must ALWAYS provide a tentative_rule describing your current belief about
+the secret rule, even if you're not confident. This helps you track your evolving
+understanding. However, only set guess_rule_if_accepted to true when you're confident
+enough to officially propose your rule (since incorrect guesses incur a penalty).
 
 <ACTION>
 {{
-    "action": "play_card" or "no_play",
-    "card": "5♥" (only if playing a card),
-    "reasoning": "Brief explanation"
+    "reasoning": "Your analysis of the pattern and why you're playing this card/no-play",
+    "action": "5♥" or "no_play",
+    "tentative_rule": "Your current best guess about the rule (always provide this)",
+    "guess_rule_if_accepted": true or false (whether to officially guess if accepted)
+}}
+</ACTION>
+
+Example:
+<ACTION>
+{{
+    "reasoning": "I see red and black cards alternating. My 3♥ is red, last card was black.",
+    "action": "3♥",
+    "tentative_rule": "Cards must alternate between red and black colors",
+    "guess_rule_if_accepted": false
 }}
 </ACTION>
 """
