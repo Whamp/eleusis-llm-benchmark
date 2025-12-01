@@ -1,7 +1,6 @@
 """Play a full game of Eleusis with LLM players."""
 
 import logging
-import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -11,6 +10,7 @@ from eleusis.game_engine import GameEngine
 from eleusis.game_state import GameState
 from eleusis.llm_client import HuggingFaceClient
 from eleusis.llm_player import LLMRuleMaker, LLMScientist
+from eleusis.logging_utils import setup_logging
 from eleusis.rules import RuleValidator
 
 # Load configuration
@@ -22,18 +22,11 @@ with open(config_path) as f:
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 log_file = f"logs/game_log_{timestamp}.txt"
 
-# Configure logging with dual levels: DEBUG to file, INFO to console
-file_handler = logging.FileHandler(log_file, mode="w")
-file_handler.setLevel(logging.DEBUG)  # DEBUG for file
-file_handler.setFormatter(logging.Formatter("%(message)s"))
-
-console_handler = logging.StreamHandler(sys.stdout)
-console_handler.setLevel(logging.INFO)  # INFO for console
-console_handler.setFormatter(logging.Formatter("%(message)s"))
-
-logging.basicConfig(
-    level=logging.DEBUG,  # Root logger at DEBUG to capture everything
-    handlers=[file_handler, console_handler],
+# Setup colored logging: INFO to console, DEBUG to file
+setup_logging(
+    log_file=log_file,
+    console_level=logging.INFO,
+    file_level=logging.DEBUG,
 )
 
 # Silence httpx logs
