@@ -1,0 +1,10 @@
+2025-12-01 14:29:27,488 [INFO] Log file: logs/game_log_20251201_142927.txt
+2025-12-01 14:29:27,488 [INFO]   - Rule-maker: GPT OSS 120B
+2025-12-01 14:29:27,488 [INFO]   - Scientist 1: GPT OSS 20B
+2025-12-01 14:29:27,488 [INFO]   - Scientist 2: GPT OSS 20B
+2025-12-01 14:29:27,489 [INFO]   - Scientist 3: GPT OSS 20B
+2025-12-01 14:29:27,489 [INFO] ================================================================================
+2025-12-01 14:29:27,489 [INFO] 
+2025-12-01 14:29:27,489 [INFO] Initializing LLM clients...
+2025-12-01 14:29:27,489 [ERROR] ✗ Failed to initialize clients: HF_TOKEN not provided and not found in environment
+2025-12-01 14:29:27,489 [ERROR] Make sure HF_TOKEN environment variable is set!

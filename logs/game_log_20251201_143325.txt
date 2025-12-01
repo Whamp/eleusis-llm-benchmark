@@ -1,0 +1,44 @@
+2025-12-01 14:33:25,275 [INFO] Log file: logs/game_log_20251201_143325.txt
+2025-12-01 14:33:25,275 [INFO]   - Rule-maker: GPT OSS 120B
+2025-12-01 14:33:25,275 [INFO]   - Scientist 1: GPT OSS 20B
+2025-12-01 14:33:25,275 [INFO]   - Scientist 2: GPT OSS 20B
+2025-12-01 14:33:25,275 [INFO]   - Scientist 3: GPT OSS 20B
+2025-12-01 14:33:25,275 [INFO] ================================================================================
+2025-12-01 14:33:25,275 [INFO] 
+2025-12-01 14:33:25,275 [INFO] Initializing LLM clients...
+2025-12-01 14:33:25,275 [INFO] ✓ Rule-maker client initialized
+2025-12-01 14:33:25,275 [INFO] ✓ All scientist clients initialized
+2025-12-01 14:33:25,275 [INFO] 
+2025-12-01 14:33:25,275 [INFO] ================================================================================
+2025-12-01 14:33:25,275 [INFO] PHASE 1: RULE GENERATION
+2025-12-01 14:33:25,275 [INFO] ================================================================================
+2025-12-01 14:33:25,275 [INFO] 
+2025-12-01 14:33:25,275 [INFO] Rule-maker is creating a secret rule...
+2025-12-01 14:33:25,275 [INFO] 
+2025-12-01 14:33:40,367 [INFO] Generated rule: A card is accepted if its rank is strictly higher than the rank of the immediately preceding accepted card and its color alternates from that previous card (red follows black, black follows red); the first card may be any card.
+2025-12-01 14:33:44,782 [INFO] 
+2025-12-01 14:33:45,042 [INFO] ================================================================================
+2025-12-01 14:33:45,276 [INFO] SECRET RULE: A card is accepted if its rank is strictly higher than the rank of the immediately preceding accepted card and its color alternates from that previous card (red follows black, black follows red); the first card may be any card.
+2025-12-01 14:33:53,386 [INFO] ================================================================================
+2025-12-01 14:33:54,361 [INFO] 
+2025-12-01 14:34:02,514 [INFO] ================================================================================
+2025-12-01 14:34:02,780 [INFO] PHASE 2: GAME SETUP
+2025-12-01 14:34:02,982 [INFO] ================================================================================
+2025-12-01 14:34:03,281 [INFO] 
+2025-12-01 14:35:29,542 [INFO] Starter card placed: J♦
+2025-12-01 14:35:31,300 [INFO] ✓ Game setup complete
+2025-12-01 14:35:32,294 [INFO] ✓ Starter card placed: J♦
+2025-12-01 14:35:39,553 [INFO] ✓ Each scientist has 12 cards
+2025-12-01 14:35:40,157 [INFO] ✓ Deck has 67 cards remaining
+2025-12-01 14:35:42,989 [INFO] 
+2025-12-01 14:36:20,895 [INFO] ================================================================================
+2025-12-01 14:36:21,427 [INFO] PHASE 3: GAME PLAY
+2025-12-01 14:36:21,991 [INFO] ================================================================================
+2025-12-01 14:36:22,623 [INFO] 
+2025-12-01 14:36:43,596 [INFO] --------------------------------------------------------------------------------
+2025-12-01 14:36:45,772 [INFO] TURN 1: Scientist1
+2025-12-01 14:36:49,552 [INFO] --------------------------------------------------------------------------------
+2025-12-01 14:36:50,307 [INFO] Board: J♦
+2025-12-01 14:36:51,931 [INFO] Hand size: 12 cards
+2025-12-01 14:36:53,029 [INFO] Deck remaining: 67 cards
+2025-12-01 14:36:56,039 [INFO] 

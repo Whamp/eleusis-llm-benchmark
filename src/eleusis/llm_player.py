@@ -1,0 +1,226 @@
+"""LLM-powered players for Eleusis: Scientists and Rule-makers."""
+
+import logging
+import random
+from abc import ABC, abstractmethod
+
+from eleusis.cards import Card
+from eleusis.game_engine import Action, GuessRuleAction, NoPlayAction, PlayCardAction
+from eleusis.game_state import GameState
+from eleusis.llm_client import HuggingFaceClient
+from eleusis.prompts import (
+    get_guess_prompt,
+    get_move_selection_prompt,
+    get_rule_generation_prompt,
+)
+from eleusis.rules import LLMGeneratedRule, RuleValidator
+
+logger = logging.getLogger(__name__)
+
+
+class Player(ABC):
+    """Abstract base class for players."""
+
+    def __init__(self, name: str) -> None:
+        """Initialize player with name."""
+        self.name = name
+
+    @abstractmethod
+    def get_action(self, game_state: GameState, can_guess: bool = False) -> Action:
+        """Get player's action for their turn."""
+        pass
+
+
+class LLMScientist(Player):
+    """Scientist player powered by an LLM."""
+
+    def __init__(
+        self,
+        name: str,
+        llm_client: HuggingFaceClient,
+        guess_threshold: int = 5,
+        max_retries: int = 3,
+    ) -> None:
+        """Initialize LLM scientist."""
+        super().__init__(name)
+        self.llm_client = llm_client
+        self.guess_threshold = guess_threshold
+        self.max_retries = max_retries
+        self.successful_plays = 0
+        self.play_history: list[dict] = []
+
+    def get_action(self, game_state: GameState, can_guess: bool = False) -> Action:
+        """Get scientist's action using LLM."""
+        current_player = game_state.get_current_player()
+
+        # Check if we should guess the rule
+        if can_guess and self._should_attempt_guess():
+            guess_action = self._try_guess(game_state)
+            if guess_action:
+                return guess_action
+
+        # Otherwise, select a move (play card or no-play)
+        return self._select_move(game_state, current_player)
+
+    def _should_attempt_guess(self) -> bool:
+        """Decide if we should try to guess the rule."""
+        # Simple heuristic: guess after several successful plays
+        return self.successful_plays >= self.guess_threshold
+
+    def _try_guess(self, game_state: GameState) -> GuessRuleAction | None:
+        """Attempt to guess the rule."""
+        compact_board = game_state.to_compact_string()
+        current_player = game_state.get_current_player()
+        hand_cards = current_player.hand.get_all_cards()
+        hand_str = ", ".join([str(c) for c in hand_cards])
+
+        prompt = get_guess_prompt(compact_board, hand_str, self.play_history)
+
+        for attempt in range(self.max_retries):
+            try:
+                response = self.llm_client.generate_structured(
+                    prompt, max_tokens=8192, xml_tag="GUESS"
+                )
+
+                if response.get("should_guess", False):
+                    guess_text = response.get("guess", "")
+                    if guess_text:
+                        logger.info(f"{self.name} attempting rule guess: {guess_text}")
+                        return GuessRuleAction(guess_text)
+
+                return None
+
+            except Exception as e:
+                logger.warning(f"Guess attempt {attempt + 1} failed: {e}")
+
+        return None
+
+    def _select_move(self, game_state: GameState, current_player) -> Action:
+        """Select a card to play or declare no-play."""
+        hand_cards = current_player.hand.get_all_cards()
+        if not hand_cards:
+            # Must guess if hand is empty (handled by game engine)
+            return NoPlayAction()
+
+        hand_dicts = [c.to_dict() for c in hand_cards]
+        compact_board = game_state.to_compact_string()
+        deck_remaining = game_state.deck.remaining_count()
+        prompt = get_move_selection_prompt(compact_board, hand_dicts, deck_remaining)
+
+        for attempt in range(self.max_retries):
+            try:
+                response = self.llm_client.generate_structured(
+                    prompt, max_tokens=8192, xml_tag="ACTION"
+                )
+                action_type = response.get("action", "").lower()
+
+                if action_type == "no_play":
+                    logger.info(f"{self.name} declares no-play")
+                    return NoPlayAction()
+
+                elif action_type == "play_card":
+                    card_str = response.get("card", "")
+                    card = self._parse_card(card_str, hand_cards)
+                    if card:
+                        logger.info(f"{self.name} plays {card}")
+                        return PlayCardAction(card)
+
+            except Exception as e:
+                logger.warning(f"Move selection attempt {attempt + 1} failed: {e}")
+
+        # Fallback: play random card
+        logger.warning(f"{self.name} using random fallback")
+        return PlayCardAction(random.choice(hand_cards))
+
+    def _parse_card(self, card_str: str, hand_cards: list[Card]) -> Card | None:
+        """Parse card string like '5♥' and find in hand."""
+        for card in hand_cards:
+            if str(card) == card_str:
+                return card
+        return None
+
+    def record_play(self, card: Card, accepted: bool) -> None:
+        """Record the result of a card play for learning."""
+        self.play_history.append({"card": str(card), "accepted": accepted})
+        if accepted:
+            self.successful_plays += 1
+
+
+class LLMRuleMaker:
+    """Rule-maker that generates rules using an LLM."""
+
+    def __init__(
+        self, llm_client: HuggingFaceClient, validator: RuleValidator, max_attempts: int = 3
+    ) -> None:
+        """Initialize LLM rule-maker."""
+        self.llm_client = llm_client
+        self.validator = validator
+        self.max_attempts = max_attempts
+
+    def generate_rule(self) -> LLMGeneratedRule | None:
+        """Generate a valid rule using the LLM."""
+        prompt = get_rule_generation_prompt()
+
+        for attempt in range(self.max_attempts):
+            try:
+                # Get rule from LLM
+                MAX_TOKENS = 8192
+                response = self.llm_client.generate(prompt, max_tokens=MAX_TOKENS)
+
+                # Extract rule from <RULE>...</RULE> tags
+                rule_text = self._extract_rule(response)
+
+                if not rule_text:
+                    logger.warning("Could not extract rule from response")
+                    logger.debug(f"Raw response: {response}")
+                    continue
+
+                logger.info(f"Generated rule: {rule_text}")
+                rule = LLMGeneratedRule(rule_text, self.llm_client, self.llm_client.model_name)
+
+                # Option: validate rule
+                # validation_result = self.validator.validate_rule(rule, num_test_cases=1)
+
+                return rule
+
+            except Exception as e:
+                logger.error(f"Rule generation attempt {attempt + 1} failed: {e}")
+
+        logger.error("Failed to generate valid rule after all attempts")
+        return None
+
+    def _extract_rule(self, response: str) -> str:
+        """Extract rule text from <RULE>...</RULE> tags."""
+        import re
+
+        # Look for <RULE>...</RULE> pattern
+        match = re.search(r"<RULE>(.*?)</RULE>", response, re.DOTALL | re.IGNORECASE)
+        if match:
+            rule_text = match.group(1).strip()
+            return rule_text
+
+        # Fallback: if no tags found, try to use the whole response
+        logger.warning("No <RULE> tags found, using full response")
+        return response.strip()
+
+
+class RandomScientist(Player):
+    """Scientist that plays randomly (for testing)."""
+
+    def __init__(self, name: str) -> None:
+        """Initialize random scientist."""
+        super().__init__(name)
+
+    def get_action(self, game_state: GameState, can_guess: bool = False) -> Action:
+        """Get random action."""
+        current_player = game_state.get_current_player()
+        hand_cards = current_player.hand.get_all_cards()
+
+        if not hand_cards:
+            return NoPlayAction()
+
+        # 80% play random card, 20% no-play
+        if random.random() < 0.8:
+            return PlayCardAction(random.choice(hand_cards))
+        else:
+            return NoPlayAction()

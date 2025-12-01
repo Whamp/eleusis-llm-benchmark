@@ -1,0 +1,37 @@
+# Eleusis LLM Benchmark Configuration
+
+# Model configuration
+models:
+  # Model for rule-maker
+  rule_maker:
+    name: "openai/gpt-oss-120b"
+    temperature: 0.8
+    display_name: "GPT OSS 120B"
+
+  # Models for scientists (can use same or different models)
+  scientist_1:
+    name: "openai/gpt-oss-20b"
+    temperature: 0.7
+    display_name: "GPT OSS 20B"
+
+  scientist_2:
+    name: "openai/gpt-oss-20b"
+    temperature: 0.7
+    display_name: "GPT OSS 20B"
+
+  scientist_3:
+    name: "openai/gpt-oss-20b"
+    temperature: 0.7
+    display_name: "GPT OSS 20B"
+
+  # Model for referee (rule equivalence checking)
+  referee:
+    name: "openai/gpt-oss-120b"
+    temperature: 0.3
+    display_name: "GPT OSS 120B"
+
+# Game settings
+game:
+  max_turns: 20
+  scientist_guess_threshold: 8  # Turns before scientist considers guessing
+  pause_after_turn: true  # Wait for user input after each turn

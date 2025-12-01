@@ -1,0 +1,44 @@
+2025-12-01 14:38:32,303 [INFO] Log file: logs/game_log_20251201_143832.txt
+2025-12-01 14:38:32,303 [INFO]   - Rule-maker: GPT OSS 120B
+2025-12-01 14:38:32,303 [INFO]   - Scientist 1: GPT OSS 20B
+2025-12-01 14:38:32,303 [INFO]   - Scientist 2: GPT OSS 20B
+2025-12-01 14:38:32,304 [INFO]   - Scientist 3: GPT OSS 20B
+2025-12-01 14:38:32,304 [INFO] ================================================================================
+2025-12-01 14:38:32,304 [INFO] 
+2025-12-01 14:38:32,304 [INFO] Initializing LLM clients...
+2025-12-01 14:38:32,304 [INFO] ✓ Rule-maker client initialized
+2025-12-01 14:38:32,304 [INFO] ✓ All scientist clients initialized
+2025-12-01 14:38:32,304 [INFO] 
+2025-12-01 14:38:32,304 [INFO] ================================================================================
+2025-12-01 14:38:32,304 [INFO] PHASE 1: RULE GENERATION
+2025-12-01 14:38:32,304 [INFO] ================================================================================
+2025-12-01 14:38:32,304 [INFO] 
+2025-12-01 14:38:32,304 [INFO] Rule-maker is creating a secret rule...
+2025-12-01 14:38:32,304 [INFO] 
+2025-12-01 14:38:33,261 [INFO] Generated rule: The first accepted card must be a red card with an even rank; thereafter a card is accepted if its rank has the same parity (both odd or both even) as the rank of the most recent accepted card and its color is opposite that of that card.
+2025-12-01 14:38:33,262 [INFO] 
+2025-12-01 14:38:33,262 [INFO] ================================================================================
+2025-12-01 14:38:33,262 [INFO] SECRET RULE: The first accepted card must be a red card with an even rank; thereafter a card is accepted if its rank has the same parity (both odd or both even) as the rank of the most recent accepted card and its color is opposite that of that card.
+2025-12-01 14:38:33,262 [INFO] ================================================================================
+2025-12-01 14:38:33,262 [INFO] 
+2025-12-01 14:38:55,665 [INFO] ================================================================================
+2025-12-01 14:38:55,665 [INFO] PHASE 2: GAME SETUP
+2025-12-01 14:38:55,665 [INFO] ================================================================================
+2025-12-01 14:38:55,665 [INFO] 
+2025-12-01 14:39:01,350 [INFO] Starter card placed: 8♥
+2025-12-01 14:39:01,350 [INFO] ✓ Game setup complete
+2025-12-01 14:39:01,350 [INFO] ✓ Starter card placed: 8♥
+2025-12-01 14:39:01,351 [INFO] ✓ Each scientist has 12 cards
+2025-12-01 14:39:01,351 [INFO] ✓ Deck has 61 cards remaining
+2025-12-01 14:39:01,351 [INFO] 
+2025-12-01 14:39:06,852 [INFO] ================================================================================
+2025-12-01 14:39:06,852 [INFO] PHASE 3: GAME PLAY
+2025-12-01 14:39:06,852 [INFO] ================================================================================
+2025-12-01 14:39:06,852 [INFO] 
+2025-12-01 14:39:06,852 [INFO] --------------------------------------------------------------------------------
+2025-12-01 14:39:06,852 [INFO] TURN 1: Scientist1
+2025-12-01 14:39:06,852 [INFO] --------------------------------------------------------------------------------
+2025-12-01 14:39:06,853 [INFO] Board: 8♥
+2025-12-01 14:39:06,853 [INFO] Hand size: <eleusis.cards.Hand object at 0x1058ba990> cards
+2025-12-01 14:39:06,853 [INFO] Deck remaining: 61 cards
+2025-12-01 14:39:06,853 [INFO] 
