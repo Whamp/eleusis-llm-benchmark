@@ -7,8 +7,9 @@ We play a simplified version of the card game Eleusis.
 
 ## Overview
 
-One player (the **Rule-maker**) invents a secret rule governing which cards may be played. 
-The other players (**Scientists**) take turns playing cards, learning from each acceptance or rejection, and trying to deduce the rule.
+One player (the **Rule-maker**) invents a secret rule governing which cards may be
+played. The other players (**Scientists**) take turns playing cards, learning from each
+acceptance or rejection, and trying to deduce the rule.
 
 ## Components
 
@@ -19,15 +20,17 @@ The other players (**Scientists**) take turns playing cards, learning from each 
 
 ## Game Structure
 
-A full game consists of several rounds, so that each player serves as Rule-maker the same number of times.
-The player with the lowest total score at the end wins.
+A full game consists of several rounds, so that each player serves as Rule-maker
+the same number of times. The player with the lowest total score at the end wins.
 
 ## Layout
 
 The playing area consists of:
 
-- **Mainline:** A horizontal row of accepted cards, ordered left-to-right by time of acceptance.
-- **Sidelines:** Vertical columns beneath mainline cards. When a card is rejected, it is placed in a column below the mainline card it was played after.
+- **Mainline:** A horizontal row of accepted cards, ordered left-to-right by time of
+  acceptance.
+- **Sidelines:** Vertical columns beneath mainline cards. When a card is rejected, it is
+  placed in a column below the mainline card it was played after.
 
 The entire layout (mainline and all sidelines) is visible to all players at all times.
 
@@ -37,16 +40,21 @@ The entire layout (mainline and all sidelines) is visible to all players at all 
 
 ### 1. Choose Turn Order
 
-Randomly determine a starting Scientist. Play proceeds clockwise from that player, skipping the Rule-maker.
+Randomly determine a starting Scientist. Play proceeds clockwise from that player,
+skipping the Rule-maker.
 
 ### 2. Create the Secret Rule
 
-Before dealing, the Rule-maker privately writes down a deterministic rule that decides whether a newly played card is **in** (accepted) or **out** (rejected).
+Before dealing, the Rule-maker privately writes down a deterministic rule that decides
+whether a newly played card is **in** (accepted) or **out** (rejected).
 
 **The rule must:**
-- Depend only on information visible in the mainline: the candidate card and/or any previously accepted mainline cards (their suits, colors, ranks, parity, positions, etc.)
-- For the first card played, evaluate based solely on that card's properties (since no mainline exists yet)
-- Give a unique, unambiguous answer (in or out) for every possible card in every possible mainline state
+- Depend only on information visible in the mainline: the candidate card and/or any
+  previously accepted mainline cards (their suits, colors, ranks, parity, positions, etc.)
+- For the first card played, evaluate based solely on that card's properties (since
+  no mainline exists yet)
+- Give a unique, unambiguous answer (in or out) for every possible card in every
+  possible mainline state
 
 **The rule must NOT:**
 - Reference sideline cards (rejected cards)
@@ -62,7 +70,10 @@ Each Scientist is dealt **12 cards**. The Rule-maker receives no cards.
 
 ### 4. Place the Starter Card
 
-The Rule-maker draws cards one at a time from the top of the deck until finding a card that satisfies the rule when evaluated as a first card (with an empty mainline). This card is placed face-up as the first mainline card. All other drawn cards are shuffled back into the deck.
+The Rule-maker draws cards one at a time from the top of the deck until finding a card
+that satisfies the rule when evaluated as a first card (with an empty mainline). This
+card is placed face-up as the first mainline card. All other drawn cards are shuffled
+back into the deck.
 
 ---
 
@@ -126,14 +137,18 @@ the Scientist may optionally attempt to state the secret rule.
 
 The Scientist writes down (or states) a verbal description of the rule.
 
-The Rule-maker judges whether the stated rule is **equivalent** to the secret rule. Two rules are equivalent if and only if they produce identical in/out judgments for every possible (card, mainline-state) pair.
+The Rule-maker judges whether the stated rule is **equivalent** to the secret rule. Two
+rules are equivalent if and only if they produce identical in/out judgments for every
+possible (card, mainline-state) pair.
 
 Note: The wording does not need to match exactly. Only logical equivalence matters.
 
 ### Outcome
 
 - **Correct guess:** The round ends immediately.
-- **Incorrect guess:** The Rule-maker announces the guess is wrong (without explaining why). The Scientist **draws 1 card** from the deck. Play continues with the next Scientist.
+- **Incorrect guess:** The Rule-maker announces the guess is wrong (without explaining
+  why). The Scientist **draws 1 card** from the deck. Play continues with the next
+  Scientist.
 
 ### Mandatory Guess at Zero Cards
 
@@ -149,7 +164,8 @@ If a player must draw but the deck is empty:
 - They do not draw (no penalty beyond failing to reduce hand size).
 - Play continues.
 
-If the deck is empty **and** no player can make a legal play or correct no-play, the round ends immediately.
+If the deck is empty **and** no player can make a legal play or correct no-play, the
+round ends immediately.
 
 ---
 
@@ -168,11 +184,13 @@ At the end of each round:
 | Player | Score |
 |--------|-------|
 | Each Scientist | **+1 point per card remaining in hand** |
-| Scientist who guessed correctly | **−3 bonus points** (added to their hand score, can result in negative) |
+| Scientist who guessed correctly | **−3 bonus points** (added to their hand score, can
+result in negative) |
 | Rule-maker | Score equal to the **second-lowest** Scientist score for that round |
 
-**Lower scores are better.** 
-After all rounds completed (each player having been Rule-maker the same number of times), the player with the lowest total score wins.
+**Lower scores are better.**
+After all rounds completed (each player having been Rule-maker the same number of
+times), the player with the lowest total score wins.
 
 ---
 
@@ -191,8 +209,10 @@ These examples illustrate appropriate rule complexity:
 - "The card's rank must have a different parity (odd/even) than the last mainline card."
 
 ### Harder Rules (use sparingly)
-- "The card's rank must differ from the last mainline card's rank by exactly 1 or 2 (with Ace and King not considered adjacent)."
-- "If the last mainline card is red, play a card with rank ≤ 7. If black, play a card with rank ≥ 7."
+- "The card's rank must differ from the last mainline card's rank by exactly 1 or 2
+  (with Ace and King not considered adjacent)."
+- "If the last mainline card is red, play a card with rank ≤ 7. If black, play a card
+  with rank ≥ 7."
 
 === END OF THE ELEUSIS GAME RULES ===
 """
@@ -231,8 +251,9 @@ COMPLEXITY:
 Aim for rules that are deducible within 15-25 plays. 
 At a given point in the game, about 20-40% of possible cards should be legal plays.
 Avoid rules so complex that random guessing is the only viable strategy.
-Since your score equals the second-lowest Scientist score, you benefit when Scientists can make progress. 
-An unsolvable rule leads to high hand counts for everyone — including you.
+Since your score equals the second-lowest Scientist score, you benefit when Scientists
+can make progress. An unsolvable rule leads to high hand counts for everyone — including
+you.
 
 OUTPUT FORMAT:
 Think through your rule if needed, once you are done, wrap your FINAL rule in XML tags:
@@ -264,7 +285,8 @@ def get_move_selection_prompt(
 
 You are a Scientist trying to deduce the secret rule.
 
-CURRENT BOARD (mainline + sideline cards in brackets at the position they have been played and rejected):
+CURRENT BOARD (mainline + sideline cards in brackets at the position they have been
+played and rejected):
 {compact_board}
 
 YOUR HAND: {hand_str}
@@ -277,7 +299,7 @@ YOUR OPTIONS:
 OUTPUT FORMAT:
 Think through the pattern, then wrap your decision in XML tags:
 
-<ACTION>
+<acACTION>
 {{
     "action": "play_card" or "no_play",
     "card": "5♥" (only if playing a card),

@@ -22,15 +22,18 @@ with open(config_path) as f:
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 log_file = f"logs/game_log_{timestamp}.txt"
 
-# Configure logging
+# Configure logging with dual levels: DEBUG to file, INFO to console
+file_handler = logging.FileHandler(log_file, mode="w")
+file_handler.setLevel(logging.DEBUG)  # DEBUG for file
+file_handler.setFormatter(logging.Formatter("%(message)s"))
+
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.INFO)  # INFO for console
+console_handler.setFormatter(logging.Formatter("%(message)s"))
+
 logging.basicConfig(
-    level=logging.INFO,
-    #format="%(asctime)s [%(levelname)s] %(message)s",
-    format="%(message)s",
-    handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.FileHandler(log_file),
-    ],
+    level=logging.DEBUG,  # Root logger at DEBUG to capture everything
+    handlers=[file_handler, console_handler],
 )
 
 # Silence httpx logs
