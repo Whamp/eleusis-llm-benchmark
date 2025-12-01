@@ -53,7 +53,12 @@ class GameEngine:
     """Orchestrates Eleusis game progression."""
 
     def __init__(
-        self, game_state: GameState, rule: Rule, rule_validator=None
+        self,
+        game_state: GameState,
+        rule: Rule,
+        rule_validator=None,
+        cards_per_scientist: int = 12,
+        correct_guess_bonus: int = -3,
     ) -> None:
         """Initialize game engine with state and rule."""
         self.state = game_state
@@ -61,15 +66,17 @@ class GameEngine:
         self.rule_validator = rule_validator
         self.rule_guessed = False
         self.winning_guesser: str | None = None
+        self.cards_per_scientist = cards_per_scientist
+        self.correct_guess_bonus = correct_guess_bonus
 
     def setup_game(self) -> None:
         """Deal initial hands and place starter card."""
         # Shuffle deck
         self.state.deck.shuffle()
 
-        # Deal 12 cards to each scientist
+        # Deal cards to each scientist
         scientists = self.state.get_scientists()
-        for _ in range(12):
+        for _ in range(self.cards_per_scientist):
             for scientist in scientists:
                 if not self.state.deck.is_empty():
                     scientist.hand.add_card(self.state.deck.draw())
@@ -268,9 +275,9 @@ class GameEngine:
 
         for scientist in scientists:
             score = scientist.hand.size()
-            # Subtract 3 if they guessed correctly
+            # Apply bonus if they guessed correctly
             if self.rule_guessed and scientist.name == self.winning_guesser:
-                score -= 3
+                score += self.correct_guess_bonus
             scores[scientist.name] = score
             scientist_scores.append(score)
 

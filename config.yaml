@@ -35,3 +35,12 @@ game:
   max_turns: 20
   scientist_guess_threshold: 8  # Turns before scientist considers guessing
   pause_after_turn: true  # Wait for user input after each turn
+
+  # Game parameters
+  cards_per_scientist: 12  # Initial hand size for each scientist
+  correct_guess_bonus: -3  # Points deducted for guessing rule correctly
+  wrong_guess_penalty: 1  # Penalty card for incorrect guess
+  max_llm_retries: 3  # Max retries for LLM when parsing fails
+  max_rule_generation_attempts: 3  # Max attempts to generate a valid rule
+  max_tokens: 8192  # Max tokens for LLM generation
+  max_tokens_referee: 2048  # Max tokens for referee rule checking

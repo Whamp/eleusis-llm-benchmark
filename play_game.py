@@ -100,7 +100,8 @@ def play_full_game():
     # Generate rule
     logger.info("Rule-maker is creating a secret rule...")
     logger.info("")
-    rule_maker = LLMRuleMaker(rule_maker_client, validator, max_attempts=3)
+    max_rule_attempts = config["game"]["max_rule_generation_attempts"]
+    rule_maker = LLMRuleMaker(rule_maker_client, validator, max_attempts=max_rule_attempts)
     rule = rule_maker.generate_rule()
 
     if not rule:
@@ -121,22 +122,46 @@ def play_full_game():
 
     players = ["RuleMaker", "Scientist1", "Scientist2", "Scientist3"]
     game_state = GameState(players, rule_maker_index=0)
-    engine = GameEngine(game_state, rule, rule_validator=None)
+    cards_per_scientist = config["game"]["cards_per_scientist"]
+    correct_guess_bonus = config["game"]["correct_guess_bonus"]
+    engine = GameEngine(
+        game_state,
+        rule,
+        rule_validator=None,
+        cards_per_scientist=cards_per_scientist,
+        correct_guess_bonus=correct_guess_bonus,
+    )
 
     # Setup game
     engine.setup_game()
     logger.info("✓ Game setup complete")
     logger.info(f"✓ Starter card placed: {game_state.mainline.get_last()}")
-    logger.info("✓ Each scientist has 12 cards")
+    logger.info(f"✓ Each scientist has {cards_per_scientist} cards")
     logger.info(f"✓ Deck has {game_state.deck.remaining_count()} cards remaining")
     logger.info("")
 
     # Create scientist players
     guess_threshold = config["game"]["scientist_guess_threshold"]
+    max_llm_retries = config["game"]["max_llm_retries"]
     scientists = [
-        LLMScientist("Scientist1", scientist1_client, guess_threshold=guess_threshold),
-        LLMScientist("Scientist2", scientist2_client, guess_threshold=guess_threshold),
-        LLMScientist("Scientist3", scientist3_client, guess_threshold=guess_threshold),
+        LLMScientist(
+            "Scientist1",
+            scientist1_client,
+            guess_threshold=guess_threshold,
+            max_retries=max_llm_retries,
+        ),
+        LLMScientist(
+            "Scientist2",
+            scientist2_client,
+            guess_threshold=guess_threshold,
+            max_retries=max_llm_retries,
+        ),
+        LLMScientist(
+            "Scientist3",
+            scientist3_client,
+            guess_threshold=guess_threshold,
+            max_retries=max_llm_retries,
+        ),
     ]
 
     # Game loop
