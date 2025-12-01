@@ -90,9 +90,14 @@ def play_full_game():
     try:
         from eleusis.llm_client import RefereeClient
 
+        referee_cfg = config["models"]["referee"]
         max_tokens_referee = config["game"]["max_tokens_referee"]
-        referee_client = RefereeClient(max_tokens=max_tokens_referee)
-        logger.info("✓ Referee client initialized for rule comparison")
+        referee_client = RefereeClient(
+            model_name=referee_cfg["name"],
+            temperature=referee_cfg["temperature"],
+            max_tokens=max_tokens_referee,
+        )
+        logger.info(f"✓ Referee client initialized: {referee_cfg['display_name']}")
     except Exception as e:
         logger.warning(f"Could not initialize referee: {e}")
         logger.info("Continuing without referee (guesses will not be validated)")

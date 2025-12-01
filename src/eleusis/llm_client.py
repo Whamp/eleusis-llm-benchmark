@@ -1,11 +1,10 @@
-"""LLM client implementations for Hugging Face and Referee (Anthropic)."""
+"""LLM client implementations for Hugging Face Inference Providers."""
 
 import json
 import logging
 import os
 from typing import Any
 
-import anthropic
 from huggingface_hub import InferenceClient
 
 logger = logging.getLogger(__name__)
@@ -108,22 +107,27 @@ class HuggingFaceClient:
 
 
 class RefereeClient:
-    """Client for referee LLM (Anthropic Claude) used for rule equivalence checking."""
+    """Client for referee LLM using HuggingFace Inference Providers."""
 
     def __init__(
         self,
+        model_name: str,
         api_key: str | None = None,
-        model: str = "claude-3-5-sonnet-20241022",
+        temperature: float = 0.3,
         max_tokens: int = 2048,
     ) -> None:
-        """Initialize referee client with Anthropic API."""
-        self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
+        """Initialize referee client with HuggingFace API."""
+        self.model_name = model_name
+        self.api_key = api_key or os.getenv("HF_TOKEN")
         if not self.api_key:
-            raise ValueError("ANTHROPIC_API_KEY not provided and not found in environment")
+            raise ValueError("HF_TOKEN not provided and not found in environment")
 
-        self.model = model
+        self.temperature = temperature
         self.max_tokens = max_tokens
-        self.client = anthropic.Anthropic(api_key=self.api_key)
+
+        # Initialize InferenceClient with billing to HuggingFace
+        os.environ["HF_TOKEN"] = self.api_key
+        self.client = InferenceClient(bill_to="huggingface")
 
     def check_rule_equivalence(self, rule1: str, rule2: str) -> tuple[bool, str]:
         """Check if two rules are logically equivalent."""
@@ -131,13 +135,14 @@ class RefereeClient:
 
         prompt = get_referee_comparison_prompt(rule1, rule2)
 
-        message = self.client.messages.create(
-            model=self.model,
-            max_tokens=self.max_tokens,
+        completion = self.client.chat.completions.create(
+            model=self.model_name,
             messages=[{"role": "user", "content": prompt}],
+            max_tokens=self.max_tokens,
+            temperature=self.temperature,
         )
 
-        response_text = message.content[0].text
+        response_text = completion.choices[0].message.content
         logger.debug(f"Referee response: {response_text}")
 
         # Parse JSON from VERDICT tags
@@ -186,13 +191,14 @@ Respond with JSON:
     "reasoning": "Brief explanation"
 }}"""
 
-        message = self.client.messages.create(
-            model=self.model,
-            max_tokens=self.max_tokens,
+        completion = self.client.chat.completions.create(
+            model=self.model_name,
             messages=[{"role": "user", "content": prompt}],
+            max_tokens=self.max_tokens,
+            temperature=self.temperature,
         )
 
-        response_text = message.content[0].text
+        response_text = completion.choices[0].message.content
 
         try:
             if "```json" in response_text:
