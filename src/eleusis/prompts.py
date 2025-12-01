@@ -245,7 +245,7 @@ RULE CONSTRAINTS:
 COMPLEXITY:
 - Simple: "Alternating colors", "Even ranks only"
 - Medium: "Rank higher than previous", "Same suit or same color, not both"
-- Avoid overly complex unsolvable rules
+- IMPORTANT Avoid overly complex unsolvable rules
 
 **IMPORTANT Guidance for Rule-makers:** 
 Aim for rules that are deducible within 15-25 plays. 
@@ -254,6 +254,7 @@ Avoid rules so complex that random guessing is the only viable strategy.
 Since your score equals the second-lowest Scientist score, you benefit when Scientists
 can make progress. An unsolvable rule leads to high hand counts for everyone — including
 you.
+CHOOSE A SIMPLE RULE THAT ALLOWS SCIENTISTS TO LEARN AND IMPROVE OVER TIME.
 
 OUTPUT FORMAT:
 Think through your rule if needed, once you are done, wrap your FINAL rule in XML tags:
