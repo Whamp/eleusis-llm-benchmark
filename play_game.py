@@ -86,13 +86,25 @@ def play_full_game():
         logger.error("Make sure HF_TOKEN environment variable is set!")
         return
 
-    # Create validator
+    # Create validator with referee
     logger.info("=" * 80)
     logger.info("PHASE 1: RULE GENERATION")
     logger.info("=" * 80)
     logger.info("")
 
-    validator = RuleValidator(referee_client=None)
+    # Initialize referee client for rule comparison
+    referee_client = None
+    try:
+        from eleusis.llm_client import RefereeClient
+
+        max_tokens_referee = config["game"]["max_tokens_referee"]
+        referee_client = RefereeClient(max_tokens=max_tokens_referee)
+        logger.info("✓ Referee client initialized for rule comparison")
+    except Exception as e:
+        logger.warning(f"Could not initialize referee: {e}")
+        logger.info("Continuing without referee (guesses will not be validated)")
+
+    validator = RuleValidator(referee_client=referee_client)
 
     # Generate rule
     logger.info("Rule-maker is creating a secret rule...")
@@ -127,12 +139,18 @@ def play_full_game():
     game_state = GameState(player_names, rule_maker_index=0)
     cards_per_scientist = config["game"]["cards_per_scientist"]
     correct_guess_bonus = config["game"]["correct_guess_bonus"]
+    card_reject_penalty = config["game"]["card_reject_penalty"]
+    no_play_incorrect_penalty = config["game"]["no_play_incorrect_penalty"]
+    no_play_correct_reduction = config["game"]["no_play_correct_reduction"]
     engine = GameEngine(
         game_state,
         rule,
-        rule_validator=None,
+        rule_validator=validator,
         cards_per_scientist=cards_per_scientist,
         correct_guess_bonus=correct_guess_bonus,
+        card_reject_penalty=card_reject_penalty,
+        no_play_incorrect_penalty=no_play_incorrect_penalty,
+        no_play_correct_reduction=no_play_correct_reduction,
     )
 
     # Setup game
@@ -178,8 +196,12 @@ def play_full_game():
         logger.info(f"TURN {turn_count + 1}: {player_name}")
         logger.info("-" * 80)
         logger.info(f"Board: {game_state.to_compact_string()}")
-        logger.info(f"Hand size {current_player_state.hand.size()} cards")
         logger.info(f"Deck remaining: {game_state.deck.remaining_count()} cards")
+
+        # Pretty print player's hand
+        hand_cards = current_player_state.hand.get_all_cards()
+        hand_str = ", ".join([str(c) for c in hand_cards])
+        logger.info(f"Hand ({len(hand_cards)} cards): {hand_str}")
         logger.info("")
 
         # Get action
@@ -191,6 +213,19 @@ def play_full_game():
             game_state.advance_turn()
             turn_count += 1
             continue
+
+        # Log ACTION details from LLM response
+        if player.last_action_response:
+            reasoning = player.last_action_response.get("reasoning", "")
+            tentative_rule = player.last_action_response.get("tentative_rule", "")
+            guess_if_accepted = player.last_action_response.get("guess_rule_if_accepted", False)
+
+            if reasoning:
+                logger.info(f"Reasoning: {reasoning}")
+            if tentative_rule:
+                logger.info(f"Tentative rule: {tentative_rule}")
+            logger.info(f"Will guess if accepted: {guess_if_accepted}")
+            logger.info("")
 
         # Play turn
         result = engine.play_turn(action)

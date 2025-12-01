@@ -84,8 +84,8 @@ class TestGameEngine:
 
         assert result["success"]
         assert not result["accepted"]
-        # Hand size same (removed card, drew card)
-        assert current_player.hand.size() == initial_hand_size
+        # Hand size increases by 1 (removed 1 card, drew 2 penalty cards)
+        assert current_player.hand.size() == initial_hand_size + 1
         assert state.mainline.size() == 1  # Only starter
         assert 0 in state.sidelines  # Card in sideline
 
@@ -107,7 +107,9 @@ class TestGameEngine:
 
         assert result["success"]
         assert result["correct"]
-        assert current_player.hand.size() == initial_hand_size - 1  # One card discarded
+        # All cards discarded, draw max(1, initial_hand_size - 4) new cards
+        expected_hand_size = max(1, initial_hand_size - 4)
+        assert current_player.hand.size() == expected_hand_size
 
     def test_no_play_incorrect(self) -> None:
         """Test incorrect no-play declaration."""
@@ -128,8 +130,8 @@ class TestGameEngine:
 
         assert result["success"]
         assert not result["correct"]
-        # Hand size same (removed card, drew penalty)
-        assert current_player.hand.size() == initial_hand_size
+        # Hand size increases by 3 (removed 1 card, drew 4 penalty cards)
+        assert current_player.hand.size() == initial_hand_size + 3
         assert state.mainline.size() == 2  # Starter + forced card
 
     def test_calculate_scores(self) -> None:

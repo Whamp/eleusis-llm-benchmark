@@ -59,6 +59,9 @@ class GameEngine:
         rule_validator=None,
         cards_per_scientist: int = 12,
         correct_guess_bonus: int = -3,
+        card_reject_penalty: int = 2,
+        no_play_incorrect_penalty: int = 4,
+        no_play_correct_reduction: int = 4,
     ) -> None:
         """Initialize game engine with state and rule."""
         self.state = game_state
@@ -68,6 +71,9 @@ class GameEngine:
         self.winning_guesser: str | None = None
         self.cards_per_scientist = cards_per_scientist
         self.correct_guess_bonus = correct_guess_bonus
+        self.card_reject_penalty = card_reject_penalty
+        self.no_play_incorrect_penalty = no_play_incorrect_penalty
+        self.no_play_correct_reduction = no_play_correct_reduction
 
     def setup_game(self) -> None:
         """Deal initial hands and place starter card."""
@@ -138,12 +144,21 @@ class GameEngine:
                 "can_guess": True,
             }
         else:
-            # Card rejected: add to sideline, draw card
+            # Card rejected: add to sideline, draw penalty cards
             self.state.add_sideline_card(card)
-            if not self.state.deck.is_empty():
-                drawn = self.state.deck.draw()
-                player.hand.add_card(drawn)
-                logger.info(f"{player.name} played {card} - REJECTED, drew {drawn}")
+            drawn_cards = []
+            for _ in range(self.card_reject_penalty):
+                if not self.state.deck.is_empty():
+                    drawn = self.state.deck.draw()
+                    player.hand.add_card(drawn)
+                    drawn_cards.append(str(drawn))
+
+            if drawn_cards:
+                cards_str = ", ".join(drawn_cards)
+                logger.info(
+                    f"{player.name} played {card} - REJECTED, "
+                    f"drew {len(drawn_cards)} cards: {cards_str}"
+                )
             else:
                 logger.info(f"{player.name} played {card} - REJECTED, deck empty")
 
@@ -161,14 +176,27 @@ class GameEngine:
         legal_cards = [c for c in hand_cards if self.evaluate_card(c)]
 
         if len(legal_cards) == 0:
-            # Correct no-play: choose one card to discard
-            if hand_cards:
-                card_to_discard = hand_cards[0]
-                player.hand.remove_card(card_to_discard)
-                self.state.add_sideline_card(card_to_discard)
-                logger.info(
-                    f"{player.name} correctly declared no-play, discarded {card_to_discard}"
-                )
+            # Correct no-play: discard all cards, draw N-reduction (min 1)
+            original_hand_size = len(hand_cards)
+
+            # Discard all cards to sideline
+            for card in hand_cards:
+                player.hand.remove_card(card)
+                self.state.add_sideline_card(card)
+
+            # Draw new cards: N - reduction, but at least 1
+            new_hand_size = max(1, original_hand_size - self.no_play_correct_reduction)
+            drawn_cards = []
+            for _ in range(new_hand_size):
+                if not self.state.deck.is_empty():
+                    drawn = self.state.deck.draw()
+                    player.hand.add_card(drawn)
+                    drawn_cards.append(str(drawn))
+
+            logger.info(
+                f"{player.name} correctly declared no-play, "
+                f"discarded {original_hand_size} cards, drew {len(drawn_cards)} new cards"
+            )
 
             return {
                 "success": True,
@@ -176,21 +204,28 @@ class GameEngine:
                 "can_guess": True,
             }
         else:
-            # Incorrect no-play: rule-maker plays one legal card
+            # Incorrect no-play: rule-maker plays one legal card, draw penalty cards
             card_to_play = legal_cards[0]
             player.hand.remove_card(card_to_play)
             self.state.mainline.add_card(card_to_play)
 
-            # Draw penalty card
-            if not self.state.deck.is_empty():
-                drawn = self.state.deck.draw()
-                player.hand.add_card(drawn)
+            # Draw penalty cards
+            drawn_cards = []
+            for _ in range(self.no_play_incorrect_penalty):
+                if not self.state.deck.is_empty():
+                    drawn = self.state.deck.draw()
+                    player.hand.add_card(drawn)
+                    drawn_cards.append(str(drawn))
+
+            if drawn_cards:
                 logger.info(
                     f"{player.name} incorrectly declared no-play, "
-                    f"{card_to_play} played, drew {drawn}"
+                    f"{card_to_play} played, drew {len(drawn_cards)} penalty cards"
                 )
             else:
-                logger.info(f"{player.name} incorrectly declared no-play, {card_to_play} played")
+                logger.info(
+                    f"{player.name} incorrectly declared no-play, {card_to_play} played, deck empty"
+                )
 
             return {
                 "success": True,
