@@ -45,11 +45,16 @@ logger = logging.getLogger(__name__)
 
 def play_full_game():
     """Play a complete game."""
+    # Validate player configuration
+    player_configs = config["models"]["players"]
+    if len(player_configs) < 1:
+        logger.error("✗ Must have at least 1 scientist player in config")
+        return
+
     logger.info(f"Log file: {log_file}")
     logger.info(f"  - Rule-maker: {config['models']['rule_maker']['display_name']}")
-    logger.info(f"  - Scientist 1: {config['models']['scientist_1']['display_name']}")
-    logger.info(f"  - Scientist 2: {config['models']['scientist_2']['display_name']}")
-    logger.info(f"  - Scientist 3: {config['models']['scientist_3']['display_name']}")
+    for i, player_cfg in enumerate(player_configs, 1):
+        logger.info(f"  - Scientist {i}: {player_cfg['display_name']}")
     logger.info("=" * 80)
     logger.info("")
 
@@ -64,24 +69,16 @@ def play_full_game():
         )
         logger.info("✓ Rule-maker client initialized")
 
-        scientist1_cfg = config["models"]["scientist_1"]
-        scientist1_client = HuggingFaceClient(
-            model_name=scientist1_cfg["name"],
-            temperature=scientist1_cfg["temperature"],
-        )
+        # Initialize scientist clients dynamically
+        scientist_clients = []
+        for i, player_cfg in enumerate(player_configs, 1):
+            client = HuggingFaceClient(
+                model_name=player_cfg["name"],
+                temperature=player_cfg["temperature"],
+            )
+            scientist_clients.append(client)
 
-        scientist2_cfg = config["models"]["scientist_2"]
-        scientist2_client = HuggingFaceClient(
-            model_name=scientist2_cfg["name"],
-            temperature=scientist2_cfg["temperature"],
-        )
-
-        scientist3_cfg = config["models"]["scientist_3"]
-        scientist3_client = HuggingFaceClient(
-            model_name=scientist3_cfg["name"],
-            temperature=scientist3_cfg["temperature"],
-        )
-        logger.info("✓ All scientist clients initialized")
+        logger.info(f"✓ {len(scientist_clients)} scientist client(s) initialized")
         logger.info("")
 
     except Exception as e:
@@ -123,8 +120,11 @@ def play_full_game():
     logger.info("=" * 80)
     logger.info("")
 
-    players = ["RuleMaker", "Scientist1", "Scientist2", "Scientist3"]
-    game_state = GameState(players, rule_maker_index=0)
+    # Create player names dynamically
+    num_scientists = len(player_configs)
+    player_names = ["RuleMaker"] + [f"Scientist{i}" for i in range(1, num_scientists + 1)]
+
+    game_state = GameState(player_names, rule_maker_index=0)
     cards_per_scientist = config["game"]["cards_per_scientist"]
     correct_guess_bonus = config["game"]["correct_guess_bonus"]
     engine = GameEngine(
@@ -143,32 +143,19 @@ def play_full_game():
     logger.info(f"✓ Deck has {game_state.deck.remaining_count()} cards remaining")
     logger.info("")
 
-    # Create scientist players
+    # Create scientist players dynamically
     guess_threshold = config["game"]["scientist_guess_threshold"]
     max_llm_retries = config["game"]["max_llm_retries"]
-    scientists = [
-        LLMScientist(
-            "Scientist1",
-            scientist1_client,
+    scientists = []
+    for i, client in enumerate(scientist_clients, 1):
+        scientist = LLMScientist(
+            f"Scientist{i}",
+            client,
             guess_threshold=guess_threshold,
             max_retries=max_llm_retries,
             max_tokens=max_tokens,
-        ),
-        LLMScientist(
-            "Scientist2",
-            scientist2_client,
-            guess_threshold=guess_threshold,
-            max_retries=max_llm_retries,
-            max_tokens=max_tokens,
-        ),
-        LLMScientist(
-            "Scientist3",
-            scientist3_client,
-            guess_threshold=guess_threshold,
-            max_retries=max_llm_retries,
-            max_tokens=max_tokens,
-        ),
-    ]
+        )
+        scientists.append(scientist)
 
     # Game loop
     logger.info("=" * 80)

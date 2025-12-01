@@ -8,21 +8,19 @@ models:
     temperature: 0.8
     display_name: "GPT OSS 120B"
 
-  # Models for scientists (can use same or different models)
-  scientist_1:
-    name: "openai/gpt-oss-20b"
-    temperature: 0.7
-    display_name: "GPT OSS 20B"
+  # Models for scientists (list determines number of players)
+  players:
+    - name: "openai/gpt-oss-20b"
+      temperature: 0.7
+      display_name: "GPT OSS 20B Scientist 1"
 
-  scientist_2:
-    name: "openai/gpt-oss-20b"
-    temperature: 0.7
-    display_name: "GPT OSS 20B"
+    - name: "openai/gpt-oss-20b"
+      temperature: 0.7
+      display_name: "GPT OSS 20B Scientist 2"
 
-  scientist_3:
-    name: "openai/gpt-oss-20b"
-    temperature: 0.7
-    display_name: "GPT OSS 20B"
+    - name: "openai/gpt-oss-20b"
+      temperature: 0.7
+      display_name: "GPT OSS 20B Scientist 3"
 
   # Model for referee (rule equivalence checking)
   referee:
