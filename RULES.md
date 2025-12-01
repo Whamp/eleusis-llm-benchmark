@@ -1,113 +1,197 @@
 # Easy Eleusis
 
-This is a set of rules for "Easy Eleusis", a simplified version of the card game Eleusis.
+A simplified version of the card game Eleusis.
 
-## Introduction
+## Overview
 
-The game is played with 4 players, using 2 standard decks of 52 cards:
-    - Ace = 1 (low), J = 11, Q = 12, K = 13.
-    - 4 suits: Hearts ♥️ (red), Diamonds ♦️ (red), Clubs ♣️ (black), Spades ♠️ (black).
+One player (the **Rule-maker**) invents a secret rule governing which cards may be played. 
+The other players (**Scientists**) take turns playing cards, learning from each acceptance or rejection, and trying to deduce the rule.
 
-In each round, one player acts as **Rule-maker** (dealer), the others are **Scientists** (ordinary players).
+## Components
 
-The Rule-maker chooses a secret rule for forming a sequence of cards.
-Scientists hold hands of cards and take turns playing cards to a common layout.
-The Rule-maker announces whether each played card is in (accepted) or out (rejected) according to the secret rule.
-Scientists try to deduce the secret rule from the pattern of accepted and rejected cards.
-Goal for Scientists: get rid of their cards and/or correctly state the secret rule.
+- **Players:** 4 (one Rule-maker, three Scientists)
+- **Cards:** 2 standard 52-card decks shuffled together into a single 104-card draw pile
+    - Ranks: Ace = 1 (low), 2–10, Jack = 11, Queen = 12, King = 13
+    - Suits: Hearts ♥️ (red), Diamonds ♦️ (red), Clubs ♣️ (black), Spades ♠️ (black)
+
+## Game Structure
+
+A full game consists of several rounds, so that each player serves as Rule-maker the same number of times.
+The player with the lowest total score at the end wins.
+
+## Layout
+
+The playing area consists of:
+
+- **Mainline:** A horizontal row of accepted cards, ordered left-to-right by time of acceptance.
+- **Sidelines:** Vertical columns beneath mainline cards. When a card is rejected, it is placed in a column below the mainline card it was played after.
+
+The entire layout (mainline and all sidelines) is visible to all players at all times.
+
+---
 
 ## Setup
 
-### Secret Rule
-Before dealing, the Rule-maker chooses and writes down a deterministic rule that decides whether a newly played card is in or out, given the current layout. 
-The rule must depend only on information visible in the layout (current last mainline card and/or earlier cards; card suits, colours, ranks, parity, etc.)
-It may not depend on hidden information (e.g. unknown cards in deck/hand) or on player identity or order.
-For every possible situation and card, the rule must give a unique answer: in or out.
+### 1. Choose Turn Order
 
-### Dealing and starting layout
+Randomly determine a starting Scientist. Play proceeds clockwise from that player, skipping the Rule-maker.
 
-12 cards are dealt to each Scientist, the Rule-Maker receives no cards.
+### 2. Create the Secret Rule
 
-The Rule-maker draws cards from the top of the pile until finding one that is in under the rule and reveal this card face up as the starter.
+Before dealing, the Rule-maker privately writes down a deterministic rule that decides whether a newly played card is **in** (accepted) or **out** (rejected).
 
-Then players take turns playing until the end of the round.
+**The rule must:**
+- Depend only on information visible in the mainline: the candidate card and/or any previously accepted mainline cards (their suits, colors, ranks, parity, positions, etc.)
+- For the first card played, evaluate based solely on that card's properties (since no mainline exists yet)
+- Give a unique, unambiguous answer (in or out) for every possible card in every possible mainline state
 
-Cards will be played by Scientists into a **mainline** and **sidelines**.
-- Mainline: horizontal row of all cards that have been judged in, in order of acceptance.
-- Sidelines: for any out card, place it in a vertical column below the mainline card it was attempted after.
+**The rule must NOT:**
+- Reference sideline cards (rejected cards)
+- Depend on hidden information (cards in the deck, cards in players' hands)
+- Depend on player identity, turn order, or game history other than the mainline
+- Include randomness or subjective judgment
 
-## Turn structure
+See "Example Rules" at the end of this document for guidance on appropriate complexity.
 
-On their turn, scientists must choose exactly one action:
-A. Play a card, or
-B. Declare “no play”.
+### 3. Deal Hands
 
-Then the turn passes to the next Scientist in order.
+Each Scientist is dealt **12 cards**. The Rule-maker receives no cards.
 
-### A. Play a card
+### 4. Place the Starter Card
 
-1. Player chooses one card from their hand that they think is **in** under the secret rule.
-2. They place it face up to the **right** of the current last mainline card (a tentative mainline extension).
-3. Rule-Maker announces:
-    - If **“In” (accepted):**
-        - Card stays in place as the new last mainline card.
-        - Player **do not** draw; their hand size decreases by 1.
-        - Player can now optionally attempt to guess the rule (see below).
-    - If **“Out” (rejected):**
-        - Move the card from the mainline position to a **sideline below** the last mainline card.
-        - Player **draw 1 card** from the top of the deck into their hand.
+The Rule-maker draws cards one at a time from the top of the deck until finding a card that satisfies the rule when evaluated as a first card (with an empty mainline). This card is placed face-up as the first mainline card. All other drawn cards are shuffled back into the deck.
 
-Then turn ends.
+---
 
-### B. Declare “No play”
+## Turn Structure
 
-Player uses this if they believe **no card in their hand** would be accepted if played now.
+On their turn, a Scientist must choose exactly one action:
+- **A. Play a card**, or
+- **B. Declare "no play"**
 
-1. They reveal their entire hand to the dealer and all players.
-2. Dealer checks if any card in their hand would be **in** if played now:
-    - **Correct no-play (they truly had no legal card):**
-        - Player choose **one** card from their hand.
-        - Place it directly below the last mainline card as a **sideline card** (it is, by definition, “out”).
-        - Remove that card from their hand (hand size −1).
-        - Mainline does **not** change.
-        - Player can now optionally attempt to guess the rule (see below).
-    - **Incorrect no-play (they did have at least one legal card):**
-        - Dealer selects one of the legal cards and places it as the new last **mainline** card (an automatic correct play).
-        - Player **draw 1 penalty card** from the deck into their hand.
+After resolving the action, play passes to the next Scientist clockwise.
 
-Then their turn ends.
+### A. Play a Card
 
-### Guessing the Rule
+1. The Scientist selects one card from their hand that they believe is **in** under the secret rule.
+2. They place it face-up to the right of the current last mainline card.
+3. The Rule-maker announces the judgment:
 
-- **Timing:** Immediately after a player either
-    - successfully plays an **in** card to the mainline, or
-    - makes a **correct no-play**,
-      player may optionally attempt to **state the secret rule**.
-- They write down a verbal description of the rule
-- Dealer decides whether their stated rule is **equivalent** to the real rule (i.e. would classify every possible card in every possible situation the same way).
+   **If "In" (accepted):**
+    - The card remains in place as the new last mainline card.
+    - The Scientist does **not** draw. Their hand size decreases by 1.
+    - The Scientist may now optionally **attempt to guess the rule** (see below).
 
-Outcome:
-- **If the guess is correct:** the **round ends immediately**.
-- **If the guess is wrong:**
-    - Dealer says it is wrong.
-    - Player **draws 1 card** from the deck.
-    - Play continues with the next player.
+   **If "Out" (rejected):**
+    - The card is moved to a sideline column directly below the last mainline card.
+    - The Scientist **draws 1 card** from the deck.
 
-Special case:
-- If a player’s hand ever reaches **0 cards**, that player **must immediately guess** the rule.
-    - If correct, the round ends (they have both gone out and solved the rule).
-    - If wrong, they draw 1 card and continue playing with that new card.
+The turn then ends.
 
+### B. Declare "No Play"
 
-## Ending a Round and scoring
+A Scientist uses this if they believe **none** of their cards would be accepted.
 
-A round ends when either:
+1. The Scientist reveals their entire hand to all players.
+2. The Rule-maker checks whether any card in the hand would be **in** if played now:
 
-1. **A player correctly guesses the rule**, or
-2. **The deck is exhausted** (no more cards to draw).
+   **If correct (no legal card exists):**
+    - The Scientist chooses one card from their hand.
+    - That card is placed in a sideline below the last mainline card.
+    - The Scientist does **not** draw. Their hand size decreases by 1.
+    - The Scientist may now optionally **attempt to guess the rule** (see below).
 
-Scoring:
-1. At round end, each non-dealer player scores **1 point per card in hand** (fewer is better).
-2. A player who **correctly guessed the rule** scores **−3 extra points** (a bonus; lower total is better).
-3. Dealer’s score for the hand = the **second lowest** player score.
-4. After each player has been Dealer the same number of times, **lowest total score wins**.
+   **If incorrect (at least one legal card exists):**
+    - The Rule-maker selects one of the legal cards and places it as the new last mainline card.
+    - The Scientist **draws 1 penalty card** from the deck.
+
+The turn then ends.
+
+---
+
+## Guessing the Rule
+
+### When You May Guess
+
+Immediately after:
+- Successfully playing an **in** card, or
+- Making a **correct no-play**
+
+the Scientist may optionally attempt to state the secret rule.
+
+### How to Guess
+
+The Scientist writes down (or states) a verbal description of the rule.
+
+The Rule-maker judges whether the stated rule is **equivalent** to the secret rule. Two rules are equivalent if and only if they produce identical in/out judgments for every possible (card, mainline-state) pair.
+
+Note: The wording does not need to match exactly. Only logical equivalence matters.
+
+### Outcome
+
+- **Correct guess:** The round ends immediately.
+- **Incorrect guess:** The Rule-maker announces the guess is wrong (without explaining why). The Scientist **draws 1 card** from the deck. Play continues with the next Scientist.
+
+### Mandatory Guess at Zero Cards
+
+If a Scientist's hand reaches **0 cards**, they **must** immediately guess the rule:
+- If correct, the round ends.
+- If incorrect, they draw 1 card and continue playing.
+
+---
+
+## Deck Exhaustion
+
+If a player must draw but the deck is empty:
+- They do not draw (no penalty beyond failing to reduce hand size).
+- Play continues.
+
+If the deck is empty **and** no player can make a legal play or correct no-play, the round ends immediately.
+
+---
+
+## End of Round
+
+A round ends when:
+1. A Scientist **correctly guesses the rule**, or
+2. The **deck is exhausted** and play cannot continue.
+
+---
+
+## Scoring
+
+At the end of each round:
+
+| Player | Score |
+|--------|-------|
+| Each Scientist | **+1 point per card remaining in hand** |
+| Scientist who guessed correctly | **−3 bonus points** (added to their hand score, can result in negative) |
+| Rule-maker | Score equal to the **second-lowest** Scientist score for that round |
+
+**Lower scores are better.** 
+After all rounds completed (each player having been Rule-maker the same number of times), the player with the lowest total score wins.
+
+---
+
+## Example Rules
+
+These examples illustrate appropriate rule complexity:
+
+### Simple Rules
+- "The card must be a different color than the last mainline card." (Alternating red/black)
+- "The card must be a heart or a spade."
+- "The card must have an even rank."
+
+### Medium Rules
+- "The card's rank must be higher than the last mainline card's rank. Any card may follow a King."
+- "The card must share either the suit or the color with the last mainline card, but not both."
+- "The card's rank must have a different parity (odd/even) than the last mainline card."
+
+### Harder Rules (use sparingly)
+- "The card's rank must differ from the last mainline card's rank by exactly 1 or 2 (with Ace and King not considered adjacent)."
+- "If the last mainline card is red, play a card with rank ≤ 7. If black, play a card with rank ≥ 7."
+
+**Guidance for Rule-makers:** Aim for rules that are deducible within 15-25 plays. 
+Avoid rules so complex that random guessing is the only viable strategy.
+Since your score equals the second-lowest Scientist score, you benefit when Scientists can make progress. 
+An unsolvable rule leads to high hand counts for everyone — including you.
