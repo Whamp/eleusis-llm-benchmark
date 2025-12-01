@@ -40,12 +40,14 @@ class LLMScientist(Player):
         llm_client: HuggingFaceClient,
         guess_threshold: int = 5,
         max_retries: int = 3,
+        max_tokens: int = 8192,
     ) -> None:
         """Initialize LLM scientist."""
         super().__init__(name)
         self.llm_client = llm_client
         self.guess_threshold = guess_threshold
         self.max_retries = max_retries
+        self.max_tokens = max_tokens
         self.successful_plays = 0
         self.play_history: list[dict] = []
 
@@ -79,7 +81,7 @@ class LLMScientist(Player):
         for attempt in range(self.max_retries):
             try:
                 response = self.llm_client.generate_structured(
-                    prompt, max_tokens=8192, xml_tag="GUESS"
+                    prompt, max_tokens=self.max_tokens, xml_tag="GUESS"
                 )
 
                 if response.get("should_guess", False):
@@ -110,7 +112,7 @@ class LLMScientist(Player):
         for attempt in range(self.max_retries):
             try:
                 response = self.llm_client.generate_structured(
-                    prompt, max_tokens=8192, xml_tag="ACTION"
+                    prompt, max_tokens=self.max_tokens, xml_tag="ACTION"
                 )
                 action_type = response.get("action", "").lower()
 
@@ -150,12 +152,17 @@ class LLMRuleMaker:
     """Rule-maker that generates rules using an LLM."""
 
     def __init__(
-        self, llm_client: HuggingFaceClient, validator: RuleValidator, max_attempts: int = 3
+        self,
+        llm_client: HuggingFaceClient,
+        validator: RuleValidator,
+        max_attempts: int = 3,
+        max_tokens: int = 8192,
     ) -> None:
         """Initialize LLM rule-maker."""
         self.llm_client = llm_client
         self.validator = validator
         self.max_attempts = max_attempts
+        self.max_tokens = max_tokens
 
     def generate_rule(self) -> LLMGeneratedRule | None:
         """Generate a valid rule using the LLM."""
@@ -164,8 +171,7 @@ class LLMRuleMaker:
         for attempt in range(self.max_attempts):
             try:
                 # Get rule from LLM
-                MAX_TOKENS = 8192
-                response = self.llm_client.generate(prompt, max_tokens=MAX_TOKENS)
+                response = self.llm_client.generate(prompt, max_tokens=self.max_tokens)
 
                 # Extract rule from <RULE>...</RULE> tags
                 rule_text = self._extract_rule(response)

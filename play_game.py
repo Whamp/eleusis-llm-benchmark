@@ -101,7 +101,10 @@ def play_full_game():
     logger.info("Rule-maker is creating a secret rule...")
     logger.info("")
     max_rule_attempts = config["game"]["max_rule_generation_attempts"]
-    rule_maker = LLMRuleMaker(rule_maker_client, validator, max_attempts=max_rule_attempts)
+    max_tokens = config["game"]["max_tokens"]
+    rule_maker = LLMRuleMaker(
+        rule_maker_client, validator, max_attempts=max_rule_attempts, max_tokens=max_tokens
+    )
     rule = rule_maker.generate_rule()
 
     if not rule:
@@ -149,18 +152,21 @@ def play_full_game():
             scientist1_client,
             guess_threshold=guess_threshold,
             max_retries=max_llm_retries,
+            max_tokens=max_tokens,
         ),
         LLMScientist(
             "Scientist2",
             scientist2_client,
             guess_threshold=guess_threshold,
             max_retries=max_llm_retries,
+            max_tokens=max_tokens,
         ),
         LLMScientist(
             "Scientist3",
             scientist3_client,
             guess_threshold=guess_threshold,
             max_retries=max_llm_retries,
+            max_tokens=max_tokens,
         ),
     ]
 

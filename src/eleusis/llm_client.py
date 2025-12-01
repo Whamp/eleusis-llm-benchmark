@@ -111,7 +111,10 @@ class RefereeClient:
     """Client for referee LLM (Anthropic Claude) used for rule equivalence checking."""
 
     def __init__(
-        self, api_key: str | None = None, model: str = "claude-3-5-sonnet-20241022"
+        self,
+        api_key: str | None = None,
+        model: str = "claude-3-5-sonnet-20241022",
+        max_tokens: int = 2048,
     ) -> None:
         """Initialize referee client with Anthropic API."""
         self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
@@ -119,6 +122,7 @@ class RefereeClient:
             raise ValueError("ANTHROPIC_API_KEY not provided and not found in environment")
 
         self.model = model
+        self.max_tokens = max_tokens
         self.client = anthropic.Anthropic(api_key=self.api_key)
 
     def check_rule_equivalence(self, rule1: str, rule2: str) -> tuple[bool, str]:
@@ -146,7 +150,7 @@ Respond with JSON in this format:
 
         message = self.client.messages.create(
             model=self.model,
-            max_tokens=2048,
+            max_tokens=self.max_tokens,
             messages=[{"role": "user", "content": prompt}],
         )
 
@@ -192,7 +196,7 @@ Respond with JSON:
 
         message = self.client.messages.create(
             model=self.model,
-            max_tokens=2048,
+            max_tokens=self.max_tokens,
             messages=[{"role": "user", "content": prompt}],
         )
 
