@@ -31,7 +31,7 @@ models:
 # Game settings
 game:
   max_turns: 20
-  pause_after_turn: true  # Wait for user input after each turn
+  pause_after_turn: false  # Wait for user input after each turn
 
   # Game parameters
   cards_per_scientist: 12  # Initial hand size for each scientist

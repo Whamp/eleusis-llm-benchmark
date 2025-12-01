@@ -228,33 +228,44 @@ def play_full_game():
             logger.info("")
 
         # Play turn
-        result = engine.play_turn(action)
-
-        # Record action result for learning
-        player.record_action_result(result)
+        play_result = engine.play_turn(action)
 
         # Log result
-        logger.info(f"Action: {result['action']}")
-        if "card" in result:
-            logger.info(f"Card played: {result['card']}")
-            logger.info(f"Result: {'ACCEPTED ✓' if result.get('accepted') else 'REJECTED ✗'}")
+        logger.info(f"Action: {play_result['action']}")
+        if "card" in play_result:
+            logger.info(f"Card played: {play_result['card']}")
+            logger.info(f"Result: {'ACCEPTED ✓' if play_result.get('accepted') else 'REJECTED ✗'}")
 
-        elif "correct" in result:
-            logger.info(f"No-play: {'CORRECT ✓' if result['correct'] else 'INCORRECT ✗'}")
-            if "forced_card" in result:
-                logger.info(f"Forced card: {result['forced_card']}")
+        elif "correct" in play_result:
+            logger.info(f"No-play: {'CORRECT ✓' if play_result['correct'] else 'INCORRECT ✗'}")
+            if "forced_card" in play_result:
+                logger.info(f"Forced card: {play_result['forced_card']}")
 
         # Check if player wants to guess after successful action
-        if result.get("can_guess", False) and player.should_guess_now():
-            guess_text = player.get_guess_from_last_action()
-            if guess_text:
-                from eleusis.game_engine import GuessRuleAction
+        # (BEFORE clearing last_action_response)
+        should_guess = (
+            play_result.get("can_guess", False)
+            and player.last_action_response
+            and player.last_action_response.get("guess_rule_if_accepted", False)
+        )
+        guess_text = (
+            player.last_action_response.get("tentative_rule", "")
+            if player.last_action_response
+            else ""
+        )
 
-                logger.info("")
-                logger.info(f"{player_name} is guessing the rule based on tentative_rule...")
-                guess_action = GuessRuleAction(guess_text)
-                result = engine.play_turn(guess_action)
-                # Note: result is now the guess result, will be logged below
+        # Now record the play result (this clears last_action_response)
+        player.record_action_result(play_result)
+
+        # Execute the guess if needed (using saved values)
+        if should_guess and guess_text:
+            from eleusis.game_engine import GuessRuleAction
+
+            logger.info("")
+            logger.info(f"{player_name} is guessing the rule based on tentative_rule...")
+            result = engine.play_turn(GuessRuleAction(guess_text))
+        else:
+            result = play_result
 
         if "guess" in result:
             logger.info("")
