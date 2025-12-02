@@ -201,6 +201,7 @@ class RuleValidator:
         current_mainline: list[Card],
         num_simulations: int = 2,
         turns_per_simulation: int = 10,
+        preconverted_code: str | None = None,
     ) -> tuple[bool, str, int, int]:
         """Check if two rules are equivalent by simulating gameplay.
 
@@ -210,16 +211,21 @@ class RuleValidator:
             current_mainline: Current mainline cards at time of guess
             num_simulations: Number of independent simulations (N)
             turns_per_simulation: Number of turns per simulation (K)
+            preconverted_code: Optional pre-converted Python code (to avoid re-conversion)
 
         Returns:
             Tuple of (equivalent, reasoning, total_comparisons, mismatches)
         """
-        if not self.referee_client:
-            raise ValueError("Referee client not configured for code conversion")
+        # Use preconverted code if provided, otherwise convert now
+        if preconverted_code:
+            logger.debug("Using preconverted guessed rule code")
+            guessed_code = preconverted_code
+        else:
+            if not self.referee_client:
+                raise ValueError("Referee client not configured for code conversion")
 
-        # Convert guessed rule to Python code
-        logger.debug(f"Converting guessed rule to Python code: {guessed_rule_text}")
-        guessed_code = self.referee_client.convert_rule_to_code(guessed_rule_text)
+            logger.debug(f"Converting guessed rule to Python code: {guessed_rule_text}")
+            guessed_code = self.referee_client.convert_rule_to_code(guessed_rule_text)
 
         if not guessed_code:
             return False, "Failed to convert guessed rule to Python code", 0, 0
@@ -259,10 +265,16 @@ class RuleValidator:
 
                         if actual_result != guessed_result:
                             mismatches += 1
-                            logger.debug(
+                            logger.warning(
                                 f"Mismatch at sim {sim_num+1}, turn {turn_num+1}: "
                                 f"card={card}, actual={actual_result}, guessed={guessed_result}"
                             )
+                            logger.warning(f"  simulated_mainline={simulated_mainline}")
+                            mismatch_msg = (
+                                f"Mismatch at sim {sim_num+1}, turn {turn_num+1}: "
+                                f"card={card}, actual={actual_result}, guessed={guessed_result}"
+                            )
+                            return False, mismatch_msg, total_comparisons, mismatches
 
                         if actual_result:
                             accepted_cards_actual.append(card)

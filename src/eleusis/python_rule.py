@@ -35,6 +35,11 @@ class PythonRule(Rule):
 
     def _create_eval_function(self, code: str) -> Callable[[Card, list[Card]], bool]:
         """Create evaluation function from code string with safe execution environment."""
+        # Debug print function that logs to logger
+        def debug_print(*args):
+            """Print function for debugging rule execution."""
+            logger.debug(f"  [Rule Debug] {' '.join(str(arg) for arg in args)}")
+
         # Define safe globals with restricted builtins
         safe_globals = {
             "__builtins__": {
@@ -45,6 +50,7 @@ class PythonRule(Rule):
                 "max": max,
                 "any": any,
                 "all": all,
+                "print": debug_print,  # Add print for debugging
             },
             "Card": Card,
         }
@@ -68,12 +74,28 @@ def evaluate_rule(card, mainline):
             return False
 
         try:
+            # Add debug context for troubleshooting
+            logger.debug(f"Evaluating {card} with mainline of {len(mainline)} cards")
+            logger.debug(f"  card.rank={card.rank}, card.color={card.color}")
+
             result = self._eval_function(card, mainline)
-            logger.info(f"Evaluating {card} against Python rule : {bool(result)} for rule '{self.rule_description}'")
+            rule_desc_short = self.rule_description[:30]
+            logger.info(
+                f"Evaluating {card} against Python rule : {bool(result)} "
+                f"for rule '{rule_desc_short}...'"
+            )
+
+            # Log detailed info if result seems unexpected
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"  result={result}, type={type(result)}")
+
             return bool(result)
         except Exception as e:
             logger.error(f"Runtime error in Python rule: {e}")
-            logger.error(f"Card: {card}, Mainline: {[str(c) for c in mainline]}")
+            logger.error(f"  Card: {card}, card.rank={card.rank}, card.color={card.color}")
+            logger.error(f"  Mainline length: {len(mainline)}")
+            if mainline:
+                logger.error(f"  Last mainline card: {mainline[-1]}")
             return False
 
     def description(self) -> str:

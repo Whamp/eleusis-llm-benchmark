@@ -298,6 +298,7 @@ class GameEngine:
                 llm_reasoning = f"Error checking equivalence: {e}"
 
             # Method 2: Simulation-based comparison
+            # Pass the already-converted code to avoid re-conversion
             try:
                 (
                     sim_correct,
@@ -305,7 +306,10 @@ class GameEngine:
                     sim_comparisons,
                     sim_mismatches,
                 ) = self.rule_validator.check_equivalence_by_simulation(
-                    self.rule, action.guess_text, self.state.mainline.get_all()
+                    self.rule,
+                    action.guess_text,
+                    self.state.mainline.get_all(),
+                    preconverted_code=guessed_code,  # Reuse the code we already converted
                 )
                 logger.info(
                     f"Simulation verdict: {sim_correct} - {sim_reasoning} "

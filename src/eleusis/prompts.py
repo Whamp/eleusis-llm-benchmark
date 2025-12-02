@@ -255,7 +255,8 @@ Since your score equals the second-lowest Scientist score, you benefit when Scie
 can make progress. 
 An unsolvable rule leads to high hand counts for everyone — including
 you.
-Avoid rules that depend on complex sequences or deep history; or has a singular behavior for the first card, etc.
+Avoid rules that depend on complex sequences or deep history; or has a singular
+behavior for the first card, etc.
 CHOOSE A SIMPLE RULE THAT ALLOWS SCIENTISTS TO LEARN AND IMPROVE OVER TIME.
 
 OUTPUT FORMAT:
