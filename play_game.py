@@ -9,8 +9,9 @@ import yaml
 from eleusis.game_engine import GameEngine
 from eleusis.game_state import GameState
 from eleusis.llm_client import HuggingFaceClient
-from eleusis.llm_player import LLMRuleMaker, LLMScientist
+from eleusis.llm_player import LLMScientist
 from eleusis.logging_utils import setup_logging
+from eleusis.rule_factory import RuleFactory
 from eleusis.rules import RuleValidator
 
 # Load configuration
@@ -104,18 +105,33 @@ def play_full_game():
 
     validator = RuleValidator(referee_client=referee_client)
 
-    # Generate rule
-    logger.info("Rule-maker is creating a secret rule...")
+    # Create rule using RuleFactory
+    rule_source_cfg = config["rule_source"]
+    mode = rule_source_cfg["mode"]
+    logger.info(f"Rule source mode: {mode}")
     logger.info("")
-    max_rule_attempts = config["game"]["max_rule_generation_attempts"]
-    max_tokens = config["game"]["max_tokens"]
-    rule_maker = LLMRuleMaker(
-        rule_maker_client, validator, max_attempts=max_rule_attempts, max_tokens=max_tokens
-    )
-    rule = rule_maker.generate_rule()
+
+    if mode == "library":
+        logger.info("Loading rule from library...")
+        rule_factory = RuleFactory(
+            mode="library",
+            library_path=rule_source_cfg["library_path"],
+            selection=rule_source_cfg["selection"],
+        )
+    else:  # llm mode
+        logger.info("Rule-maker is creating a secret rule...")
+        max_rule_attempts = config["game"]["max_rule_generation_attempts"]
+        max_tokens = config["game"]["max_tokens"]
+        rule_factory = RuleFactory(
+            mode="llm",
+            llm_client=rule_maker_client,
+            validator=validator,
+        )
+
+    rule = rule_factory.create_rule()
 
     if not rule:
-        logger.error("✗ Failed to generate valid rule")
+        logger.error("✗ Failed to create rule")
         return
 
     logger.info("")
