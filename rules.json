@@ -1,0 +1,60 @@
+{
+  "rules": [
+    {
+      "name": "even_ranks_only",
+      "description": "Cards with even ranks are accepted.",
+      "code": "if card.rank % 2 == 0:\n    return True\nelse:\n    return False"
+    },
+    {
+      "name": "red_cards_only",
+      "description": "Only red cards (hearts and diamonds) are accepted.",
+      "code": "if card.color == \"red\":\n    return True\nelse:\n    return False"
+    },
+    {
+      "name": "hearts_and_clubs",
+      "description": "Only hearts and clubs are accepted.",
+      "code": "if card.suit.suit_name in [\"hearts\", \"clubs\"]:\n    return True\nelse:\n    return False"
+    },
+    {
+      "name": "alternating_colors",
+      "description": "Cards must alternate between red and black colors.",
+      "code": "if not mainline:\n    return True\nlast_card = mainline[-1]\nreturn card.color != last_card.color"
+    },
+    {
+      "name": "rank_higher_than_previous",
+      "description": "Each card's rank must be higher than the previous one.",
+      "code": "if not mainline:\n    return True\nlast_card = mainline[-1]\nreturn card.rank > last_card.rank"
+    },
+    {
+      "name": "same_suit_as_previous",
+      "description": "Each card must have the same suit as the previous one.",
+      "code": "if not mainline:\n    return True\nlast_card = mainline[-1]\nreturn card.suit.suit_name == last_card.suit.suit_name"
+    },
+    {
+      "name": "red_to_low_rank_black_to_high_rank",
+      "description": "Red cards must have a rank \u2264 7, and black cards must have a rank \u2265 7.",
+      "code": "if card.color == \"red\":\n    return card.rank <= 7\nelif card.color == \"black\":\n    return card.rank >= 7"
+    },
+    {
+      "name": "alternating_ranks_odd_even",
+      "description": "Cards must alternate between odd and even ranks.",
+      "code": "if not mainline:\n    return True\nlast_card = mainline[-1]\nif last_card.rank % 2 == 0:  # Last card was even\n    return card.rank % 2 != 0  # This card must be odd\nelse:  # Last card was odd\n    return card.rank % 2 == 0  # This card must be even"
+    },
+    {
+      "name": "increasing_then_decreasing_ranks",
+      "description": "Ranks must first increase and then decrease (e.g., 3, 5, 7, 5, 3).",
+      "code": "# Simplified logic for demonstration; actual implementation might require tracking state\nif not mainline:\n    return True\nlast_card = mainline[-1]\nif len(mainline) < 3:  # First two cards must increase\n    return card.rank > last_card.rank\nelse:  # After the third card, ranks must decrease\n    return card.rank < last_card.rank"
+    },
+    {
+      "name": "specific_suit_sequence",
+      "description": "Cards must follow a sequence of suits (hearts, diamonds, clubs, spades, repeat).",
+      "code": "suit_sequence = [\"hearts\", \"diamonds\", \"clubs\", \"spades\"]\nif not mainline:\n    return card.suit.suit_name == suit_sequence[0]\nlast_card = mainline[-1]\ncurrent_index = suit_sequence.index(last_card.suit.suit_name)\nnext_index = (current_index + 1) % len(suit_sequence)\nreturn card.suit.suit_name == suit_sequence[next_index]"
+    }
+  ],
+  "metadata": {
+    "generated_at": "2025-12-02T07:33:59.309418",
+    "total_generated": 10,
+    "valid_count": 10,
+    "invalid_count": 0
+  }
+}
