@@ -72,7 +72,7 @@ def test_with_predefined_rule():
             break
 
         # Get action
-        action = player.get_action(game_state, can_guess=False)
+        action = player.get_action(game_state)
 
         # Play turn
         logger.info(f"\n--- Turn {turn_count + 1}: {player_name} ---")
@@ -168,8 +168,7 @@ def test_with_llm_rule():
             break
 
         # Get action (allow guessing after successful plays)
-        can_guess = current_player_state.hand.size() > 0
-        action = player.get_action(game_state, can_guess=can_guess)
+        action = player.get_action(game_state)
 
         # Play turn
         logger.info(f"\n--- Turn {turn_count + 1}: {player_name} ---")

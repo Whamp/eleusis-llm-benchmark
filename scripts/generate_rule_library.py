@@ -189,6 +189,7 @@ def validate_and_save_rules(
 
 def main():
     """Main entry point for rule library generation."""
+    # Example usage : python scripts/generate_rule_library.py --num-rules 20 --output rules.json --model openai/gpt-oss-120b --max-tokens 16384 --test-cases 5
     parser = argparse.ArgumentParser(description="Generate a library of Eleusis rules")
     parser.add_argument(
         "--num-rules",
@@ -205,7 +206,7 @@ def main():
     parser.add_argument(
         "--model",
         type=str,
-        default="meta-llama/Llama-3.3-70B-Instruct",
+        default="openai/gpt-oss-120b",
         help="Model to use for generation",
     )
     parser.add_argument(

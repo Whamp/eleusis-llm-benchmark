@@ -25,7 +25,7 @@ class Player(ABC):
         self.name = name
 
     @abstractmethod
-    def get_action(self, game_state: GameState, can_guess: bool = False) -> Action:
+    def get_action(self, game_state: GameState) -> Action:
         """Get player's action for their turn."""
         pass
 
@@ -49,12 +49,9 @@ class LLMScientist(Player):
         self.play_history: list[dict] = []
         self.last_action_response: dict | None = None  # Store LLM response for history
 
-    def get_action(self, game_state: GameState, can_guess: bool = False) -> Action:
+    def get_action(self, game_state: GameState) -> Action:
         """Get scientist's action using LLM."""
         current_player = game_state.get_current_player()
-
-        # Select a move (play card or no-play)
-        # Note: guessing is now handled via guess_rule_if_accepted flag in the action
         return self._select_move(game_state, current_player)
 
     def should_guess_now(self) -> bool:
@@ -260,7 +257,7 @@ class RandomScientist(Player):
         """Initialize random scientist."""
         super().__init__(name)
 
-    def get_action(self, game_state: GameState, can_guess: bool = False) -> Action:
+    def get_action(self, game_state: GameState) -> Action:
         """Get random action."""
         current_player = game_state.get_current_player()
         hand_cards = current_player.hand.get_all_cards()

@@ -10,17 +10,18 @@ models:
 
   # Models for scientists (list determines number of players)
   players:
-    - name: "openai/gpt-oss-120b"
+    - name: "meta-llama/Llama-3.3-70B-Instruct"
       temperature: 0.7
-      display_name: "GPT OSS 120B Scientist 1"
+      display_name: "S3 — Llama-3.3-70B-Instruct"
 
     - name: "openai/gpt-oss-120b"
       temperature: 0.7
-      display_name: "GPT OSS 20B Scientist 2"
+      display_name: "S1 — GPT OSS 120B"
 
-    - name: "openai/gpt-oss-120b"
+    - name: "openai/gpt-oss-20b"
       temperature: 0.7
-      display_name: "GPT OSS 120B Scientist 3"
+      display_name: "S2 — GPT OSS 20B"
+
 
   # Model for referee (rule equivalence checking)
   referee:
@@ -30,8 +31,10 @@ models:
 
 # Rule source configuration
 rule_source:
-  mode: "llm"  # "llm" to generate at runtime, "library" to use pre-generated rules
+  mode: "library"  # "llm" to generate at runtime, "library" to use pre-generated rules
   library_path: "rules.json"  # Path to rule library JSON file
+  min_acceptance: 0.15      # Minimum avg acceptance rate for rules in library
+  max_acceptance: 0.55
   selection: "random"  # "random" or "sequential" for library mode
 
 # Game settings

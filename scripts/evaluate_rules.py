@@ -1,81 +1,48 @@
-"""Evaluate rules by measuring acceptance rates with random players."""
+"""Evaluate rules by measuring acceptance rates with random cards."""
 
 import argparse
 import json
 import logging
+import random
 from pathlib import Path
 
-from eleusis.game_engine import GameEngine
-from eleusis.game_state import GameState
-from eleusis.llm_player import RandomScientist
+from eleusis.cards import Card, Suit
 from eleusis.python_rule import PythonRule
 
 logger = logging.getLogger(__name__)
 
 
-def play_game_with_random_players(
-    rule: PythonRule,
-    num_players: int = 3,
-    max_turns: int = 40,
-    cards_per_scientist: int = 12,
-) -> dict:
-    """Play a game with random players and return statistics.
+def simulate_random_plays(rule: PythonRule, num_plays: int = 50) -> dict:
+    """Simulate random card plays and return statistics.
 
     Args:
         rule: The rule to evaluate
-        num_players: Number of scientist players
-        max_turns: Maximum number of turns
-        cards_per_scientist: Initial hand size
+        num_plays: Number of random cards to try
 
     Returns:
         Dict with acceptance_rate and other stats
     """
-    # Create game state
-    player_names = ["RuleMaker"] + [f"RandomPlayer{i}" for i in range(1, num_players + 1)]
-    game_state = GameState(player_names, rule_maker_index=0)
-
-    # Create game engine
-    engine = GameEngine(
-        game_state,
-        rule,
-        cards_per_scientist=cards_per_scientist,
-        # Minimal penalties for random players
-        card_reject_penalty=1,
-        no_play_incorrect_penalty=1,
-        no_play_correct_reduction=1,
-        correct_guess_bonus=0,  # No guessing
-    )
-
-    # Create random players
-    players = [RandomScientist(name) for name in player_names[1:]]
+    # Create all 52 cards
+    all_cards = [Card(rank, suit) for rank in range(1, 14) for suit in Suit]
 
     # Track statistics
     total_plays = 0
     total_accepted = 0
+    mainline = []
 
-    # Play game
-    for turn_num in range(max_turns):
-        current_player_index = game_state.current_turn_index
+    # Try random cards
+    for _ in range(num_plays):
+        # Pick a random card
+        card = random.choice(all_cards)
 
-        if current_player_index == 0:  # Skip rule-maker
-            game_state.advance_turn()
-            continue
+        # Evaluate against current mainline
+        accepted = rule.evaluate(card, mainline)
 
-        player = players[current_player_index - 1]
-        action = player.get_action(game_state)
-
-        # Play turn
-        result = engine.play_turn(action)
-
-        # Track statistics
-        if "card" in result:
-            total_plays += 1
-            if result.get("accepted", False):
-                total_accepted += 1
-
-        # Check if game ended
-        if result.get("game_over", False):
-            break
+        total_plays += 1
+        if accepted:
+            total_accepted += 1
+            # Add to mainline for next evaluation
+            mainline.append(card)
 
     acceptance_rate = total_accepted / total_plays if total_plays > 0 else 0.0
 
@@ -83,23 +50,21 @@ def play_game_with_random_players(
         "total_plays": total_plays,
         "total_accepted": total_accepted,
         "acceptance_rate": acceptance_rate,
-        "turns_played": turn_num + 1,
+        "mainline_length": len(mainline),
     }
 
 
 def evaluate_rule(
     rule_dict: dict,
-    num_games: int = 5,
-    num_players: int = 3,
-    max_turns: int = 40,
+    num_simulations: int = 10,
+    plays_per_simulation: int = 50,
 ) -> dict:
-    """Evaluate a single rule across multiple games.
+    """Evaluate a single rule across multiple simulations.
 
     Args:
         rule_dict: Dict with name, description, code
-        num_games: Number of games to play for averaging
-        num_players: Number of random players
-        max_turns: Maximum turns per game
+        num_simulations: Number of simulations to run for averaging
+        plays_per_simulation: Number of random card plays per simulation
 
     Returns:
         Dict with averaged statistics
@@ -109,32 +74,29 @@ def evaluate_rule(
     code = rule_dict["code"]
 
     logger.info(f"Evaluating rule: {name}")
-    logger.debug(f"Description: {description}")
+    logger.info(f"Description: {description}")
 
     rule = PythonRule(description, code)
 
-    # Run multiple games
-    game_results = []
-    for game_num in range(num_games):
-        logger.debug(f"  Game {game_num + 1}/{num_games}")
-        result = play_game_with_random_players(rule, num_players, max_turns)
-        game_results.append(result)
+    # Run multiple simulations
+    sim_results = []
+    for sim_num in range(num_simulations):
+        logger.debug(f"  Simulation {sim_num + 1}/{num_simulations}")
+        result = simulate_random_plays(rule, plays_per_simulation)
+        sim_results.append(result)
 
     # Compute averages
-    avg_acceptance_rate = sum(r["acceptance_rate"] for r in game_results) / num_games
-    avg_plays = sum(r["total_plays"] for r in game_results) / num_games
-    avg_accepted = sum(r["total_accepted"] for r in game_results) / num_games
+    avg_acceptance_rate = sum(r["acceptance_rate"] for r in sim_results) / num_simulations
+    avg_mainline_length = sum(r["mainline_length"] for r in sim_results) / num_simulations
 
     logger.info(f"  Acceptance rate: {avg_acceptance_rate:.1%}")
-    logger.info(f"  Avg plays per game: {avg_plays:.1f}")
+    logger.info(f"  Avg mainline length: {avg_mainline_length:.1f}")
 
     return {
-        "name": name,
-        "description": description,
         "avg_acceptance_rate": avg_acceptance_rate,
-        "avg_plays_per_game": avg_plays,
-        "avg_accepted_per_game": avg_accepted,
-        "num_games_evaluated": num_games,
+        "avg_mainline_length": avg_mainline_length,
+        "num_simulations": num_simulations,
+        "plays_per_simulation": plays_per_simulation,
     }
 
 
@@ -148,28 +110,21 @@ def main():
         help="Path to rule library JSON (default: rules.json)",
     )
     parser.add_argument(
-        "--num-games",
+        "--num-simulations",
         type=int,
-        default=5,
-        help="Number of games per rule for averaging (default: 5)",
+        default=10,
+        help="Number of simulations per rule for averaging (default: 10)",
     )
     parser.add_argument(
-        "--num-players",
+        "--plays-per-simulation",
         type=int,
-        default=3,
-        help="Number of random players (default: 3)",
-    )
-    parser.add_argument(
-        "--max-turns",
-        type=int,
-        default=40,
-        help="Maximum turns per game (default: 40)",
+        default=50,
+        help="Number of random card plays per simulation (default: 50)",
     )
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("rule_evaluation_results.json"),
-        help="Output JSON file (default: rule_evaluation_results.json)",
+        help="Output path for updated rules (default: overwrites input library)",
     )
     parser.add_argument(
         "--log-level",
@@ -196,38 +151,37 @@ def main():
     logger.info(f"Found {len(rules)} rules to evaluate")
     logger.info("")
 
-    # Evaluate each rule
-    results = []
+    # Evaluate each rule and merge results
     for i, rule_dict in enumerate(rules, 1):
         logger.info(f"[{i}/{len(rules)}] {rule_dict['name']}")
-        result = evaluate_rule(
+        evaluation_results = evaluate_rule(
             rule_dict,
-            num_games=args.num_games,
-            num_players=args.num_players,
-            max_turns=args.max_turns,
+            num_simulations=args.num_simulations,
+            plays_per_simulation=args.plays_per_simulation,
         )
-        results.append(result)
+        # Merge evaluation results into rule dict
+        rule_dict.update(evaluation_results)
         logger.info("")
 
-    # Save results
-    output_data = {
-        "evaluation_params": {
-            "num_games_per_rule": args.num_games,
-            "num_players": args.num_players,
-            "max_turns": args.max_turns,
-        },
-        "results": results,
+    # Add evaluation metadata to the data structure
+    data["evaluation_params"] = {
+        "num_simulations": args.num_simulations,
+        "plays_per_simulation": args.plays_per_simulation,
     }
 
-    with open(args.output, "w") as f:
-        json.dump(output_data, f, indent=2)
+    # Determine output path
+    output_path = args.output if args.output else args.library
 
-    logger.info(f"Results saved to {args.output}")
+    # Save updated rules back to JSON
+    with open(output_path, "w") as f:
+        json.dump(data, f, indent=2)
+
+    logger.info(f"Updated rules saved to {output_path}")
     logger.info("")
     logger.info("Summary:")
     logger.info("-" * 60)
-    for result in results:
-        logger.info(f"{result['name']:40s} {result['avg_acceptance_rate']:6.1%}")
+    for rule in rules:
+        logger.info(f"{rule['name']:40s} {rule['avg_acceptance_rate']:6.1%}")
     logger.info("-" * 60)
 
     return 0

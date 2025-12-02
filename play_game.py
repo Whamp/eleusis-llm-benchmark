@@ -19,97 +19,78 @@ config_path = Path(__file__).parent / "config.yaml"
 with open(config_path) as f:
     config = yaml.safe_load(f)
 
-# Create log file with timestamp
+# Logging setup
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 log_file = f"logs/game_log_{timestamp}.txt"
-
-# Setup colored logging: INFO to console, DEBUG to file
-setup_logging(
-    log_file=log_file,
-    console_level=logging.INFO,
-    file_level=logging.DEBUG,
-)
-
-# Silence httpx logs
-logging.getLogger("httpx").setLevel(logging.WARNING)
-
+setup_logging(log_file=log_file, console_level=logging.INFO, file_level=logging.DEBUG)
+logging.getLogger("httpx").setLevel(logging.WARNING)  # Suppress httpx info logs
 logger = logging.getLogger(__name__)
-
 
 
 def play_full_game():
     """Play a complete game."""
-    # Validate player configuration
+
+    # ---------------
+    # (0) Initialize
+    # ---------------
+
     player_configs = config["models"]["players"]
-    if len(player_configs) < 1:
-        logger.error("✗ Must have at least 1 scientist player in config")
-        return
 
     logger.info(f"Log file: {log_file}")
     logger.info(f"  - Rule-maker: {config['models']['rule_maker']['display_name']}")
     for i, player_cfg in enumerate(player_configs, 1):
         logger.info(f"  - Scientist {i}: {player_cfg['display_name']}")
-    logger.info("=" * 80)
     logger.info("")
 
-    # Initialize clients from config
-    try:
-        logger.info("Initializing LLM clients...")
+    rule_maker_cfg = config["models"]["rule_maker"]
+    rule_maker_client = HuggingFaceClient(
+        model_name=rule_maker_cfg["name"],
+        temperature=rule_maker_cfg["temperature"],
+    )
+    logger.info("✓ Rule-maker client initialized")
 
-        rule_maker_cfg = config["models"]["rule_maker"]
-        rule_maker_client = HuggingFaceClient(
-            model_name=rule_maker_cfg["name"],
-            temperature=rule_maker_cfg["temperature"],
+    scientist_clients = []
+    for i, player_cfg in enumerate(player_configs, 1):
+        client = HuggingFaceClient(
+            model_name=player_cfg["name"],
+            temperature=player_cfg["temperature"],
         )
-        logger.info("✓ Rule-maker client initialized")
+        scientist_clients.append(client)
+    logger.info(f"✓ {len(scientist_clients)} scientist client(s) initialized")
 
-        # Initialize scientist clients dynamically
-        scientist_clients = []
-        for i, player_cfg in enumerate(player_configs, 1):
-            client = HuggingFaceClient(
-                model_name=player_cfg["name"],
-                temperature=player_cfg["temperature"],
-            )
-            scientist_clients.append(client)
+    # Initialize referee client for rule comparison
+    from eleusis.llm_client import RefereeClient
 
-        logger.info(f"✓ {len(scientist_clients)} scientist client(s) initialized")
-        logger.info("")
+    referee_cfg = config["models"]["referee"]
+    max_tokens_referee = config["game"]["max_tokens_referee"]
+    referee_client = RefereeClient(
+        model_name=referee_cfg["name"],
+        temperature=referee_cfg["temperature"],
+        max_tokens=max_tokens_referee,
+    )
+    logger.info(f"✓ Referee client initialized: {referee_cfg['display_name']}")
 
-    except Exception as e:
-        logger.error(f"✗ Failed to initialize clients: {e}")
-        logger.error("Make sure HF_TOKEN environment variable is set!")
-        return
 
-    # Create validator with referee
+    # --------------------
+    # (1) Rule generation
+    # --------------------
+
     logger.info("=" * 80)
     logger.info("PHASE 1: RULE GENERATION")
     logger.info("=" * 80)
     logger.info("")
 
-    # Initialize referee client for rule comparison
-    referee_client = None
-    try:
-        from eleusis.llm_client import RefereeClient
-
-        referee_cfg = config["models"]["referee"]
-        max_tokens_referee = config["game"]["max_tokens_referee"]
-        referee_client = RefereeClient(
-            model_name=referee_cfg["name"],
-            temperature=referee_cfg["temperature"],
-            max_tokens=max_tokens_referee,
-        )
-        logger.info(f"✓ Referee client initialized: {referee_cfg['display_name']}")
-    except Exception as e:
-        logger.warning(f"Could not initialize referee: {e}")
-        logger.info("Continuing without referee (guesses will not be validated)")
-
     validator = RuleValidator(referee_client=referee_client)
 
-    # Create rule using RuleFactory
     rule_source_cfg = config["rule_source"]
     mode = rule_source_cfg["mode"]
+
+    max_tokens = config["game"]["max_tokens"]
+    min_acceptance = rule_source_cfg.get("min_acceptance", 0.0)
+    max_acceptance = rule_source_cfg.get("max_acceptance", 1.0)
+
     logger.info(f"Rule source mode: {mode}")
-    logger.info("")
+    logger.info(f"Acceptance rate bounds: [{min_acceptance:.2%}, {max_acceptance:.2%}]")
 
     if mode == "library":
         logger.info("Loading rule from library...")
@@ -117,22 +98,20 @@ def play_full_game():
             mode="library",
             library_path=rule_source_cfg["library_path"],
             selection=rule_source_cfg["selection"],
+            min_acceptance=min_acceptance,
+            max_acceptance=max_acceptance,
         )
     else:  # llm mode
         logger.info("Rule-maker is creating a secret rule...")
-        max_rule_attempts = config["game"]["max_rule_generation_attempts"]
-        max_tokens = config["game"]["max_tokens"]
         rule_factory = RuleFactory(
             mode="llm",
             llm_client=rule_maker_client,
             validator=validator,
+            min_acceptance=min_acceptance,
+            max_acceptance=max_acceptance,
         )
 
     rule = rule_factory.create_rule()
-
-    if not rule:
-        logger.error("✗ Failed to create rule")
-        return
 
     logger.info("")
     logger.info("=" * 80)
@@ -140,22 +119,24 @@ def play_full_game():
     logger.info("=" * 80)
     logger.info("")
 
-    # Create game
+    # ---------------
+    # (2) Game setup
+    # ---------------
+
     logger.info("=" * 80)
     logger.info("PHASE 2: GAME SETUP")
     logger.info("=" * 80)
     logger.info("")
 
-    # Create player names dynamically
-    num_scientists = len(player_configs)
-    player_names = ["RuleMaker"] + [f"Scientist{i}" for i in range(1, num_scientists + 1)]
-
+    player_names = ["RuleMaker"] + [player_cfg['display_name'] for player_cfg in player_configs]
     game_state = GameState(player_names, rule_maker_index=0)
+
     cards_per_scientist = config["game"]["cards_per_scientist"]
     correct_guess_bonus = config["game"]["correct_guess_bonus"]
     card_reject_penalty = config["game"]["card_reject_penalty"]
     no_play_incorrect_penalty = config["game"]["no_play_incorrect_penalty"]
     no_play_correct_reduction = config["game"]["no_play_correct_reduction"]
+
     engine = GameEngine(
         game_state,
         rule,
@@ -169,6 +150,7 @@ def play_full_game():
 
     # Setup game
     engine.setup_game()
+
     logger.info("✓ Game setup complete")
     logger.info(f"✓ Starter card placed: {game_state.mainline.get_last()}")
     logger.info(f"✓ Each scientist has {cards_per_scientist} cards")
@@ -178,16 +160,22 @@ def play_full_game():
     # Create scientist players dynamically
     max_llm_retries = config["game"]["max_llm_retries"]
     scientists = []
-    for i, client in enumerate(scientist_clients, 1):
+    for i, client in enumerate(scientist_clients):
         scientist = LLMScientist(
-            f"Scientist{i}",
+            player_configs[i]["display_name"],
             client,
             max_retries=max_llm_retries,
             max_tokens=max_tokens,
         )
         scientists.append(scientist)
+        logger.info(f"✓ scientist player(s) # {i+1} initialized: {scientist.name}")
+    logger.info("")
 
-    # Game loop
+
+    # --------------
+    # (3) MAIN LOOP
+    # --------------
+
     logger.info("=" * 80)
     logger.info("PHASE 3: GAME PLAY")
     logger.info("=" * 80)
@@ -205,23 +193,19 @@ def play_full_game():
             logger.error(f"No player found for {player_name}")
             break
 
-        # Log turn header with compact board
+        # Log turn header
         logger.info("-" * 80)
         logger.info(f"TURN {turn_count + 1}: {player_name}")
         logger.info("-" * 80)
         logger.info(f"Board: {game_state.to_compact_string()}")
         logger.info(f"Deck remaining: {game_state.deck.remaining_count()} cards")
-
-        # Pretty print player's hand
         hand_cards = current_player_state.hand.get_all_cards()
         hand_str = ", ".join([str(c) for c in hand_cards])
         logger.info(f"Hand ({len(hand_cards)} cards): {hand_str}")
         logger.info("")
 
-        # Get action
-        can_guess = current_player_state.hand.size() > 0
         try:
-            action = player.get_action(game_state, can_guess=can_guess)
+            action = player.get_action(game_state)
         except Exception as e:
             logger.error(f"Error getting action: {e}", exc_info=True)
             game_state.advance_turn()
@@ -247,22 +231,21 @@ def play_full_game():
             and player.last_action_response.get("guess_rule_if_accepted", False)
         )
 
-        # Play turn - don't auto-advance, we'll handle turn advancement ourselves
         play_result = engine.play_turn(action, advance_turn=False)
 
         # Log result
         logger.info(f"Action: {play_result['action']}")
-        if "card" in play_result:
+        if "card" in play_result:       # Card play
             logger.info(f"Card played: {play_result['card']}")
             logger.info(f"Result: {'ACCEPTED ✓' if play_result.get('accepted') else 'REJECTED ✗'}")
 
-        elif "correct" in play_result:
+        elif "correct" in play_result:  # No-play
             logger.info(f"No-play: {'CORRECT ✓' if play_result['correct'] else 'INCORRECT ✗'}")
             if "forced_card" in play_result:
                 logger.info(f"Forced card: {play_result['forced_card']}")
 
         # Check if guess should execute (action was successful and player wanted to guess)
-        should_guess = will_guess and play_result.get("can_guess", False)
+
         guess_text = (
             player.last_action_response.get("tentative_rule", "")
             if player.last_action_response
@@ -273,7 +256,7 @@ def play_full_game():
         player.record_action_result(play_result)
 
         # Execute the guess if needed (will advance turn)
-        if should_guess and guess_text:
+        if will_guess and guess_text:
             from eleusis.game_engine import GuessRuleAction
 
             logger.info("")
@@ -311,14 +294,6 @@ def play_full_game():
     logger.info(f"Secret rule: {rule.description()}")
     logger.info(f"Final board: {game_state.to_compact_string()}")
     logger.info("")
-
-    # Sidelines summary
-    if game_state.sidelines:
-        logger.info("Rejected cards by position:")
-        for pos, sideline in sorted(game_state.sidelines.items()):
-            cards = [str(c) for c in sideline.get_cards()]
-            logger.info(f"  Position {pos}: {cards}")
-        logger.info("")
 
     scores = engine.calculate_scores()
     logger.info("Final scores (lower is better):")
