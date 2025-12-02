@@ -18,4 +18,8 @@ To generate a library of rules, run:
 uv run scripts/generate_rule_library.py --num-rules 50 --output rules.json --model openai/gpt-oss-120b --max-tokens 16384 --test-cases 5
 ```
 
+Evaluate the rules generated:
 
+```bash
+uv run scripts/evaluate_rules.py --library rules.json
+```

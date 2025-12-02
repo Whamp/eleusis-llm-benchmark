@@ -3,11 +3,16 @@
 import logging
 import sys
 
+from dotenv import load_dotenv
+
 from eleusis.game_engine import GameEngine
 from eleusis.game_state import GameState
 from eleusis.llm_client import HuggingFaceClient, RefereeClient
 from eleusis.llm_player import LLMRuleMaker, LLMScientist, RandomScientist
 from eleusis.rules import AlternatingColorsRule, RuleValidator
+
+# Load environment variables from .env
+load_dotenv()
 
 # Set up logging
 logging.basicConfig(
@@ -178,8 +183,6 @@ def test_with_llm_rule():
 
         # Record play for LLM scientist
         if isinstance(player, LLMScientist) and "card" in result:
-            from eleusis.cards import Card, Suit
-
             # Note: We can't easily reconstruct the card here, skip recording
             pass
 

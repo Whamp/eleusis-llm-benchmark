@@ -92,6 +92,7 @@ class GameState:
         self.sidelines: dict[int, Sideline] = {}
         self.deck = Deck()
         self.players: list[PlayerState] = []
+        self.failed_rule_guesses: list[dict] = []  # Global history of failed guesses
 
         for i, name in enumerate(player_names):
             is_rule_maker = i == rule_maker_index
@@ -131,6 +132,14 @@ class GameState:
         if mainline_index not in self.sidelines:
             self.sidelines[mainline_index] = Sideline(mainline_index)
         self.sidelines[mainline_index].add_card(card)
+
+    def record_failed_guess(self, player_name: str, guess_text: str, reasoning: str = "") -> None:
+        """Record a failed rule guess for all players to see."""
+        self.failed_rule_guesses.append({
+            "player": player_name,
+            "guess": guess_text,
+            "reasoning": reasoning,
+        })
 
     def to_compact_string(self) -> str:
         """Generate compact string representation of mainline with rejected cards in brackets."""

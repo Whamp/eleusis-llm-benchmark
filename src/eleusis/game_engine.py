@@ -348,11 +348,14 @@ class GameEngine:
                 "sim_comparisons": sim_comparisons,
             }
         else:
-            # Incorrect guess - draw penalty card
+            # Incorrect guess - record in global history and draw penalty card
+            self.state.record_failed_guess(player.name, action.guess_text, reasoning)
+            logger.info(f"{player.name} incorrect guess (now recorded in game history)")
+
             if not self.state.deck.is_empty():
                 drawn = self.state.deck.draw()
                 player.hand.add_card(drawn)
-                logger.info(f"{player.name} incorrect guess, drew {drawn}")
+                logger.info(f"{player.name} drew penalty card: {drawn}")
 
             return {
                 "success": True,

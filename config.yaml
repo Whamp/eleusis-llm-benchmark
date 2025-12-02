@@ -35,7 +35,8 @@ rule_source:
   library_path: "rules.json"  # Path to rule library JSON file
   min_acceptance: 0.15      # Minimum avg acceptance rate for rules in library
   max_acceptance: 0.55
-  selection: "random"  # "random" or "sequential" for library mode
+  selection: "sequential"  # "random" or "sequential" for library mode
+  index: 54  # Starting index for sequential selection
 
 # Game settings
 game:

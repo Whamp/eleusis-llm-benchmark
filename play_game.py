@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 import yaml
+from dotenv import load_dotenv
 
 from eleusis.game_engine import GameEngine
 from eleusis.game_state import GameState
@@ -13,6 +14,9 @@ from eleusis.llm_player import LLMScientist
 from eleusis.logging_utils import setup_logging
 from eleusis.rule_factory import RuleFactory
 from eleusis.rules import RuleValidator
+
+# Load environment variables from .env
+load_dotenv()
 
 # Load configuration
 config_path = Path(__file__).parent / "config.yaml"
@@ -94,12 +98,14 @@ def play_full_game():
 
     if mode == "library":
         logger.info("Loading rule from library...")
+        start_index = rule_source_cfg.get("index", 0)
         rule_factory = RuleFactory(
             mode="library",
             library_path=rule_source_cfg["library_path"],
             selection=rule_source_cfg["selection"],
             min_acceptance=min_acceptance,
             max_acceptance=max_acceptance,
+            start_index=start_index,
         )
     else:  # llm mode
         logger.info("Rule-maker is creating a secret rule...")

@@ -76,9 +76,12 @@ class LLMScientist(Player):
         hand_dicts = [c.to_dict() for c in hand_cards]
         compact_board = game_state.to_compact_string()
         deck_remaining = game_state.deck.remaining_count()
+        failed_guesses = game_state.failed_rule_guesses
         prompt = get_move_selection_prompt(
-            compact_board, hand_dicts, deck_remaining, self.play_history
+            compact_board, hand_dicts, deck_remaining, self.play_history, failed_guesses
         )
+
+        logger.debug(f"PROMPT: {prompt}")
 
         for attempt in range(self.max_retries):
             try:

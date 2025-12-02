@@ -65,7 +65,7 @@ class HuggingFaceClient:
     def generate_structured(
         self, prompt: str, max_tokens: int = 8192, xml_tag: str | None = None
     ) -> dict[str, Any]:
-        """Generate structured JSON response.
+        """Generate structured JSON response with automatic continuation on truncation.
 
         Args:
             prompt: The prompt to send
@@ -75,6 +75,67 @@ class HuggingFaceClient:
         response_text = self.generate(prompt, max_tokens)
 
         # Try to extract JSON from response
+        try:
+            return self._parse_structured_response(response_text, xml_tag)
+        except ValueError as e:
+            # If parsing failed, try continuation once
+            logger.warning(f"Failed to parse structured response, attempting continuation: {e}")
+            return self._continue_and_parse(response_text, xml_tag, max_tokens)
+
+    def _continue_and_parse(
+        self, partial_response: str, xml_tag: str | None, max_tokens: int
+    ) -> dict[str, Any]:
+        """Continue a truncated response and parse the result.
+
+        Args:
+            partial_response: The incomplete response from the first attempt
+            xml_tag: The XML tag to extract JSON from
+            max_tokens: Max tokens for continuation
+
+        Returns:
+            Parsed JSON dictionary
+
+        Raises:
+            ValueError: If continuation also fails to produce valid JSON
+        """
+        tag_name = xml_tag or 'RESPONSE'
+        continuation_prompt = f"""You were responding but got cut off. Here's what you wrote so far:
+
+{partial_response}
+
+Please continue and COMPLETE your response now.
+You MUST finish with a properly closed <{tag_name}> tag containing valid JSON.
+
+IMPORTANT:
+- Be concise and get to the final answer quickly
+- Include the complete JSON object in the XML tags
+- Ensure all JSON braces and brackets are properly closed
+"""
+
+        # Get continuation with a smaller token budget
+        continuation_text = self.generate(continuation_prompt, max_tokens=max_tokens // 2)
+
+        # Try to parse the continuation alone first
+        try:
+            return self._parse_structured_response(continuation_text, xml_tag)
+        except ValueError:
+            # If that fails, try combining partial + continuation
+            logger.warning("Continuation alone failed to parse, trying combined text")
+            combined_text = partial_response + "\n" + continuation_text
+            return self._parse_structured_response(combined_text, xml_tag)
+
+    def _parse_structured_response(
+        self, response_text: str, xml_tag: str | None = None
+    ) -> dict[str, Any]:
+        """Parse structured JSON response from text.
+
+        Args:
+            response_text: The response text to parse
+            xml_tag: If provided, extract JSON from <TAG>...</TAG> (e.g., "ACTION", "GUESS")
+
+        Raises:
+            ValueError: If JSON cannot be parsed
+        """
         try:
             import re
 

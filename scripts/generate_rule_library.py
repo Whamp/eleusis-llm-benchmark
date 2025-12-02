@@ -37,12 +37,12 @@ RULE CONSTRAINTS:
    - Rejected cards
    - Hidden information (deck, hands)
    - Player identity or randomness
-3. Must work with EMPTY mainline (first card), ideally accepting all cards as a start
+3. Must work with EMPTY mainline (first card).
 
 COMPLEXITY MIX:
-- {num_rules // 3} Simple rules (e.g., "Even ranks only", "Red cards only")
-- {num_rules // 3} Medium rules (e.g., "Alternating colors", "Rank higher than previous")
-- {num_rules - 2 * (num_rules // 3)} Harder rules (e.g., "Red→low rank, Black→high rank")
+- {num_rules // 3} Simple rules (e.g., "Even ranks only", "Red cards only", "Alternating colors", "Rank higher than previous")
+- {num_rules // 3} Medium rules (e.g., "Rank difference of 2 from previous", "Color alternates every two cards")
+- {num_rules - 2 * (num_rules // 3)} Harder rules (e.g., "Fibonacci sequence of ranks", "Prime number ranks only", "Suits in a specific repeating order")
 
 OUTPUT FORMAT:
 For each rule, wrap it in XML tags with a unique name:
@@ -56,7 +56,8 @@ For each rule, wrap it in XML tags with a unique name:
 #            card.suit.suit_name ("hearts", "diamonds", "clubs", "spades")
 #            mainline: list of Card objects
 if not mainline:
-    return True  # or False with condition
+    # Your logic here
+    return True/False
 # Your logic here
 return True/False
   </CODE>
@@ -68,11 +69,21 @@ Example:
   <DESCRIPTION>Cards must alternate between red and black colors.</DESCRIPTION>
   <CODE>
 if not mainline:
-    return True
+    return True     # Any card is allowed as the first card
 last_card = mainline[-1]
 return card.color != last_card.color
   </CODE>
 </RULE>
+
+Example:
+<RULE>
+  <NAME>Only red</NAME>
+  <DESCRIPTION>Cards must be red.</DESCRIPTION>
+    <CODE>
+return card.color == "red"    # Works even if mainline is empty
+    </CODE>
+</RULE>
+    
 
 Generate {num_rules} unique, interesting, playable rules now.
 Do not overcomplicate the rules, a rule impossible to guess will not be fun, and will be rejected by the rule-maker.
@@ -151,6 +162,7 @@ def validate_and_save_rules(
 
             if validation.valid:
                 logger.info(f"✓ {name}: Valid")
+                rule_dict["index"] = len(valid_rules)
                 valid_rules.append(rule_dict)
             else:
                 logger.warning(f"✗ {name}: Invalid - {', '.join(validation.issues)}")

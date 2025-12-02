@@ -318,7 +318,11 @@ IMPORTANT:
 
 
 def get_move_selection_prompt(
-    compact_board: str, hand_cards: list[dict], deck_remaining: int, play_history: list[dict]
+    compact_board: str,
+    hand_cards: list[dict],
+    deck_remaining: int,
+    play_history: list[dict],
+    failed_guesses: list[dict] | None = None,
 ) -> str:
     """Generate prompt for LLM to select a move as Scientist."""
     hand_str = ", ".join([c["symbol"] for c in hand_cards])
@@ -345,6 +349,15 @@ def get_move_selection_prompt(
                 if reasoning:
                     history_str += f"  Your reasoning: {reasoning}\n"
 
+    # Format failed guesses history
+    failed_guesses_str = ""
+    if failed_guesses:
+        failed_guesses_str = "\n\nFAILED RULE GUESSES (by all players):\n"
+        for entry in failed_guesses:
+            player = entry.get("player", "Unknown")
+            guess = entry.get("guess", "")
+            failed_guesses_str += f"- {player}: \"{guess}\"\n"
+
     return f"""{ELEUSIS_RULES}
 
 **YOU PLAY AS A SCIENTIST**
@@ -359,7 +372,7 @@ played and rejected):
 
 YOUR HAND: {hand_str}
 DECK REMAINING: {deck_remaining} cards
-{history_str}
+{history_str}{failed_guesses_str}
 YOUR OPTIONS:
 1. PLAY a card: Specify the card from your hand (e.g., "5♥")
 2. NO-PLAY: Use the value "no_play" if you believe no card in your hand will be accepted

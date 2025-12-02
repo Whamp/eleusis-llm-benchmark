@@ -27,6 +27,7 @@ class RuleFactory:
         validator: RuleValidator | None = None,
         min_acceptance: float = 0.0,
         max_acceptance: float = 1.0,
+        start_index: int = 0,
     ) -> None:
         """Initialize rule factory.
 
@@ -38,6 +39,7 @@ class RuleFactory:
             validator: Validator for generated rules (required for llm mode)
             min_acceptance: Minimum acceptance rate for rules (0.0-1.0)
             max_acceptance: Maximum acceptance rate for rules (0.0-1.0)
+            start_index: Starting index for sequential selection (library mode only)
         """
         self.mode = mode
         self.library_path = library_path
@@ -46,7 +48,7 @@ class RuleFactory:
         self.validator = validator
         self.min_acceptance = min_acceptance
         self.max_acceptance = max_acceptance
-        self._library_index = 0
+        self._library_index = start_index
         self._library_rules: list[dict] | None = None
 
         if mode == "library":
