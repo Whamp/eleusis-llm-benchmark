@@ -243,6 +243,39 @@ class GameEngine:
         """Process a rule guess."""
         logger.info(f"{player.name} guessed: {action.guess_text}")
 
+        # Log actual rule details
+        logger.info("=" * 60)
+        logger.info("ACTUAL RULE:")
+        logger.info(f"Description: {self.rule.description()}")
+
+        # Try to get Python code if it's a PythonRule
+        from eleusis.python_rule import PythonRule
+        if isinstance(self.rule, PythonRule):
+            logger.info(f"Python code:\n{self.rule.get_code()}")
+        else:
+            logger.info("(No Python code - LLM-based rule)")
+
+        logger.info("-" * 60)
+        logger.info("GUESSED RULE:")
+        logger.info(f"Description: {action.guess_text}")
+
+        # Convert guessed rule to code for logging
+        guessed_code = None
+        if self.rule_validator and self.rule_validator.referee_client:
+            try:
+                guessed_code = self.rule_validator.referee_client.convert_rule_to_code(
+                    action.guess_text
+                )
+                if guessed_code:
+                    logger.info(f"Python code:\n{guessed_code}")
+                else:
+                    logger.warning("(Failed to convert guessed rule to Python code)")
+            except Exception as e:
+                logger.warning(f"(Could not convert guessed rule to code: {e})")
+
+        logger.info("=" * 60)
+        logger.info("")
+
         # Check if guess is correct using BOTH methods
         llm_correct = False
         llm_reasoning = ""

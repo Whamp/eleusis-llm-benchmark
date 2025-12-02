@@ -68,8 +68,8 @@ def evaluate_rule(card, mainline):
             return False
 
         try:
-            logger.info(f"Evaluating {card} against Python rule.")
             result = self._eval_function(card, mainline)
+            logger.info(f"Evaluating {card} against Python rule : {bool(result)} for rule '{self.rule_description}'")
             return bool(result)
         except Exception as e:
             logger.error(f"Runtime error in Python rule: {e}")

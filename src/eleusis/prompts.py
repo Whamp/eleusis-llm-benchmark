@@ -234,13 +234,13 @@ IN (accepted) or OUT (rejected).
 RULE CONSTRAINTS:
 1. DETERMINISTIC: Same card + same mainline → always same result
 2. CAN depend on:
-   - Candidate card properties (rank, suit, color, even/odd)
-   - Previously ACCEPTED mainline cards (their properties, positions)
+   - Candidate card properties (rank, even/odd, face/pip, suit, color, etc.) 
+   - Previously ACCEPTED mainline cards (their properties and positions)
 3. CANNOT depend on:
    - Rejected cards (cards in brackets)
    - Hidden information (deck, players' hands)
    - Player identity, turn order, or randomness
-4. MUST work with EMPTY mainline (first card must have a valid answer)
+4. MUST work with EMPTY mainline (any first card must have a valid answer IN or OUT)
 
 COMPLEXITY:
 - Simple: "Alternating colors", "Even ranks only"
@@ -252,8 +252,10 @@ Aim for rules that are deducible within 15-25 plays.
 At a given point in the game, about 20-40% of possible cards should be legal plays.
 Avoid rules so complex that random guessing is the only viable strategy.
 Since your score equals the second-lowest Scientist score, you benefit when Scientists
-can make progress. An unsolvable rule leads to high hand counts for everyone — including
+can make progress. 
+An unsolvable rule leads to high hand counts for everyone — including
 you.
+Avoid rules that depend on complex sequences or deep history; or has a singular behavior for the first card, etc.
 CHOOSE A SIMPLE RULE THAT ALLOWS SCIENTISTS TO LEARN AND IMPROVE OVER TIME.
 
 OUTPUT FORMAT:
@@ -268,7 +270,7 @@ Think through your rule if needed, once you are done, wrap your rule in XML tags
 #            mainline: list of Card objects
 # Must handle empty mainline (first card)
 if not mainline:
-    return True  # or False depending on first card rule
+    return True  # or False depending on first card rule, e.g., card.is_even
 # Your logic here
 return True/False
   </CODE>
