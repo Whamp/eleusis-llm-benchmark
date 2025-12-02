@@ -5,7 +5,7 @@ import random
 from abc import ABC, abstractmethod
 
 from eleusis.cards import Card
-from eleusis.game_engine import Action, NoPlayAction, PlayCardAction
+from eleusis.game_engine import Action, NoPlayAction, PlayCardAction, Rule
 from eleusis.game_state import GameState
 from eleusis.llm_client import HuggingFaceClient
 from eleusis.prompts import (
@@ -170,8 +170,13 @@ class LLMRuleMaker:
         self.max_attempts = max_attempts
         self.max_tokens = max_tokens
 
-    def generate_rule(self) -> LLMGeneratedRule | None:
-        """Generate a valid rule using the LLM."""
+    def generate_rule(self) -> Rule | None:
+        """Generate a valid rule using the LLM.
+
+        Returns PythonRule if code is valid, otherwise falls back to LLMGeneratedRule.
+        """
+        from eleusis.python_rule import PythonRule
+
         prompt = get_rule_generation_prompt()
 
         for attempt in range(self.max_attempts):
@@ -192,14 +197,22 @@ class LLMRuleMaker:
                 logger.info(f"Generated rule: {description}")
                 logger.info(f"Generated Python code:\n{code}")
 
-                rule = LLMGeneratedRule(
-                    description, self.llm_client, self.llm_client.model_name, code=code
-                )
+                # Try to create and validate PythonRule
+                python_rule = PythonRule(description, code)
+                validation = self.validator.validate_rule(python_rule, num_test_cases=5)
 
-                # Option: validate rule
-                # validation_result = self.validator.validate_rule(rule, num_test_cases=1)
+                if validation.valid:
+                    logger.info("✓ Python rule is valid, using fast Python evaluation")
+                    return python_rule
+                else:
+                    logger.warning(f"✗ Python rule invalid: {', '.join(validation.issues)}")
+                    logger.info("Falling back to LLM evaluation")
 
-                return rule
+                    # Fall back to LLM-based evaluation
+                    llm_rule = LLMGeneratedRule(
+                        description, self.llm_client, self.llm_client.model_name, code=code
+                    )
+                    return llm_rule
 
             except Exception as e:
                 logger.error(f"Rule generation attempt {attempt + 1} failed: {e}")

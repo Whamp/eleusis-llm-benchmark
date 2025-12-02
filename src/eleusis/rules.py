@@ -89,10 +89,11 @@ class RuleValidator:
         """Initialize validator with optional referee client."""
         self.referee_client = referee_client
 
-    def validate_rule(
-        self, rule: LLMGeneratedRule, num_test_cases: int = 3
-    ) -> ValidationResult:
-        """Validate that a rule meets requirements."""
+    def validate_rule(self, rule: Rule, num_test_cases: int = 3) -> ValidationResult:
+        """Validate that a rule meets requirements.
+
+        Works with any Rule implementation (LLMGeneratedRule, PythonRule, etc.).
+        """
         issues = []
 
         # Test 1: Determinism - same input should give same output
@@ -118,7 +119,7 @@ class RuleValidator:
             issues=issues,
         )
 
-    def _test_determinism(self, rule: LLMGeneratedRule, num_tests: int = 3) -> bool:
+    def _test_determinism(self, rule: Rule, num_tests: int = 3) -> bool:
         """Test if rule gives consistent results."""
         # Test a few random scenarios multiple times
         test_scenarios = [
@@ -141,7 +142,7 @@ class RuleValidator:
 
         return True
 
-    def _test_empty_mainline(self, rule: LLMGeneratedRule) -> bool:
+    def _test_empty_mainline(self, rule: Rule) -> bool:
         """Test if rule works with empty mainline."""
         try:
             # Try evaluating a few cards with empty mainline
@@ -159,9 +160,7 @@ class RuleValidator:
             logger.error(f"Rule failed with empty mainline: {e}")
             return False
 
-    def _run_test_scenarios(
-        self, rule: LLMGeneratedRule, num_tests: int
-    ) -> list[str]:
+    def _run_test_scenarios(self, rule: Rule, num_tests: int) -> list[str]:
         """Run random test scenarios to check rule behavior."""
         issues = []
 
