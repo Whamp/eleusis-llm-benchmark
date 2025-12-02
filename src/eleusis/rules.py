@@ -185,12 +185,122 @@ class RuleValidator:
 
         return issues
 
-    def check_equivalence(self, rule1_text: str, rule2_text: str) -> tuple[bool, str]:
+    def check_equivalence(
+        self, rule1_text: str, rule2_text: str, mainline_text: str
+    ) -> tuple[bool, str]:
         """Check if two rules are equivalent using referee LLM."""
         if not self.referee_client:
             raise ValueError("Referee client not configured")
 
-        return self.referee_client.check_rule_equivalence(rule1_text, rule2_text)
+        return self.referee_client.check_rule_equivalence(rule1_text, rule2_text, mainline_text)
+
+    def check_equivalence_by_simulation(
+        self,
+        actual_rule: Rule,
+        guessed_rule_text: str,
+        current_mainline: list[Card],
+        num_simulations: int = 2,
+        turns_per_simulation: int = 10,
+    ) -> tuple[bool, str, int, int]:
+        """Check if two rules are equivalent by simulating gameplay.
+
+        Args:
+            actual_rule: The actual secret rule (PythonRule or other)
+            guessed_rule_text: Natural language description of guessed rule
+            current_mainline: Current mainline cards at time of guess
+            num_simulations: Number of independent simulations (N)
+            turns_per_simulation: Number of turns per simulation (K)
+
+        Returns:
+            Tuple of (equivalent, reasoning, total_comparisons, mismatches)
+        """
+        if not self.referee_client:
+            raise ValueError("Referee client not configured for code conversion")
+
+        # Convert guessed rule to Python code
+        logger.debug(f"Converting guessed rule to Python code: {guessed_rule_text}")
+        guessed_code = self.referee_client.convert_rule_to_code(guessed_rule_text)
+
+        if not guessed_code:
+            return False, "Failed to convert guessed rule to Python code", 0, 0
+
+        # Create PythonRule from guessed code
+        from eleusis.python_rule import PythonRule
+
+        try:
+            guessed_rule = PythonRule(guessed_rule_text, guessed_code)
+        except Exception as e:
+            logger.error(f"Failed to create PythonRule from guessed code: {e}")
+            return False, f"Guessed rule code has syntax errors: {e}", 0, 0
+
+        # Generate all 52 cards
+        all_cards = [Card(rank, suit) for rank in range(1, 14) for suit in Suit]
+
+        total_comparisons = 0
+        mismatches = 0
+
+        # Run N simulations
+        for sim_num in range(num_simulations):
+            # Start with current mainline
+            simulated_mainline = list(current_mainline)
+
+            # Run K turns
+            for turn_num in range(turns_per_simulation):
+                # Try all 52 cards
+                accepted_cards_actual = []
+                accepted_cards_guessed = []
+
+                for card in all_cards:
+                    try:
+                        actual_result = actual_rule.evaluate(card, simulated_mainline)
+                        guessed_result = guessed_rule.evaluate(card, simulated_mainline)
+
+                        total_comparisons += 1
+
+                        if actual_result != guessed_result:
+                            mismatches += 1
+                            logger.debug(
+                                f"Mismatch at sim {sim_num+1}, turn {turn_num+1}: "
+                                f"card={card}, actual={actual_result}, guessed={guessed_result}"
+                            )
+
+                        if actual_result:
+                            accepted_cards_actual.append(card)
+                        if guessed_result:
+                            accepted_cards_guessed.append(card)
+
+                    except Exception as e:
+                        logger.error(f"Evaluation error for {card}: {e}")
+                        mismatches += 1
+                        total_comparisons += 1
+
+                # If there are mismatches, rules are not equivalent
+                if mismatches > 0:
+                    reasoning = (
+                        f"Rules differ: {mismatches}/{total_comparisons} comparisons mismatched. "
+                        f"Stopped at simulation {sim_num+1}, turn {turn_num+1}."
+                    )
+                    return False, reasoning, total_comparisons, mismatches
+
+                # Pick a random accepted card from actual rule to add to mainline
+                # If no cards accepted, stop simulation
+                if not accepted_cards_actual:
+                    logger.debug(
+                        f"No cards accepted at sim {sim_num+1}, turn {turn_num+1}, "
+                        f"ending simulation"
+                    )
+                    break
+
+                chosen_card = random.choice(accepted_cards_actual)
+                simulated_mainline.append(chosen_card)
+
+        # If we got here, no mismatches found
+        if mismatches == 0:
+            reasoning = f"Rules appear equivalent: {total_comparisons} comparisons, all matched"
+            return True, reasoning, total_comparisons, mismatches
+        else:
+            reasoning = f"Rules differ: {mismatches}/{total_comparisons} comparisons mismatched"
+            return False, reasoning, total_comparisons, mismatches
 
 
 # Predefined rules for testing and baselines

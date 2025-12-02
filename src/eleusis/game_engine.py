@@ -243,21 +243,58 @@ class GameEngine:
         """Process a rule guess."""
         logger.info(f"{player.name} guessed: {action.guess_text}")
 
-        # Check if guess is correct
-        is_correct = False
-        reasoning = ""
+        # Check if guess is correct using BOTH methods
+        llm_correct = False
+        llm_reasoning = ""
+        sim_correct = False
+        sim_reasoning = ""
+        sim_comparisons = 0
+        sim_mismatches = 0
 
         if self.rule_validator:
+            # Method 1: LLM-based comparison
             try:
                 secret_rule_text = self.rule.description()
-                is_correct, reasoning = self.rule_validator.check_equivalence(
-                    secret_rule_text, action.guess_text
+                llm_correct, llm_reasoning = self.rule_validator.check_equivalence(
+                    secret_rule_text, action.guess_text, self.state.mainline.to_str()
                 )
-                logger.info(f"Referee verdict: {is_correct} - {reasoning}")
+                logger.info(f"LLM verdict: {llm_correct} - {llm_reasoning}")
             except Exception as e:
-                logger.error(f"Failed to check rule equivalence: {e}")
-                is_correct = False
-                reasoning = "Error checking equivalence"
+                logger.error(f"Failed LLM equivalence check: {e}")
+                llm_correct = False
+                llm_reasoning = f"Error checking equivalence: {e}"
+
+            # Method 2: Simulation-based comparison
+            try:
+                (
+                    sim_correct,
+                    sim_reasoning,
+                    sim_comparisons,
+                    sim_mismatches,
+                ) = self.rule_validator.check_equivalence_by_simulation(
+                    self.rule, action.guess_text, self.state.mainline.get_all()
+                )
+                logger.info(
+                    f"Simulation verdict: {sim_correct} - {sim_reasoning} "
+                    f"({sim_comparisons} comparisons, {sim_mismatches} mismatches)"
+                )
+            except Exception as e:
+                logger.error(f"Failed simulation equivalence check: {e}")
+                sim_correct = False
+                sim_reasoning = f"Error in simulation: {e}"
+
+            # Check if verdicts differ
+            if llm_correct != sim_correct:
+                logger.warning(
+                    f"⚠️  VERDICT MISMATCH: LLM says {llm_correct}, "
+                    f"Simulation says {sim_correct}"
+                )
+                logger.warning(f"  LLM reasoning: {llm_reasoning}")
+                logger.warning(f"  Simulation reasoning: {sim_reasoning}")
+
+        # Use simulation verdict as final decision (more reliable)
+        is_correct = sim_correct
+        reasoning = sim_reasoning
 
         if is_correct:
             # Correct guess! Mark game state
@@ -269,6 +306,9 @@ class GameEngine:
                 "correct": True,
                 "guess": action.guess_text,
                 "reasoning": reasoning,
+                "llm_verdict": llm_correct,
+                "sim_verdict": sim_correct,
+                "sim_comparisons": sim_comparisons,
             }
         else:
             # Incorrect guess - draw penalty card
@@ -282,6 +322,9 @@ class GameEngine:
                 "correct": False,
                 "guess": action.guess_text,
                 "reasoning": reasoning,
+                "llm_verdict": llm_correct,
+                "sim_verdict": sim_correct,
+                "sim_comparisons": sim_comparisons,
             }
 
     def check_mandatory_guess(self, player: PlayerState) -> bool:

@@ -396,9 +396,7 @@ Example:
 
 
 
-
-
-def get_referee_comparison_prompt(secret_rule: str, guessed_rule: str) -> str:
+def get_referee_comparison_prompt(secret_rule: str, guessed_rule: str, mainline:str) -> str:
     """Generate prompt for referee to compare two rules for equivalence."""
     return f"""{ELEUSIS_RULES}
 
@@ -407,7 +405,25 @@ def get_referee_comparison_prompt(secret_rule: str, guessed_rule: str) -> str:
 === YOUR TASK: DETERMINE RULE EQUIVALENCE ===
 
 A Scientist is attempting to guess the secret rule. Your job is to determine if their
-guess is logically equivalent to the actual secret rule.
+guess is equivalent to the actual secret rule.
+
+**EQUIVALENCE DEFINITION:**
+Two rules are said equivalent if *for that game and the present state of the mainline* 
+both rules would produce identical IN/OUT judgments from now on to the end of the round,
+for every possible card played in every possible future mainline state.
+
+That means that the Scientist's might look more restrictive because the mainline has
+already been partially built, but if both rules would accept and reject the same cards
+from this point onward, they are equivalent.
+
+Example: If the secret rule is "All cards should be of the same color" and the
+mainline started with "red", then the guessed rule "Cards must be red" would be
+equivalent because both rules would accept only red cards from that point onward.
+
+Equivalent rules may use different wording but must have identical behavior
+- Example: "Red cards only" ≡ "Card must be Hearts or Diamonds"
+- Example: "Even ranks" ≡ "Rank is 2, 4, 6, 8, 10, or 12"
+
 
 **ACTUAL SECRET RULE:**
 {secret_rule}
@@ -415,26 +431,11 @@ guess is logically equivalent to the actual secret rule.
 **SCIENTIST'S GUESSED RULE:**
 {guessed_rule}
 
-**EQUIVALENCE DEFINITION:**
-Two rules are equivalent if and only if they produce identical IN/OUT judgments for
-EVERY possible (card, mainline-state) combination.
-
-**YOUR ANALYSIS SHOULD CONSIDER:**
-1. Do both rules describe the same logical condition?
-2. Would they accept/reject the same cards in all possible scenarios?
-3. Are there any edge cases where they might differ?
-4. Do they handle the first card (empty mainline) the same way?
-5. Are the wording differences merely stylistic, or do they change the meaning?
-
-**IMPORTANT:**
-- Equivalent rules may use different wording but must have identical behavior
-- Example: "Red cards only" ≡ "Card must be Hearts or Diamonds"
-- Example: "Even ranks" ≡ "Rank is 2, 4, 6, 8, 10, or 12"
-- Counter-example: "Alternating colors" ≠ "Red cards only"
+**CURRENT MAINLINE STATE:**
+{mainline}
 
 OUTPUT FORMAT:
 Think through your analysis carefully, then wrap your verdict in XML tags:
-
 <VERDICT>
 {{
     "equivalent": true or false,
@@ -442,6 +443,7 @@ Think through your analysis carefully, then wrap your verdict in XML tags:
 }}
 </VERDICT>
 """
+
 
 
 def get_rule_evaluation_prompt(

@@ -45,8 +45,10 @@ class HuggingFaceClient:
                 )
 
                 response_text = completion.choices[0].message.content
-                logger.debug(f"LLM reasoning: {completion.choices[0].message.reasoning}...")
-                logger.debug(f"LLM response: {response_text}")
+                reasoning = getattr(completion.choices[0].message, 'reasoning', None)
+                if reasoning:
+                    logger.debug(f"LLM reasoning: {reasoning}")
+                logger.debug(f"LLM full response: {response_text}")
                 return response_text
 
             except Exception as e:
@@ -129,11 +131,11 @@ class RefereeClient:
         os.environ["HF_TOKEN"] = self.api_key
         self.client = InferenceClient(bill_to="huggingface")
 
-    def check_rule_equivalence(self, rule1: str, rule2: str) -> tuple[bool, str]:
+    def check_rule_equivalence(self, rule1: str, rule2: str, mainline: str) -> tuple[bool, str]:
         """Check if two rules are logically equivalent."""
         from eleusis.prompts import get_referee_comparison_prompt
 
-        prompt = get_referee_comparison_prompt(rule1, rule2)
+        prompt = get_referee_comparison_prompt(rule1, rule2, mainline)
 
         completion = self.client.chat.completions.create(
             model=self.model_name,
@@ -143,7 +145,7 @@ class RefereeClient:
         )
 
         response_text = completion.choices[0].message.content
-        logger.debug(f"Referee response: {response_text}")
+        logger.debug(f"Referee full response: {response_text}")
 
         # Parse JSON from VERDICT tags
         try:
@@ -172,6 +174,60 @@ class RefereeClient:
             logger.error(f"Failed to parse referee response: {response_text}")
             raise ValueError(f"Invalid referee response: {e}")
 
+    def convert_rule_to_code(self, rule_text: str) -> str | None:
+        """Convert natural language rule to Python code.
+
+        Args:
+            rule_text: Natural language description of the rule
+
+        Returns:
+            Python code string or None if conversion fails
+        """
+        prompt = f"""Convert this Eleusis game rule into Python code.
+
+Rule: {rule_text}
+
+Generate Python code that implements this rule. The code should:
+- Use available properties: card.rank (1-13), card.color ("red"/"black")
+- Use card.suit.suit_name ("hearts", "diamonds", "clubs", "spades")
+- Have access to mainline: list of Card objects
+- Handle empty mainline (first card)
+- Return True (accepted) or False (rejected)
+
+OUTPUT FORMAT:
+<CODE>
+# Python code here
+if not mainline:
+    return True  # or your logic
+# Your implementation
+return True/False
+</CODE>
+
+Generate only the code, no explanation."""
+
+        completion = self.client.chat.completions.create(
+            model=self.model_name,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=self.max_tokens,
+            temperature=self.temperature,
+        )
+
+        response_text = completion.choices[0].message.content
+        logger.debug(f"Referee rule-to-code full response: {response_text}")
+
+        # Extract code from <CODE> tags
+        try:
+            import re
+            code_match = re.search(r"<CODE>(.*?)</CODE>", response_text, re.DOTALL | re.IGNORECASE)
+            if code_match:
+                return code_match.group(1).strip()
+            else:
+                logger.warning("No <CODE> tags found in rule-to-code response")
+                return None
+        except Exception as e:
+            logger.error(f"Failed to extract code from response: {e}")
+            return None
+
     def evaluate_rule_on_card(self, rule_text: str, card: dict, mainline: list[dict]) -> bool:
         """Ask referee to evaluate if a card is IN or OUT according to a rule."""
         mainline_str = ", ".join([c["symbol"] for c in mainline]) if mainline else "empty"
@@ -199,6 +255,7 @@ Respond with JSON:
         )
 
         response_text = completion.choices[0].message.content
+        logger.debug(f"Referee evaluate_rule_on_card full response: {response_text}")
 
         try:
             if "```json" in response_text:

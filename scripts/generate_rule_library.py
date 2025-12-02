@@ -17,13 +17,12 @@ from eleusis.rules import RuleValidator
 logger = logging.getLogger(__name__)
 
 
-def get_library_generation_prompt(num_rules: int = 10) -> str:
+def get_library_generation_prompt(num_rules: int = 20) -> str:
     """Generate prompt for LLM to create multiple rules at once."""
     return f"""{ELEUSIS_RULES}
 
-**YOU PLAY AS THE RULE-MAKER**
 
-=== YOUR TASK: CREATE A LIBRARY OF RULES ===
+=== YOUR TASK: CREATE A LIBRARY OF RULES FOR THE RULE-MAKER ===
 
 Generate {num_rules} different rules for the Eleusis card game. Each rule should be:
 - DETERMINISTIC (same inputs always give same output)
@@ -38,7 +37,7 @@ RULE CONSTRAINTS:
    - Rejected cards
    - Hidden information (deck, hands)
    - Player identity or randomness
-3. Must work with EMPTY mainline (first card)
+3. Must work with EMPTY mainline (first card), ideally accepting all cards as a start
 
 COMPLEXITY MIX:
 - {num_rules // 3} Simple rules (e.g., "Even ranks only", "Red cards only")
@@ -53,7 +52,7 @@ For each rule, wrap it in XML tags with a unique name:
   <DESCRIPTION>Natural language description (1-2 sentences)</DESCRIPTION>
   <CODE>
 # Python code implementing the rule
-# Available: card.rank (1-13), card.color ("red"/"black"), card.is_even, card.is_odd
+# Available: card.rank (1-13), card.color ("red"/"black")
 #            card.suit.suit_name ("hearts", "diamonds", "clubs", "spades")
 #            mainline: list of Card objects
 if not mainline:
@@ -76,6 +75,7 @@ return card.color != last_card.color
 </RULE>
 
 Generate {num_rules} unique, interesting, playable rules now.
+Do not overcomplicate the rules, a rule impossible to guess will not be fun, and will be rejected by the rule-maker.
 """
 
 

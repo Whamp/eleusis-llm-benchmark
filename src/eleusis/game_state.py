@@ -32,6 +32,10 @@ class Mainline:
         """Convert mainline to list of card dictionaries."""
         return [card.to_dict() for card in self._cards]
 
+    def to_str(self) -> str:
+        """Convert mainline to a compact string representation."""
+        return " ".join(str(card) for card in self._cards)
+
 
 class Sideline:
     """Rejected cards below a specific mainline position."""
