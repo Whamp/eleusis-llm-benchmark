@@ -265,11 +265,11 @@ class RuleValidator:
 
                         if actual_result != guessed_result:
                             mismatches += 1
-                            logger.warning(
+                            logger.info(
                                 f"Mismatch at sim {sim_num+1}, turn {turn_num+1}: "
                                 f"card={card}, actual={actual_result}, guessed={guessed_result}"
                             )
-                            logger.warning(f"  simulated_mainline={simulated_mainline}")
+                            logger.info(f"  simulated_mainline={simulated_mainline}")
                             mismatch_msg = (
                                 f"Mismatch at sim {sim_num+1}, turn {turn_num+1}: "
                                 f"card={card}, actual={actual_result}, guessed={guessed_result}"

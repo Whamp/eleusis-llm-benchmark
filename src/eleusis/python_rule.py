@@ -35,6 +35,26 @@ class PythonRule(Rule):
 
     def _create_eval_function(self, code: str) -> Callable[[Card, list[Card]], bool]:
         """Create evaluation function from code string with safe execution environment."""
+
+        # VALIDATION: Warn if code looks like a complete function definition
+        first_line = code.strip().split('\n')[0].strip()
+        if first_line.startswith('def '):
+            logger.error(
+                "Generated code appears to be a complete function definition!"
+            )
+            logger.error(f"First line: {first_line}")
+            logger.error(
+                "This will create a nested function that never gets called. "
+                "Expected function body only, not 'def ...'."
+            )
+            logger.error("Rule will likely fail all evaluations (return None/False)")
+
+        # Check if code has any return statements
+        if 'return' not in code:
+            logger.warning(
+                "Generated code has no 'return' statement - will implicitly return None"
+            )
+
         # Debug print function that logs to logger
         def debug_print(*args):
             """Print function for debugging rule execution."""
@@ -79,8 +99,8 @@ def evaluate_rule(card, mainline):
             logger.debug(f"  card.rank={card.rank}, card.color={card.color}")
 
             result = self._eval_function(card, mainline)
-            rule_desc_short = self.rule_description[:30]
-            logger.info(
+            rule_desc_short = self.rule_description[:100]
+            logger.debug(
                 f"Evaluating {card} against Python rule : {bool(result)} "
                 f"for rule '{rule_desc_short}...'"
             )

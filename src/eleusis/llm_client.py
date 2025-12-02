@@ -187,23 +187,27 @@ class RefereeClient:
 
 Rule: {rule_text}
 
-Generate Python code that implements this rule. The code should:
+CRITICAL: Generate ONLY the function body code, NOT a complete function definition.
+Do NOT start with "def", do NOT define a new function.
+We will wrap your code in a function automatically.
+
+The code should:
 - Use available properties: card.rank (1-13), card.color ("red"/"black")
 - Use card.suit.suit_name ("hearts", "diamonds", "clubs", "spades")
 - Have access to mainline: list of Card objects
-- Handle empty mainline (first card)
+- Handle empty mainline (first card) with: if not mainline:
 - Return True (accepted) or False (rejected)
 
-OUTPUT FORMAT:
+RESPONSE FORMAT (function body only, enclosed in <CODE> tags):
 <CODE>
-# Python code here
+# Function body only, no def statement
 if not mainline:
-    return True  # or your logic
-# Your implementation
+    return True
+last_card = mainline[-1]
+# Your logic here
 return True/False
 </CODE>
-
-Generate only the code, no explanation."""
+"""
 
         completion = self.client.chat.completions.create(
             model=self.model_name,
@@ -220,13 +224,70 @@ Generate only the code, no explanation."""
             import re
             code_match = re.search(r"<CODE>(.*?)</CODE>", response_text, re.DOTALL | re.IGNORECASE)
             if code_match:
-                return code_match.group(1).strip()
+                code = code_match.group(1).strip()
+
+                # POST-PROCESSING: Unwrap function definitions
+                code = self._unwrap_function_definition(code)
+
+                return code
             else:
                 logger.warning("No <CODE> tags found in rule-to-code response")
                 return None
         except Exception as e:
             logger.error(f"Failed to extract code from response: {e}")
             return None
+
+    def _unwrap_function_definition(self, code: str) -> str:
+        """Strip function definition wrapper if present.
+
+        Detects patterns like:
+            def function_name(card, mainline):
+                <body>
+
+        And returns just the <body>.
+        """
+        lines = code.split('\n')
+
+        # Check if first non-empty line is a function definition
+        first_line_idx = 0
+        for i, line in enumerate(lines):
+            if line.strip():
+                first_line_idx = i
+                break
+
+        first_line = lines[first_line_idx].strip()
+
+        # Pattern: "def <name>(card, mainline):" or similar
+        if first_line.startswith('def ') and '(' in first_line and ')' in first_line:
+            logger.warning(
+                f"Detected function definition wrapper in generated code: '{first_line}'"
+            )
+            logger.warning("Automatically unwrapping to extract function body")
+
+            # Find indentation of function body (first indented line after def)
+            body_start_idx = first_line_idx + 1
+            if body_start_idx >= len(lines):
+                return code  # Malformed, return as-is
+
+            # Get indentation level of first body line
+            body_indent = len(lines[body_start_idx]) - len(lines[body_start_idx].lstrip())
+
+            # Extract and dedent body lines
+            body_lines = []
+            for line in lines[body_start_idx:]:
+                if line.strip():  # Non-empty line
+                    # Remove the base indentation
+                    dedented = line[body_indent:] if len(line) >= body_indent else line
+                    body_lines.append(dedented)
+                else:
+                    body_lines.append('')
+
+            unwrapped_code = '\n'.join(body_lines).strip()
+            logger.info("Unwrapped code from function definition")
+            return unwrapped_code
+
+        # No wrapping detected, return as-is
+        return code
 
     def evaluate_rule_on_card(self, rule_text: str, card: dict, mainline: list[dict]) -> bool:
         """Ask referee to evaluate if a card is IN or OUT according to a rule."""
