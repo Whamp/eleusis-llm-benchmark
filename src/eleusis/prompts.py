@@ -257,17 +257,59 @@ you.
 CHOOSE A SIMPLE RULE THAT ALLOWS SCIENTISTS TO LEARN AND IMPROVE OVER TIME.
 
 OUTPUT FORMAT:
-Think through your rule if needed, once you are done, wrap your FINAL rule in XML tags:
+Think through your rule if needed, once you are done, wrap your rule in XML tags:
 
-<RULE> your rule </RULE>
-
-The rule should be concise (max 1-2 sentences) yet unambiguous.
-Enclose only the rule, not your reasoning.
+<RULE>
+  <DESCRIPTION>Natural language description of the rule (1-2 sentences)</DESCRIPTION>
+  <CODE>
+# Python code that implements the rule
+# Available: card.rank (1-13), card.color ("red"/"black"), card.is_even, card.is_odd
+#            card.suit.suit_name ("hearts", "diamonds", "clubs", "spades")
+#            mainline: list of Card objects
+# Must handle empty mainline (first card)
+if not mainline:
+    return True  # or False depending on first card rule
+# Your logic here
+return True/False
+  </CODE>
+</RULE>
 
 Examples:
-<RULE>The card must alternate between red and black colors.</RULE>
-<RULE>The card's rank must be even (2,4,6,8,10,12).</RULE>
-<RULE>If the last mainline card is red, play rank ≤7. If black, play rank ≥7.</RULE>
+<RULE>
+  <DESCRIPTION>Cards must alternate between red and black colors.</DESCRIPTION>
+  <CODE>
+if not mainline:
+    return True
+last_card = mainline[-1]
+return card.color != last_card.color
+  </CODE>
+</RULE>
+
+<RULE>
+  <DESCRIPTION>Only cards with even ranks (2,4,6,8,10,12) are accepted.</DESCRIPTION>
+  <CODE>
+return card.is_even
+  </CODE>
+</RULE>
+
+<RULE>
+  <DESCRIPTION>If the last mainline card is red, play rank ≤7. If black, play rank ≥7.</DESCRIPTION>
+  <CODE>
+if not mainline:
+    return True
+last_card = mainline[-1]
+if last_card.color == "red":
+    return card.rank <= 7
+else:
+    return card.rank >= 7
+  </CODE>
+</RULE>
+
+IMPORTANT:
+- Code must be deterministic (same inputs → same output)
+- No imports, no file I/O, no external calls
+- Only use: len, sum, min, max, any, all, abs
+- Return True (accepted) or False (rejected)
 """
 
 

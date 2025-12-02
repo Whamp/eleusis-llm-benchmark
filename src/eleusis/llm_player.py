@@ -179,16 +179,22 @@ class LLMRuleMaker:
                 # Get rule from LLM
                 response = self.llm_client.generate(prompt, max_tokens=self.max_tokens)
 
-                # Extract rule from <RULE>...</RULE> tags
-                rule_text = self._extract_rule(response)
+                # Extract description and code from <RULE> tags
+                extracted = self._extract_rule(response)
 
-                if not rule_text:
+                if not extracted:
                     logger.warning("Could not extract rule from response")
                     logger.debug(f"Raw response: {response}")
                     continue
 
-                logger.info(f"Generated rule: {rule_text}")
-                rule = LLMGeneratedRule(rule_text, self.llm_client, self.llm_client.model_name)
+                description, code = extracted
+
+                logger.info(f"Generated rule: {description}")
+                logger.info(f"Generated Python code:\n{code}")
+
+                rule = LLMGeneratedRule(
+                    description, self.llm_client, self.llm_client.model_name, code=code
+                )
 
                 # Option: validate rule
                 # validation_result = self.validator.validate_rule(rule, num_test_cases=1)
@@ -201,19 +207,37 @@ class LLMRuleMaker:
         logger.error("Failed to generate valid rule after all attempts")
         return None
 
-    def _extract_rule(self, response: str) -> str:
-        """Extract rule text from <RULE>...</RULE> tags."""
+    def _extract_rule(self, response: str) -> tuple[str, str] | None:
+        """Extract description and code from <RULE> tags.
+
+        Returns:
+            Tuple of (description, code) or None if extraction fails
+        """
         import re
 
         # Look for <RULE>...</RULE> pattern
-        match = re.search(r"<RULE>(.*?)</RULE>", response, re.DOTALL | re.IGNORECASE)
-        if match:
-            rule_text = match.group(1).strip()
-            return rule_text
+        rule_match = re.search(r"<RULE>(.*?)</RULE>", response, re.DOTALL | re.IGNORECASE)
+        if not rule_match:
+            logger.warning("No <RULE> tags found in response")
+            return None
 
-        # Fallback: if no tags found, try to use the whole response
-        logger.warning("No <RULE> tags found, using full response")
-        return response.strip()
+        rule_content = rule_match.group(1).strip()
+
+        # Extract <DESCRIPTION>
+        desc_match = re.search(
+            r"<DESCRIPTION>(.*?)</DESCRIPTION>", rule_content, re.DOTALL | re.IGNORECASE
+        )
+        # Extract <CODE>
+        code_match = re.search(r"<CODE>(.*?)</CODE>", rule_content, re.DOTALL | re.IGNORECASE)
+
+        if not desc_match or not code_match:
+            logger.warning("Missing <DESCRIPTION> or <CODE> tags in rule")
+            return None
+
+        description = desc_match.group(1).strip()
+        code = code_match.group(1).strip()
+
+        return description, code
 
 
 class RandomScientist(Player):
