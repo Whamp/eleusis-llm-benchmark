@@ -179,7 +179,6 @@ class RuleFactory:
                 self.llm_client,
                 self.validator,
                 max_attempts=3,
-                max_tokens=8192,
             )
 
             rule = rule_maker.generate_rule()

@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 from eleusis.game_engine import GameEngine
 from eleusis.game_state import GameState
-from eleusis.llm_client import HuggingFaceClient, RefereeClient
+from eleusis.llm_client import HuggingFaceClient
 from eleusis.llm_player import LLMRuleMaker, LLMScientist, RandomScientist
 from eleusis.rules import AlternatingColorsRule, RuleValidator
 
@@ -39,7 +39,7 @@ def test_with_predefined_rule():
 
     # Create referee client
     try:
-        referee = RefereeClient()
+        referee = HuggingFaceClient(model_name="Qwen/Qwen2.5-72B-Instruct", temperature=0.3, max_tokens=512)
         validator = RuleValidator(referee_client=referee)
         logger.info("✓ Referee client initialized successfully")
     except Exception as e:
@@ -109,7 +109,7 @@ def test_with_llm_rule():
     try:
         # Use a good model for testing (Qwen is fast and reliable)
         llm_client = HuggingFaceClient(
-            model_name="Qwen/Qwen3-4B-Thinking-2507", temperature=0.7
+            model_name="Qwen/Qwen3-4B-Thinking-2507", temperature=0.7, max_tokens=512
         )
         logger.info("✓ HuggingFace client initialized")
     except Exception as e:
@@ -120,7 +120,7 @@ def test_with_llm_rule():
 
     # Initialize referee
     try:
-        referee = RefereeClient()
+        referee = HuggingFaceClient(model_name="Qwen/Qwen2.5-72B-Instruct", temperature=0.3, max_tokens=512)
         validator = RuleValidator(referee_client=referee)
         logger.info("✓ Referee client initialized")
     except Exception as e:
@@ -152,7 +152,7 @@ def test_with_llm_rule():
 
     # Create players (1 LLM scientist, 2 random for speed)
     scientists = [
-        LLMScientist("LLMScientist1", llm_client, guess_threshold=5),
+        LLMScientist("LLMScientist1", llm_client),
         RandomScientist("RandomScientist1"),
         RandomScientist("RandomScientist2"),
     ]

@@ -217,7 +217,7 @@ These examples illustrate appropriate rule complexity:
 === END OF THE ELEUSIS GAME RULES ===
 """
 
-
+# ================================================================================================
 
 def get_rule_generation_prompt() -> str:
     """Generate prompt for LLM to create a game rule."""
@@ -316,6 +316,8 @@ IMPORTANT:
 """
 
 
+# ================================================================================================
+
 
 def get_move_selection_prompt(
     compact_board: str,
@@ -411,6 +413,8 @@ Example:
 """
 
 
+# ================================================================================================
+
 
 def get_referee_comparison_prompt(secret_rule: str, guessed_rule: str, mainline:str) -> str:
     """Generate prompt for referee to compare two rules for equivalence."""
@@ -462,6 +466,64 @@ Think through your analysis carefully, then wrap your verdict in XML tags:
 
 
 
+def get_rule_compilation_prompt(rule_text: str) -> str:
+    """Generate prompt for LLM to convert a game rule into Python code."""
+
+    return f"""{ELEUSIS_RULES}
+    
+    === YOUR TASK : CONVERT A RULE TO PYTHON CODE ===
+    
+    Rule: {rule_text}
+    
+    CRITICAL: Generate ONLY the function body code, NOT a complete function definition.
+    Do NOT start with "def", do NOT define a new function.
+    We will wrap your code in a function automatically.
+    
+    The code should:
+    - Use available properties: card.rank (1-13), card.color ("red"/"black")
+    - Use card.suit.suit_name ("hearts", "diamonds", "clubs", "spades")
+    - Have access to mainline: list of Card objects
+    - Handle empty mainline (first card) with: if not mainline:
+    - Return True (accepted) or False (rejected)
+    
+    Think through your rule if needed, once you are done, wrap your rule in XML tags:
+    
+    RESPONSE FORMAT (function body only, enclosed in <CODE> tags):
+    
+    <CODE>
+    # Python code that implements the rule
+    # Available: card.rank (1-13), card.color ("red"/"black"), card.is_even, card.is_odd
+    #            card.suit.suit_name ("hearts", "diamonds", "clubs", "spades")
+    #            mainline: list of Card objects
+    # Must handle empty mainline (first card)
+    if not mainline:
+    # Your logic here
+    return True/False
+    # Your logic here
+    return True/False
+    </CODE>
+    
+    Example: 
+    Rule is "Cards must alternate between red and black colors."
+    <CODE>
+    if not mainline:
+        return True
+    last_card = mainline[-1]
+    return card.color != last_card.color
+    </CODE>
+    
+    Example: 
+    Rule is "Only cards with even ranks (2,4,6,8,10,12) are accepted."
+    <CODE>
+    return card.is_even
+    </CODE>
+    
+    """
+
+
+# ================================================================================================
+
+
 def get_rule_evaluation_prompt(
     rule_text: str, card: dict, mainline_compact: str
 ) -> str:
@@ -491,3 +553,33 @@ Think through how your rule applies, then wrap your answer in XML tags:
 }}
 </EVALUATION>
 """
+
+
+def get_continuation_prompt(xml_tag: str) -> str:
+    """Get prompt for completing truncated structured response."""
+    return f"""Please continue and COMPLETE your response now.
+    DO NOT REASON ABOUT IT FURTHER, just provide the missing content.
+    You MUST start your response immediately with the <{xml_tag}> tag.
+    You MUST finish with a properly closed </{xml_tag}> tag containing valid JSON.
+    - Include the complete JSON object in the XML tags
+    - Ensure all JSON braces and brackets are properly closed
+"""
+
+
+def get_card_evaluation_prompt(rule_text: str, card: dict, mainline: list[dict]) -> str:
+    """Get prompt for evaluating if card follows rule."""
+    mainline_str = ", ".join([c["symbol"] for c in mainline]) if mainline else "empty"
+    return f"""You are evaluating a card according to a rule in the game Eleusis.
+
+Rule: {rule_text}
+
+Current mainline: {mainline_str}
+Card to evaluate: {card['symbol']}
+
+Determine if this card is IN (accepted) or OUT (rejected) according to the rule.
+
+Respond with JSON:
+{{
+    "result": "in" or "out",
+    "reasoning": "Brief explanation"
+}}"""

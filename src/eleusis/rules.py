@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from eleusis.cards import Card, Suit
 from eleusis.game_engine import Rule
-from eleusis.llm_client import HuggingFaceClient, RefereeClient
+from eleusis.llm_client import HuggingFaceClient
 from eleusis.prompts import get_rule_evaluation_prompt
 
 logger = logging.getLogger(__name__)
@@ -63,9 +63,7 @@ class LLMGeneratedRule(Rule):
         prompt = get_rule_evaluation_prompt(self.rule_text, card_dict, mainline_compact)
 
         try:
-            response = self.creator_client.generate_structured(
-                prompt, max_tokens=2048, xml_tag="EVALUATION"
-            )
+            response = self.creator_client.generate_structured(prompt, xml_tag="EVALUATION")
             result = response["result"].lower() == "in"
 
             # Cache result
@@ -85,7 +83,7 @@ class LLMGeneratedRule(Rule):
 class RuleValidator:
     """Validates LLM-generated rules."""
 
-    def __init__(self, referee_client: RefereeClient | None = None) -> None:
+    def __init__(self, referee_client: HuggingFaceClient | None = None) -> None:
         """Initialize validator with optional referee client."""
         self.referee_client = referee_client
 
@@ -204,17 +202,6 @@ class RuleValidator:
         preconverted_code: str | None = None,
     ) -> tuple[bool, str, int, int]:
         """Check if two rules are equivalent by simulating gameplay.
-
-        Args:
-            actual_rule: The actual secret rule (PythonRule or other)
-            guessed_rule_text: Natural language description of guessed rule
-            current_mainline: Current mainline cards at time of guess
-            num_simulations: Number of independent simulations (N)
-            turns_per_simulation: Number of turns per simulation (K)
-            preconverted_code: Optional pre-converted Python code (to avoid re-conversion)
-
-        Returns:
-            Tuple of (equivalent, reasoning, total_comparisons, mismatches)
         """
         # Use preconverted code if provided, otherwise convert now
         if preconverted_code:
@@ -269,7 +256,7 @@ class RuleValidator:
                                 f"Mismatch at sim {sim_num+1}, turn {turn_num+1}: "
                                 f"card={card}, actual={actual_result}, guessed={guessed_result}"
                             )
-                            logger.info(f"  simulated_mainline={simulated_mainline}")
+                            logger.debug(f"  simulated_mainline={simulated_mainline}")
                             mismatch_msg = (
                                 f"Mismatch at sim {sim_num+1}, turn {turn_num+1}: "
                                 f"card={card}, actual={actual_result}, guessed={guessed_result}"

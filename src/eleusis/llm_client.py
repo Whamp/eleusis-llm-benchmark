@@ -3,6 +3,8 @@
 import json
 import logging
 import os
+import re
+import time
 from typing import Any
 
 from huggingface_hub import InferenceClient
@@ -19,380 +21,178 @@ class HuggingFaceClient:
         api_key: str | None = None,
         temperature: float = 0.7,
         max_retries: int = 3,
+        max_tokens: int = 0
     ) -> None:
         """Initialize HuggingFace client using Inference Providers."""
         self.model_name = model_name
         self.api_key = api_key or os.getenv("HF_TOKEN")
-        if not self.api_key:
-            raise ValueError("HF_TOKEN not provided and not found in environment")
-
         self.temperature = temperature
         self.max_retries = max_retries
+        self.max_tokens = max_tokens
 
-        # Initialize InferenceClient with billing to HuggingFace
         os.environ["HF_TOKEN"] = self.api_key
         self.client = InferenceClient(bill_to="huggingface")
 
-    def generate(self, prompt: str, max_tokens: int = 8192) -> str:
-        """Generate text completion from prompt using chat completions API."""
+    def _call_api_with_retry(self, messages: list[dict]):
+        """Core API call with retry logic and reasoning extraction."""
+        logger.debug(f"Calling API with retry {self.max_tokens} tokens and the following messages:\n{messages}")
         for attempt in range(self.max_retries):
             try:
                 completion = self.client.chat.completions.create(
                     model=self.model_name,
-                    messages=[{"role": "user", "content": prompt}],
-                    max_tokens=max_tokens,
+                    messages=messages,
+                    max_tokens=self.max_tokens,
                     temperature=self.temperature,
                 )
-
-                response_text = completion.choices[0].message.content
-                reasoning = getattr(completion.choices[0].message, 'reasoning', None)
-                if reasoning:
-                    logger.debug(f"LLM reasoning: {reasoning}")
-                logger.debug(f"LLM full response: {response_text}")
-                return response_text
+                message = completion.choices[0].message
+                logger.debug(f"LLM response message:\n{message}")
+                return message
 
             except Exception as e:
                 logger.warning(f"Attempt {attempt + 1}/{self.max_retries} failed: {e}")
                 if attempt < self.max_retries - 1:
-                    import time
-
                     time.sleep(2**attempt)
                 else:
                     raise
 
         raise RuntimeError("Max retries exceeded")
 
+
+    def generate(self, prompt: str) -> str:
+        """Generate text completion from prompt."""
+        messages = [{"role": "user", "content": prompt}]
+        message = self._call_api_with_retry(messages)
+        return message.content
+
+
     def generate_structured(
-        self, prompt: str, max_tokens: int = 8192, xml_tag: str | None = None
-    ) -> dict[str, Any]:
-        """Generate structured JSON response with automatic continuation on truncation.
+        self, prompt: str, xml_tag: str | None = None
+    ) -> dict:
+        """Generate structured JSON response with automatic continuation on truncation."""
 
-        Args:
-            prompt: The prompt to send
-            max_tokens: Maximum tokens in response
-            xml_tag: If provided, extract JSON from <TAG>...</TAG> (e.g., "ACTION", "GUESS")
-        """
-        response_text = self.generate(prompt, max_tokens)
+        # Initial generation
+        messages = [{"role": "user", "content": prompt}]
+        response_message = self._call_api_with_retry(messages)
 
-        # Try to extract JSON from response
+        # Try to extract JSON from response content
         try:
-            return self._parse_structured_response(response_text, xml_tag)
+            return self._parse_structured_response(response_message.content, xml_tag)
         except ValueError as e:
-            # If parsing failed, try continuation once
+            # If parsing failed, continue the conversation
             logger.warning(f"Failed to parse structured response, attempting continuation: {e}")
-            return self._continue_and_parse(response_text, xml_tag, max_tokens)
+            return self._continue_and_parse(messages, response_message, xml_tag)
+
 
     def _continue_and_parse(
-        self, partial_response: str, xml_tag: str | None, max_tokens: int
+        self,
+        messages: list[dict],
+        partial_response_message,
+        xml_tag: str | None
     ) -> dict[str, Any]:
-        """Continue a truncated response and parse the result.
+        """Continue truncated response using multi-turn conversation."""
+        from eleusis.prompts import get_continuation_prompt
 
-        Args:
-            partial_response: The incomplete response from the first attempt
-            xml_tag: The XML tag to extract JSON from
-            max_tokens: Max tokens for continuation
-
-        Returns:
-            Parsed JSON dictionary
-
-        Raises:
-            ValueError: If continuation also fails to produce valid JSON
-        """
+        # Add incomplete message and Request continuation
+        messages.append({"role": "assistant", "reasoning": partial_response_message.reasoning, "content": partial_response_message.content})
         tag_name = xml_tag or 'RESPONSE'
-        continuation_prompt = f"""You were responding but got cut off. Here's what you wrote so far:
+        messages.append({"role": "user", "content": get_continuation_prompt(tag_name)})
+        continuation_message = self._call_api_with_retry(messages)
 
-{partial_response}
-
-Please continue and COMPLETE your response now.
-You MUST finish with a properly closed <{tag_name}> tag containing valid JSON.
-
-IMPORTANT:
-- Be concise and get to the final answer quickly
-- Include the complete JSON object in the XML tags
-- Ensure all JSON braces and brackets are properly closed
-"""
-
-        # Get continuation with a smaller token budget
-        continuation_text = self.generate(continuation_prompt, max_tokens=max_tokens // 2)
-
-        # Try to parse the continuation alone first
+        # Try parsing continuation alone first
         try:
-            return self._parse_structured_response(continuation_text, xml_tag)
+            response = self._parse_structured_response(continuation_message.content, xml_tag)
+            logger.warning("Successfully parsed structured response from continuation alone.")
+            return response
         except ValueError:
-            # If that fails, try combining partial + continuation
-            logger.warning("Continuation alone failed to parse, trying combined text")
-            combined_text = partial_response + "\n" + continuation_text
-            return self._parse_structured_response(combined_text, xml_tag)
+            logger.error("Failed to parse structured response, continuation alone failed.")
+            return {}
+
+
+    def _extract_content_from_response(
+        self,
+        response_text: str,
+        xml_tags: list[str] | None = None,
+        try_code_blocks: bool = True,
+    ) -> str:
+        """Extract content from XML tags or markdown code blocks."""
+        extracted = None
+
+        # Try XML tags first
+        if xml_tags:
+            for tag in xml_tags:
+                pattern = f"<{tag}>(.*?)</{tag}>"
+                match = re.search(pattern, response_text, re.DOTALL | re.IGNORECASE)
+                if match:
+                    extracted = match.group(1).strip()
+                    break
+
+        # Fallback to code blocks if requested and XML extraction failed
+        if not extracted and try_code_blocks:
+            if "```json" in response_text:
+                start = response_text.find("```json") + 7
+                end = response_text.find("```", start)
+                extracted = response_text[start:end].strip()
+            elif "```" in response_text:
+                start = response_text.find("```") + 3
+                end = response_text.find("```", start)
+                extracted = response_text[start:end].strip()
+
+        return extracted or response_text.strip()
+
 
     def _parse_structured_response(
         self, response_text: str, xml_tag: str | None = None
     ) -> dict[str, Any]:
-        """Parse structured JSON response from text.
+        """Parse structured JSON response from text."""
+        xml_tags = [xml_tag] if xml_tag else None
+        json_text = self._extract_content_from_response(
+            response_text, xml_tags, try_code_blocks=True
+        )
 
-        Args:
-            response_text: The response text to parse
-            xml_tag: If provided, extract JSON from <TAG>...</TAG> (e.g., "ACTION", "GUESS")
-
-        Raises:
-            ValueError: If JSON cannot be parsed
-        """
         try:
-            import re
-
-            json_text = None
-
-            # First try XML tags if specified
-            if xml_tag:
-                pattern = f"<{xml_tag}>(.*?)</{xml_tag}>"
-                match = re.search(pattern, response_text, re.DOTALL | re.IGNORECASE)
-                if match:
-                    json_text = match.group(1).strip()
-
-            # Fall back to code blocks
-            if not json_text:
-                if "```json" in response_text:
-                    json_start = response_text.find("```json") + 7
-                    json_end = response_text.find("```", json_start)
-                    json_text = response_text[json_start:json_end].strip()
-                elif "```" in response_text:
-                    json_start = response_text.find("```") + 3
-                    json_end = response_text.find("```", json_start)
-                    json_text = response_text[json_start:json_end].strip()
-
-            # Last resort: use whole response
-            if not json_text:
-                json_text = response_text.strip()
-
             return json.loads(json_text)
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse JSON from response: {response_text}")
             raise ValueError(f"Invalid JSON response: {e}")
 
 
-class RefereeClient:
-    """Client for referee LLM using HuggingFace Inference Providers."""
 
-    def __init__(
-        self,
-        model_name: str,
-        api_key: str | None = None,
-        temperature: float = 0.3,
-        max_tokens: int = 2048,
-    ) -> None:
-        """Initialize referee client with HuggingFace API."""
-        self.model_name = model_name
-        self.api_key = api_key or os.getenv("HF_TOKEN")
-        if not self.api_key:
-            raise ValueError("HF_TOKEN not provided and not found in environment")
-
-        self.temperature = temperature
-        self.max_tokens = max_tokens
-
-        # Initialize InferenceClient with billing to HuggingFace
-        os.environ["HF_TOKEN"] = self.api_key
-        self.client = InferenceClient(bill_to="huggingface")
-
-    def check_rule_equivalence(self, rule1: str, rule2: str, mainline: str) -> tuple[bool, str]:
+    def check_rule_equivalence(
+        self, rule1: str, rule2: str, mainline: str
+    ) -> tuple[bool, str]:
         """Check if two rules are logically equivalent."""
         from eleusis.prompts import get_referee_comparison_prompt
 
         prompt = get_referee_comparison_prompt(rule1, rule2, mainline)
+        response_text = self.generate(prompt)
 
-        completion = self.client.chat.completions.create(
-            model=self.model_name,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=self.max_tokens,
-            temperature=self.temperature,
+        json_text = self._extract_content_from_response(
+            response_text, ["VERDICT"], try_code_blocks=True
         )
+        result = json.loads(json_text)
+        return result["equivalent"], result["reasoning"]
 
-        response_text = completion.choices[0].message.content
-        logger.debug(f"Referee full response: {response_text}")
-
-        # Parse JSON from VERDICT tags
-        try:
-            import re
-
-            # Try to extract from <VERDICT> tags
-            pattern = r"<VERDICT>(.*?)</VERDICT>"
-            match = re.search(pattern, response_text, re.DOTALL | re.IGNORECASE)
-            if match:
-                json_text = match.group(1).strip()
-            # Fall back to code blocks
-            elif "```json" in response_text:
-                json_start = response_text.find("```json") + 7
-                json_end = response_text.find("```", json_start)
-                json_text = response_text[json_start:json_end].strip()
-            elif "```" in response_text:
-                json_start = response_text.find("```") + 3
-                json_end = response_text.find("```", json_start)
-                json_text = response_text[json_start:json_end].strip()
-            else:
-                json_text = response_text.strip()
-
-            result = json.loads(json_text)
-            return result["equivalent"], result["reasoning"]
-        except (json.JSONDecodeError, KeyError) as e:
-            logger.error(f"Failed to parse referee response: {response_text}")
-            raise ValueError(f"Invalid referee response: {e}")
 
     def convert_rule_to_code(self, rule_text: str) -> str | None:
-        """Convert natural language rule to Python code.
+        """Convert natural language rule to Python code."""
+        from eleusis.prompts import get_rule_compilation_prompt
 
-        Args:
-            rule_text: Natural language description of the rule
+        prompt = get_rule_compilation_prompt(rule_text)
+        response_text = self.generate(prompt)
 
-        Returns:
-            Python code string or None if conversion fails
-        """
-        prompt = f"""Convert this Eleusis game rule into Python code.
-
-Rule: {rule_text}
-
-CRITICAL: Generate ONLY the function body code, NOT a complete function definition.
-Do NOT start with "def", do NOT define a new function.
-We will wrap your code in a function automatically.
-
-The code should:
-- Use available properties: card.rank (1-13), card.color ("red"/"black")
-- Use card.suit.suit_name ("hearts", "diamonds", "clubs", "spades")
-- Have access to mainline: list of Card objects
-- Handle empty mainline (first card) with: if not mainline:
-- Return True (accepted) or False (rejected)
-
-RESPONSE FORMAT (function body only, enclosed in <CODE> tags):
-<CODE>
-# Function body only, no def statement
-if not mainline:
-    return True
-last_card = mainline[-1]
-# Your logic here
-return True/False
-</CODE>
-"""
-
-        completion = self.client.chat.completions.create(
-            model=self.model_name,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=self.max_tokens,
-            temperature=self.temperature,
-        )
-
-        response_text = completion.choices[0].message.content
-        logger.debug(f"Referee rule-to-code full response: {response_text}")
-
-        # Extract code from <CODE> tags
-        try:
-            import re
-            code_match = re.search(r"<CODE>(.*?)</CODE>", response_text, re.DOTALL | re.IGNORECASE)
-            if code_match:
-                code = code_match.group(1).strip()
-
-                # POST-PROCESSING: Unwrap function definitions
-                code = self._unwrap_function_definition(code)
-
-                return code
-            else:
-                logger.warning("No <CODE> tags found in rule-to-code response")
-                return None
-        except Exception as e:
-            logger.error(f"Failed to extract code from response: {e}")
-            return None
-
-    def _unwrap_function_definition(self, code: str) -> str:
-        """Strip function definition wrapper if present.
-
-        Detects patterns like:
-            def function_name(card, mainline):
-                <body>
-
-        And returns just the <body>.
-        """
-        lines = code.split('\n')
-
-        # Check if first non-empty line is a function definition
-        first_line_idx = 0
-        for i, line in enumerate(lines):
-            if line.strip():
-                first_line_idx = i
-                break
-
-        first_line = lines[first_line_idx].strip()
-
-        # Pattern: "def <name>(card, mainline):" or similar
-        if first_line.startswith('def ') and '(' in first_line and ')' in first_line:
-            logger.warning(
-                f"Detected function definition wrapper in generated code: '{first_line}'"
-            )
-            logger.warning("Automatically unwrapping to extract function body")
-
-            # Find indentation of function body (first indented line after def)
-            body_start_idx = first_line_idx + 1
-            if body_start_idx >= len(lines):
-                return code  # Malformed, return as-is
-
-            # Get indentation level of first body line
-            body_indent = len(lines[body_start_idx]) - len(lines[body_start_idx].lstrip())
-
-            # Extract and dedent body lines
-            body_lines = []
-            for line in lines[body_start_idx:]:
-                if line.strip():  # Non-empty line
-                    # Remove the base indentation
-                    dedented = line[body_indent:] if len(line) >= body_indent else line
-                    body_lines.append(dedented)
-                else:
-                    body_lines.append('')
-
-            unwrapped_code = '\n'.join(body_lines).strip()
-            logger.info("Unwrapped code from function definition")
-            return unwrapped_code
-
-        # No wrapping detected, return as-is
+        code = self._extract_content_from_response(response_text, ["CODE"], try_code_blocks=False)
         return code
 
+
     def evaluate_rule_on_card(self, rule_text: str, card: dict, mainline: list[dict]) -> bool:
-        """Ask referee to evaluate if a card is IN or OUT according to a rule."""
-        mainline_str = ", ".join([c["symbol"] for c in mainline]) if mainline else "empty"
+        """Evaluate if card is IN or OUT according to rule."""
+        from eleusis.prompts import get_card_evaluation_prompt
 
-        prompt = f"""You are evaluating a card according to a rule in the game Eleusis.
+        prompt = get_card_evaluation_prompt(rule_text, card, mainline)
+        response_text = self.generate(prompt)
 
-Rule: {rule_text}
-
-Current mainline: {mainline_str}
-Card to evaluate: {card['symbol']}
-
-Determine if this card is IN (accepted) or OUT (rejected) according to the rule.
-
-Respond with JSON:
-{{
-    "result": "in" or "out",
-    "reasoning": "Brief explanation"
-}}"""
-
-        completion = self.client.chat.completions.create(
-            model=self.model_name,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=self.max_tokens,
-            temperature=self.temperature,
+        json_text = self._extract_content_from_response(
+            response_text, xml_tags=None, try_code_blocks=True
         )
-
-        response_text = completion.choices[0].message.content
-        logger.debug(f"Referee evaluate_rule_on_card full response: {response_text}")
-
-        try:
-            if "```json" in response_text:
-                json_start = response_text.find("```json") + 7
-                json_end = response_text.find("```", json_start)
-                json_text = response_text[json_start:json_end].strip()
-            elif "```" in response_text:
-                json_start = response_text.find("```") + 3
-                json_end = response_text.find("```", json_start)
-                json_text = response_text[json_start:json_end].strip()
-            else:
-                json_text = response_text.strip()
-
-            result = json.loads(json_text)
-            return result["result"].lower() == "in"
-        except (json.JSONDecodeError, KeyError) as e:
-            logger.error(f"Failed to parse evaluation response: {response_text}")
-            raise ValueError(f"Invalid evaluation response: {e}")
+        result = json.loads(json_text)
+        return result["result"].lower() == "in"

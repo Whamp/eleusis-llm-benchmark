@@ -264,7 +264,7 @@ class GameEngine:
         if self.rule_validator and self.rule_validator.referee_client:
             try:
                 guessed_code = self.rule_validator.referee_client.convert_rule_to_code(
-                    action.guess_text
+                    action.guess_text,
                 )
                 if guessed_code:
                     logger.info(f"Python code:\n{guessed_code}")

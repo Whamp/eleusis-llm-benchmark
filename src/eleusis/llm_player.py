@@ -38,13 +38,11 @@ class LLMScientist(Player):
         name: str,
         llm_client: HuggingFaceClient,
         max_retries: int = 3,
-        max_tokens: int = 8192,
     ) -> None:
         """Initialize LLM scientist."""
         super().__init__(name)
         self.llm_client = llm_client
         self.max_retries = max_retries
-        self.max_tokens = max_tokens
         self.successful_plays = 0
         self.play_history: list[dict] = []
         self.last_action_response: dict | None = None  # Store LLM response for history
@@ -86,7 +84,7 @@ class LLMScientist(Player):
         for attempt in range(self.max_retries):
             try:
                 response = self.llm_client.generate_structured(
-                    prompt, max_tokens=self.max_tokens, xml_tag="ACTION"
+                    prompt, xml_tag="ACTION"
                 )
 
                 # Store response for history tracking
@@ -162,13 +160,11 @@ class LLMRuleMaker:
         llm_client: HuggingFaceClient,
         validator: RuleValidator,
         max_attempts: int = 3,
-        max_tokens: int = 8192,
     ) -> None:
         """Initialize LLM rule-maker."""
         self.llm_client = llm_client
         self.validator = validator
         self.max_attempts = max_attempts
-        self.max_tokens = max_tokens
 
     def generate_rule(self) -> Rule | None:
         """Generate a valid rule using the LLM.
@@ -182,7 +178,7 @@ class LLMRuleMaker:
         for attempt in range(self.max_attempts):
             try:
                 # Get rule from LLM
-                response = self.llm_client.generate(prompt, max_tokens=self.max_tokens)
+                response = self.llm_client.generate(prompt)
 
                 # Extract description and code from <RULE> tags
                 extracted = self._extract_rule(response)

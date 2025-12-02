@@ -39,40 +39,31 @@ def play_full_game():
     # ---------------
 
     player_configs = config["models"]["players"]
+    max_tokens = config["models"]["max_tokens"]
 
     logger.info(f"Log file: {log_file}")
-    logger.info(f"  - Rule-maker: {config['models']['rule_maker']['display_name']}")
+    logger.info(f"  - Rule-maker: {config['models']['game_master']['display_name']}")
     for i, player_cfg in enumerate(player_configs, 1):
         logger.info(f"  - Scientist {i}: {player_cfg['display_name']}")
     logger.info("")
 
-    rule_maker_cfg = config["models"]["rule_maker"]
-    rule_maker_client = HuggingFaceClient(
-        model_name=rule_maker_cfg["name"],
-        temperature=rule_maker_cfg["temperature"],
+    game_master_cfg = config["models"]["game_master"]
+    game_master_client = HuggingFaceClient(
+        model_name=game_master_cfg["name"],
+        temperature=game_master_cfg["temperature"],
+        max_tokens=max_tokens,
     )
-    logger.info("✓ Rule-maker client initialized")
+    logger.info("✓ Game master client initialized")
 
     scientist_clients = []
     for i, player_cfg in enumerate(player_configs, 1):
         client = HuggingFaceClient(
             model_name=player_cfg["name"],
             temperature=player_cfg["temperature"],
+            max_tokens=max_tokens,
         )
         scientist_clients.append(client)
     logger.info(f"✓ {len(scientist_clients)} scientist client(s) initialized")
-
-    # Initialize referee client for rule comparison
-    from eleusis.llm_client import RefereeClient
-
-    referee_cfg = config["models"]["referee"]
-    max_tokens_referee = config["game"]["max_tokens_referee"]
-    referee_client = RefereeClient(
-        model_name=referee_cfg["name"],
-        temperature=referee_cfg["temperature"],
-        max_tokens=max_tokens_referee,
-    )
-    logger.info(f"✓ Referee client initialized: {referee_cfg['display_name']}")
 
 
     # --------------------
@@ -84,12 +75,11 @@ def play_full_game():
     logger.info("=" * 80)
     logger.info("")
 
-    validator = RuleValidator(referee_client=referee_client)
+    validator = RuleValidator(referee_client=game_master_client)
 
     rule_source_cfg = config["rule_source"]
     mode = rule_source_cfg["mode"]
 
-    max_tokens = config["game"]["max_tokens"]
     min_acceptance = rule_source_cfg.get("min_acceptance", 0.0)
     max_acceptance = rule_source_cfg.get("max_acceptance", 1.0)
 
@@ -111,7 +101,7 @@ def play_full_game():
         logger.info("Rule-maker is creating a secret rule...")
         rule_factory = RuleFactory(
             mode="llm",
-            llm_client=rule_maker_client,
+            llm_client=game_master_client,
             validator=validator,
             min_acceptance=min_acceptance,
             max_acceptance=max_acceptance,
@@ -171,7 +161,6 @@ def play_full_game():
             player_configs[i]["display_name"],
             client,
             max_retries=max_llm_retries,
-            max_tokens=max_tokens,
         )
         scientists.append(scientist)
         logger.info(f"✓ scientist player(s) # {i+1} initialized: {scientist.name}")

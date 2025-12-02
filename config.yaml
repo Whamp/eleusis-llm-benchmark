@@ -2,11 +2,15 @@
 
 # Model configuration
 models:
-  # Model for rule-maker
-  rule_maker:
+
+  max_tokens: 8192  # Maximum tokens for all models
+
+  # Model for game_master (rule maker, referee...)
+  game_master:
     name: "openai/gpt-oss-120b"
     temperature: 0.8
     display_name: "GPT OSS 120B"
+
 
   # Models for scientists (list determines number of players)
   players:
@@ -22,12 +26,6 @@ models:
       temperature: 0.7
       display_name: "S2 — GPT OSS 20B"
 
-
-  # Model for referee (rule equivalence checking)
-  referee:
-    name: "openai/gpt-oss-120b"
-    temperature: 0.3
-    display_name: "GPT OSS 120B"
 
 # Rule source configuration
 rule_source:
@@ -52,5 +50,3 @@ game:
   no_play_correct_reduction: 4  # Cards reduced from hand on correct no-play (min 1)
   max_llm_retries: 3  # Max retries for LLM when parsing fails
   max_rule_generation_attempts: 3  # Max attempts to generate a valid rule
-  max_tokens: 8192  # Max tokens for LLM generation
-  max_tokens_referee: 8192  # Max tokens for referee rule checking

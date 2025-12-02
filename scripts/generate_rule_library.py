@@ -254,7 +254,7 @@ def main():
 
     # Initialize clients
     logger.info(f"Initializing LLM client with model: {args.model}")
-    llm_client = HuggingFaceClient(model_name=args.model)
+    llm_client = HuggingFaceClient(model_name=args.model, max_tokens=args.max_tokens)
     validator = RuleValidator()
 
     # Generate rules
@@ -262,7 +262,7 @@ def main():
     prompt = get_library_generation_prompt(args.num_rules)
 
     try:
-        response = llm_client.generate(prompt, max_tokens=args.max_tokens)
+        response = llm_client.generate(prompt)
         logger.debug(f"Raw response:\n{response}")
     except Exception as e:
         logger.error(f"Failed to generate rules: {e}")
