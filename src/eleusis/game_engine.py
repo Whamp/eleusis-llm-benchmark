@@ -91,13 +91,11 @@ def evaluate_rule(card, mainline):
 
     def evaluate(self, card: Card, mainline: list[Card]) -> bool:
         """Evaluate if card is accepted according to rule."""
-        logger.debug(f"Evaluating {card} with mainline of {len(mainline)} cards")
-        logger.debug(f"  card.rank={card.rank}, card.color={card.color}")
 
         # Call eval function (fails hard on runtime errors)
         result = self._eval_function(card, mainline)
 
-        logger.debug(f"Result: {bool(result)} for rule '{self.description_text[:100]}...'")
+        logger.debug(f"Evaluating {card} for mainline {mainline} : Result: {bool(result)} for rule '{self.description_text[:100]}...'")
         return bool(result)
 
     def description(self) -> str:

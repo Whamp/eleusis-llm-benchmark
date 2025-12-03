@@ -3,7 +3,7 @@
 # Model configuration
 models:
 
-  max_tokens: 8192  # Maximum tokens for all models
+  max_tokens: 4096  # Maximum tokens for all models
 
   # Model for game_master (rule maker, referee...)
   game_master:

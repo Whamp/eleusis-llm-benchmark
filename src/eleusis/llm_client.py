@@ -47,9 +47,8 @@ class HuggingFaceClient:
                     max_tokens=self.max_tokens,
                     temperature=self.temperature,
                 )
-                message = completion.choices[0].message
-                logger.debug(f"LLM response message:\n{message}")
-                return message
+                logger.debug(f"LLM response:\n{completion.choices[0]}")
+                return completion.choices[0]
 
             except Exception as e:
                 logger.warning(f"Attempt {attempt + 1}/{self.max_retries} failed: {e}")
@@ -64,8 +63,8 @@ class HuggingFaceClient:
     def generate(self, prompt: str) -> str:
         """Generate text completion from prompt."""
         messages = [{"role": "user", "content": prompt}]
-        message = self._call_api_with_retry(messages)
-        return message.content
+        response = self._call_api_with_retry(messages)
+        return response.message.content
 
 
     def generate_structured(
@@ -75,15 +74,17 @@ class HuggingFaceClient:
 
         # Initial generation
         messages = [{"role": "user", "content": prompt}]
-        response_message = self._call_api_with_retry(messages)
+        response = self._call_api_with_retry(messages)
+        response_message = response.message
 
-        # Try to extract JSON from response content
-        try:
-            return self._parse_structured_response(response_message.content, xml_tag)
-        except ValueError as e:
-            # If parsing failed, continue the conversation
-            logger.warning(f"Failed to parse structured response, attempting continuation: {e}")
+        logger.info(f"Finish reason: {response.finish_reason}")
+
+        # Check for truncation
+        if response.finish_reason == "length":
+            logger.warning(f"Response was truncated, attempting continuation.")
             return self._continue_and_parse(messages, response_message, xml_tag)
+
+        return self._parse_structured_response(response_message.content, xml_tag)
 
 
     def _continue_and_parse(
@@ -103,11 +104,12 @@ class HuggingFaceClient:
         })
         tag_name = xml_tag or 'RESPONSE'
         messages.append({"role": "user", "content": get_continuation_prompt(tag_name)})
-        continuation_message = self._call_api_with_retry(messages)
+        continuation_response = self._call_api_with_retry(messages)
+        continuation_message = continuation_response.message
 
         # Try parsing continuation alone first
         try:
-            response = self._parse_structured_response(continuation_message.content, xml_tag)
+            response = self.    _parse_structured_response(continuation_message.content, xml_tag)
             logger.warning("Successfully parsed structured response from continuation alone.")
             return response
         except ValueError:

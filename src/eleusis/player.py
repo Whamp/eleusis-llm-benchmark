@@ -75,13 +75,9 @@ class LLMScientist(Player):
             compact_board, hand_dicts, deck_remaining, self.play_history, failed_guesses
         )
 
-        logger.debug(f"PROMPT: {prompt}")
-
         for attempt in range(self.max_retries):
             try:
-                response = self.llm_client.generate_structured(
-                    prompt, xml_tag="ACTION"
-                )
+                response = self.llm_client.generate_structured(prompt, xml_tag="ACTION")
 
                 # Store response for history tracking
                 self.last_action_response = response
