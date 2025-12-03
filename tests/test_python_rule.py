@@ -3,11 +3,11 @@
 import pytest
 
 from eleusis.cards import Card, Suit
-from eleusis.python_rule import PythonRule
+from eleusis.game_engine import Rule
 
 
-class TestPythonRule:
-    """Tests for PythonRule class."""
+class TestRule:
+    """Tests for Rule class."""
 
     def test_valid_code_execution(self) -> None:
         """Test that valid Python code executes correctly."""
@@ -17,7 +17,7 @@ if not mainline:
 last_card = mainline[-1]
 return card.color != last_card.color
 """
-        rule = PythonRule("Alternating colors", code)
+        rule = Rule("Alternating colors", code)
 
         # First card should be accepted
         card1 = Card(5, Suit.HEARTS)  # Red
@@ -33,8 +33,8 @@ return card.color != last_card.color
 
     def test_even_ranks_rule(self) -> None:
         """Test rule that only accepts even ranks."""
-        code = "return card.is_even"
-        rule = PythonRule("Even ranks only", code)
+        code = "return card.rank %2 == 0"
+        rule = Rule("Even ranks only", code)
 
         assert rule.evaluate(Card(2, Suit.HEARTS), [])
         assert rule.evaluate(Card(10, Suit.CLUBS), [])
@@ -42,30 +42,30 @@ return card.color != last_card.color
         assert not rule.evaluate(Card(13, Suit.SPADES), [])  # King
 
     def test_syntax_error_handling(self) -> None:
-        """Test that syntax errors are caught and handled."""
+        """Test that syntax errors fail hard during compilation."""
         code = "if not mainline\n    return True"  # Missing colon
-        rule = PythonRule("Broken rule", code)
 
-        # Rule should reject all cards when compilation fails
-        assert not rule.evaluate(Card(5, Suit.HEARTS), [])
-        assert not rule.evaluate(Card(8, Suit.SPADES), [Card(5, Suit.HEARTS)])
+        # Rule creation should fail with SyntaxError
+        with pytest.raises(SyntaxError):
+            rule = Rule("Broken rule", code)
 
     def test_runtime_error_handling(self) -> None:
-        """Test that runtime errors are caught and handled."""
+        """Test that runtime errors fail hard during evaluation."""
         code = """
 if not mainline:
     return True
 # This will cause IndexError if mainline is actually empty somehow
 return card.rank > mainline[10].rank
 """
-        rule = PythonRule("Risky rule", code)
+        rule = Rule("Risky rule", code)
 
         # First card should work
         assert rule.evaluate(Card(5, Suit.HEARTS), [])
 
-        # Should handle runtime error gracefully
+        # Runtime error should raise IndexError
         mainline = [Card(3, Suit.CLUBS)]
-        assert not rule.evaluate(Card(8, Suit.SPADES), mainline)
+        with pytest.raises(IndexError):
+            rule.evaluate(Card(8, Suit.SPADES), mainline)
 
     def test_empty_mainline_handling(self) -> None:
         """Test rules correctly handle empty mainline."""
@@ -75,7 +75,7 @@ if not mainline:
 last_card = mainline[-1]
 return card.rank > last_card.rank
 """
-        rule = PythonRule("First card rank <= 7, then increasing", code)
+        rule = Rule("First card rank <= 7, then increasing", code)
 
         # First card with rank <= 7 should be accepted
         assert rule.evaluate(Card(5, Suit.HEARTS), [])
@@ -96,10 +96,11 @@ return card.rank > last_card.rank
 import os
 return True
 """
-        rule = PythonRule("Malicious import", code)
+        rule = Rule("Malicious import", code)
 
-        # Should fail at compilation due to NameError
-        assert not rule.evaluate(Card(5, Suit.HEARTS), [])
+        # Should fail at runtime due to import not being available
+        with pytest.raises(ImportError):
+            rule.evaluate(Card(5, Suit.HEARTS), [])
 
     def test_safe_globals_no_open(self) -> None:
         """Test that file operations are not allowed."""
@@ -108,10 +109,11 @@ with open('test.txt', 'w') as f:
     f.write('test')
 return True
 """
-        rule = PythonRule("Malicious file I/O", code)
+        rule = Rule("Malicious file I/O", code)
 
-        # Should reject due to NameError (open not defined)
-        assert not rule.evaluate(Card(5, Suit.HEARTS), [])
+        # Should fail due to NameError (open not defined)
+        with pytest.raises(NameError):
+            rule.evaluate(Card(5, Suit.HEARTS), [])
 
     def test_safe_globals_no_eval(self) -> None:
         """Test that eval/exec are not allowed."""
@@ -119,10 +121,11 @@ return True
 eval('malicious code')
 return True
 """
-        rule = PythonRule("Malicious eval", code)
+        rule = Rule("Malicious eval", code)
 
-        # Should reject due to NameError (eval not defined)
-        assert not rule.evaluate(Card(5, Suit.HEARTS), [])
+        # Should fail due to NameError (eval not defined)
+        with pytest.raises(NameError):
+            rule.evaluate(Card(5, Suit.HEARTS), [])
 
     def test_allowed_builtins(self) -> None:
         """Test that allowed builtins work correctly."""
@@ -133,7 +136,7 @@ if not mainline:
 total_ranks = sum(c.rank for c in mainline)
 return total_ranks % 2 == 0
 """
-        rule = PythonRule("Sum of ranks is even", code)
+        rule = Rule("Sum of ranks is even", code)
 
         # Empty mainline
         assert rule.evaluate(Card(5, Suit.HEARTS), [])
@@ -154,7 +157,7 @@ if not mainline:
 # Accept if any previous card was even
 return any(c.is_even for c in mainline)
 """
-        rule = PythonRule("Any previous card was even", code)
+        rule = Rule("Any previous card was even", code)
 
         # First card
         assert rule.evaluate(Card(5, Suit.HEARTS), [])
@@ -169,15 +172,15 @@ return any(c.is_even for c in mainline)
 
     def test_get_code_method(self) -> None:
         """Test that get_code() returns the original code."""
-        code = "return card.is_even"
-        rule = PythonRule("Even ranks", code)
+        code = "return card.rank %2 == 0"
+        rule = Rule("Even ranks", code)
 
         assert rule.get_code() == code
 
     def test_description_method(self) -> None:
         """Test that description() returns the rule description."""
         description = "Only accept even ranked cards"
-        code = "return card.is_even"
-        rule = PythonRule(description, code)
+        code = "return card.rank %2 == 0"
+        rule = Rule(description, code)
 
         assert rule.description() == description

@@ -9,9 +9,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from eleusis.game_engine import Rule
 from eleusis.llm_client import HuggingFaceClient
 from eleusis.prompts import ELEUSIS_RULES
-from eleusis.python_rule import PythonRule
 from eleusis.rules import RuleValidator
 
 logger = logging.getLogger(__name__)
@@ -154,11 +154,11 @@ def validate_and_save_rules(
         logger.debug(f"Code:\n{code}")
 
         try:
-            # Create PythonRule
-            python_rule = PythonRule(description, code)
+            # Create Rule
+            rule = Rule(description, code)
 
             # Validate
-            validation = validator.validate_rule(python_rule, num_test_cases=num_test_cases)
+            validation = validator.validate_rule(rule, num_test_cases=num_test_cases)
 
             if validation.valid:
                 logger.info(f"✓ {name}: Valid")

@@ -5,14 +5,10 @@ import random
 from abc import ABC, abstractmethod
 
 from eleusis.cards import Card
-from eleusis.game_engine import Action, NoPlayAction, PlayCardAction, Rule
+from eleusis.game_engine import Action, NoPlayAction, PlayCardAction
 from eleusis.game_state import GameState
 from eleusis.llm_client import HuggingFaceClient
-from eleusis.prompts import (
-    get_move_selection_prompt,
-    get_rule_generation_prompt,
-)
-from eleusis.rules import LLMGeneratedRule, RuleValidator
+from eleusis.prompts import get_move_selection_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -150,103 +146,6 @@ class LLMScientist(Player):
 
         self.play_history.append(history_entry)
         self.last_action_response = None  # Clear for next turn
-
-
-class LLMRuleMaker:
-    """Rule-maker that generates rules using an LLM."""
-
-    def __init__(
-        self,
-        llm_client: HuggingFaceClient,
-        validator: RuleValidator,
-        max_attempts: int = 3,
-    ) -> None:
-        """Initialize LLM rule-maker."""
-        self.llm_client = llm_client
-        self.validator = validator
-        self.max_attempts = max_attempts
-
-    def generate_rule(self) -> Rule | None:
-        """Generate a valid rule using the LLM.
-
-        Returns PythonRule if code is valid, otherwise falls back to LLMGeneratedRule.
-        """
-        from eleusis.python_rule import PythonRule
-
-        prompt = get_rule_generation_prompt()
-
-        for attempt in range(self.max_attempts):
-            try:
-                # Get rule from LLM
-                response = self.llm_client.generate(prompt)
-
-                # Extract description and code from <RULE> tags
-                extracted = self._extract_rule(response)
-
-                if not extracted:
-                    logger.warning("Could not extract rule from response")
-                    logger.debug(f"Raw response: {response}")
-                    continue
-
-                description, code = extracted
-
-                logger.info(f"Generated rule: {description}")
-                logger.info(f"Generated Python code:\n{code}")
-
-                # Try to create and validate PythonRule
-                python_rule = PythonRule(description, code)
-                validation = self.validator.validate_rule(python_rule, num_test_cases=5)
-
-                if validation.valid:
-                    logger.info("✓ Python rule is valid, using fast Python evaluation")
-                    return python_rule
-                else:
-                    logger.warning(f"✗ Python rule invalid: {', '.join(validation.issues)}")
-                    logger.info("Falling back to LLM evaluation")
-
-                    # Fall back to LLM-based evaluation
-                    llm_rule = LLMGeneratedRule(
-                        description, self.llm_client, self.llm_client.model_name, code=code
-                    )
-                    return llm_rule
-
-            except Exception as e:
-                logger.error(f"Rule generation attempt {attempt + 1} failed: {e}")
-
-        logger.error("Failed to generate valid rule after all attempts")
-        return None
-
-    def _extract_rule(self, response: str) -> tuple[str, str] | None:
-        """Extract description and code from <RULE> tags.
-
-        Returns:
-            Tuple of (description, code) or None if extraction fails
-        """
-        import re
-
-        # Look for <RULE>...</RULE> pattern
-        rule_match = re.search(r"<RULE>(.*?)</RULE>", response, re.DOTALL | re.IGNORECASE)
-        if not rule_match:
-            logger.warning("No <RULE> tags found in response")
-            return None
-
-        rule_content = rule_match.group(1).strip()
-
-        # Extract <DESCRIPTION>
-        desc_match = re.search(
-            r"<DESCRIPTION>(.*?)</DESCRIPTION>", rule_content, re.DOTALL | re.IGNORECASE
-        )
-        # Extract <CODE>
-        code_match = re.search(r"<CODE>(.*?)</CODE>", rule_content, re.DOTALL | re.IGNORECASE)
-
-        if not desc_match or not code_match:
-            logger.warning("Missing <DESCRIPTION> or <CODE> tags in rule")
-            return None
-
-        description = desc_match.group(1).strip()
-        code = code_match.group(1).strip()
-
-        return description, code
 
 
 class RandomScientist(Player):

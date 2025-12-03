@@ -27,24 +27,10 @@ class Card:
     rank: int  # 1 (Ace) through 13 (King)
     suit: Suit
 
-    def __post_init__(self) -> None:
-        if not 1 <= self.rank <= 13:
-            raise ValueError(f"Rank must be between 1 and 13, got {self.rank}")
-
     @property
     def color(self) -> str:
         """Color of the card (red or black)."""
         return self.suit.color
-
-    @property
-    def is_even(self) -> bool:
-        """Check if rank is even."""
-        return self.rank % 2 == 0
-
-    @property
-    def is_odd(self) -> bool:
-        """Check if rank is odd."""
-        return self.rank % 2 == 1
 
     @property
     def rank_name(self) -> str:
@@ -70,7 +56,8 @@ class Card:
             "symbol": str(self),
         }
 
-
+NUM_DECKS = 2
+NUM_CARDS = 13
 class Deck:
     """Double deck of 104 cards (2 standard 52-card decks)."""
 
@@ -80,9 +67,9 @@ class Deck:
 
     def _initialize(self) -> None:
         """Create 104 cards (2 of each rank-suit combination)."""
-        for _ in range(2):
+        for _ in range(NUM_DECKS):
             for suit in Suit:
-                for rank in range(1, 14):
+                for rank in range(1, NUM_CARDS + 1):
                     self._cards.append(Card(rank, suit))
 
     def shuffle(self) -> None:

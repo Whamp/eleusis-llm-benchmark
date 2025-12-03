@@ -7,9 +7,7 @@ from pathlib import Path
 
 from eleusis.cards import Card, Suit
 from eleusis.game_engine import Rule
-from eleusis.llm_client import HuggingFaceClient
-from eleusis.llm_player import LLMRuleMaker
-from eleusis.python_rule import PythonRule
+from eleusis.game_master import GameMaster
 from eleusis.rules import RuleValidator
 
 logger = logging.getLogger(__name__)
@@ -23,28 +21,17 @@ class RuleFactory:
         mode: str,
         library_path: str | None = None,
         selection: str = "random",
-        llm_client: HuggingFaceClient | None = None,
+        game_master: GameMaster | None = None,
         validator: RuleValidator | None = None,
         min_acceptance: float = 0.0,
         max_acceptance: float = 1.0,
         start_index: int = 0,
     ) -> None:
-        """Initialize rule factory.
-
-        Args:
-            mode: "llm" or "library"
-            library_path: Path to rules JSON file (required for library mode)
-            selection: "random" or "sequential" (for library mode)
-            llm_client: LLM client for generating rules (required for llm mode)
-            validator: Validator for generated rules (required for llm mode)
-            min_acceptance: Minimum acceptance rate for rules (0.0-1.0)
-            max_acceptance: Maximum acceptance rate for rules (0.0-1.0)
-            start_index: Starting index for sequential selection (library mode only)
-        """
+        """Initialize rule factory."""
         self.mode = mode
         self.library_path = library_path
         self.selection = selection
-        self.llm_client = llm_client
+        self.game_master = game_master
         self.validator = validator
         self.min_acceptance = min_acceptance
         self.max_acceptance = max_acceptance
@@ -56,8 +43,8 @@ class RuleFactory:
                 raise ValueError("library_path required for library mode")
             self._load_library()
         elif mode == "llm":
-            if not llm_client or not validator:
-                raise ValueError("llm_client and validator required for llm mode")
+            if not game_master or not validator:
+                raise ValueError("game_master and validator required for llm mode")
         else:
             raise ValueError(f"Invalid mode: {mode}. Must be 'llm' or 'library'")
 
@@ -77,7 +64,7 @@ class RuleFactory:
         logger.info(f"Loaded {len(self._library_rules)} rules from {path}")
 
     def _evaluate_acceptance_rate(
-        self, rule: PythonRule, num_simulations: int = 5, plays_per_simulation: int = 50
+        self, rule: Rule, num_simulations: int = 5, plays_per_simulation: int = 50
     ) -> float:
         """Evaluate rule's acceptance rate by simulating random plays.
 
@@ -158,7 +145,7 @@ class RuleFactory:
 
             logger.debug(f"Code:\n{code}")
 
-            return PythonRule(description, code)
+            return Rule(description, code)
 
         # If we exhausted all rules without finding one in bounds
         raise RuntimeError(
@@ -172,45 +159,35 @@ class RuleFactory:
 
         for attempt in range(max_generation_attempts):
             logger.info(
-                f"Generating rule using LLM "
+                f"Generating rule using GameMaster "
                 f"(attempt {attempt + 1}/{max_generation_attempts})..."
             )
-            rule_maker = LLMRuleMaker(
-                self.llm_client,
-                self.validator,
-                max_attempts=3,
-            )
 
-            rule = rule_maker.generate_rule()
-            if not rule:
-                logger.warning("Failed to generate valid rule, retrying...")
+            rule = self.game_master.create_rule()
+
+            # Validate rule
+            validation_result = self.validator.validate_rule(rule)
+            if not validation_result.valid:
+                logger.warning(f"Rule validation failed: {validation_result.issues}")
                 continue
 
-            # Only evaluate PythonRules (LLMGeneratedRules are too slow to evaluate)
-            if isinstance(rule, PythonRule):
-                logger.info("Evaluating acceptance rate...")
-                acceptance_rate = self._evaluate_acceptance_rate(rule, num_simulations=5)
-                logger.info(f"Acceptance rate: {acceptance_rate:.2%}")
+            # Evaluate acceptance rate
+            logger.info("Evaluating acceptance rate...")
+            acceptance_rate = self._evaluate_acceptance_rate(rule, num_simulations=5)
+            logger.info(f"Acceptance rate: {acceptance_rate:.2%}")
 
-                if self._is_acceptance_rate_valid(acceptance_rate):
-                    logger.info(
-                        f"✓ Rule within acceptable range "
-                        f"[{self.min_acceptance:.2%}, {self.max_acceptance:.2%}]"
-                    )
-                    return rule
-                else:
-                    logger.warning(
-                        f"✗ Rule acceptance rate {acceptance_rate:.2%} outside bounds "
-                        f"[{self.min_acceptance:.2%}, {self.max_acceptance:.2%}], regenerating..."
-                    )
-                    continue
-            else:
-                # LLMGeneratedRule - skip evaluation (too slow)
-                logger.warning(
-                    "Generated LLMGeneratedRule (not PythonRule), "
-                    "skipping acceptance rate check"
+            if self._is_acceptance_rate_valid(acceptance_rate):
+                logger.info(
+                    f"✓ Rule within acceptable range "
+                    f"[{self.min_acceptance:.2%}, {self.max_acceptance:.2%}]"
                 )
                 return rule
+            else:
+                logger.warning(
+                    f"✗ Rule acceptance rate {acceptance_rate:.2%} outside bounds "
+                    f"[{self.min_acceptance:.2%}, {self.max_acceptance:.2%}], regenerating..."
+                )
+                continue
 
         raise RuntimeError(
             f"Failed to generate rule with acceptance rate in range "

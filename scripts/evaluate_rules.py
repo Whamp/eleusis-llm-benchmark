@@ -7,12 +7,12 @@ import random
 from pathlib import Path
 
 from eleusis.cards import Card, Suit
-from eleusis.python_rule import PythonRule
+from eleusis.game_engine import Rule
 
 logger = logging.getLogger(__name__)
 
 
-def simulate_random_plays(rule: PythonRule, num_plays: int = 50) -> dict:
+def simulate_random_plays(rule: Rule, num_plays: int = 50) -> dict:
     """Simulate random card plays and return statistics.
 
     Args:
@@ -76,7 +76,7 @@ def evaluate_rule(
     logger.info(f"Evaluating rule: {name}")
     logger.info(f"Description: {description}")
 
-    rule = PythonRule(description, code)
+    rule = Rule(description, code)
 
     # Run multiple simulations
     sim_results = []

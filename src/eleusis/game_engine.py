@@ -1,7 +1,7 @@
 """Game engine for Eleusis: turn logic, game flow, and scoring."""
 
 import logging
-from abc import ABC, abstractmethod
+import textwrap
 from dataclasses import dataclass
 
 from eleusis.cards import Card
@@ -35,18 +35,78 @@ class GuessRuleAction:
 Action = PlayCardAction | NoPlayAction | GuessRuleAction
 
 
-class Rule(ABC):
-    """Abstract base class for game rules."""
+class Rule:
+    """A game rule with description and executable Python code."""
 
-    @abstractmethod
+    def __init__(self, description: str, code: str):
+        """Initialize rule and compile code."""
+        self.description_text = description
+        self.code = code
+        self._eval_function = self._compile_code(code)
+
+    def _compile_code(self, code: str):
+        """Compile Python code into executable function."""
+
+        # Validate code structure
+        first_line = code.strip().split('\n')[0].strip() if code.strip() else ""
+        if first_line.startswith('def '):
+            logger.error("Generated code appears to be a complete function definition!")
+            logger.error(f"First line: {first_line}")
+            logger.error("Expected function body only, not 'def ...'.")
+
+        if 'return' not in code:
+            logger.warning("Generated code has no 'return' statement")
+
+        # Debug print function
+        def debug_print(*args):
+            """Print function for debugging rule execution."""
+            logger.debug(f"  [Rule Debug] {' '.join(str(arg) for arg in args)}")
+
+        # Safe execution environment
+        safe_globals = {
+            "__builtins__": {
+                "len": len,
+                "sum": sum,
+                "abs": abs,
+                "min": min,
+                "max": max,
+                "any": any,
+                "all": all,
+                "print": debug_print,
+            },
+            "Card": Card,
+        }
+
+        # Wrap code in function definition
+        full_code = f"""
+def evaluate_rule(card, mainline):
+{textwrap.indent(code, '    ')}
+"""
+
+        # Execute code to define the function (fails hard on syntax errors)
+        local_namespace = {}
+        exec(full_code, safe_globals, local_namespace)
+
+        return local_namespace["evaluate_rule"]
+
     def evaluate(self, card: Card, mainline: list[Card]) -> bool:
-        """Evaluate if a card is 'in' (accepted) given the current mainline."""
-        pass
+        """Evaluate if card is accepted according to rule."""
+        logger.debug(f"Evaluating {card} with mainline of {len(mainline)} cards")
+        logger.debug(f"  card.rank={card.rank}, card.color={card.color}")
 
-    @abstractmethod
+        # Call eval function (fails hard on runtime errors)
+        result = self._eval_function(card, mainline)
+
+        logger.debug(f"Result: {bool(result)} for rule '{self.description_text[:100]}...'")
+        return bool(result)
+
     def description(self) -> str:
-        """Return human-readable description of the rule."""
-        pass
+        """Return rule description."""
+        return self.description_text
+
+    def get_code(self) -> str:
+        """Return rule code."""
+        return self.code
 
 
 class GameEngine:
@@ -56,6 +116,7 @@ class GameEngine:
         self,
         game_state: GameState,
         rule: Rule,
+        game_master,
         rule_validator=None,
         cards_per_scientist: int = 12,
         correct_guess_bonus: int = -3,
@@ -66,6 +127,7 @@ class GameEngine:
         """Initialize game engine with state and rule."""
         self.state = game_state
         self.rule = rule
+        self.game_master = game_master
         self.rule_validator = rule_validator
         self.rule_guessed = False
         self.winning_guesser: str | None = None
@@ -240,98 +302,51 @@ class GameEngine:
             }
 
     def _process_guess(self, player: PlayerState, action: GuessRuleAction) -> dict:
-        """Process a rule guess."""
+        """Process rule guess with simulation-based comparison."""
         logger.info(f"{player.name} guessed: {action.guess_text}")
 
         # Log actual rule details
-        logger.info("=" * 60)
+        logger.info("-" * 60)
         logger.info("ACTUAL RULE:")
         logger.info(f"Description: {self.rule.description()}")
-
-        # Try to get Python code if it's a PythonRule
-        from eleusis.python_rule import PythonRule
-        if isinstance(self.rule, PythonRule):
-            logger.info(f"Python code:\n{self.rule.get_code()}")
-        else:
-            logger.info("(No Python code - LLM-based rule)")
+        logger.info(f"Python code:\n{self.rule.get_code()}")
 
         logger.info("-" * 60)
         logger.info("GUESSED RULE:")
         logger.info(f"Description: {action.guess_text}")
-
-        # Convert guessed rule to code for logging
-        guessed_code = None
-        if self.rule_validator and self.rule_validator.referee_client:
-            try:
-                guessed_code = self.rule_validator.referee_client.convert_rule_to_code(
-                    action.guess_text,
-                )
-                if guessed_code:
-                    logger.info(f"Python code:\n{guessed_code}")
-                else:
-                    logger.warning("(Failed to convert guessed rule to Python code)")
-            except Exception as e:
-                logger.warning(f"(Could not convert guessed rule to code: {e})")
-
-        logger.info("=" * 60)
+        logger.info("-" * 60)
         logger.info("")
 
-        # Check if guess is correct using BOTH methods
-        llm_correct = False
-        llm_reasoning = ""
-        sim_correct = False
-        sim_reasoning = ""
-        sim_comparisons = 0
-        sim_mismatches = 0
+        # Check for duplicate guess
+        if action.guess_text in self.state.failed_rule_guesses:
+            logger.info(f"Duplicate guess rejected: '{action.guess_text}'")
+            return {
+                "guess": action.guess_text,
+                "correct": False,
+                "reason": "duplicate",
+                "equivalent": False,
+                "reasoning": "This exact rule has already been guessed and rejected",
+            }
 
-        if self.rule_validator:
-            # Method 1: LLM-based comparison
-            try:
-                secret_rule_text = self.rule.description()
-                llm_correct, llm_reasoning = self.rule_validator.check_equivalence(
-                    secret_rule_text, action.guess_text, self.state.mainline.to_str()
-                )
-                logger.info(f"LLM verdict: {llm_correct} - {llm_reasoning}")
-            except Exception as e:
-                logger.error(f"Failed LLM equivalence check: {e}")
-                llm_correct = False
-                llm_reasoning = f"Error checking equivalence: {e}"
+        # Compare rules using RuleValidator
+        is_correct, reasoning, metadata = self.rule_validator.compare_rules(
+            actual_rule=self.rule,
+            guessed_rule_desc=action.guess_text,
+            current_mainline=self.state.mainline.get_all(),
+            game_master=self.game_master,
+            num_simulations=2,
+            turns_per_simulation=10,
+        )
 
-            # Method 2: Simulation-based comparison
-            # Pass the already-converted code to avoid re-conversion
-            try:
-                (
-                    sim_correct,
-                    sim_reasoning,
-                    sim_comparisons,
-                    sim_mismatches,
-                ) = self.rule_validator.check_equivalence_by_simulation(
-                    self.rule,
-                    action.guess_text,
-                    self.state.mainline.get_all(),
-                    preconverted_code=guessed_code,  # Reuse the code we already converted
-                )
-                logger.info(
-                    f"Simulation verdict: {sim_correct} - {sim_reasoning} "
-                    f"({sim_comparisons} comparisons, {sim_mismatches} mismatches)"
-                )
-            except Exception as e:
-                logger.error(f"Failed simulation equivalence check: {e}")
-                sim_correct = False
-                sim_reasoning = f"Error in simulation: {e}"
+        # Log both verdicts for debugging
+        logger.info(f"Simulation verdict: {is_correct}")
+        logger.info(f"LLM verdict: {metadata['llm_verdict']}")
+        if is_correct != metadata['llm_verdict']:
+            logger.warning("Simulation and LLM verdicts differ!")
 
-            # Check if verdicts differ
-            if llm_correct != sim_correct:
-                logger.warning(
-                    f"⚠️  VERDICT MISMATCH: LLM says {llm_correct}, "
-                    f"Simulation says {sim_correct}"
-                )
-                logger.warning(f"  LLM reasoning: {llm_reasoning}")
-                logger.warning(f"  Simulation reasoning: {sim_reasoning}")
-
-        # Use simulation verdict as final decision (more reliable)
-        is_correct = sim_correct
-        reasoning = sim_reasoning
+        # Record failed guess
+        if not is_correct:
+            self.state.record_failed_guess(player_name=player.name, guess_text=action.guess_text)
 
         if is_correct:
             # Correct guess! Mark game state
@@ -343,14 +358,11 @@ class GameEngine:
                 "correct": True,
                 "guess": action.guess_text,
                 "reasoning": reasoning,
-                "llm_verdict": llm_correct,
-                "sim_verdict": sim_correct,
-                "sim_comparisons": sim_comparisons,
+                **metadata,
             }
         else:
-            # Incorrect guess - record in global history and draw penalty card
-            self.state.record_failed_guess(player.name, action.guess_text, reasoning)
-            logger.info(f"{player.name} incorrect guess (now recorded in game history)")
+            # Incorrect guess - draw penalty card
+            logger.info(f"{player.name} incorrect guess")
 
             if not self.state.deck.is_empty():
                 drawn = self.state.deck.draw()
@@ -362,9 +374,7 @@ class GameEngine:
                 "correct": False,
                 "guess": action.guess_text,
                 "reasoning": reasoning,
-                "llm_verdict": llm_correct,
-                "sim_verdict": sim_correct,
-                "sim_comparisons": sim_comparisons,
+                **metadata,
             }
 
     def check_mandatory_guess(self, player: PlayerState) -> bool:

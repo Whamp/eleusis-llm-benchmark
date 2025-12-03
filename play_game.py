@@ -8,9 +8,10 @@ import yaml
 from dotenv import load_dotenv
 
 from eleusis.game_engine import GameEngine
+from eleusis.game_master import GameMaster
 from eleusis.game_state import GameState
 from eleusis.llm_client import HuggingFaceClient
-from eleusis.llm_player import LLMScientist
+from eleusis.player import LLMScientist
 from eleusis.logging_utils import setup_logging
 from eleusis.rule_factory import RuleFactory
 from eleusis.rules import RuleValidator
@@ -75,6 +76,13 @@ def play_full_game():
     logger.info("=" * 80)
     logger.info("")
 
+    # Initialize game master for rule operations
+    game_master = GameMaster(
+        llm_client=game_master_client,
+        max_retry_attempts=config["game"].get("max_rule_retry_attempts", 3),
+    )
+    logger.info("✓ Game master initialized")
+
     validator = RuleValidator(referee_client=game_master_client)
 
     rule_source_cfg = config["rule_source"]
@@ -98,10 +106,10 @@ def play_full_game():
             start_index=start_index,
         )
     else:  # llm mode
-        logger.info("Rule-maker is creating a secret rule...")
+        logger.info("Game master is creating a secret rule...")
         rule_factory = RuleFactory(
             mode="llm",
-            llm_client=game_master_client,
+            game_master=game_master,
             validator=validator,
             min_acceptance=min_acceptance,
             max_acceptance=max_acceptance,
@@ -136,6 +144,7 @@ def play_full_game():
     engine = GameEngine(
         game_state,
         rule,
+        game_master=game_master,
         rule_validator=validator,
         cards_per_scientist=cards_per_scientist,
         correct_guess_bonus=correct_guess_bonus,
@@ -189,9 +198,9 @@ def play_full_game():
             break
 
         # Log turn header
-        logger.info("-" * 80)
+        logger.info("=" * 80)
         logger.info(f"TURN {turn_count + 1}: {player_name}")
-        logger.info("-" * 80)
+        logger.info("=" * 80)
         logger.info(f"Board: {game_state.to_compact_string()}")
         logger.info(f"Deck remaining: {game_state.deck.remaining_count()} cards")
         hand_cards = current_player_state.hand.get_all_cards()

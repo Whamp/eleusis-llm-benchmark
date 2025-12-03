@@ -133,12 +133,11 @@ class GameState:
             self.sidelines[mainline_index] = Sideline(mainline_index)
         self.sidelines[mainline_index].add_card(card)
 
-    def record_failed_guess(self, player_name: str, guess_text: str, reasoning: str = "") -> None:
+    def record_failed_guess(self, player_name: str, guess_text: str) -> None:
         """Record a failed rule guess for all players to see."""
         self.failed_rule_guesses.append({
             "player": player_name,
-            "guess": guess_text,
-            "reasoning": reasoning,
+            "guess": guess_text
         })
 
     def to_compact_string(self) -> str:

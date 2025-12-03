@@ -266,12 +266,13 @@ Think through your rule if needed, once you are done, wrap your rule in XML tags
   <DESCRIPTION>Natural language description of the rule (1-2 sentences)</DESCRIPTION>
   <CODE>
 # Python code that implements the rule
-# Available: card.rank (1-13), card.color ("red"/"black"), card.is_even, card.is_odd
+# Available: card.rank (1-13), card.color ("red"/"black"), 
 #            card.suit.suit_name ("hearts", "diamonds", "clubs", "spades")
 #            mainline: list of Card objects
 # Must handle empty mainline (first card)
 if not mainline:
-    return True  # or False depending on first card rule, e.g., card.is_even
+    # Your logic here
+    return True/False
 # Your logic here
 return True/False
   </CODE>
@@ -291,7 +292,7 @@ return card.color != last_card.color
 <RULE>
   <DESCRIPTION>Only cards with even ranks (2,4,6,8,10,12) are accepted.</DESCRIPTION>
   <CODE>
-return card.is_even
+return card.rank % 2 == 0
   </CODE>
 </RULE>
 
@@ -492,13 +493,13 @@ def get_rule_compilation_prompt(rule_text: str) -> str:
     
     <CODE>
     # Python code that implements the rule
-    # Available: card.rank (1-13), card.color ("red"/"black"), card.is_even, card.is_odd
+    # Available: card.rank (1-13), card.color ("red"/"black"),
     #            card.suit.suit_name ("hearts", "diamonds", "clubs", "spades")
     #            mainline: list of Card objects
     # Must handle empty mainline (first card)
     if not mainline:
-    # Your logic here
-    return True/False
+        # Your logic here
+        return True/False
     # Your logic here
     return True/False
     </CODE>
@@ -515,7 +516,7 @@ def get_rule_compilation_prompt(rule_text: str) -> str:
     Example: 
     Rule is "Only cards with even ranks (2,4,6,8,10,12) are accepted."
     <CODE>
-    return card.is_even
+    return card.rank % 2 == 0
     </CODE>
     
     """

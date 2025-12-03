@@ -35,7 +35,10 @@ class HuggingFaceClient:
 
     def _call_api_with_retry(self, messages: list[dict]):
         """Core API call with retry logic and reasoning extraction."""
-        logger.debug(f"Calling API with retry {self.max_tokens} tokens and the following messages:\n{messages}")
+        logger.debug(
+            f"Calling API with retry {self.max_tokens} tokens and the following messages:\n"
+            f"{messages}"
+        )
         for attempt in range(self.max_retries):
             try:
                 completion = self.client.chat.completions.create(
@@ -93,7 +96,11 @@ class HuggingFaceClient:
         from eleusis.prompts import get_continuation_prompt
 
         # Add incomplete message and Request continuation
-        messages.append({"role": "assistant", "reasoning": partial_response_message.reasoning, "content": partial_response_message.content})
+        messages.append({
+            "role": "assistant",
+            "reasoning": partial_response_message.reasoning,
+            "content": partial_response_message.content,
+        })
         tag_name = xml_tag or 'RESPONSE'
         messages.append({"role": "user", "content": get_continuation_prompt(tag_name)})
         continuation_message = self._call_api_with_retry(messages)

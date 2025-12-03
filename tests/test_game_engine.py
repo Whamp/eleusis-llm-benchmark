@@ -7,24 +7,14 @@ from eleusis.game_engine import GameEngine, NoPlayAction, PlayCardAction, Rule
 from eleusis.game_state import GameState
 
 
-class AlwaysAcceptRule(Rule):
+def AlwaysAcceptRule() -> Rule:
     """Test rule that accepts all cards."""
-
-    def evaluate(self, card: Card, mainline: list[Card]) -> bool:
-        return True
-
-    def description(self) -> str:
-        return "Accept all cards"
+    return Rule("Accept all cards", "return True")
 
 
-class EvenRankRule(Rule):
+def EvenRankRule() -> Rule:
     """Test rule that accepts only even ranks."""
-
-    def evaluate(self, card: Card, mainline: list[Card]) -> bool:
-        return card.is_even
-
-    def description(self) -> str:
-        return "Only even ranks are accepted"
+    return Rule("Only even ranks are accepted", "return card.rank % 2 == 0")
 
 
 class TestGameEngine:
@@ -34,7 +24,7 @@ class TestGameEngine:
         """Test game setup with dealing and starter card."""
         state = GameState(["Alice", "Bob", "Charlie", "Dave"], rule_maker_index=0)
         rule = AlwaysAcceptRule()
-        engine = GameEngine(state, rule)
+        engine = GameEngine(state, rule, game_master=None)
 
         engine.setup_game()
 
@@ -53,7 +43,7 @@ class TestGameEngine:
         """Test playing a card that is accepted."""
         state = GameState(["Alice", "Bob", "Charlie", "Dave"], rule_maker_index=0)
         rule = AlwaysAcceptRule()
-        engine = GameEngine(state, rule)
+        engine = GameEngine(state, rule, game_master=None)
         engine.setup_game()
 
         current_player = state.get_current_player()
@@ -71,7 +61,7 @@ class TestGameEngine:
         """Test playing a card that is rejected."""
         state = GameState(["Alice", "Bob", "Charlie", "Dave"], rule_maker_index=0)
         rule = EvenRankRule()
-        engine = GameEngine(state, rule)
+        engine = GameEngine(state, rule, game_master=None)
 
         # Manually set up for testing
         state.mainline.add_card(Card(2, Suit.HEARTS))  # Starter
@@ -93,7 +83,7 @@ class TestGameEngine:
         """Test correct no-play declaration."""
         state = GameState(["Alice", "Bob", "Charlie", "Dave"], rule_maker_index=0)
         rule = EvenRankRule()
-        engine = GameEngine(state, rule)
+        engine = GameEngine(state, rule, game_master=None)
 
         state.mainline.add_card(Card(2, Suit.HEARTS))
         current_player = state.get_current_player()
@@ -115,7 +105,7 @@ class TestGameEngine:
         """Test incorrect no-play declaration."""
         state = GameState(["Alice", "Bob", "Charlie", "Dave"], rule_maker_index=0)
         rule = EvenRankRule()
-        engine = GameEngine(state, rule)
+        engine = GameEngine(state, rule, game_master=None)
 
         state.mainline.add_card(Card(2, Suit.HEARTS))
         current_player = state.get_current_player()
@@ -138,7 +128,7 @@ class TestGameEngine:
         """Test score calculation."""
         state = GameState(["Alice", "Bob", "Charlie", "Dave"], rule_maker_index=0)
         rule = AlwaysAcceptRule()
-        engine = GameEngine(state, rule)
+        engine = GameEngine(state, rule, game_master=None)
 
         # Set up hand sizes
         scientists = state.get_scientists()
@@ -162,7 +152,7 @@ class TestGameEngine:
         """Test game over when deck is empty."""
         state = GameState(["Alice", "Bob", "Charlie", "Dave"], rule_maker_index=0)
         rule = EvenRankRule()
-        engine = GameEngine(state, rule)
+        engine = GameEngine(state, rule, game_master=None)
 
         # Empty the deck
         while not state.deck.is_empty():
@@ -178,7 +168,7 @@ class TestGameEngine:
         """Test that turns advance correctly."""
         state = GameState(["Alice", "Bob", "Charlie", "Dave"], rule_maker_index=0)
         rule = AlwaysAcceptRule()
-        engine = GameEngine(state, rule)
+        engine = GameEngine(state, rule, game_master=None)
         engine.setup_game()
 
         initial_player = state.get_current_player()
