@@ -4,6 +4,7 @@
 models:
 
   max_tokens: 4096  # Maximum tokens for all models
+  max_llm_retries: 3  # Max retries for LLM when parsing fails
 
   # Model for game_master (rule maker, referee...)
   game_master:
@@ -35,6 +36,7 @@ rule_source:
   max_acceptance: 0.55
   selection: "sequential"  # "random" or "sequential" for library mode
   index: 54  # Starting index for sequential selection
+  tournament_rounds: 5  # Number of rounds in tournament mode
 
 # Game settings
 game:
@@ -43,10 +45,9 @@ game:
 
   # Game parameters
   cards_per_scientist: 12  # Initial hand size for each scientist
-  correct_guess_bonus: -3  # Points deducted for guessing rule correctly
-  wrong_guess_penalty: 1  # Penalty card for incorrect guess
+  correct_guess_bonus: -6  # Points deducted for guessing rule correctly
+  wrong_guess_penalty: 2  # Penalty card for incorrect guess
   card_reject_penalty: 2  # Cards drawn when a card is rejected
-  no_play_incorrect_penalty: 4  # Penalty cards for incorrect no-play
-  no_play_correct_reduction: 4  # Cards reduced from hand on correct no-play (min 1)
-  max_llm_retries: 3  # Max retries for LLM when parsing fails
-  max_rule_generation_attempts: 3  # Max attempts to generate a valid rule
+  no_play_incorrect_penalty: 3  # Penalty cards for incorrect no-play
+  no_play_correct_reduction: 3  # Cards reduced from hand on correct no-play (min 1)
+

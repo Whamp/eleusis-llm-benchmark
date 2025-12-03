@@ -39,6 +39,7 @@ class HuggingFaceClient:
             f"Calling API with retry {self.max_tokens} tokens and the following messages:\n"
             f"{messages}"
         )
+        logger.debug(f"PROMPT:\n{messages[-1]['content']}")
         for attempt in range(self.max_retries):
             try:
                 completion = self.client.chat.completions.create(

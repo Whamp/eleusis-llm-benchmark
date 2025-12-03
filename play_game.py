@@ -163,7 +163,7 @@ def play_full_game():
     logger.info("")
 
     # Create scientist players dynamically
-    max_llm_retries = config["game"]["max_llm_retries"]
+    max_llm_retries = config["models"]["max_llm_retries"]
     scientists = []
     for i, client in enumerate(scientist_clients):
         scientist = LLMScientist(
@@ -220,12 +220,12 @@ def play_full_game():
         if player.last_action_response:
             reasoning = player.last_action_response.get("reasoning", "")
             tentative_rule = player.last_action_response.get("tentative_rule", "")
+            confidence_level = player.last_action_response.get("confidence_level", "")
             guess_if_accepted = player.last_action_response.get("guess_rule_if_accepted", False)
 
-            if reasoning:
-                logger.info(f"Reasoning: {reasoning}")
-            if tentative_rule:
-                logger.info(f"Tentative rule: {tentative_rule}")
+            logger.info(f"Reasoning: {reasoning}")
+            logger.info(f"Tentative rule: {tentative_rule}")
+            logger.info(f"Confidence level: {confidence_level}")
             logger.info(f"Will guess if accepted: {guess_if_accepted}")
             logger.info("")
 
@@ -236,6 +236,8 @@ def play_full_game():
         )
 
         play_result = engine.play_turn(action, advance_turn=False)
+        can_guess = "card" in play_result and play_result.get("accepted", False) or "correct" in play_result and play_result.get("correct", False)
+        logger.info(f"Can guess this turn: {'YES' if can_guess else 'NO'}")
 
         # Log result
         logger.info(f"Action: {play_result['action']}")
@@ -260,7 +262,7 @@ def play_full_game():
         player.record_action_result(play_result)
 
         # Execute the guess if needed (will advance turn)
-        if will_guess and guess_text:
+        if will_guess and can_guess and guess_text:
             from eleusis.game_engine import GuessRuleAction
 
             logger.info("")

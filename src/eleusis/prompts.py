@@ -373,9 +373,17 @@ CURRENT BOARD (mainline + sideline cards in brackets at the position they have b
 played and rejected):
 {compact_board}
 
+FAILED RULE GUESSES SO FAR (IF ANY):
+{failed_guesses_str}
+ALL OF THOSE GUESSES WERE INCORRECT, THEY DO NOT MATCH THE SECRET RULE.
+
 YOUR HAND: {hand_str}
+
 DECK REMAINING: {deck_remaining} cards
-{history_str}{failed_guesses_str}
+
+YOUR PLAY HISTORY:
+{history_str}
+
 YOUR OPTIONS:
 1. PLAY a card: Specify the card from your hand (e.g., "5♥")
 2. NO-PLAY: Use the value "no_play" if you believe no card in your hand will be accepted
@@ -386,6 +394,8 @@ Think through the pattern, then wrap your decision in XML tags.
 IMPORTANT ABOUT GUESSING:
 - You must ALWAYS provide a "tentative_rule" describing your current belief about the
   secret rule, even if you're not confident. This helps track your evolving understanding.
+- Provide a "confidence_level" from 0-10 indicating how confident you are in your tentative_rule.
+  (0 = no clue, 10 = 100% sure). This has no direct gameplay effect but helps you reflect on your certainty.
 - Set "guess_rule_if_accepted" to true ONLY when you're confident in your tentative_rule.
 - If your action succeeds (card accepted or correct no-play) AND guess_rule_if_accepted
   is true, your tentative_rule will be officially submitted to the referee.
@@ -398,6 +408,7 @@ IMPORTANT ABOUT GUESSING:
     "reasoning": "Your analysis of the pattern and why you're playing this card/no-play",
     "action": "5♥" or "no_play",
     "tentative_rule": "Your current best guess about the rule (always provide this)",
+    "confidence_level": 0-10 (your confidence in the tentative_rule, 0=lowest, you have no clue, 10=maximum, you are 100% sure),
     "guess_rule_if_accepted": true or false (whether to officially guess if accepted)
 }}
 </ACTION>
@@ -408,6 +419,7 @@ Example:
     "reasoning": "I see red and black cards alternating. My 3♥ is red, last card was black.",
     "action": "3♥",
     "tentative_rule": "Cards must alternate between red and black colors",
+    "confidence_level": 7,
     "guess_rule_if_accepted": false
 }}
 </ACTION>
