@@ -98,7 +98,7 @@ After resolving the action, play passes to the next Scientist clockwise.
 
    **If "Out" (rejected):**
     - The card is moved to a sideline column directly below the last mainline card.
-    - The Scientist **draws 1 card** from the deck.
+    - The Scientist **draws 2 card** from the deck.
 
 The turn then ends.
 
@@ -112,12 +112,13 @@ A Scientist uses this if they believe **none** of their cards would be accepted.
    **If correct (no legal card exists):**
     - The Scientist chooses one card from their hand.
     - That card is placed in a sideline below the last mainline card.
-    - The Scientist does **not** draw. Their hand size decreases by 1.
+    - The Scientist receives N-3 new cards from the deck, where N is their hand size 
+    - All the old cards are discarded.
     - The Scientist may now optionally **attempt to guess the rule** (see below).
 
    **If incorrect (at least one legal card exists):**
     - The Rule-maker selects one of the legal cards and places it as the new last mainline card.
-    - The Scientist **draws 1 penalty card** from the deck.
+    - The Scientist **draws 3 penalty card** from the deck.
 
 The turn then ends.
 
@@ -147,7 +148,7 @@ Note: The wording does not need to match exactly. Only logical equivalence matte
 
 - **Correct guess:** The round ends immediately.
 - **Incorrect guess:** The Rule-maker announces the guess is wrong (without explaining
-  why). The Scientist **draws 1 card** from the deck. Play continues with the next
+  why). The Scientist **draws 2 cards** from the deck. Play continues with the next
   Scientist.
 
 ### Mandatory Guess at Zero Cards
@@ -184,7 +185,7 @@ At the end of each round:
 | Player | Score |
 |--------|-------|
 | Each Scientist | **+1 point per card remaining in hand** |
-| Scientist who guessed correctly | **−3 bonus points** (added to their hand score, can
+| Scientist who guessed correctly | **−6 bonus points** (added to their hand score, can
 result in negative) |
 | Rule-maker | Score equal to the **second-lowest** Scientist score for that round |
 

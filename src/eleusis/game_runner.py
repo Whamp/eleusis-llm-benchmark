@@ -1,52 +1,44 @@
-"""Play a full game of Eleusis with LLM players."""
+"""Game runner for playing rounds of Eleusis."""
 
 import logging
-from datetime import datetime
-from pathlib import Path
 
-import yaml
-from dotenv import load_dotenv
-
-from eleusis.game_engine import GameEngine
+from eleusis.game_engine import GameEngine, GuessRuleAction, Rule
 from eleusis.game_master import GameMaster
 from eleusis.game_state import GameState
 from eleusis.llm_client import HuggingFaceClient
 from eleusis.player import LLMScientist
-from eleusis.logging_utils import setup_logging
 from eleusis.rule_factory import RuleFactory
 from eleusis.rules import RuleValidator
 
-# Load environment variables from .env
-load_dotenv()
-
-# Load configuration
-config_path = Path(__file__).parent / "config.yaml"
-with open(config_path) as f:
-    config = yaml.safe_load(f)
-
-# Logging setup
-timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-log_file = f"logs/game_log_{timestamp}.txt"
-setup_logging(log_file=log_file, console_level=logging.INFO, file_level=logging.DEBUG)
-logging.getLogger("httpx").setLevel(logging.WARNING)  # Suppress httpx info logs
 logger = logging.getLogger(__name__)
 
 
-def play_full_game():
-    """Play a complete game."""
+def play_round(
+    config: dict,
+    round_number: int,
+    rule: Rule | None = None,
+    max_turns: int | None = None,
+) -> dict:
+    """Play a single round of Eleusis.
 
-    # ---------------
-    # (0) Initialize
-    # ---------------
+    Args:
+        config: Full game configuration dict
+        round_number: Current round number (for logging)
+        rule: Optional rule to reuse (if None, generate/load new rule)
+        max_turns: Optional override for max turns
+
+    Returns:
+        dict with round_number, turn_count, rule_description, rule_code,
+        winning_player, scores, game_over_reason
+    """
+    from eleusis.game_engine import GuessRuleAction
+
+    # --------------------
+    # (1) Client initialization
+    # --------------------
 
     player_configs = config["models"]["players"]
     max_tokens = config["models"]["max_tokens"]
-
-    logger.info(f"Log file: {log_file}")
-    logger.info(f"  - Rule-maker: {config['models']['game_master']['display_name']}")
-    for i, player_cfg in enumerate(player_configs, 1):
-        logger.info(f"  - Scientist {i}: {player_cfg['display_name']}")
-    logger.info("")
 
     game_master_cfg = config["models"]["game_master"]
     game_master_client = HuggingFaceClient(
@@ -54,84 +46,90 @@ def play_full_game():
         temperature=game_master_cfg["temperature"],
         max_tokens=max_tokens,
     )
-    logger.info("✓ Game master client initialized")
 
     scientist_clients = []
-    for i, player_cfg in enumerate(player_configs, 1):
+    for player_cfg in player_configs:
         client = HuggingFaceClient(
             model_name=player_cfg["name"],
             temperature=player_cfg["temperature"],
             max_tokens=max_tokens,
         )
         scientist_clients.append(client)
-    logger.info(f"✓ {len(scientist_clients)} scientist client(s) initialized")
-
 
     # --------------------
-    # (1) Rule generation
+    # (2) Rule generation
     # --------------------
 
-    logger.info("=" * 80)
-    logger.info("PHASE 1: RULE GENERATION")
-    logger.info("=" * 80)
-    logger.info("")
+    if rule is None:
+        logger.info("=" * 80)
+        logger.info(f"[Round {round_number}] PHASE 1: RULE GENERATION")
+        logger.info("=" * 80)
+        logger.info("")
 
-    # Initialize game master for rule operations
-    game_master = GameMaster(
-        llm_client=game_master_client,
-        max_retry_attempts=config["game"].get("max_rule_retry_attempts", 3),
-    )
-    logger.info("✓ Game master initialized")
-
-    validator = RuleValidator(referee_client=game_master_client)
-
-    rule_source_cfg = config["rule_source"]
-    mode = rule_source_cfg["mode"]
-
-    min_acceptance = rule_source_cfg.get("min_acceptance", 0.0)
-    max_acceptance = rule_source_cfg.get("max_acceptance", 1.0)
-
-    logger.info(f"Rule source mode: {mode}")
-    logger.info(f"Acceptance rate bounds: [{min_acceptance:.2%}, {max_acceptance:.2%}]")
-
-    if mode == "library":
-        logger.info("Loading rule from library...")
-        start_index = rule_source_cfg.get("index", 0)
-        rule_factory = RuleFactory(
-            mode="library",
-            library_path=rule_source_cfg["library_path"],
-            selection=rule_source_cfg["selection"],
-            min_acceptance=min_acceptance,
-            max_acceptance=max_acceptance,
-            start_index=start_index,
+        # Initialize game master for rule operations
+        game_master = GameMaster(
+            llm_client=game_master_client,
+            max_retry_attempts=config["game"].get("max_rule_retry_attempts", 3),
         )
-    else:  # llm mode
-        logger.info("Game master is creating a secret rule...")
-        rule_factory = RuleFactory(
-            mode="llm",
-            game_master=game_master,
-            validator=validator,
-            min_acceptance=min_acceptance,
-            max_acceptance=max_acceptance,
+        logger.info("✓ Game master initialized")
+
+        validator = RuleValidator(referee_client=game_master_client)
+
+        rule_source_cfg = config["rule_source"]
+        mode = rule_source_cfg["mode"]
+
+        min_acceptance = rule_source_cfg.get("min_acceptance", 0.0)
+        max_acceptance = rule_source_cfg.get("max_acceptance", 1.0)
+
+        logger.info(f"Rule source mode: {mode}")
+        logger.info(f"Acceptance rate bounds: [{min_acceptance:.2%}, {max_acceptance:.2%}]")
+
+        if mode == "library":
+            logger.info("Loading rule from library...")
+            start_index = rule_source_cfg.get("index", 0)
+            rule_factory = RuleFactory(
+                mode="library",
+                library_path=rule_source_cfg["library_path"],
+                selection=rule_source_cfg["selection"],
+                min_acceptance=min_acceptance,
+                max_acceptance=max_acceptance,
+                start_index=start_index,
+            )
+        else:  # llm mode
+            logger.info("Game master is creating a secret rule...")
+            rule_factory = RuleFactory(
+                mode="llm",
+                game_master=game_master,
+                validator=validator,
+                min_acceptance=min_acceptance,
+                max_acceptance=max_acceptance,
+            )
+
+        rule = rule_factory.create_rule()
+
+        logger.info("")
+        logger.info("=" * 80)
+        logger.info(f"SECRET RULE: {rule.description()}")
+        logger.info("=" * 80)
+        logger.info("")
+    else:
+        logger.info(f"[Round {round_number}] Using provided rule")
+        game_master = GameMaster(
+            llm_client=game_master_client,
+            max_retry_attempts=config["game"].get("max_rule_retry_attempts", 3),
         )
-
-    rule = rule_factory.create_rule()
-
-    logger.info("")
-    logger.info("=" * 80)
-    logger.info(f"SECRET RULE: {rule.description()}")
-    logger.info("=" * 80)
-    logger.info("")
+        validator = RuleValidator(referee_client=game_master_client)
 
     # ---------------
-    # (2) Game setup
+    # (3) Game setup
     # ---------------
 
     logger.info("=" * 80)
-    logger.info("PHASE 2: GAME SETUP")
+    logger.info(f"[Round {round_number}] PHASE 2: GAME SETUP")
     logger.info("=" * 80)
     logger.info("")
 
+    player_configs = config["models"]["players"]
     player_names = ["RuleMaker"] + [player_cfg['display_name'] for player_cfg in player_configs]
     game_state = GameState(player_names, rule_maker_index=0)
 
@@ -175,20 +173,20 @@ def play_full_game():
         logger.info(f"✓ scientist player(s) # {i+1} initialized: {scientist.name}")
     logger.info("")
 
-
     # --------------
-    # (3) MAIN LOOP
+    # (4) MAIN LOOP
     # --------------
 
     logger.info("=" * 80)
-    logger.info("PHASE 3: GAME PLAY")
+    logger.info(f"[Round {round_number}] PHASE 3: GAME PLAY")
     logger.info("=" * 80)
     logger.info("")
 
-    max_turns = config["game"]["max_turns"]
+    max_turns_limit = max_turns or config["game"]["max_turns"]
     turn_count = 0
+    game_over_reason = "max_turns"
 
-    while turn_count < max_turns and not engine.is_game_over():
+    while turn_count < max_turns_limit and not engine.is_game_over():
         current_player_state = game_state.get_current_player()
         player_name = current_player_state.name
 
@@ -263,8 +261,6 @@ def play_full_game():
 
         # Execute the guess if needed (will advance turn)
         if will_guess and can_guess and guess_text:
-            from eleusis.game_engine import GuessRuleAction
-
             logger.info("")
             logger.info(f"{player_name} is guessing the rule based on tentative_rule...")
             result = engine.play_turn(GuessRuleAction(guess_text))  # This will advance turn
@@ -282,6 +278,7 @@ def play_full_game():
                 logger.info("=" * 80)
                 logger.info(f"GAME OVER! {player_name} won!")
                 logger.info("=" * 80)
+                game_over_reason = "correct_guess"
                 break
 
         logger.info("")
@@ -291,25 +288,27 @@ def play_full_game():
         if config["game"]["pause_after_turn"]:
             input(f"[Turn {turn_count} complete] Press Enter to continue...")
 
-    # Summary
-    logger.info("")
-    logger.info("=" * 80)
-    logger.info("GAME SUMMARY")
-    logger.info("=" * 80)
-    logger.info(f"Turns: {turn_count}")
-    logger.info(f"Secret rule: {rule.description()}")
-    logger.info(f"Final board: {game_state.to_compact_string()}")
-    logger.info("")
+    # Check if game ended due to deck empty
+    if engine.is_game_over() and game_over_reason != "correct_guess":
+        game_over_reason = "deck_empty"
+
+    # -------------
+    # (5) Scoring
+    # -------------
 
     scores = engine.calculate_scores()
-    logger.info("Final scores (lower is better):")
-    for name, score in sorted(scores.items(), key=lambda x: x[1]):
-        logger.info(f"  {name}: {score}")
+    winning_player = engine.winning_guesser if engine.rule_guessed else None
 
-    logger.info("")
-    logger.info(f"Game log: {log_file}")
-    logger.info("=" * 80)
+    # Remove RuleMaker from scores (only track scientists)
+    if "RuleMaker" in scores:
+        del scores["RuleMaker"]
 
-
-if __name__ == "__main__":
-    play_full_game()
+    return {
+        'round_number': round_number,
+        'turn_count': turn_count,
+        'rule_description': rule.description(),
+        'rule_code': rule.get_code(),
+        'winning_player': winning_player,
+        'scores': scores,
+        'game_over_reason': game_over_reason,
+    }
