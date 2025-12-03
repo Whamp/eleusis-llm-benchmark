@@ -27,9 +27,9 @@ class GameMaster:
             logger.info(f"Rule generation attempt {attempt + 1}/{self.max_retry_attempts}")
 
             prompt = get_rule_generation_prompt()
-            response = self.llm_client.generate(prompt)
+            response = self.llm_client.generate(prompt)  # Get raw response
 
-            # Extract <RULE> tags
+            # Extract both RULE and CODE tags from response
             description, code = self._extract_rule_from_response(response)
 
             if not description or not code:
@@ -89,19 +89,7 @@ class GameMaster:
         logger.debug(f"Converting rule to code: {rule_description}")
 
         prompt = get_rule_compilation_prompt(rule_description)
-        response = self.llm_client.generate(prompt)
-
-        # Extract <CODE> tags
-        import re
-
-        code_match = re.search(r"<CODE>(.*?)</CODE>", response, re.DOTALL | re.IGNORECASE)
-        if not code_match:
-            error_msg = "Failed to extract code from <CODE> tags in LLM response"
-            logger.error(error_msg)
-            logger.error(f"Response was: {response}")
-            raise ValueError(error_msg)
-
-        code = code_match.group(1).strip()
+        code = self.llm_client.generate(prompt, xml_tag="CODE")
         logger.debug(f"Converted code:\n{code}")
         return code
 
@@ -114,22 +102,7 @@ class GameMaster:
         logger.debug("Comparing rules with LLM (non-authoritative)")
 
         prompt = get_referee_comparison_prompt(rule1_desc, rule2_desc, mainline)
-        response = self.llm_client.generate(prompt)
-
-        # Extract <VERDICT> tags
-        import re
-
-        verdict_match = re.search(r"<VERDICT>(.*?)</VERDICT>", response, re.DOTALL | re.IGNORECASE)
-        if not verdict_match:
-            error_msg = "Failed to extract verdict from <VERDICT> tags"
-            logger.error(error_msg)
-            raise ValueError(error_msg)
-
-        verdict_content = verdict_match.group(1).strip()
-
-        # Parse JSON
-        verdict_data = json.loads(verdict_content)
+        verdict_data = self.llm_client.generate(prompt, xml_tag="VERDICT", return_dict=True)
         equivalent = verdict_data.get("equivalent", False)
         reasoning = verdict_data.get("reasoning", "")
-
         return equivalent, reasoning

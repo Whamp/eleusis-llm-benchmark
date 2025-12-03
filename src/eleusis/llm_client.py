@@ -5,7 +5,6 @@ import logging
 import os
 import re
 import time
-from typing import Any
 
 from huggingface_hub import InferenceClient
 
@@ -61,61 +60,96 @@ class HuggingFaceClient:
         raise RuntimeError("Max retries exceeded")
 
 
-    def generate(self, prompt: str) -> str:
-        """Generate text completion from prompt."""
-        messages = [{"role": "user", "content": prompt}]
-        response = self._call_api_with_retry(messages)
-        return response.message.content
+    def generate(
+        self,
+        prompt: str,
+        xml_tag: str | None = None,
+        return_dict: bool = False
+    ) -> str | dict:
+        """Generate text or structured response with automatic continuation.
 
+        Args:
+            prompt: The prompt string to send to LLM
+            xml_tag: Optional XML tag name to extract content from
+            return_dict: If True, parse extracted/raw content as JSON
 
-    def generate_structured(
-        self, prompt: str, xml_tag: str | None = None
-    ) -> dict:
-        """Generate structured JSON response with automatic continuation on truncation."""
+        Returns:
+            str: Raw or XML-extracted text (if return_dict=False)
+            dict: Parsed JSON object (if return_dict=True)
+        """
 
-        # Initial generation
+        # Make initial API call
         messages = [{"role": "user", "content": prompt}]
         response = self._call_api_with_retry(messages)
         response_message = response.message
 
         logger.info(f"Finish reason: {response.finish_reason}")
 
-        # Check for truncation
+        # Handle truncation by continuing
         if response.finish_reason == "length":
-            logger.warning(f"Response was truncated, attempting continuation.")
-            return self._continue_and_parse(messages, response_message, xml_tag)
+            logger.warning("Response was truncated, attempting continuation.")
+            return self._continue_response(messages, response_message, xml_tag, return_dict)
 
-        return self._parse_structured_response(response_message.content, xml_tag)
+        # No truncation - process response
+        content = response_message.content
+
+        # Extract from XML tag if specified
+        if xml_tag:
+            content = self._extract_content_from_response(content, [xml_tag], try_code_blocks=True)
+
+        # Parse as JSON if requested
+        if return_dict:
+            return json.loads(content)
+
+        return content
 
 
-    def _continue_and_parse(
+
+
+    def _continue_response(
         self,
         messages: list[dict],
         partial_response_message,
-        xml_tag: str | None
-    ) -> dict[str, Any]:
-        """Continue truncated response using multi-turn conversation."""
+        xml_tag: str | None,
+        return_dict: bool
+    ) -> str | dict:
+        """Continue truncated response and return in requested format."""
         from eleusis.prompts import get_continuation_prompt
 
-        # Add incomplete message and Request continuation
+        # Append incomplete assistant message
         messages.append({
             "role": "assistant",
             "reasoning": partial_response_message.reasoning,
             "content": partial_response_message.content,
         })
-        tag_name = xml_tag or 'RESPONSE'
+
+        # Request continuation
+        tag_name = xml_tag if xml_tag else "RESPONSE"
         messages.append({"role": "user", "content": get_continuation_prompt(tag_name)})
+
+        # Get continuation
         continuation_response = self._call_api_with_retry(messages)
         continuation_message = continuation_response.message
 
-        # Try parsing continuation alone first
-        try:
-            response = self.    _parse_structured_response(continuation_message.content, xml_tag)
-            logger.warning("Successfully parsed structured response from continuation alone.")
-            return response
-        except ValueError:
-            logger.error("Failed to parse structured response, continuation alone failed.")
-            return {}
+        # Recursively handle further truncation
+        if continuation_response.finish_reason == "length":
+            logger.warning("Continuation was also truncated, continuing again...")
+            return self._continue_response(messages, continuation_message, xml_tag, return_dict)
+
+        # Combine partial + continuation
+        combined_content = partial_response_message.content + continuation_message.content
+
+        # Extract from XML tag if specified
+        if xml_tag:
+            combined_content = self._extract_content_from_response(
+                combined_content, [xml_tag], try_code_blocks=True
+            )
+
+        # Parse as JSON if requested
+        if return_dict:
+            return json.loads(combined_content)
+
+        return combined_content
 
 
     def _extract_content_from_response(
@@ -150,20 +184,6 @@ class HuggingFaceClient:
         return extracted or response_text.strip()
 
 
-    def _parse_structured_response(
-        self, response_text: str, xml_tag: str | None = None
-    ) -> dict[str, Any]:
-        """Parse structured JSON response from text."""
-        xml_tags = [xml_tag] if xml_tag else None
-        json_text = self._extract_content_from_response(
-            response_text, xml_tags, try_code_blocks=True
-        )
-
-        try:
-            return json.loads(json_text)
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse JSON from response: {response_text}")
-            raise ValueError(f"Invalid JSON response: {e}")
 
 
 
@@ -174,12 +194,7 @@ class HuggingFaceClient:
         from eleusis.prompts import get_referee_comparison_prompt
 
         prompt = get_referee_comparison_prompt(rule1, rule2, mainline)
-        response_text = self.generate(prompt)
-
-        json_text = self._extract_content_from_response(
-            response_text, ["VERDICT"], try_code_blocks=True
-        )
-        result = json.loads(json_text)
+        result = self.generate(prompt, xml_tag="VERDICT", return_dict=True)
         return result["equivalent"], result["reasoning"]
 
 
@@ -188,10 +203,7 @@ class HuggingFaceClient:
         from eleusis.prompts import get_rule_compilation_prompt
 
         prompt = get_rule_compilation_prompt(rule_text)
-        response_text = self.generate(prompt)
-
-        code = self._extract_content_from_response(response_text, ["CODE"], try_code_blocks=False)
-        return code
+        return self.generate(prompt, xml_tag="CODE")
 
 
     def evaluate_rule_on_card(self, rule_text: str, card: dict, mainline: list[dict]) -> bool:
@@ -199,10 +211,5 @@ class HuggingFaceClient:
         from eleusis.prompts import get_card_evaluation_prompt
 
         prompt = get_card_evaluation_prompt(rule_text, card, mainline)
-        response_text = self.generate(prompt)
-
-        json_text = self._extract_content_from_response(
-            response_text, xml_tags=None, try_code_blocks=True
-        )
-        result = json.loads(json_text)
+        result = self.generate(prompt, return_dict=True)
         return result["result"].lower() == "in"

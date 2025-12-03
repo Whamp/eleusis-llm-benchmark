@@ -77,7 +77,7 @@ class LLMScientist(Player):
 
         for attempt in range(self.max_retries):
             try:
-                response = self.llm_client.generate_structured(prompt, xml_tag="ACTION")
+                response = self.llm_client.generate(prompt, xml_tag="ACTION", return_dict=True)
 
                 # Store response for history tracking
                 self.last_action_response = response
