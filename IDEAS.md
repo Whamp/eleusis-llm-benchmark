@@ -3,7 +3,8 @@
 
 ## Priority
 - check that in case of faulty no-play (when there are cards that can be played in the player's hand), the game master chooses at random among the valid cards instead of just picking the first one.
-- check what happens if succesful no-play
+- check what happens if successful no-play
+
 ## Later
 - implement a seed in config.yaml to make the game reproducible for testing purposes (for both random in the game logic, and to be passed to the LLM client)
 - The Eleusis rules prompt should automatically load the proper numeric values from the config.yaml regarding cards drawn, score, penalty, max number of turns, etc.
