@@ -26,25 +26,25 @@ def get_eleusis_rules() -> str:
 
     return f"""=== ELEUSIS GAME RULES ===
 
-We play a simplified version of the card game Eleusis.
+This is simplified version of the card game Eleusis.
 
 ## Overview
 
-One player (the **Rule-maker**) invents a secret rule governing which cards may be
-played. The other players (**Scientists**) take turns playing cards, learning from each
+A **Rule-maker** invents a secret rule governing which cards may be
+played. The players (**Scientists**) take turns playing cards, learning from each
 acceptance or rejection, and trying to deduce the rule.
 
 ## Components
 
-- **Players:** 4 (one Rule-maker, three Scientists)
+- **Players:** typically 2 to 4 scientists
 - **Cards:** 2 standard 52-card decks shuffled together into a single 104-card draw pile
     - Ranks: Ace = 1 (low), 2–10, Jack = 11, Queen = 12, King = 13
     - Suits: Hearts ♥️ (red), Diamonds ♦️ (red), Clubs ♣️ (black), Spades ♠️ (black)
 
 ## Game Structure
 
-A full game consists of several rounds, so that each player serves as Rule-maker
-the same number of times. The player with the lowest total score at the end wins.
+A full game consists of several rounds, so that the rule changes at every round. 
+The player with the *lowest* total score at the end wins.
 
 ## Layout
 
@@ -61,12 +61,7 @@ The entire layout (mainline and all sidelines) is visible to all players at all 
 
 ## Setup
 
-### 1. Choose Turn Order
-
-Randomly determine a starting Scientist. Play proceeds clockwise from that player,
-skipping the Rule-maker.
-
-### 2. Create the Secret Rule
+### Secret rule
 
 Before dealing, the Rule-maker privately writes down a deterministic rule that decides
 whether a newly played card is **in** (accepted) or **out** (rejected).
@@ -85,20 +80,13 @@ whether a newly played card is **in** (accepted) or **out** (rejected).
 - Depend on player identity, turn order, or game history other than the mainline
 - Include randomness or subjective judgment
 
-See "Example Rules" at the end of this document for guidance on appropriate complexity.
 
-### 3. Deal Hands
+### Deal Hands
 
-Each Scientist is dealt **{cards_per_scientist} cards**. The Rule-maker receives no cards.
-
-### 4. Place the Starter Card
+Each Scientist player is dealt **{cards_per_scientist} cards**. The Rule-maker receives no cards.
 
 The Rule-maker draws cards one at a time from the top of the deck until finding a card
-that satisfies the rule when evaluated as a first card (with an empty mainline). This
-card is placed face-up as the first mainline card. All other drawn cards are shuffled
-back into the deck.
-
----
+that satisfies the rule when evaluated as a first card (with an empty mainline). 
 
 ## Turn Structure
 

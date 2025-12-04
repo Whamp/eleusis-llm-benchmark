@@ -1,6 +1,7 @@
 """Game engine for Eleusis: turn logic, game flow, and scoring."""
 
 import logging
+import random
 import textwrap
 from dataclasses import dataclass
 
@@ -241,13 +242,17 @@ class GameEngine:
         legal_cards = [c for c in hand_cards if self.evaluate_card(c)]
 
         if len(legal_cards) == 0:
-            # Correct no-play: discard all cards, draw N-reduction (min 1)
+            # Correct no-play: place one random card in sideline, discard rest, draw N-reduction (min 1)
             original_hand_size = len(hand_cards)
 
-            # Discard all cards to sideline
-            for card in hand_cards:
+            # Choose one random card to place in sideline
+            sideline_card = random.choice(hand_cards)
+            player.hand.remove_card(sideline_card)
+            self.state.add_sideline_card(sideline_card)
+
+            # Discard remaining cards from hand (not to sideline)
+            for card in list(player.hand.get_all_cards()):
                 player.hand.remove_card(card)
-                self.state.add_sideline_card(card)
 
             # Draw new cards: N - reduction, but at least 1
             new_hand_size = max(1, original_hand_size - self.no_play_correct_reduction)
@@ -260,17 +265,15 @@ class GameEngine:
 
             logger.info(
                 f"{player.name} correctly declared no-play, "
-                f"discarded {original_hand_size} cards, drew {len(drawn_cards)} new cards"
+                f"placed {sideline_card} in sideline, discarded {original_hand_size - 1} cards, "
+                f"drew {len(drawn_cards)} new cards"
             )
 
-            return {
-                "success": True,
-                "correct": True,
-                "can_guess": True,
-            }
+            return {"success": True, "correct": True, "can_guess": True,}
+
         else:
-            # Incorrect no-play: rule-maker plays one legal card, draw penalty cards
-            card_to_play = legal_cards[0]
+            # Incorrect no-play: rule-maker randomly plays one legal card, draw penalty cards
+            card_to_play = random.choice(legal_cards)
             player.hand.remove_card(card_to_play)
             self.state.mainline.add_card(card_to_play)
 
@@ -292,12 +295,8 @@ class GameEngine:
                     f"{player.name} incorrectly declared no-play, {card_to_play} played, deck empty"
                 )
 
-            return {
-                "success": True,
-                "correct": False,
-                "forced_card": str(card_to_play),
-                "can_guess": False,
-            }
+            return {"success": True, "correct": False, "forced_card": str(card_to_play), "can_guess": False,}
+
 
     def _process_guess(self, player: PlayerState, action: GuessRuleAction) -> dict:
         """Process rule guess with simulation-based comparison."""
