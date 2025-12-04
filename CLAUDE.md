@@ -3,8 +3,7 @@
 ## Project Overview
 
 This is an LLM benchmark for the card game Eleusis. 
-The benchmark evaluates how well LLMs can deduce secret rules by playing as "Scientists" who test cards against a hidden rule. 
-See RULES.md for complete game rules.
+The benchmark evaluates how well LLMs can deduce secret rules by playing as "Scientists" who test cards against a hidden rule.
 
 Key concepts:
 - **Mainline**: Horizontal row of accepted cards, visible to all players

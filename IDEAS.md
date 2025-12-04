@@ -4,6 +4,8 @@
 ## Priority
 - check that in case of faulty no-play (when there are cards that can be played in the player's hand), the game master chooses at random among the valid cards instead of just picking the first one.
 - check what happens if successful no-play
+- quick test for inference providers
+- system prompt ?
 
 ## Later
 - implement a seed in config.yaml to make the game reproducible for testing purposes (for both random in the game logic, and to be passed to the LLM client)

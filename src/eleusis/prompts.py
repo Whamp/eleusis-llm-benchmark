@@ -1,7 +1,30 @@
 """Prompt templates for LLM interactions in Eleusis."""
 
+from pathlib import Path
+import yaml
+
 # Common game rules explanation used across prompts
-ELEUSIS_RULES = """=== ELEUSIS GAME RULES ===
+
+def _load_game_config() -> dict:
+    """Load game config from config.yaml"""
+    config_path = Path(__file__).parent.parent.parent / "config.yaml"
+    with open(config_path) as f:
+        config = yaml.safe_load(f)
+    return config["game"]
+
+
+def get_eleusis_rules() -> str:
+    """Generate ELEUSIS game rules using values from config.yaml"""
+    game_config = _load_game_config()
+
+    cards_per_scientist = game_config['cards_per_scientist']
+    card_reject_penalty = game_config['card_reject_penalty']
+    no_play_correct_reduction = game_config['no_play_correct_reduction']
+    no_play_incorrect_penalty = game_config['no_play_incorrect_penalty']
+    wrong_guess_penalty = game_config['wrong_guess_penalty']
+    correct_guess_bonus = game_config['correct_guess_bonus']
+
+    return f"""=== ELEUSIS GAME RULES ===
 
 We play a simplified version of the card game Eleusis.
 
@@ -66,7 +89,7 @@ See "Example Rules" at the end of this document for guidance on appropriate comp
 
 ### 3. Deal Hands
 
-Each Scientist is dealt **12 cards**. The Rule-maker receives no cards.
+Each Scientist is dealt **{cards_per_scientist} cards**. The Rule-maker receives no cards.
 
 ### 4. Place the Starter Card
 
@@ -98,7 +121,7 @@ After resolving the action, play passes to the next Scientist clockwise.
 
    **If "Out" (rejected):**
     - The card is moved to a sideline column directly below the last mainline card.
-    - The Scientist **draws 2 card** from the deck.
+    - The Scientist **draws {card_reject_penalty} card** from the deck.
 
 The turn then ends.
 
@@ -112,13 +135,13 @@ A Scientist uses this if they believe **none** of their cards would be accepted.
    **If correct (no legal card exists):**
     - The Scientist chooses one card from their hand.
     - That card is placed in a sideline below the last mainline card.
-    - The Scientist receives N-3 new cards from the deck, where N is their hand size 
+    - The Scientist receives N-{no_play_correct_reduction} new cards from the deck, where N is their hand size
     - All the old cards are discarded.
     - The Scientist may now optionally **attempt to guess the rule** (see below).
 
    **If incorrect (at least one legal card exists):**
     - The Rule-maker selects one of the legal cards and places it as the new last mainline card.
-    - The Scientist **draws 3 penalty card** from the deck.
+    - The Scientist **draws {no_play_incorrect_penalty} penalty card** from the deck.
 
 The turn then ends.
 
@@ -148,7 +171,7 @@ Note: The wording does not need to match exactly. Only logical equivalence matte
 
 - **Correct guess:** The round ends immediately.
 - **Incorrect guess:** The Rule-maker announces the guess is wrong (without explaining
-  why). The Scientist **draws 2 cards** from the deck. Play continues with the next
+  why). The Scientist **draws {wrong_guess_penalty} cards** from the deck. Play continues with the next
   Scientist.
 
 ### Mandatory Guess at Zero Cards
@@ -185,7 +208,7 @@ At the end of each round:
 | Player | Score |
 |--------|-------|
 | Each Scientist | **+1 point per card remaining in hand** |
-| Scientist who guessed correctly | **−6 bonus points** (added to their hand score, can
+| Scientist who guessed correctly | **{correct_guess_bonus} bonus points** (added to their hand score, can
 result in negative) |
 | Rule-maker | Score equal to the **second-lowest** Scientist score for that round |
 
@@ -222,7 +245,7 @@ These examples illustrate appropriate rule complexity:
 
 def get_rule_generation_prompt() -> str:
     """Generate prompt for LLM to create a game rule."""
-    return f"""{ELEUSIS_RULES}
+    return f"""{get_eleusis_rules()}
 
 
 **YOU PLAY AS THE RULE-MAKER**
@@ -362,7 +385,7 @@ def get_move_selection_prompt(
             guess = entry.get("guess", "")
             failed_guesses_str += f"- {player}: \"{guess}\"\n"
 
-    return f"""{ELEUSIS_RULES}
+    return f"""{get_eleusis_rules()}
 
 **YOU PLAY AS A SCIENTIST**
 
@@ -432,7 +455,7 @@ Example:
 
 def get_referee_comparison_prompt(secret_rule: str, guessed_rule: str, mainline:str) -> str:
     """Generate prompt for referee to compare two rules for equivalence."""
-    return f"""{ELEUSIS_RULES}
+    return f"""{get_eleusis_rules()}
 
 **YOU PLAY AS THE REFEREE**
 
@@ -483,8 +506,8 @@ Think through your analysis carefully, then wrap your verdict in XML tags:
 def get_rule_compilation_prompt(rule_text: str) -> str:
     """Generate prompt for LLM to convert a game rule into Python code."""
 
-    return f"""{ELEUSIS_RULES}
-    
+    return f"""{get_eleusis_rules()}
+
     === YOUR TASK : CONVERT A RULE TO PYTHON CODE ===
     
     Rule: {rule_text}
@@ -542,7 +565,7 @@ def get_rule_evaluation_prompt(
     rule_text: str, card: dict, mainline_compact: str
 ) -> str:
     """Generate prompt for LLM to evaluate if a card follows their rule."""
-    return f"""{ELEUSIS_RULES}
+    return f"""{get_eleusis_rules()}
 
 **YOU PLAY AS THE RULE-MAKER**
 
