@@ -9,3 +9,18 @@ A testing framework is provided to facilitate the assessment of LLMs' performanc
 Open source LLM are called using Hugging Face Inference Providers API.
 
 Closed source LLMs are called using their respective APIs.
+
+
+```bash
+# Generate a library of rules
+uv run scripts/generate_rule_library.py --num-rules 50 --output rules.json
+
+# Evaluate rules in library
+uv run scripts/evaluate_rules.py --library rules.json
+
+# Play a single round with default config
+uv run scripts/play_single_round.py
+
+# Play a tournament (multiple rounds)
+uv run scripts/play_tournament.py
+```

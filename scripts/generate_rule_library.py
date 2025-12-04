@@ -11,83 +11,10 @@ from dotenv import load_dotenv
 
 from eleusis.game_engine import Rule
 from eleusis.llm_client import HuggingFaceClient
-from eleusis.prompts import ELEUSIS_RULES
+from eleusis.prompts import get_library_generation_prompt
 from eleusis.rules import RuleValidator
 
 logger = logging.getLogger(__name__)
-
-
-def get_library_generation_prompt(num_rules: int = 20) -> str:
-    """Generate prompt for LLM to create multiple rules at once."""
-    return f"""{ELEUSIS_RULES}
-
-
-=== YOUR TASK: CREATE A LIBRARY OF RULES FOR THE RULE-MAKER ===
-
-Generate {num_rules} different rules for the Eleusis card game. Each rule should be:
-- DETERMINISTIC (same inputs always give same output)
-- PLAYABLE (not too complex, learnable in 15-25 plays)
-- DIVERSE (cover different types of patterns)
-
-RULE CONSTRAINTS:
-1. Can depend on:
-   - Candidate card properties (rank, suit, color, even/odd)
-   - Previously ACCEPTED mainline cards
-2. Cannot depend on:
-   - Rejected cards
-   - Hidden information (deck, hands)
-   - Player identity or randomness
-3. Must work with EMPTY mainline (first card).
-
-COMPLEXITY MIX:
-- {num_rules // 3} Simple rules (e.g., "Even ranks only", "Red cards only", "Alternating colors", "Rank higher than previous")
-- {num_rules // 3} Medium rules (e.g., "Rank difference of 2 from previous", "Color alternates every two cards")
-- {num_rules - 2 * (num_rules // 3)} Harder rules (e.g., "Fibonacci sequence of ranks", "Prime number ranks only", "Suits in a specific repeating order")
-
-OUTPUT FORMAT:
-For each rule, wrap it in XML tags with a unique name:
-
-<RULE>
-  <NAME>unique_rule_name</NAME>
-  <DESCRIPTION>Natural language description (1-2 sentences)</DESCRIPTION>
-  <CODE>
-# Python code implementing the rule
-# Available: card.rank (1-13), card.color ("red"/"black")
-#            card.suit.suit_name ("hearts", "diamonds", "clubs", "spades")
-#            mainline: list of Card objects
-if not mainline:
-    # Your logic here
-    return True/False
-# Your logic here
-return True/False
-  </CODE>
-</RULE>
-
-Example:
-<RULE>
-  <NAME>alternating_colors</NAME>
-  <DESCRIPTION>Cards must alternate between red and black colors.</DESCRIPTION>
-  <CODE>
-if not mainline:
-    return True     # Any card is allowed as the first card
-last_card = mainline[-1]
-return card.color != last_card.color
-  </CODE>
-</RULE>
-
-Example:
-<RULE>
-  <NAME>Only red</NAME>
-  <DESCRIPTION>Cards must be red.</DESCRIPTION>
-    <CODE>
-return card.color == "red"    # Works even if mainline is empty
-    </CODE>
-</RULE>
-    
-
-Generate {num_rules} unique, interesting, playable rules now.
-Do not overcomplicate the rules, a rule impossible to guess will not be fun, and will be rejected by the rule-maker.
-"""
 
 
 def extract_rules_from_response(response: str) -> list[dict]:

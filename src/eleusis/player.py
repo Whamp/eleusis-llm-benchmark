@@ -8,7 +8,7 @@ from eleusis.cards import Card
 from eleusis.game_engine import Action, NoPlayAction, PlayCardAction
 from eleusis.game_state import GameState
 from eleusis.llm_client import HuggingFaceClient
-from eleusis.prompts import get_move_selection_prompt
+from eleusis.prompts import get_action_selection_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +71,7 @@ class LLMScientist(Player):
         compact_board = game_state.to_compact_string()
         deck_remaining = game_state.deck.remaining_count()
         failed_guesses = game_state.failed_rule_guesses
-        prompt = get_move_selection_prompt(
+        prompt = get_action_selection_prompt(
             compact_board, hand_dicts, deck_remaining, self.play_history, failed_guesses
         )
 

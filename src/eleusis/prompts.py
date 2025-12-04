@@ -3,8 +3,20 @@
 from pathlib import Path
 import yaml
 
-# Common game rules explanation used across prompts
 
+# ================================================================================================
+
+def get_continuation_prompt(xml_tag: str) -> str:
+    """Get prompt for completing truncated structured response."""
+    return f"""Please continue and COMPLETE your response now.
+    DO NOT REASON ABOUT IT FURTHER, just provide the missing content.
+    You MUST start your response immediately with the <{xml_tag}> tag.
+    You MUST finish with a properly closed </{xml_tag}> tag containing valid JSON.
+    - Include the complete JSON object in the XML tags
+    - Ensure all JSON braces and brackets are properly closed
+"""
+
+# Common game rules explanation used across prompts
 def _load_game_config() -> dict:
     """Load game config from config.yaml"""
     config_path = Path(__file__).parent.parent.parent / "config.yaml"
@@ -80,6 +92,16 @@ whether a newly played card is **in** (accepted) or **out** (rejected).
 - Depend on player identity, turn order, or game history other than the mainline
 - Include randomness or subjective judgment
 
+These examples illustrate appropriate rule complexity:
+- "The card must be a different color than the last mainline card." (Alternating red/black)
+- "The card must be a heart or a spade."
+- "The card must share either the suit or the color with the last mainline card, but not both."
+- "The card's rank must have a different parity (odd/even) than the last mainline card."
+- "The card's rank must differ from the last mainline card's rank by exactly 1 or 2
+  (with Ace and King not considered adjacent)."
+- "If the last mainline card is red, play a card with rank ≤ 7. If black, play a card
+  with rank ≥ 7."
+
 
 ### Deal Hands
 
@@ -137,17 +159,7 @@ The turn then ends.
 
 ## Guessing the Rule
 
-### When You May Guess
-
-Immediately after:
-- Successfully playing an **in** card, or
-- Making a **correct no-play**
-
-the Scientist may optionally attempt to state the secret rule.
-
-### How to Guess
-
-The Scientist writes down (or states) a verbal description of the rule.
+Immediately after successfully playing an **in** card, or making a correct no-play, the Scientist may optionally attempt to state the secret rule.
 
 The Rule-maker judges whether the stated rule is **equivalent** to the secret rule. Two
 rules are equivalent if and only if they produce identical in/out judgments for every
@@ -155,31 +167,11 @@ possible (card, mainline-state) pair.
 
 Note: The wording does not need to match exactly. Only logical equivalence matters.
 
-### Outcome
-
 - **Correct guess:** The round ends immediately.
 - **Incorrect guess:** The Rule-maker announces the guess is wrong (without explaining
   why). The Scientist **draws {wrong_guess_penalty} cards** from the deck. Play continues with the next
   Scientist.
 
-### Mandatory Guess at Zero Cards
-
-If a Scientist's hand reaches **0 cards**, they **must** immediately guess the rule:
-- If correct, the round ends.
-- If incorrect, they draw 1 card and continue playing.
-
----
-
-## Deck Exhaustion
-
-If a player must draw but the deck is empty:
-- They do not draw (no penalty beyond failing to reduce hand size).
-- Play continues.
-
-If the deck is empty **and** no player can make a legal play or correct no-play, the
-round ends immediately.
-
----
 
 ## End of Round
 
@@ -191,62 +183,95 @@ A round ends when:
 
 ## Scoring
 
-At the end of each round:
-
-| Player | Score |
-|--------|-------|
-| Each Scientist | **+1 point per card remaining in hand** |
-| Scientist who guessed correctly | **{correct_guess_bonus} bonus points** (added to their hand score, can
+- Each get +1 point per card remaining in hand
+- If a scientist guessed correctly, they receive **{correct_guess_bonus} bonus points** (added to their hand score, can
 result in negative) |
-| Rule-maker | Score equal to the **second-lowest** Scientist score for that round |
 
 **Lower scores are better.**
 After all rounds completed (each player having been Rule-maker the same number of
 times), the player with the lowest total score wins.
 
----
-
-## Example Rules
-
-These examples illustrate appropriate rule complexity:
-
-### Simple Rules
-- "The card must be a different color than the last mainline card." (Alternating red/black)
-- "The card must be a heart or a spade."
-- "The card must have an even rank."
-
-### Medium Rules
-- "The card's rank must be higher than the last mainline card's rank. Any card may follow a King."
-- "The card must share either the suit or the color with the last mainline card, but not both."
-- "The card's rank must have a different parity (odd/even) than the last mainline card."
-
-### Harder Rules (use sparingly)
-- "The card's rank must differ from the last mainline card's rank by exactly 1 or 2
-  (with Ace and King not considered adjacent)."
-- "If the last mainline card is red, play a card with rank ≤ 7. If black, play a card
-  with rank ≥ 7."
-
 === END OF THE ELEUSIS GAME RULES ===
 """
 
+
+
 # ================================================================================================
 
-def get_rule_generation_prompt() -> str:
-    """Generate prompt for LLM to create a game rule."""
+def _get_code_requirements() -> str:
+    """Return code requirements for rule implementation."""
+    return f"""
+    CRITICAL: Generate ONLY the function body code, NOT a complete function definition.
+    Do NOT start with "def", do NOT define a new function.
+    We will wrap your code in a function automatically.
+
+    The code should:
+    - Use available properties: card.rank (1-13), card.color ("red"/"black")
+    - Use card.suit.suit_name ("hearts", "diamonds", "clubs", "spades")
+    - Have access to mainline: list of Card objects
+    - Handle empty mainline (first card) with: if not mainline:
+    - Return True (accepted) or False (rejected)
+"""
+
+
+def get_rule_compilation_prompt(rule_text: str) -> str:
+    """Generate prompt for LLM to convert a game rule into Python code."""
+
     return f"""{get_eleusis_rules()}
 
+    === YOUR TASK : CONVERT A RULE TO PYTHON CODE ===
 
-**YOU PLAY AS THE RULE-MAKER**
+    Rule: {rule_text}
 
-=== YOUR TASK: CREATE A SECRET RULE ===
+    {_get_code_requirements()}
 
-You are the Rule-maker. Create a rule determining which cards are
-IN (accepted) or OUT (rejected).
+    RESPONSE FORMAT (function body only, enclosed in <CODE> tags):
+
+    <CODE>
+    # Python code that implements the rule
+    # Available: card.rank (1-13), card.color ("red"/"black"),
+    #            card.suit.suit_name ("hearts", "diamonds", "clubs", "spades")
+    #            mainline: list of Card objects
+    # Must handle empty mainline (first card)
+    if not mainline:
+        # Your logic here
+        return True/False
+    # Your logic here
+    return True/False
+    </CODE>
+
+    Example: 
+    Rule is "Cards must alternate between red and black colors."
+    <CODE>
+    if not mainline:
+        return True
+    last_card = mainline[-1]
+    return card.color != last_card.color
+    </CODE>
+
+    Example: 
+    Rule is "Only cards with even ranks (2,4,6,8,10,12) are accepted."
+    <CODE>
+    return card.rank % 2 == 0
+    </CODE> 
+    """
+
+# ================================================================================================
+
+
+def _get_rule_creation() -> str:
+    """Return rule constraints (what rules can/cannot depend on)."""
+    return f"""
+
+=== WHAT IS A RULE AND HOW TO CREATE ONE === 
+
+A rule is a deterministic function that decides whether a newly played card is
+**in** (accepted) or **out** (rejected) based on the current mainline state.
 
 RULE CONSTRAINTS:
 1. DETERMINISTIC: Same card + same mainline → always same result
 2. CAN depend on:
-   - Candidate card properties (rank, even/odd, face/pip, suit, color, etc.) 
+   - Candidate card properties (rank, even/odd, face/pip, suit, color, etc.)
    - Previously ACCEPTED mainline cards (their properties and positions)
 3. CANNOT depend on:
    - Rejected cards (cards in brackets)
@@ -254,44 +279,46 @@ RULE CONSTRAINTS:
    - Player identity, turn order, or randomness
 4. MUST work with EMPTY mainline (any first card must have a valid answer IN or OUT)
 
-COMPLEXITY:
-- Simple: "Alternating colors", "Even ranks only"
-- Medium: "Rank higher than previous", "Same suit or same color, not both"
-- IMPORTANT Avoid overly complex unsolvable rules
-
-**IMPORTANT Guidance for Rule-makers:** 
-Aim for rules that are deducible within 15-25 plays. 
+**IMPORTANT Guidance for Rule-makers:**
+Aim for rules that are deducible within 15-25 plays.
 At a given point in the game, about 20-40% of possible cards should be legal plays.
 Avoid rules so complex that random guessing is the only viable strategy.
 Since your score equals the second-lowest Scientist score, you benefit when Scientists
-can make progress. 
+can make progress.
 An unsolvable rule leads to high hand counts for everyone — including
 you.
 Avoid rules that depend on complex sequences or deep history; or has a singular
 behavior for the first card, etc.
-CHOOSE A SIMPLE RULE THAT ALLOWS SCIENTISTS TO LEARN AND IMPROVE OVER TIME.
+
 
 OUTPUT FORMAT:
-Think through your rule if needed, once you are done, wrap your rule in XML tags:
+You should both output the description of the rule and the Python code implementing it.
+Wrap your entire response in XML tags as shown below
+
+About the code generated.
+{_get_code_requirements()}
+
 
 <RULE>
+  <NAME>Rule Name Here</NAME>
   <DESCRIPTION>Natural language description of the rule (1-2 sentences)</DESCRIPTION>
-  <CODE>
-# Python code that implements the rule
-# Available: card.rank (1-13), card.color ("red"/"black"), 
-#            card.suit.suit_name ("hearts", "diamonds", "clubs", "spades")
-#            mainline: list of Card objects
-# Must handle empty mainline (first card)
-if not mainline:
+    <CODE>
+    # Python code that implements the rule
+    # Available: card.rank (1-13), card.color ("red"/"black"),
+    #            card.suit.suit_name ("hearts", "diamonds", "clubs", "spades")
+    #            mainline: list of Card objects
+    # Must handle empty mainline (first card)
+    if not mainline:
+        # Your logic here
+        return True/False
     # Your logic here
     return True/False
-# Your logic here
-return True/False
-  </CODE>
+    </CODE>
 </RULE>
 
-Examples:
+EXAMPLE:
 <RULE>
+  <NAME>Alternating Colors</NAME> 
   <DESCRIPTION>Cards must alternate between red and black colors.</DESCRIPTION>
   <CODE>
 if not mainline:
@@ -301,38 +328,58 @@ return card.color != last_card.color
   </CODE>
 </RULE>
 
-<RULE>
-  <DESCRIPTION>Only cards with even ranks (2,4,6,8,10,12) are accepted.</DESCRIPTION>
-  <CODE>
-return card.rank % 2 == 0
-  </CODE>
-</RULE>
+"""
 
-<RULE>
-  <DESCRIPTION>If the last mainline card is red, play rank ≤7. If black, play rank ≥7.</DESCRIPTION>
-  <CODE>
-if not mainline:
-    return True
-last_card = mainline[-1]
-if last_card.color == "red":
-    return card.rank <= 7
-else:
-    return card.rank >= 7
-  </CODE>
-</RULE>
 
-IMPORTANT:
-- Code must be deterministic (same inputs → same output)
-- No imports, no file I/O, no external calls
-- Only use: len, sum, min, max, any, all, abs
-- Return True (accepted) or False (rejected)
+def get_rule_generation_prompt() -> str:
+    """Generate prompt for LLM to create a game rule."""
+    return f"""
+
+**YOU PLAY AS THE RULE-MAKER IN A CARD GAME OF ELEUSIS**
+
+{get_eleusis_rules()}
+
+=== YOUR TASK: CREATE A SECRET RULE ===
+
+{_get_rule_creation()}
+
+"""
+
+
+def get_library_generation_prompt(num_rules: int = 20) -> str:
+    """Generate prompt for LLM to create multiple rules at once."""
+    return f"""
+
+**YOU PLAY AS THE RULE-MAKER IN A CARD GAME OF ELEUSIS**
+
+{get_eleusis_rules()}
+
+=== YOUR TASK: CREATE A LIBRARY OF {num_rules} SECRET RULES ===
+
+{_get_rule_creation()}
+
+
+Generate {num_rules} different rules for the Eleusis card game. Each rule should be:
+- DETERMINISTIC (same inputs always give same output)
+- PLAYABLE (not too complex, learnable in 15-25 plays)
+- DIVERSE (cover different types of patterns)
+
+COMPLEXITY MIX:
+- {num_rules // 3} Simple rules (e.g., "Even ranks only", "Red cards only", "Alternating colors", "Rank higher than previous")
+- {num_rules // 3} Medium rules (e.g., "Rank difference of 2 from previous", "Color alternates every two cards")
+- {num_rules - 2 * (num_rules // 3)} Harder rules (e.g., "Fibonacci sequence of ranks", "Prime number ranks only", "Suits in a specific repeating order")
+
+Generate {num_rules} unique, interesting, playable rules now.
+Do not overcomplicate the rules, a rule impossible to guess will not be fun, and will be rejected by the rule-maker.
+
+Answer below by providing all rules, each wrapped in <RULE> XML tags as shown above.
 """
 
 
 # ================================================================================================
 
 
-def get_move_selection_prompt(
+def get_action_selection_prompt(
     compact_board: str,
     hand_cards: list[dict],
     deck_remaining: int,
@@ -373,11 +420,13 @@ def get_move_selection_prompt(
             guess = entry.get("guess", "")
             failed_guesses_str += f"- {player}: \"{guess}\"\n"
 
-    return f"""{get_eleusis_rules()}
+    return f"""
+    
+**YOU PLAY AS A SCIENTIST IN A GAME OF ELEUSIS, YOUR TASK IS TO SELECT YOUR NEXT ACTION**
 
-**YOU PLAY AS A SCIENTIST**
+{get_eleusis_rules()}
 
-=== YOUR TASK: CHOOSE YOUR MOVE ===
+=== YOUR TASK: CHOOSE YOUR ACTION ===
 
 You are a Scientist trying to deduce the secret rule.
 
@@ -443,9 +492,11 @@ Example:
 
 def get_referee_comparison_prompt(secret_rule: str, guessed_rule: str, mainline:str) -> str:
     """Generate prompt for referee to compare two rules for equivalence."""
-    return f"""{get_eleusis_rules()}
+    return f"""
 
-**YOU PLAY AS THE REFEREE**
+**YOU PLAY AS THE REFEREE IN A GAME OF ELEUSIS, YOU MUST ADJUDICATE RULE EQUIVALENCE**
+
+{get_eleusis_rules()}
 
 === YOUR TASK: DETERMINE RULE EQUIVALENCE ===
 
@@ -488,123 +539,3 @@ Think through your analysis carefully, then wrap your verdict in XML tags:
 }}
 </VERDICT>
 """
-
-
-
-def get_rule_compilation_prompt(rule_text: str) -> str:
-    """Generate prompt for LLM to convert a game rule into Python code."""
-
-    return f"""{get_eleusis_rules()}
-
-    === YOUR TASK : CONVERT A RULE TO PYTHON CODE ===
-    
-    Rule: {rule_text}
-    
-    CRITICAL: Generate ONLY the function body code, NOT a complete function definition.
-    Do NOT start with "def", do NOT define a new function.
-    We will wrap your code in a function automatically.
-    
-    The code should:
-    - Use available properties: card.rank (1-13), card.color ("red"/"black")
-    - Use card.suit.suit_name ("hearts", "diamonds", "clubs", "spades")
-    - Have access to mainline: list of Card objects
-    - Handle empty mainline (first card) with: if not mainline:
-    - Return True (accepted) or False (rejected)
-    
-    Think through your rule if needed, once you are done, wrap your rule in XML tags:
-    
-    RESPONSE FORMAT (function body only, enclosed in <CODE> tags):
-    
-    <CODE>
-    # Python code that implements the rule
-    # Available: card.rank (1-13), card.color ("red"/"black"),
-    #            card.suit.suit_name ("hearts", "diamonds", "clubs", "spades")
-    #            mainline: list of Card objects
-    # Must handle empty mainline (first card)
-    if not mainline:
-        # Your logic here
-        return True/False
-    # Your logic here
-    return True/False
-    </CODE>
-    
-    Example: 
-    Rule is "Cards must alternate between red and black colors."
-    <CODE>
-    if not mainline:
-        return True
-    last_card = mainline[-1]
-    return card.color != last_card.color
-    </CODE>
-    
-    Example: 
-    Rule is "Only cards with even ranks (2,4,6,8,10,12) are accepted."
-    <CODE>
-    return card.rank % 2 == 0
-    </CODE>
-    
-    """
-
-
-# ================================================================================================
-
-
-def get_rule_evaluation_prompt(
-    rule_text: str, card: dict, mainline_compact: str
-) -> str:
-    """Generate prompt for LLM to evaluate if a card follows their rule."""
-    return f"""{get_eleusis_rules()}
-
-**YOU PLAY AS THE RULE-MAKER**
-
-=== EVALUATE CARD AGAINST YOUR RULE ===
-
-You created this rule:
-{rule_text}
-
-Current mainline: {mainline_compact}
-
-Card to evaluate: {card['symbol']} (rank={card['rank']}, suit={card['suit']}, color={card['color']})
-
-Is this card IN (accepted) or OUT (rejected) according to YOUR rule?
-
-OUTPUT FORMAT:
-Think through how your rule applies, then wrap your answer in XML tags:
-
-<EVALUATION>
-{{
-    "result": "in" or "out",
-    "reasoning": "Brief explanation"
-}}
-</EVALUATION>
-"""
-
-
-def get_continuation_prompt(xml_tag: str) -> str:
-    """Get prompt for completing truncated structured response."""
-    return f"""Please continue and COMPLETE your response now.
-    DO NOT REASON ABOUT IT FURTHER, just provide the missing content.
-    You MUST start your response immediately with the <{xml_tag}> tag.
-    You MUST finish with a properly closed </{xml_tag}> tag containing valid JSON.
-    - Include the complete JSON object in the XML tags
-    - Ensure all JSON braces and brackets are properly closed
-"""
-
-
-def get_card_evaluation_prompt(rule_text: str, card: dict, mainline: list[dict]) -> str:
-    """Get prompt for evaluating if card follows rule."""
-    mainline_str = ", ".join([c["symbol"] for c in mainline]) if mainline else "empty"
-    return f"""You are evaluating a card according to a rule in the game Eleusis.
-
-Rule: {rule_text}
-
-Current mainline: {mainline_str}
-Card to evaluate: {card['symbol']}
-
-Determine if this card is IN (accepted) or OUT (rejected) according to the rule.
-
-Respond with JSON:
-{{
-    "result": "in" or "out",
-    "reasoning": "Brief explanation"
-}}"""

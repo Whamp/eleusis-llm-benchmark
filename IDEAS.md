@@ -2,8 +2,6 @@
 # IDEAS FOR IMPROVEMENTS
 
 ## Priority
-- check that in case of faulty no-play (when there are cards that can be played in the player's hand), the game master chooses at random among the valid cards instead of just picking the first one.
-- check what happens if successful no-play
 - quick test for inference providers
 - system prompt ?
 
@@ -16,3 +14,4 @@
 - Apparently "set()" is not supported in python generated code (when rule guessing for instance). 
 - Abstract the game client interface so that we can easily plug in different LLM providers (OpenAI, Anthropic).
 - Make sure tournament results are saved after each round in a JSON file to avoid losing data in case of crash.
+- what happens at zero cards ?

@@ -13,19 +13,6 @@ Key concepts:
 - **Rule-maker/Game Master**: LLM that generates rules and judges equivalence
 
 
-```bash
-# Generate a library of rules
-uv run scripts/generate_rule_library.py --num-rules 50 --output rules.json --model openai/gpt-oss-120b --max-tokens 16384 --test-cases 5
-
-# Evaluate rules in library
-uv run scripts/evaluate_rules.py --library rules.json
-
-# Play a single round with default config
-uv run scripts/play_single_round.py
-
-# Play a tournament (multiple rounds)
-uv run scripts/play_tournament.py
-```
 
 ## Architecture
 
