@@ -15,17 +15,29 @@ models:
 
   # Models for scientists (list determines number of players)
   players:
-    - name: "meta-llama/Llama-3.3-70B-Instruct"
-      temperature: 0.7
-      display_name: "Llama-3.3-70B-Instruct"
-
+#    - name: "meta-llama/Llama-3.3-70B-Instruct"
+#      temperature: 0.7
+#      display_name: "Llama-3.3-70B-Instruct"
+#
     - name: "openai/gpt-oss-120b"
       temperature: 0.7
       display_name: "GPT OSS 120B"
+#
+#    - name: "openai/gpt-oss-20b"
+#      temperature: 0.7
+#      display_name: "GPT OSS 20B"
 
-    - name: "openai/gpt-oss-20b"
+#    - name: "moonshotai/Kimi-K2-Thinking:fastest"
+#      temperature: 0.7
+#      display_name: "Kimi-K2-Thinking"
+
+    - name: "deepseek-ai/DeepSeek-R1:fastest"
       temperature: 0.7
-      display_name: "GPT OSS 20B"
+      display_name: "DeepSeek-R1"
+
+    - name: "Qwen/Qwen3-235B-A22B-Thinking-2507:fastest"
+      temperature: 0.7
+      display_name: "Qwen3-235B-A22B-Thinking-2507"
 
 
 # Rule source configuration
