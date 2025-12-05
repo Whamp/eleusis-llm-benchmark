@@ -30,11 +30,10 @@ models:
 
 # Rule source configuration
 rule_source:
-  mode: "library"  # "llm" to generate at runtime, "library" to use pre-generated rules
   library_path: "rules.json"  # Path to rule library JSON file
   min_acceptance: 0.15      # Minimum avg acceptance rate for rules in library
   max_acceptance: 0.55
-  selection: "random"  # "random" or "sequential" for library mode
+  selection: "random"  # "random" or "sequential"
   index: 54  # Starting index for sequential selection
   tournament_rounds: 20  # Number of rounds in tournament mode
   rounds_per_rule: 1  # How many rounds to play same rule before changing

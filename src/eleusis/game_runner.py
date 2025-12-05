@@ -67,43 +67,27 @@ def play_round(
         logger.info("")
 
         # Initialize game master for rule operations
-        game_master = GameMaster(
-            llm_client=game_master_client,
-            max_retry_attempts=config["game"].get("max_rule_retry_attempts", 3),
-        )
+        game_master = GameMaster(llm_client=game_master_client)
         logger.info("✓ Game master initialized")
 
-        validator = RuleValidator(referee_client=game_master_client)
+        validator = RuleValidator()
 
         rule_source_cfg = config["rule_source"]
-        mode = rule_source_cfg["mode"]
 
         min_acceptance = rule_source_cfg.get("min_acceptance", 0.0)
         max_acceptance = rule_source_cfg.get("max_acceptance", 1.0)
 
-        logger.info(f"Rule source mode: {mode}")
+        logger.info("Loading rule from library...")
         logger.info(f"Acceptance rate bounds: [{min_acceptance:.2%}, {max_acceptance:.2%}]")
 
-        if mode == "library":
-            logger.info("Loading rule from library...")
-            start_index = rule_source_cfg.get("index", 0)
-            rule_factory = RuleFactory(
-                mode="library",
-                library_path=rule_source_cfg["library_path"],
-                selection=rule_source_cfg["selection"],
-                min_acceptance=min_acceptance,
-                max_acceptance=max_acceptance,
-                start_index=start_index,
-            )
-        else:  # llm mode
-            logger.info("Game master is creating a secret rule...")
-            rule_factory = RuleFactory(
-                mode="llm",
-                game_master=game_master,
-                validator=validator,
-                min_acceptance=min_acceptance,
-                max_acceptance=max_acceptance,
-            )
+        start_index = rule_source_cfg.get("index", 0)
+        rule_factory = RuleFactory(
+            library_path=rule_source_cfg["library_path"],
+            selection=rule_source_cfg["selection"],
+            min_acceptance=min_acceptance,
+            max_acceptance=max_acceptance,
+            start_index=start_index,
+        )
 
         rule = rule_factory.create_rule()
 
@@ -114,11 +98,8 @@ def play_round(
         logger.info("")
     else:
         logger.info(f"[Round {round_number}] Using provided rule")
-        game_master = GameMaster(
-            llm_client=game_master_client,
-            max_retry_attempts=config["game"].get("max_rule_retry_attempts", 3),
-        )
-        validator = RuleValidator(referee_client=game_master_client)
+        game_master = GameMaster(llm_client=game_master_client)
+        validator = RuleValidator()
 
     # ---------------
     # (3) Game setup

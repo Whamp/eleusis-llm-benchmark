@@ -198,9 +198,22 @@ times), the player with the lowest total score wins.
 
 # ================================================================================================
 
-def _get_code_requirements() -> str:
-    """Return code requirements for rule implementation."""
+def get_rule_compilation_prompt(rule_text: str) -> str:
+    """Generate prompt for LLM to convert a game rule into Python code."""
+
     return f"""
+
+    === YOUR TASK : CONVERT A RULE ABOUT CARDS INTO PYTHON CODE ===
+
+    The context is a game of ELEUSIS, where a secret rule determines whether a played card is
+    accepted (in) or rejected (out) based on the current mainline of accepted cards.
+
+    {get_eleusis_rules()}
+
+    === YOUR TASK : CONVERT THE FOLLOWING RULE INTO PYTHON CODE ===
+
+    Rule: {rule_text}
+
     CRITICAL: Generate ONLY the function body code, NOT a complete function definition.
     Do NOT start with "def", do NOT define a new function.
     We will wrap your code in a function automatically.
@@ -211,19 +224,6 @@ def _get_code_requirements() -> str:
     - Have access to mainline: list of Card objects
     - Handle empty mainline (first card) with: if not mainline:
     - Return True (accepted) or False (rejected)
-"""
-
-
-def get_rule_compilation_prompt(rule_text: str) -> str:
-    """Generate prompt for LLM to convert a game rule into Python code."""
-
-    return f"""{get_eleusis_rules()}
-
-    === YOUR TASK : CONVERT A RULE TO PYTHON CODE ===
-
-    Rule: {rule_text}
-
-    {_get_code_requirements()}
 
     RESPONSE FORMAT (function body only, enclosed in <CODE> tags):
 
@@ -259,9 +259,15 @@ def get_rule_compilation_prompt(rule_text: str) -> str:
 # ================================================================================================
 
 
-def _get_rule_creation() -> str:
-    """Return rule constraints (what rules can/cannot depend on)."""
+def get_library_generation_prompt(num_rules: int = 20) -> str:
+    """Generate prompt for LLM to create multiple rules at once."""
     return f"""
+
+**YOU PLAY AS THE RULE-MAKER IN A CARD GAME OF ELEUSIS**
+
+{get_eleusis_rules()}
+
+=== YOUR TASK: CREATE A LIBRARY OF {num_rules} SECRET RULES ===
 
 === WHAT IS A RULE AND HOW TO CREATE ONE === 
 
@@ -295,8 +301,16 @@ OUTPUT FORMAT:
 You should both output the description of the rule and the Python code implementing it.
 Wrap your entire response in XML tags as shown below
 
-About the code generated.
-{_get_code_requirements()}
+CRITICAL: Generate ONLY the function body code, NOT a complete function definition.
+Do NOT start with "def", do NOT define a new function.
+We will wrap your code in a function automatically.
+
+The code should:
+- Use available properties: card.rank (1-13), card.color ("red"/"black")
+- Use card.suit.suit_name ("hearts", "diamonds", "clubs", "spades")
+- Have access to mainline: list of Card objects
+- Handle empty mainline (first card) with: if not mainline:
+- Return True (accepted) or False (rejected)
 
 
 <RULE>
@@ -328,35 +342,6 @@ return card.color != last_card.color
   </CODE>
 </RULE>
 
-"""
-
-
-def get_rule_generation_prompt() -> str:
-    """Generate prompt for LLM to create a game rule."""
-    return f"""
-
-**YOU PLAY AS THE RULE-MAKER IN A CARD GAME OF ELEUSIS**
-
-{get_eleusis_rules()}
-
-=== YOUR TASK: CREATE A SECRET RULE ===
-
-{_get_rule_creation()}
-
-"""
-
-
-def get_library_generation_prompt(num_rules: int = 20) -> str:
-    """Generate prompt for LLM to create multiple rules at once."""
-    return f"""
-
-**YOU PLAY AS THE RULE-MAKER IN A CARD GAME OF ELEUSIS**
-
-{get_eleusis_rules()}
-
-=== YOUR TASK: CREATE A LIBRARY OF {num_rules} SECRET RULES ===
-
-{_get_rule_creation()}
 
 
 Generate {num_rules} different rules for the Eleusis card game. Each rule should be:
@@ -487,58 +472,4 @@ Example:
     "guess_rule_if_accepted": false
 }}
 </ACTION>
-"""
-
-
-# ================================================================================================
-
-
-def get_referee_comparison_prompt(secret_rule: str, guessed_rule: str, mainline:str) -> str:
-    """Generate prompt for referee to compare two rules for equivalence."""
-    return f"""
-
-**YOU PLAY AS THE REFEREE IN A GAME OF ELEUSIS, YOU MUST ADJUDICATE RULE EQUIVALENCE**
-
-{get_eleusis_rules()}
-
-=== YOUR TASK: DETERMINE RULE EQUIVALENCE ===
-
-A Scientist is attempting to guess the secret rule. Your job is to determine if their
-guess is equivalent to the actual secret rule.
-
-**EQUIVALENCE DEFINITION:**
-Two rules are said equivalent if *for that game and the present state of the mainline* 
-both rules would produce identical IN/OUT judgments from now on to the end of the round,
-for every possible card played in every possible future mainline state.
-
-That means that the Scientist's might look more restrictive because the mainline has
-already been partially built, but if both rules would accept and reject the same cards
-from this point onward, they are equivalent.
-
-Example: If the secret rule is "All cards should be of the same color" and the
-mainline started with "red", then the guessed rule "Cards must be red" would be
-equivalent because both rules would accept only red cards from that point onward.
-
-Equivalent rules may use different wording but must have identical behavior
-- Example: "Red cards only" ≡ "Card must be Hearts or Diamonds"
-- Example: "Even ranks" ≡ "Rank is 2, 4, 6, 8, 10, or 12"
-
-
-**ACTUAL SECRET RULE:**
-{secret_rule}
-
-**SCIENTIST'S GUESSED RULE:**
-{guessed_rule}
-
-**CURRENT MAINLINE STATE:**
-{mainline}
-
-OUTPUT FORMAT:
-Think through your analysis carefully, then wrap your verdict in XML tags:
-<VERDICT>
-{{
-    "equivalent": true or false,
-    "reasoning": "Detailed explanation of why the rules are or are not equivalent"
-}}
-</VERDICT>
 """

@@ -187,17 +187,6 @@ class HuggingFaceClient:
 
 
 
-    def check_rule_equivalence(
-        self, rule1: str, rule2: str, mainline: str
-    ) -> tuple[bool, str]:
-        """Check if two rules are logically equivalent."""
-        from eleusis.prompts import get_referee_comparison_prompt
-
-        prompt = get_referee_comparison_prompt(rule1, rule2, mainline)
-        result = self.generate(prompt, xml_tag="VERDICT", return_dict=True)
-        return result["equivalent"], result["reasoning"]
-
-
     def convert_rule_to_code(self, rule_text: str) -> str | None:
         """Convert natural language rule to Python code."""
         from eleusis.prompts import get_rule_compilation_prompt

@@ -326,9 +326,6 @@ class GameEngine:
 
         # Log both verdicts for debugging
         logger.info(f"Simulation verdict: {is_correct}")
-        logger.info(f"LLM verdict: {metadata['llm_verdict']}")
-        if is_correct != metadata['llm_verdict']:
-            logger.warning("Simulation and LLM verdicts differ!")
 
         # Record failed guess
         if not is_correct:

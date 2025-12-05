@@ -53,8 +53,7 @@ Key concepts:
 
 **rules.py** - `RuleValidator` validates rules and compares guessed rules to actual rules:
 - Validation: Tests determinism, empty mainline handling, random scenarios
-- Comparison: Uses simulation (authoritative) to check rule equivalence by playing multiple simulated games
-- LLM comparison also available for debugging
+- Comparison: Uses simulation-based comparison to check rule equivalence by playing multiple simulated games
 
 **game_runner.py** - High-level orchestrator that sets up and runs complete rounds
 
@@ -63,31 +62,29 @@ Key concepts:
 - `RandomScientist`: Random baseline player for testing
 
 **game_master.py** - LLM-powered game master that:
-- Generates rules from natural language descriptions
 - Converts rule descriptions to executable Python code
-- Judges rule equivalence using LLM reasoning
 
 **llm_client.py** - `HuggingFaceClient` wraps Hugging Face Inference Providers API:
 - Handles API calls with retry logic
 - Extracts structured responses from XML tags or code blocks
 - Supports response continuation when truncated
-- Methods for rule equivalence, code conversion, card evaluation
+- Methods for code conversion and card evaluation
 
-**prompts.py** - Prompt templates for LLM interactions (move selection, rule generation, comparison, etc.)
+**prompts.py** - Prompt templates for LLM interactions (move selection, rule generation for library, etc.)
 
 ### Key Workflows
 
-**Rule Generation**: Game master generates natural language rule → converts to Python code → validates with test cases
+**Rule Loading**: Rules are loaded from a pre-generated library (JSON file)
 
 **Turn Processing**: Player selects action → GameEngine processes (evaluate card, update state, apply penalties/bonuses) → optionally allow rule guess → advance turn
 
-**Rule Comparison**: Player guesses rule → Game master converts guess to code → RuleValidator runs simulations comparing actual vs guessed → returns verdict (authoritative) + LLM verdict (debugging)
+**Rule Comparison**: Player guesses rule → Game master converts guess to code → RuleValidator runs simulations comparing actual vs guessed → returns verdict
 
 ### Configuration
 
 **config.yaml** - Controls all game parameters:
 - Model selection for game master and scientists (Hugging Face model names)
-- Rule source (LLM-generated or pre-generated library)
+- Rule library path and selection mode (random or sequential)
 - Game parameters (hand size, penalties, bonuses, max turns)
 - Tournament settings
 
@@ -97,7 +94,7 @@ Key concepts:
 
 - Rules are compiled into sandboxed Python functions with limited builtins (len, sum, min, max, any, all)
 - Rule code must be function body only, not full function definition
-- Simulation-based rule comparison is authoritative; LLM comparison is for debugging only
+- Simulation-based rule comparison is used to validate guesses
 - Failed guesses are tracked to prevent duplicates
 - Logging: Uses Python logging module with separate console/file levels
 - Game state uses compact string representation for efficient LLM prompting

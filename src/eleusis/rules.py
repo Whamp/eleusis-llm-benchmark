@@ -6,7 +6,6 @@ from dataclasses import dataclass
 
 from eleusis.cards import Card, Suit
 from eleusis.game_engine import Rule
-from eleusis.llm_client import HuggingFaceClient
 
 logger = logging.getLogger(__name__)
 
@@ -24,9 +23,9 @@ class ValidationResult:
 class RuleValidator:
     """Validates LLM-generated rules."""
 
-    def __init__(self, referee_client: HuggingFaceClient | None = None) -> None:
-        """Initialize validator with optional referee client."""
-        self.referee_client = referee_client
+    def __init__(self) -> None:
+        """Initialize validator."""
+        pass
 
     def validate_rule(self, rule: Rule, num_test_cases: int = 3) -> ValidationResult:
         """Validate that a rule meets requirements.
@@ -124,14 +123,6 @@ class RuleValidator:
 
         return issues
 
-    def check_equivalence(
-        self, rule1_text: str, rule2_text: str, mainline_text: str
-    ) -> tuple[bool, str]:
-        """Check if two rules are equivalent using referee LLM."""
-        if not self.referee_client:
-            raise ValueError("Referee client not configured")
-
-        return self.referee_client.check_rule_equivalence(rule1_text, rule2_text, mainline_text)
 
     def compare_rules(
         self,
@@ -142,11 +133,11 @@ class RuleValidator:
         num_simulations: int = 2,
         turns_per_simulation: int = 10,
     ) -> tuple[bool, str, dict]:
-        """Compare rules using simulation (authoritative) and optionally LLM (debugging)."""
+        """Compare rules using simulation-based comparison."""
         # Step 1: Convert guessed rule to code
         guessed_code = game_master.convert_rule_to_code(guessed_rule_desc)
 
-        # Step 2: Run simulation comparison (authoritative)
+        # Step 2: Run simulation comparison
         sim_equivalent, sim_reasoning, comparisons, mismatches = (
             self.check_equivalence_by_simulation(
                 actual_rule,
@@ -158,17 +149,8 @@ class RuleValidator:
             )
         )
 
-        # Step 3: Optionally run LLM comparison (debugging only)
-        llm_equivalent, llm_reasoning = game_master.compare_rules_with_llm(
-            actual_rule.description(),
-            guessed_rule_desc,
-            " ".join([str(c) for c in current_mainline]),
-        )
-
-        # Step 4: Return simulation verdict with metadata
+        # Return simulation verdict with metadata
         return sim_equivalent, sim_reasoning, {
-            "llm_verdict": llm_equivalent,
-            "llm_reasoning": llm_reasoning,
             "simulation_comparisons": comparisons,
             "simulation_mismatches": mismatches,
         }
@@ -182,21 +164,12 @@ class RuleValidator:
         turns_per_simulation: int = 10,
         preconverted_code: str | None = None,
     ) -> tuple[bool, str, int, int]:
-        """Check if two rules are equivalent by simulating gameplay.
-        """
-        # Use preconverted code if provided, otherwise convert now
-        if preconverted_code:
-            logger.debug("Using preconverted guessed rule code")
-            guessed_code = preconverted_code
-        else:
-            if not self.referee_client:
-                raise ValueError("Referee client not configured for code conversion")
+        """Check if two rules are equivalent by simulating gameplay."""
+        # Use preconverted code (should always be provided now)
+        if not preconverted_code:
+            return False, "No code provided for guessed rule", 0, 0
 
-            logger.debug(f"Converting guessed rule to Python code: {guessed_rule_text}")
-            guessed_code = self.referee_client.convert_rule_to_code(guessed_rule_text)
-
-        if not guessed_code:
-            return False, "Failed to convert guessed rule to Python code", 0, 0
+        guessed_code = preconverted_code
 
         # Create Rule from guessed code
         try:
