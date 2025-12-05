@@ -239,6 +239,12 @@ class GameEngine:
         """Process a no-play declaration."""
         # Check if any card in hand would be accepted
         hand_cards = player.hand.get_all_cards()
+
+        # Special case: empty hand (player reached 0 cards)
+        if len(hand_cards) == 0:
+            logger.warning(f"{player.name} declared no-play with empty hand")
+            return {"success": True, "correct": True, "can_guess": True}
+
         legal_cards = [c for c in hand_cards if self.evaluate_card(c)]
 
         if len(legal_cards) == 0:
@@ -254,8 +260,8 @@ class GameEngine:
             for card in list(player.hand.get_all_cards()):
                 player.hand.remove_card(card)
 
-            # Draw new cards: N - reduction, but at least 1
-            new_hand_size = max(1, original_hand_size - self.no_play_correct_reduction)
+            # Draw new cards: N - reduction, can reach 0
+            new_hand_size = max(0, original_hand_size - self.no_play_correct_reduction)
             drawn_cards = []
             for _ in range(new_hand_size):
                 if not self.state.deck.is_empty():

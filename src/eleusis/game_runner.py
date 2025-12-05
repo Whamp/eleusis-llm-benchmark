@@ -199,6 +199,11 @@ def play_round(
         logger.info(f"Hand ({len(hand_cards)} cards): {hand_str}")
         logger.info("")
 
+        # Safety check: player should not start turn with empty hand
+        if len(hand_cards) == 0:
+            logger.error(f"{player_name} started turn with empty hand - should not happen!")
+            # This indicates a bug in the mandatory guess logic
+
         try:
             action = player.get_action(game_state)
         except Exception as e:
@@ -230,6 +235,40 @@ def play_round(
         can_guess = "card" in play_result and play_result.get("accepted", False) or "correct" in play_result and play_result.get("correct", False)
         logger.info(f"Can guess this turn: {'YES' if can_guess else 'NO'}")
 
+        # Check for mandatory guess (hand reached 0 after successful action)
+        player_hand_size_after = current_player_state.hand.size()
+        action_was_successful = (
+            play_result.get("success", False) and
+            (play_result.get("accepted", False) or play_result.get("correct", False))
+        )
+        mandatory_guess = action_was_successful and player_hand_size_after == 0
+
+        # Get tentative rule if available
+        guess_text = (
+            player.last_action_response.get("tentative_rule", "")
+            if player.last_action_response
+            else ""
+        )
+
+        # Handle mandatory guess without tentative_rule: draw penalty instead
+        if mandatory_guess and not guess_text:
+            logger.warning(
+                f"{player_name} reached empty hand but no tentative_rule provided - "
+                f"drawing 1 penalty card instead of forced guess"
+            )
+            if not game_state.deck.is_empty():
+                drawn = game_state.deck.draw()
+                current_player_state.hand.add_card(drawn)
+                logger.info(f"{player_name} drew penalty card: {drawn}")
+            mandatory_guess = False  # Cancel the forced guess
+
+        # Update will_guess to include mandatory guess
+        will_guess = will_guess or mandatory_guess
+
+        # Log if mandatory
+        if mandatory_guess:
+            logger.info(f"{player_name} has empty hand after successful action - MANDATORY GUESS")
+
         # Create turn data entry
         turn_data = {
             "turn_number": turn_count + 1,
@@ -260,12 +299,7 @@ def play_round(
                 logger.info(f"Forced card: {play_result['forced_card']}")
 
         # Check if guess should execute (action was successful and player wanted to guess)
-
-        guess_text = (
-            player.last_action_response.get("tentative_rule", "")
-            if player.last_action_response
-            else ""
-        )
+        # (guess_text already extracted above for mandatory guess check)
 
         # Record the play result (this clears last_action_response)
         player.record_action_result(play_result)
