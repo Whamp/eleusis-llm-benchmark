@@ -45,12 +45,12 @@ rule_source:
   library_path: "rules.json"  # Path to rule library JSON file
   min_acceptance: 0.15      # Minimum avg acceptance rate for rules in library
   max_acceptance: 0.55
-  selection: "random"  # "random" or "sequential"
-  index: 54  # Starting index for sequential selection
+  selection: "sequential"  # "random" or "sequential"
+  index: 1  # Starting index for sequential selection
   tournament_rounds: 5  # Number of rounds in tournament mode
   rounds_per_rule: 1  # How many rounds to play same rule before changing
 
-# Game settings
+# Game settings (multi-player tournament mode)
 game:
   max_turns: 40
   pause_after_turn: false  # Wait for user input after each turn
@@ -62,4 +62,20 @@ game:
   card_reject_penalty: 2  # Cards drawn when a card is rejected
   no_play_incorrect_penalty: 3  # Penalty cards for incorrect no-play
   no_play_correct_reduction: 3  # Cards reduced from hand on correct no-play (min 1)
+
+# Solo mode settings (single-player pattern discovery)
+solo_game:
+  num_rounds: 50  # Number of evaluation rounds
+  max_turns: 40  # Maximum turns per round
+  pause_after_turn: false  # Wait for user input after each turn
+
+  # Solo game parameters
+  hand_size: 12  # Constant hand size (always maintained)
+  wrong_guess_penalty: 2  # Score penalty for incorrect guess
+
+  # Player configuration
+  player:
+    name: "openai/gpt-oss-120b"
+    temperature: 0.7
+    display_name: "GPT OSS 120B"
 
