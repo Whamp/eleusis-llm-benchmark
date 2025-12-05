@@ -35,7 +35,7 @@ rule_source:
   max_acceptance: 0.55
   selection: "random"  # "random" or "sequential"
   index: 54  # Starting index for sequential selection
-  tournament_rounds: 20  # Number of rounds in tournament mode
+  tournament_rounds: 2  # Number of rounds in tournament mode
   rounds_per_rule: 1  # How many rounds to play same rule before changing
 
 # Game settings

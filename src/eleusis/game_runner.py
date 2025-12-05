@@ -45,6 +45,7 @@ def play_round(
         model_name=game_master_cfg["name"],
         temperature=game_master_cfg["temperature"],
         max_tokens=max_tokens,
+        role="game_master"
     )
 
     scientist_clients = []
@@ -53,6 +54,7 @@ def play_round(
             model_name=player_cfg["name"],
             temperature=player_cfg["temperature"],
             max_tokens=max_tokens,
+            role=player_cfg["display_name"]
         )
         scientist_clients.append(client)
 
@@ -69,6 +71,11 @@ def play_round(
         # Initialize game master for rule operations
         game_master = GameMaster(llm_client=game_master_client)
         logger.info("✓ Game master initialized")
+
+        # Reset usage stats for new round
+        game_master_client.reset_usage_stats()
+        for client in scientist_clients:
+            client.reset_usage_stats()
 
         validator = RuleValidator()
 
@@ -166,10 +173,15 @@ def play_round(
     max_turns_limit = max_turns or config["game"]["max_turns"]
     turn_count = 0
     game_over_reason = "max_turns"
+    turn_data_list = []  # Track all turn data
 
     while turn_count < max_turns_limit and not engine.is_game_over():
         current_player_state = game_state.get_current_player()
         player_name = current_player_state.name
+
+        # Capture state BEFORE action
+        mainline_before = game_state.to_compact_string()
+        hand_before = [str(c) for c in current_player_state.hand.get_all_cards()]
 
         player = next((p for p in scientists if p.name == player_name), None)
         if not player:
@@ -218,6 +230,24 @@ def play_round(
         can_guess = "card" in play_result and play_result.get("accepted", False) or "correct" in play_result and play_result.get("correct", False)
         logger.info(f"Can guess this turn: {'YES' if can_guess else 'NO'}")
 
+        # Create turn data entry
+        turn_data = {
+            "turn_number": turn_count + 1,
+            "player": player_name,
+            "mainline_state": mainline_before,
+            "hand": hand_before,
+            "llm_response": player.last_action_response.copy() if player.last_action_response else {},
+            "action_result": {
+                "action": play_result.get("action"),
+                "card": play_result.get("card"),
+                "accepted": play_result.get("accepted"),
+                "correct": play_result.get("correct"),
+                "forced_card": play_result.get("forced_card"),
+                "success": play_result.get("success"),
+            },
+            "guess_attempt": None  # Will be filled if guess happens
+        }
+
         # Log result
         logger.info(f"Action: {play_result['action']}")
         if "card" in play_result:       # Card play
@@ -245,10 +275,21 @@ def play_round(
             logger.info("")
             logger.info(f"{player_name} is guessing the rule based on tentative_rule...")
             result = engine.play_turn(GuessRuleAction(guess_text))  # This will advance turn
+
+            # Add guess data to turn
+            if "guess" in result:
+                turn_data["guess_attempt"] = {
+                    "guess": result["guess"],
+                    "correct": result.get("correct", False),
+                    "reasoning": result.get("reasoning", "")
+                }
         else:
             # No guess - manually advance turn
             game_state.advance_turn()
             result = play_result
+
+        # Store turn data
+        turn_data_list.append(turn_data)
 
         if "guess" in result:
             logger.info("")
@@ -284,6 +325,15 @@ def play_round(
     if "RuleMaker" in scores:
         del scores["RuleMaker"]
 
+    # Collect LLM usage statistics
+    llm_usage = {
+        "game_master": game_master_client.get_usage_stats(),
+        "scientists": {}
+    }
+    for i, client in enumerate(scientist_clients):
+        player_name = player_configs[i]["display_name"]
+        llm_usage["scientists"][player_name] = client.get_usage_stats()
+
     return {
         'round_number': round_number,
         'turn_count': turn_count,
@@ -292,4 +342,6 @@ def play_round(
         'winning_player': winning_player,
         'scores': scores,
         'game_over_reason': game_over_reason,
+        'llm_usage': llm_usage,
+        'turns': turn_data_list,
     }

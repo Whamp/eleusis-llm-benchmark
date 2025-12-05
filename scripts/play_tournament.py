@@ -28,6 +28,14 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
+def save_tournament_results(tournament_results: dict, timestamp: str) -> str:
+    """Save tournament results to JSON file (incremental)."""
+    output_file = f"results/tournament_results_{timestamp}.json"
+    with open(output_file, 'w') as f:
+        json.dump(tournament_results, f, indent=2)
+    return output_file
+
+
 def main():
     """Play a full tournament with multiple rounds."""
 
@@ -97,9 +105,12 @@ def main():
             'round_number': round_num,
             'turn_count': result['turn_count'],
             'rule_description': result['rule_description'],
+            'rule_code': result['rule_code'],
             'winning_player': result['winning_player'],
             'scores': result['scores'],
             'game_over_reason': result['game_over_reason'],
+            'llm_usage': result['llm_usage'],
+            'turns': result['turns'],
         })
 
         # Update cumulative scores (only scientists, no RuleMaker)
@@ -110,6 +121,10 @@ def main():
         # Update win counts
         if result['winning_player']:
             tournament_results['win_counts'][result['winning_player']] += 1
+
+        # Save incrementally after each round
+        output_file = save_tournament_results(tournament_results, timestamp)
+        logger.info(f"Progress saved to: {output_file}")
 
         # Log round summary
         logger.info("")
@@ -145,10 +160,8 @@ def main():
         score = tournament_results['cumulative_scores'][player]
         logger.info(f"  {rank}. {player}: {wins} wins ({score} points)")
 
-    # Save results to JSON
-    output_file = f"tournament_results_{timestamp}.json"
-    with open(output_file, 'w') as f:
-        json.dump(tournament_results, f, indent=2)
+    # Save results to JSON (final save)
+    output_file = save_tournament_results(tournament_results, timestamp)
 
     logger.info("")
     logger.info(f"Results saved to: {output_file}")

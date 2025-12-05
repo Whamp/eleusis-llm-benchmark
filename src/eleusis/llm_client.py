@@ -5,10 +5,26 @@ import logging
 import os
 import re
 import time
+from dataclasses import dataclass
 
 from huggingface_hub import InferenceClient
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class LLMCallMetrics:
+    """Metrics for a single LLM API call."""
+    model_name: str
+    role: str  # "game_master" or player display name
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
+    duration_seconds: float
+    throughput_tokens_per_sec: float
+    finish_reason: str
+    has_reasoning: bool
+    timestamp: float
 
 
 class HuggingFaceClient:
@@ -20,7 +36,8 @@ class HuggingFaceClient:
         api_key: str | None = None,
         temperature: float = 0.7,
         max_retries: int = 3,
-        max_tokens: int = 0
+        max_tokens: int = 0,
+        role: str = "unknown"
     ) -> None:
         """Initialize HuggingFace client using Inference Providers."""
         self.model_name = model_name
@@ -28,6 +45,8 @@ class HuggingFaceClient:
         self.temperature = temperature
         self.max_retries = max_retries
         self.max_tokens = max_tokens
+        self.role = role
+        self.call_metrics: list[LLMCallMetrics] = []
 
         os.environ["HF_TOKEN"] = self.api_key
         self.client = InferenceClient(bill_to="huggingface")
@@ -41,14 +60,45 @@ class HuggingFaceClient:
         logger.debug(f"PROMPT:\n{messages[-1]['content']}")
         for attempt in range(self.max_retries):
             try:
+                # Start timing
+                start_time = time.time()
+
                 completion = self.client.chat.completions.create(
                     model=self.model_name,
                     messages=messages,
                     max_tokens=self.max_tokens,
                     temperature=self.temperature,
                 )
-                logger.debug(f"LLM response:\n{completion.choices[0]}")
-                return completion.choices[0]
+
+                # End timing
+                end_time = time.time()
+                choice = completion.choices[0]
+
+                # Extract and track metrics
+                if hasattr(completion, 'usage') and completion.usage:
+                    usage = completion.usage
+                    duration = end_time - start_time
+
+                    metrics = LLMCallMetrics(
+                        model_name=self.model_name,
+                        role=self.role,
+                        prompt_tokens=usage.prompt_tokens,
+                        completion_tokens=usage.completion_tokens,
+                        total_tokens=usage.total_tokens,
+                        duration_seconds=duration,
+                        throughput_tokens_per_sec=usage.completion_tokens / duration if duration > 0 else 0,
+                        finish_reason=choice.finish_reason,
+                        has_reasoning=hasattr(choice.message, 'reasoning') and choice.message.reasoning is not None and choice.message.reasoning != "",
+                        timestamp=start_time,
+                    )
+
+                    self.call_metrics.append(metrics)
+                    logger.debug(f"Metrics: {usage.completion_tokens} tokens in {duration:.2f}s ({metrics.throughput_tokens_per_sec:.2f} tok/s)")
+                else:
+                    logger.warning("No usage data available from LLM response")
+
+                logger.debug(f"LLM response:\n{choice}")
+                return choice
 
             except Exception as e:
                 logger.warning(f"Attempt {attempt + 1}/{self.max_retries} failed: {e}")
@@ -202,3 +252,34 @@ class HuggingFaceClient:
         prompt = get_card_evaluation_prompt(rule_text, card, mainline)
         result = self.generate(prompt, return_dict=True)
         return result["result"].lower() == "in"
+
+    def get_usage_stats(self) -> dict:
+        """Get aggregated usage statistics for this client."""
+        if not self.call_metrics:
+            return {
+                "prompt_tokens": 0,
+                "completion_tokens": 0,
+                "total_tokens": 0,
+                "duration_seconds": 0.0,
+                "throughput_tokens_per_sec": 0.0,
+                "call_count": 0,
+            }
+
+        # Aggregate metrics
+        total_prompt = sum(m.prompt_tokens for m in self.call_metrics)
+        total_completion = sum(m.completion_tokens for m in self.call_metrics)
+        total_tokens = sum(m.total_tokens for m in self.call_metrics)
+        total_duration = sum(m.duration_seconds for m in self.call_metrics)
+
+        return {
+            "prompt_tokens": total_prompt,
+            "completion_tokens": total_completion,
+            "total_tokens": total_tokens,
+            "duration_seconds": round(total_duration, 2),
+            "throughput_tokens_per_sec": round(total_completion / total_duration if total_duration > 0 else 0, 2),
+            "call_count": len(self.call_metrics),
+        }
+
+    def reset_usage_stats(self) -> None:
+        """Reset call metrics (called at start of each round)."""
+        self.call_metrics = []
