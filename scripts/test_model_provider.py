@@ -17,15 +17,27 @@ logger = logging.getLogger(__name__)
 
 # Default models to test with --all flag
 DEFAULT_MODELS = [
-    "moonshotai/Kimi-K2-Thinking:cheapest",
-    "moonshotai/Kimi-K2-Thinking:fastest",
+    "moonshotai/Kimi-K2-Thinking",
+
     "meta-llama/Llama-3.3-70B-Instruct",
+
     "openai/gpt-oss-120b",
     "openai/gpt-oss-20b",
-    "deepseek-ai/DeepSeek-R1:cheapest",
-    "deepseek-ai/DeepSeek-R1:fastest",
-    "deepseek-ai/DeepSeek-V3.1:cheapest",
-    "deepseek-ai/DeepSeek-V3.1:fastest",
+
+    "deepseek-ai/DeepSeek-R1",
+    "deepseek-ai/DeepSeek-V3.1",
+    "deepseek-ai/DeepSeek-V3.2",
+    
+    "MiniMaxAI/MiniMax-M2",
+
+    "HuggingFaceTB/SmolLM3-3B:hf-inference",
+
+    "Qwen/Qwen3-Next-80B-A3B-Thinking",
+    "Qwen/Qwen3-30B-A3B-Thinking-2507",
+    "Qwen/Qwen3-235B-A22B-Thinking-2507",
+    "Qwen/Qwen3-4B-Thinking-2507",
+
+    "allenai/Olmo-3-7B-Think"
 ]
 
 
@@ -135,7 +147,7 @@ def main():
 
     # Determine which models to test
     if args.all:
-        models_to_test = DEFAULT_MODELS
+        models_to_test = [model_name + ":fastest" for model_name in DEFAULT_MODELS]
         logger.info(f"Testing {len(models_to_test)} models from default list\n")
     else:
         models_to_test = [args.model]
