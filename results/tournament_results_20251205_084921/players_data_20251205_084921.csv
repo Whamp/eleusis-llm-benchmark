@@ -1,0 +1,4 @@
+player,avg_score,total_rounds,wins,avg_confidence,not_guessing_count,not_guessing_avg_confidence,want_guess_not_allowed_count,want_guess_not_allowed_avg_confidence,guess_wrong_count,guess_wrong_avg_confidence,guess_correct_count,guess_correct_avg_confidence,total_prompt_tokens,total_completion_tokens,total_tokens,total_duration_seconds,avg_throughput_tokens_per_sec,total_llm_calls,avg_tokens_per_call
+Llama-3.3-70B-Instruct,11.666666666666666,3,0,4.666666666666667,9,4.666666666666667,0,,0,,0,,19587,5155,24742,25.25,204.15841584158414,9,2749.1111111111113
+GPT OSS 120B,8.0,3,2,6.444444444444445,7,5.857142857142857,0,,0,,2,8.5,35751,26171,61922,75.26,347.74116396492155,12,5160.166666666667
+GPT OSS 20B,9.666666666666666,3,1,7.142857142857143,4,6.75,0,,2,8.0,1,7.0,35056,26086,61142,33.28,783.8341346153846,10,6114.2

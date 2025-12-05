@@ -30,7 +30,8 @@ logger = logging.getLogger(__name__)
 
 def save_tournament_results(tournament_results: dict, timestamp: str) -> str:
     """Save tournament results to JSON file (incremental)."""
-    output_file = f"results/tournament_results_{timestamp}.json"
+    Path(f"results/tournament_results_{timestamp}").mkdir(parents=True, exist_ok=True)
+    output_file = f"results/tournament_results_{timestamp}/results.json"
     with open(output_file, 'w') as f:
         json.dump(tournament_results, f, indent=2)
     return output_file
