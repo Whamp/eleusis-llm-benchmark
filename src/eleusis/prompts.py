@@ -396,20 +396,20 @@ def get_action_selection_prompt(
         for entry in play_history[-10:]:  # Show last 10 attempts
             action_type = entry.get("action", "unknown")
             card = entry.get("card", "N/A")
-            reasoning = entry.get("reasoning", "")
+            reasoning_summary = entry.get("reasoning_summary", "")
             accepted = entry.get("accepted")
 
             if accepted is not None:
                 result = "✓ ACCEPTED" if accepted else "✗ REJECTED"
                 history_str += f"- {card}: {result}\n"
-                if reasoning:
-                    history_str += f"  Your reasoning: {reasoning}\n"
+                if reasoning_summary:
+                    history_str += f"  Your reasoning: {reasoning_summary}\n"
             elif action_type == "no_play":
                 correct = entry.get("correct", False)
                 result = "✓ CORRECT" if correct else "✗ INCORRECT"
                 history_str += f"- NO-PLAY: {result}\n"
-                if reasoning:
-                    history_str += f"  Your reasoning: {reasoning}\n"
+                if reasoning_summary:
+                    history_str += f"  Your reasoning: {reasoning_summary}\n"
 
     # Format failed guesses history
     failed_guesses_str = ""
@@ -450,7 +450,19 @@ YOUR OPTIONS:
 2. NO-PLAY: Use the value "no_play" if you believe no card in your hand will be accepted
 
 OUTPUT FORMAT:
-Think through the pattern, then wrap your decision in XML tags.
+You can freely reason step by step about this case in your response.
+Then your response should end with your final decision wrapped in XML tags.
+
+<your reasoning about the situation>
+<ACTION>
+{{
+    "reasoning_summary": "A summary of your analysis of the pattern and why you're playing this card/no-play",
+    "action": "5♥" or "no_play",
+    "tentative_rule": "Your current best guess about the rule (always provide this)",
+    "confidence_level": 0-10 (your confidence in the tentative_rule, 0=lowest, you have no clue, 10=maximum, you are 100% sure),
+    "guess_rule_if_accepted": true or false (whether to officially guess if accepted)
+}}
+</ACTION>
 
 IMPORTANT ABOUT GUESSING:
 - You must ALWAYS provide a "tentative_rule" describing your current belief about the
@@ -464,20 +476,11 @@ IMPORTANT ABOUT GUESSING:
 - **If your guess is INCORRECT: You draw 1 penalty card and continue playing.**
 - Since incorrect guesses have a penalty, only guess when you're reasonably confident.
 
-<ACTION>
-{{
-    "reasoning": "Your analysis of the pattern and why you're playing this card/no-play",
-    "action": "5♥" or "no_play",
-    "tentative_rule": "Your current best guess about the rule (always provide this)",
-    "confidence_level": 0-10 (your confidence in the tentative_rule, 0=lowest, you have no clue, 10=maximum, you are 100% sure),
-    "guess_rule_if_accepted": true or false (whether to officially guess if accepted)
-}}
-</ACTION>
 
 Example:
 <ACTION>
 {{
-    "reasoning": "I see red and black cards alternating. My 3♥ is red, last card was black.",
+    "reasoning_summary": "I see red and black cards alternating. My 3♥ is red, last card was black.",
     "action": "3♥",
     "tentative_rule": "Cards must alternate between red and black colors",
     "confidence_level": 7,

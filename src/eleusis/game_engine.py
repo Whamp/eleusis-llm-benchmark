@@ -314,17 +314,6 @@ class GameEngine:
         logger.info("-" * 60)
         logger.info("")
 
-        # Check for duplicate guess
-        if action.guess_text in self.state.failed_rule_guesses:
-            logger.info(f"Duplicate guess rejected: '{action.guess_text}'")
-            return {
-                "guess": action.guess_text,
-                "correct": False,
-                "reason": "duplicate",
-                "equivalent": False,
-                "reasoning": "This exact rule has already been guessed and rejected",
-            }
-
         # Compare rules using RuleValidator
         is_correct, reasoning, metadata = self.rule_validator.compare_rules(
             actual_rule=self.rule,

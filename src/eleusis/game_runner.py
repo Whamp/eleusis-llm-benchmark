@@ -216,12 +216,12 @@ def play_round(
 
         # Log ACTION details from LLM response
         if player.last_action_response:
-            reasoning = player.last_action_response.get("reasoning", "")
+            reasoning_summary = player.last_action_response.get("reasoning_summary", "")
             tentative_rule = player.last_action_response.get("tentative_rule", "")
             confidence_level = player.last_action_response.get("confidence_level", "")
             guess_if_accepted = player.last_action_response.get("guess_rule_if_accepted", False)
 
-            logger.info(f"Reasoning: {reasoning}")
+            logger.info(f"Reasoning: {reasoning_summary}")
             logger.info(f"Tentative rule: {tentative_rule}")
             logger.info(f"Confidence level: {confidence_level}")
             logger.info(f"Will guess if accepted: {guess_if_accepted}")

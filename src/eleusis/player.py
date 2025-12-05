@@ -128,7 +128,7 @@ class LLMScientist(Player):
         # Build history entry from LLM response and game result
         history_entry = {
             "action": self.last_action_response.get("action", "unknown"),
-            "reasoning": self.last_action_response.get("reasoning", ""),
+            "reasoning_summary": self.last_action_response.get("reasoning_summary", ""),
         }
 
         # Add result-specific fields
