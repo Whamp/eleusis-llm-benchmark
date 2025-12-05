@@ -141,12 +141,11 @@ class GameEngine:
         # Shuffle deck
         self.state.deck.shuffle()
 
-        # Deal cards to each scientist
-        scientists = self.state.get_scientists()
+        # Deal cards to each player
         for _ in range(self.cards_per_scientist):
-            for scientist in scientists:
+            for player in self.state.players:
                 if not self.state.deck.is_empty():
-                    scientist.hand.add_card(self.state.deck.draw())
+                    player.hand.add_card(self.state.deck.draw())
 
         # Find and place starter card
         while not self.state.deck.is_empty():
@@ -278,7 +277,7 @@ class GameEngine:
             return {"success": True, "correct": True, "can_guess": True,}
 
         else:
-            # Incorrect no-play: rule-maker randomly plays one legal card, draw penalty cards
+            # Incorrect no-play: game master randomly plays one legal card, draw penalty cards
             card_to_play = random.choice(legal_cards)
             player.hand.remove_card(card_to_play)
             self.state.mainline.add_card(card_to_play)
@@ -378,9 +377,8 @@ class GameEngine:
 
         # Game ends if deck empty and no one can make a legal play
         if self.state.deck.is_empty():
-            scientists = self.state.get_scientists()
-            for scientist in scientists:
-                hand_cards = scientist.hand.get_all_cards()
+            for player in self.state.players:
+                hand_cards = player.hand.get_all_cards()
                 if any(self.evaluate_card(c) for c in hand_cards):
                     return False
             return True
@@ -391,25 +389,13 @@ class GameEngine:
         """Calculate final scores for the round."""
         scores = {}
 
-        # Scientists score based on remaining cards
-        scientists = self.state.get_scientists()
-        scientist_scores = []
-
-        for scientist in scientists:
-            score = scientist.hand.size()
+        # Players score based on remaining cards
+        for player in self.state.players:
+            score = player.hand.size()
             # Apply bonus if they guessed correctly
-            if self.rule_guessed and scientist.name == self.winning_guesser:
+            if self.rule_guessed and player.name == self.winning_guesser:
                 score += self.correct_guess_bonus
-            scores[scientist.name] = score
-            scientist_scores.append(score)
-
-        # Rule-maker gets second-lowest scientist score
-        scientist_scores.sort()
-        rule_maker_score = (
-            scientist_scores[1] if len(scientist_scores) >= 2 else scientist_scores[0]
-        )
-        rule_maker = self.state.get_rule_maker()
-        scores[rule_maker.name] = rule_maker_score
+            scores[player.name] = score
 
         logger.info(f"Round scores: {scores}")
         return scores

@@ -60,12 +60,11 @@ class Sideline:
 
 @dataclass
 class PlayerState:
-    """State for a single player."""
+    """State for a single player (scientist)."""
 
     name: str
     hand: Hand = field(default_factory=Hand)
     score: int = 0
-    is_rule_maker: bool = False
 
     def to_dict(self, reveal_hand: bool = False) -> dict:
         """Convert player state to dictionary."""
@@ -73,7 +72,6 @@ class PlayerState:
             "name": self.name,
             "hand_size": self.hand.size(),
             "score": self.score,
-            "is_rule_maker": self.is_rule_maker,
         }
         if reveal_hand:
             result["hand"] = self.hand.to_dict()
@@ -83,10 +81,8 @@ class PlayerState:
 class GameState:
     """Complete game state visible to all players."""
 
-    def __init__(self, player_names: list[str], rule_maker_index: int = 0) -> None:
-        """Initialize game state with player names."""
-        if len(player_names) != 4:
-            raise ValueError("Game requires exactly 4 players")
+    def __init__(self, player_names: list[str]) -> None:
+        """Initialize game state with player names (scientists only)."""
 
         self.mainline = Mainline()
         self.sidelines: dict[int, Sideline] = {}
@@ -94,11 +90,10 @@ class GameState:
         self.players: list[PlayerState] = []
         self.failed_rule_guesses: list[dict] = []  # Global history of failed guesses
 
-        for i, name in enumerate(player_names):
-            is_rule_maker = i == rule_maker_index
-            self.players.append(PlayerState(name=name, is_rule_maker=is_rule_maker))
+        for name in player_names:
+            self.players.append(PlayerState(name=name))
 
-        self.current_turn_index = (rule_maker_index + 1) % 4
+        self.current_turn_index = 0
         self.round_number = 1
         self.game_over = False
         self.winner: str | None = None
@@ -107,24 +102,9 @@ class GameState:
         """Get the player whose turn it is."""
         return self.players[self.current_turn_index]
 
-    def get_rule_maker(self) -> PlayerState:
-        """Get the rule-maker player."""
-        for player in self.players:
-            if player.is_rule_maker:
-                return player
-        raise ValueError("No rule-maker found")
-
-    def get_scientists(self) -> list[PlayerState]:
-        """Get all scientist players (non-rule-makers)."""
-        return [p for p in self.players if not p.is_rule_maker]
-
     def advance_turn(self) -> None:
-        """Move to next player's turn (skip rule-maker)."""
-        rule_maker_index = next(i for i, p in enumerate(self.players) if p.is_rule_maker)
-
-        self.current_turn_index = (self.current_turn_index + 1) % 4
-        if self.current_turn_index == rule_maker_index:
-            self.current_turn_index = (self.current_turn_index + 1) % 4
+        """Move to next player's turn."""
+        self.current_turn_index = (self.current_turn_index + 1) % len(self.players)
 
     def add_sideline_card(self, card: Card) -> None:
         """Add a rejected card to the sideline for the current mainline position."""

@@ -50,7 +50,7 @@ def main():
     logger.info("=" * 80)
     logger.info(f"Log file: {log_file}")
     logger.info(f"Rounds per rule: {rounds_per_rule}")
-    logger.info(f"  - Rule-maker: {config['models']['game_master']['display_name']}")
+    logger.info(f"  - Game Master: {config['models']['game_master']['display_name']}")
     for i, player_cfg in enumerate(player_configs, 1):
         logger.info(f"  - Scientist {i}: {player_cfg['display_name']}")
     logger.info("")

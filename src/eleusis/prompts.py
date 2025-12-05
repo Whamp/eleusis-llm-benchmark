@@ -443,7 +443,7 @@ Then your response should end with your final decision wrapped in XML tags.
 {{
     "reasoning_summary": "A summary of your analysis of the pattern and why you're playing this card/no-play",
     "action": "5♥" or "no_play",
-    "tentative_rule": "Your current best guess about the rule (always provide this)",
+    "tentative_rule": "Your current best guess about the rule (always provide this, it has to be unequivocal)",
     "confidence_level": 0-10 (your confidence in the tentative_rule, 0=lowest, you have no clue, 10=maximum, you are 100% sure),
     "guess_rule_if_accepted": true or false (whether to officially guess if accepted)
 }}
@@ -452,6 +452,7 @@ Then your response should end with your final decision wrapped in XML tags.
 IMPORTANT ABOUT GUESSING:
 - You must ALWAYS provide a "tentative_rule" describing your current belief about the
   secret rule, even if you're not confident. This helps track your evolving understanding.
+  This rule has to be unequivocal (no "maybe", etc.)
 - Provide a "confidence_level" from 0-10 indicating how confident you are in your tentative_rule.
   (0 = no clue, 10 = 100% sure). This has no direct gameplay effect but helps you reflect on your certainty.
 - Set "guess_rule_if_accepted" to true ONLY when you're confident in your tentative_rule.

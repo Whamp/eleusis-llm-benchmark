@@ -22,26 +22,22 @@ class TestGameEngine:
 
     def test_game_setup(self) -> None:
         """Test game setup with dealing and starter card."""
-        state = GameState(["Alice", "Bob", "Charlie", "Dave"], rule_maker_index=0)
+        state = GameState(["Alice", "Bob", "Charlie"])
         rule = AlwaysAcceptRule()
         engine = GameEngine(state, rule, game_master=None)
 
         engine.setup_game()
 
-        # Check scientists have 12 cards each
-        scientists = state.get_scientists()
-        for scientist in scientists:
-            assert scientist.hand.size() == 12
-
-        # Check rule-maker has no cards
-        assert state.get_rule_maker().hand.size() == 0
+        # Check all players have 12 cards each
+        for player in state.players:
+            assert player.hand.size() == 12
 
         # Check starter card is placed
         assert state.mainline.size() == 1
 
     def test_play_card_accepted(self) -> None:
         """Test playing a card that is accepted."""
-        state = GameState(["Alice", "Bob", "Charlie", "Dave"], rule_maker_index=0)
+        state = GameState(["Alice", "Bob", "Charlie"])
         rule = AlwaysAcceptRule()
         engine = GameEngine(state, rule, game_master=None)
         engine.setup_game()
@@ -59,7 +55,7 @@ class TestGameEngine:
 
     def test_play_card_rejected(self) -> None:
         """Test playing a card that is rejected."""
-        state = GameState(["Alice", "Bob", "Charlie", "Dave"], rule_maker_index=0)
+        state = GameState(["Alice", "Bob", "Charlie"])
         rule = EvenRankRule()
         engine = GameEngine(state, rule, game_master=None)
 
@@ -81,7 +77,7 @@ class TestGameEngine:
 
     def test_no_play_correct(self) -> None:
         """Test correct no-play declaration."""
-        state = GameState(["Alice", "Bob", "Charlie", "Dave"], rule_maker_index=0)
+        state = GameState(["Alice", "Bob", "Charlie"])
         rule = EvenRankRule()
         engine = GameEngine(state, rule, game_master=None)
 
@@ -97,13 +93,13 @@ class TestGameEngine:
 
         assert result["success"]
         assert result["correct"]
-        # All cards discarded, draw max(1, initial_hand_size - 4) new cards
-        expected_hand_size = max(1, initial_hand_size - 4)
+        # All cards discarded, draw max(0, initial_hand_size - 4) new cards
+        expected_hand_size = max(0, initial_hand_size - 4)
         assert current_player.hand.size() == expected_hand_size
 
     def test_no_play_incorrect(self) -> None:
         """Test incorrect no-play declaration."""
-        state = GameState(["Alice", "Bob", "Charlie", "Dave"], rule_maker_index=0)
+        state = GameState(["Alice", "Bob", "Charlie"])
         rule = EvenRankRule()
         engine = GameEngine(state, rule, game_master=None)
 
@@ -126,31 +122,26 @@ class TestGameEngine:
 
     def test_calculate_scores(self) -> None:
         """Test score calculation."""
-        state = GameState(["Alice", "Bob", "Charlie", "Dave"], rule_maker_index=0)
+        state = GameState(["Alice", "Bob", "Charlie"])
         rule = AlwaysAcceptRule()
         engine = GameEngine(state, rule, game_master=None)
 
         # Set up hand sizes
-        scientists = state.get_scientists()
-        scientists[0].hand.add_card(Card(2, Suit.HEARTS))
-        scientists[0].hand.add_card(Card(3, Suit.HEARTS))  # 2 cards
-        scientists[1].hand.add_card(Card(4, Suit.HEARTS))  # 1 card
-        # scientists[2] has 0 cards
+        state.players[0].hand.add_card(Card(2, Suit.HEARTS))
+        state.players[0].hand.add_card(Card(3, Suit.HEARTS))  # 2 cards
+        state.players[1].hand.add_card(Card(4, Suit.HEARTS))  # 1 card
+        # state.players[2] has 0 cards
 
         scores = engine.calculate_scores()
 
-        # Scientists get their hand size
-        assert scores[scientists[0].name] == 2
-        assert scores[scientists[1].name] == 1
-        assert scores[scientists[2].name] == 0
-
-        # Rule-maker gets second-lowest score (sorted: [0, 1, 2] -> second is 1)
-        rule_maker = state.get_rule_maker()
-        assert scores[rule_maker.name] == 1
+        # Players get their hand size
+        assert scores[state.players[0].name] == 2
+        assert scores[state.players[1].name] == 1
+        assert scores[state.players[2].name] == 0
 
     def test_is_game_over_deck_empty(self) -> None:
         """Test game over when deck is empty."""
-        state = GameState(["Alice", "Bob", "Charlie", "Dave"], rule_maker_index=0)
+        state = GameState(["Alice", "Bob", "Charlie"])
         rule = EvenRankRule()
         engine = GameEngine(state, rule, game_master=None)
 
@@ -158,15 +149,15 @@ class TestGameEngine:
         while not state.deck.is_empty():
             state.deck.draw()
 
-        # Give scientists only odd cards (no legal plays)
-        for scientist in state.get_scientists():
-            scientist.hand.add_card(Card(3, Suit.HEARTS))
+        # Give all players only odd cards (no legal plays)
+        for player in state.players:
+            player.hand.add_card(Card(3, Suit.HEARTS))
 
         assert engine.is_game_over()
 
     def test_turn_advancement(self) -> None:
         """Test that turns advance correctly."""
-        state = GameState(["Alice", "Bob", "Charlie", "Dave"], rule_maker_index=0)
+        state = GameState(["Alice", "Bob", "Charlie"])
         rule = AlwaysAcceptRule()
         engine = GameEngine(state, rule, game_master=None)
         engine.setup_game()

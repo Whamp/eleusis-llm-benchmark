@@ -155,7 +155,7 @@ return total_ranks % 2 == 0
 if not mainline:
     return True
 # Accept if any previous card was even
-return any(c.is_even for c in mainline)
+return any(c.rank%2==0 for c in mainline)
 """
         rule = Rule("Any previous card was even", code)
 

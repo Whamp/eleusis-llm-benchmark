@@ -1,4 +1,4 @@
-"""LLM-powered players for Eleusis: Scientists and Rule-makers."""
+"""LLM-powered players for Eleusis."""
 
 import logging
 import random

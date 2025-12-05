@@ -118,8 +118,8 @@ def play_round(
     logger.info("")
 
     player_configs = config["models"]["players"]
-    player_names = ["RuleMaker"] + [player_cfg['display_name'] for player_cfg in player_configs]
-    game_state = GameState(player_names, rule_maker_index=0)
+    player_names = [player_cfg['display_name'] for player_cfg in player_configs]
+    game_state = GameState(player_names)
 
     cards_per_scientist = config["game"]["cards_per_scientist"]
     correct_guess_bonus = config["game"]["correct_guess_bonus"]
@@ -354,10 +354,6 @@ def play_round(
 
     scores = engine.calculate_scores()
     winning_player = engine.winning_guesser if engine.rule_guessed else None
-
-    # Remove RuleMaker from scores (only track scientists)
-    if "RuleMaker" in scores:
-        del scores["RuleMaker"]
 
     # Collect LLM usage statistics
     llm_usage = {
