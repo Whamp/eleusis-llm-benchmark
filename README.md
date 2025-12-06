@@ -128,6 +128,29 @@ Edit `config.yaml` under the `solo_game` section to configure:
 - `prompts_solo.py`: Pattern discovery prompts (no "Eleusis" references)
 - `evaluate_single.py`: Multi-round evaluation script
 
+**Resume Interrupted Evaluations:**
+
+If an evaluation is interrupted (crash, Ctrl-C, etc.), you can resume from where it left off:
+
+```bash
+uv run scripts/evaluate_single.py --resume results/solo_evaluation_20251205_151306
+```
+
+**Requirements for resume:**
+- Works only with `selection: "sequential"` in config.yaml (deterministic rule order)
+- The results folder must contain a valid results.json file with checkpoint data
+- Configuration parameters (num_rounds, max_turns, hand_size, etc.) must match the original run
+
+**What happens on resume:**
+- Loads checkpoint state from results.json (rules, progress, statistics)
+- Validates configuration consistency with original run
+- Resumes from the next incomplete round
+- Continues using rules from the stored checkpoint (self-contained, no dependency on external rules.json)
+- Appends new results to the same results.json file
+
+**Checkpoint data:**
+The resume feature stores complete rule information in results.json, making checkpoints self-contained. Even if the rules.json file changes or is deleted, resume will work using the stored rules.
+
 ## Development Notes
 
 - Rules are compiled into sandboxed Python functions with limited builtins (len, sum, min, max, any, all)

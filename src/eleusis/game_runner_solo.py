@@ -90,6 +90,7 @@ def play_round_solo(
     round_number: int,
     rule: Rule | None = None,
     max_turns: int | None = None,
+    start_rule_index: int | None = None,
 ) -> dict:
     """Play a single round of solo pattern discovery.
 
@@ -98,6 +99,7 @@ def play_round_solo(
         round_number: Current round number (for logging)
         rule: Optional rule to reuse (if None, generate/load new rule)
         max_turns: Optional override for max turns
+        start_rule_index: Starting index for RuleFactory (for resume support)
 
     Returns:
         dict with round_number, turn_count, rule_description, rule_code,
@@ -155,7 +157,10 @@ def play_round_solo(
         logger.info("Loading rule from library...")
         logger.info(f"Acceptance rate bounds: [{min_acceptance:.2%}, {max_acceptance:.2%}]")
 
-        start_index = rule_source_cfg.get("index", 0)
+        # Use provided start_rule_index for resume support, otherwise use config default
+        start_index = start_rule_index if start_rule_index is not None else rule_source_cfg.get("index", 0)
+        logger.info(f"Rule factory starting at index: {start_index}")
+
         rule_factory = RuleFactory(
             library_path=rule_source_cfg["library_path"],
             selection=rule_source_cfg["selection"],
@@ -245,7 +250,7 @@ def play_round_solo(
 
         # Log turn header
         logger.info("=" * 80)
-        logger.info(f"TURN {turn_count + 1}: {player_name}")
+        logger.info(f"[Round {round_number}] TURN {turn_count + 1}: {player_name}")
         logger.info("=" * 80)
         logger.info(f"Board: {game_state.to_compact_string()}")
         logger.info(f"Deck remaining: {game_state.deck.remaining_count()} cards")
