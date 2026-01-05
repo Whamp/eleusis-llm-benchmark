@@ -180,7 +180,7 @@ Rules are filtered by acceptance rate (configurable in config.yaml) to ensure pl
 |------|-------------|
 | `cards.py` | Card representation (rank 1-13, 4 suits) |
 | `game_state.py` | Game state: mainline, sidelines, hands, deck |
-| `game_engine_solo.py` | Solo mode engine with Rule class |
+| `game_engine.py` | Game engine with Rule class |
 | `game_runner_solo.py` | Solo round orchestration |
 | `providers/` | LLM clients (OpenRouter, HuggingFace) |
 | `prompts.py` | Prompt templates |

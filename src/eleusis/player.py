@@ -1,7 +1,18 @@
 """Player classes for Eleusis card game."""
 
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
+
 from eleusis.cards import Card, Suit
+
+__all__ = ["LLMScientist"]
+
+if TYPE_CHECKING:
+    from eleusis.game_engine import Action
+    from eleusis.game_state import GameState, PlayerState
+    from eleusis.llm_client import BaseLLMClient
 
 logger = logging.getLogger(__name__)
 
@@ -9,7 +20,7 @@ logger = logging.getLogger(__name__)
 class LLMScientist:
     """Base Scientist player using LLM for decision making."""
 
-    def __init__(self, name: str, llm_client, max_retries: int = 3):
+    def __init__(self, name: str, llm_client: BaseLLMClient, max_retries: int = 3) -> None:
         """Initialize scientist with name and LLM client."""
         self.name = name
         self.llm_client = llm_client
@@ -17,17 +28,29 @@ class LLMScientist:
         self.play_history: list[dict] = []
         self.last_action_response: dict | None = None
 
-    def select_move(self, game_state, current_player):
-        """Select a move. Must be overridden by subclass."""
+    def get_action(self, game_state: GameState) -> Action:
+        """Get an action for the current game state."""
+        current_player = game_state.get_current_player()
         return self._select_move(game_state, current_player)
 
-    def _select_move(self, game_state, current_player):
-        """Select a move (to be overridden)."""
+    def _select_move(self, game_state: GameState, current_player: PlayerState) -> Action:
+        """Select a move (to be overridden by subclass)."""
         raise NotImplementedError("Subclasses must implement _select_move")
+
+    def record_action_result(self, result: dict) -> None:
+        """Record the result of an action in play history."""
+        if result.get("success") and "card" in result:
+            reasoning = ""
+            if self.last_action_response:
+                reasoning = self.last_action_response.get("reasoning_summary", "")
+            self.record_play(
+                card_str=result["card"],
+                accepted=result.get("accepted", False),
+                reasoning_summary=reasoning,
+            )
 
     def _parse_card(self, card_value: str, hand_cards: list[Card]) -> Card | None:
         """Parse card value string to Card object from hand."""
-        # Handle Unicode suit symbols
         suit_map = {
             "♥": Suit.HEARTS,
             "♦": Suit.DIAMONDS,
@@ -38,14 +61,11 @@ class LLMScientist:
             "clubs": Suit.CLUBS,
             "spades": Suit.SPADES,
         }
-
-        # Handle J/Q/K/A values
         rank_map = {"A": 1, "J": 11, "Q": 12, "K": 13}
 
         if not card_value:
             return None
 
-        # Try to extract rank and suit
         card_value = card_value.strip()
 
         # Find suit symbol
@@ -78,10 +98,10 @@ class LLMScientist:
 
         return None
 
-    def record_play(self, card: Card, accepted: bool, reasoning_summary: str = ""):
+    def record_play(self, card_str: str, accepted: bool, reasoning_summary: str = "") -> None:
         """Record a play attempt in history."""
         self.play_history.append({
-            "card": str(card),
+            "card": card_str,
             "accepted": accepted,
             "reasoning_summary": reasoning_summary,
         })

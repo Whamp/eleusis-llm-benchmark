@@ -1,9 +1,10 @@
-"""Unit tests for game_engine_solo module."""
+"""Unit tests for game_engine module."""
 
 import pytest
+from unittest.mock import Mock
 
 from eleusis.cards import Card, Suit
-from eleusis.game_engine_solo import GameEngineSolo, PlayCardAction, GuessRuleAction, Rule
+from eleusis.game_engine import GameEngineSolo, PlayCardAction, GuessRuleAction, Rule
 from eleusis.game_state import GameState
 
 
@@ -24,7 +25,7 @@ class TestGameEngineSolo:
         """Test game setup with dealing and starter card."""
         state = GameState(["Player"])
         rule = AlwaysAcceptRule()
-        engine = GameEngineSolo(state, rule, game_master=None, hand_size=12)
+        engine = GameEngineSolo(state, rule, rule_compiler_client=None, hand_size=12)
 
         engine.setup_game()
 
@@ -39,7 +40,7 @@ class TestGameEngineSolo:
         """Test playing a card that is accepted."""
         state = GameState(["Player"])
         rule = AlwaysAcceptRule()
-        engine = GameEngineSolo(state, rule, game_master=None, hand_size=12)
+        engine = GameEngineSolo(state, rule, rule_compiler_client=None, hand_size=12)
         engine.setup_game()
 
         player = state.players[0]
@@ -57,7 +58,7 @@ class TestGameEngineSolo:
         """Test playing a card that is rejected."""
         state = GameState(["Player"])
         rule = EvenRankRule()
-        engine = GameEngineSolo(state, rule, game_master=None, hand_size=12)
+        engine = GameEngineSolo(state, rule, rule_compiler_client=None, hand_size=12)
 
         # Manually set up for testing
         state.mainline.add_card(Card(2, Suit.HEARTS))  # Starter
@@ -76,7 +77,7 @@ class TestGameEngineSolo:
         """Test score calculation for solo mode (efficiency-based)."""
         state = GameState(["Player"])
         rule = AlwaysAcceptRule()
-        engine = GameEngineSolo(state, rule, game_master=None, hand_size=12, wrong_guess_penalty=3)
+        engine = GameEngineSolo(state, rule, rule_compiler_client=None, hand_size=12, wrong_guess_penalty=3)
 
         # Simulate a correct guess at turn 10
         engine.rule_guessed = True
@@ -92,7 +93,7 @@ class TestGameEngineSolo:
         """Test score calculation with failed guesses."""
         state = GameState(["Player"])
         rule = AlwaysAcceptRule()
-        engine = GameEngineSolo(state, rule, game_master=None, hand_size=12, wrong_guess_penalty=3)
+        engine = GameEngineSolo(state, rule, rule_compiler_client=None, hand_size=12, wrong_guess_penalty=3)
 
         # Simulate a correct guess at turn 15 with 2 failed guesses
         engine.rule_guessed = True
@@ -108,7 +109,7 @@ class TestGameEngineSolo:
         """Test score calculation when rule was not guessed."""
         state = GameState(["Player"])
         rule = AlwaysAcceptRule()
-        engine = GameEngineSolo(state, rule, game_master=None, hand_size=12, wrong_guess_penalty=3)
+        engine = GameEngineSolo(state, rule, rule_compiler_client=None, hand_size=12, wrong_guess_penalty=3)
 
         # No correct guess
         engine.rule_guessed = False
@@ -123,7 +124,7 @@ class TestGameEngineSolo:
         """Test game over when rule is guessed correctly."""
         state = GameState(["Player"])
         rule = AlwaysAcceptRule()
-        engine = GameEngineSolo(state, rule, game_master=None, hand_size=12)
+        engine = GameEngineSolo(state, rule, rule_compiler_client=None, hand_size=12)
 
         # Initially not over
         assert not engine.is_game_over()
@@ -136,7 +137,7 @@ class TestGameEngineSolo:
         """Test that play_turn returns appropriate result dict."""
         state = GameState(["Player"])
         rule = AlwaysAcceptRule()
-        engine = GameEngineSolo(state, rule, game_master=None, hand_size=12)
+        engine = GameEngineSolo(state, rule, rule_compiler_client=None, hand_size=12)
         engine.setup_game()
 
         player = state.players[0]
@@ -153,7 +154,7 @@ class TestGameEngineSolo:
         """Test that hand size remains constant after each play."""
         state = GameState(["Player"])
         rule = AlwaysAcceptRule()
-        engine = GameEngineSolo(state, rule, game_master=None, hand_size=12)
+        engine = GameEngineSolo(state, rule, rule_compiler_client=None, hand_size=12)
         engine.setup_game()
 
         player = state.players[0]
@@ -163,3 +164,102 @@ class TestGameEngineSolo:
             assert player.hand.size() == 12
             card = player.hand.get_all_cards()[0]
             engine.play_turn(PlayCardAction(card))
+
+    def test_process_guess_correct(self) -> None:
+        """Test processing a correct rule guess."""
+        state = GameState(["Player"])
+        rule = AlwaysAcceptRule()
+
+        # Mock rule validator that returns correct guess
+        mock_validator = Mock()
+        mock_validator.compare_rules.return_value = (
+            True,  # is_correct
+            "Rules match",  # reasoning
+            {"simulation_comparisons": 100, "simulation_mismatches": 0}  # metadata
+        )
+
+        # Mock game master (LLM client)
+        mock_game_master = Mock()
+
+        engine = GameEngineSolo(
+            state, rule,
+            rule_compiler_client=mock_game_master,
+            rule_validator=mock_validator,
+            hand_size=12
+        )
+        engine.setup_game()
+
+        # Make a guess
+        result = engine.play_turn(GuessRuleAction("Accept all cards"), advance_turn=False)
+
+        assert result["success"]
+        assert result["correct"]
+        assert engine.rule_guessed
+        assert engine.failed_guess_count == 0
+
+    def test_process_guess_incorrect(self) -> None:
+        """Test processing an incorrect rule guess."""
+        state = GameState(["Player"])
+        rule = AlwaysAcceptRule()
+
+        # Mock rule validator that returns incorrect guess
+        mock_validator = Mock()
+        mock_validator.compare_rules.return_value = (
+            False,  # is_correct
+            "Rules differ at card X",  # reasoning
+            {"simulation_comparisons": 50, "simulation_mismatches": 1}  # metadata
+        )
+
+        mock_game_master = Mock()
+
+        engine = GameEngineSolo(
+            state, rule,
+            rule_compiler_client=mock_game_master,
+            rule_validator=mock_validator,
+            hand_size=12,
+            wrong_guess_penalty=3
+        )
+        engine.setup_game()
+
+        # Make a guess
+        result = engine.play_turn(GuessRuleAction("Wrong guess"), advance_turn=False)
+
+        assert result["success"]
+        assert not result["correct"]
+        assert not engine.rule_guessed
+        assert engine.failed_guess_count == 1
+
+        # Failed guess should be recorded
+        assert len(state.failed_rule_guesses) == 1
+        assert state.failed_rule_guesses[0]["guess"] == "Wrong guess"
+
+    def test_multiple_failed_guesses(self) -> None:
+        """Test that multiple failed guesses accumulate correctly."""
+        state = GameState(["Player"])
+        rule = AlwaysAcceptRule()
+
+        mock_validator = Mock()
+        mock_validator.compare_rules.return_value = (False, "Wrong", {})
+        mock_game_master = Mock()
+
+        engine = GameEngineSolo(
+            state, rule,
+            rule_compiler_client=mock_game_master,
+            rule_validator=mock_validator,
+            hand_size=12,
+            wrong_guess_penalty=3
+        )
+        engine.setup_game()
+
+        # Make multiple wrong guesses
+        engine.play_turn(GuessRuleAction("Guess 1"), advance_turn=False)
+        engine.play_turn(GuessRuleAction("Guess 2"), advance_turn=False)
+        engine.play_turn(GuessRuleAction("Guess 3"), advance_turn=False)
+
+        assert engine.failed_guess_count == 3
+        assert len(state.failed_rule_guesses) == 3
+
+        # Check score with penalty
+        scores = engine.calculate_scores(max_turns=40, current_turn=10)
+        # If not guessed correctly, score is 0
+        assert scores["Player"] == 0

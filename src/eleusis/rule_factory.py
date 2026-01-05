@@ -5,7 +5,9 @@ import logging
 import random
 from pathlib import Path
 
-from eleusis.game_engine_solo import Rule
+from eleusis.game_engine import Rule
+
+__all__ = ["RuleFactory"]
 
 logger = logging.getLogger(__name__)
 

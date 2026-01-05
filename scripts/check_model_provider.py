@@ -1,4 +1,4 @@
-"""Test HuggingFace Inference Provider model responsiveness."""
+"""Utility script to check HuggingFace Inference Provider model responsiveness."""
 
 import argparse
 import logging

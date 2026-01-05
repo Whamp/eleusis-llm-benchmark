@@ -5,7 +5,9 @@ import random
 from dataclasses import dataclass
 
 from eleusis.cards import Card, Suit
-from eleusis.game_engine_solo import Rule
+from eleusis.game_engine import Rule
+
+__all__ = ["ValidationResult", "RuleValidator"]
 
 logger = logging.getLogger(__name__)
 
@@ -129,13 +131,13 @@ class RuleValidator:
         actual_rule,
         guessed_rule_desc: str,
         current_mainline: list[Card],
-        game_master,
+        rule_compiler_client,
         num_simulations: int = 2,
         turns_per_simulation: int = 10,
     ) -> tuple[bool, str, dict]:
         """Compare rules using simulation-based comparison."""
         # Step 1: Convert guessed rule to code
-        guessed_code = game_master.convert_rule_to_code(guessed_rule_desc)
+        guessed_code = rule_compiler_client.convert_rule_to_code(guessed_rule_desc)
 
         # Step 2: Run simulation comparison
         sim_equivalent, sim_reasoning, comparisons, mismatches = (

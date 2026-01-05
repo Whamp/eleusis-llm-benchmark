@@ -9,7 +9,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from eleusis.game_engine_solo import Rule
+from eleusis.game_engine import Rule
 from eleusis.llm_client import HuggingFaceClient
 from eleusis.prompts import get_library_generation_prompt
 from eleusis.rules import RuleValidator

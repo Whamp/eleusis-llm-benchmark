@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from eleusis.cards import Card
 from eleusis.game_state import GameState, PlayerState
 
+__all__ = ["PlayCardAction", "GuessRuleAction", "Action", "Rule", "GameEngineSolo"]
+
 logger = logging.getLogger(__name__)
 
 
@@ -58,13 +60,28 @@ class Rule:
         # Safe execution environment
         safe_globals = {
             "__builtins__": {
+                # Type constructors
+                "bool": bool,
+                "int": int,
+                "str": str,
+                "list": list,
+                "tuple": tuple,
+                "set": set,
+                # Iteration helpers
+                "range": range,
+                "reversed": reversed,
+                "sorted": sorted,
+                "enumerate": enumerate,
+                "zip": zip,
+                # Aggregation functions
                 "len": len,
                 "sum": sum,
-                "abs": abs,
                 "min": min,
                 "max": max,
+                "abs": abs,
                 "any": any,
                 "all": all,
+                # Debugging
                 "print": debug_print,
             },
             "Card": Card,
@@ -107,7 +124,7 @@ class GameEngineSolo:
         self,
         game_state: GameState,
         rule: Rule,
-        game_master,
+        rule_compiler_client,
         rule_validator=None,
         hand_size: int = 12,
         wrong_guess_penalty: int = 3,
@@ -115,7 +132,7 @@ class GameEngineSolo:
         """Initialize solo game engine with state and rule."""
         self.state = game_state
         self.rule = rule
-        self.game_master = game_master
+        self.rule_compiler_client = rule_compiler_client
         self.rule_validator = rule_validator
         self.rule_guessed = False
         self.winning_turn: int | None = None
@@ -228,7 +245,7 @@ class GameEngineSolo:
             actual_rule=self.rule,
             guessed_rule_desc=action.guess_text,
             current_mainline=self.state.mainline.get_all(),
-            game_master=self.game_master,
+            rule_compiler_client=self.rule_compiler_client,
             num_simulations=2,
             turns_per_simulation=10,
         )

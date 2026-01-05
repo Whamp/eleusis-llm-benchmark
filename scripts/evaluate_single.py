@@ -10,7 +10,7 @@ from pathlib import Path
 import yaml
 from dotenv import load_dotenv
 
-from eleusis.game_engine_solo import Rule
+from eleusis.game_engine import Rule
 from eleusis.game_runner_solo import play_round_solo
 from eleusis.logging_utils import setup_logging
 from eleusis.utils import model_spec_to_display_name

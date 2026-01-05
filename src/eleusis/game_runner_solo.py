@@ -2,14 +2,16 @@
 
 import logging
 
-from eleusis.game_engine_solo import GameEngineSolo, GuessRuleAction, Rule
+from eleusis.game_engine import GameEngineSolo, GuessRuleAction, Rule
 from eleusis.game_state import GameState
 from eleusis.llm_client import create_client
 from eleusis.player import LLMScientist
 from eleusis.rule_factory import RuleFactory
 from eleusis.rules import RuleValidator
-from eleusis.prompts_solo import get_solo_action_selection_prompt
+from eleusis.prompts import get_solo_action_selection_prompt
 from eleusis.utils import model_spec_to_display_name
+
+__all__ = ["LLMScientistSolo", "play_round_solo"]
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +32,7 @@ class LLMScientistSolo(LLMScientist):
             # Should not happen in solo mode with constant hand size
             logger.error("Empty hand in solo mode - should not happen!")
             import random
-            from eleusis.game_engine_solo import PlayCardAction
+            from eleusis.game_engine import PlayCardAction
             return PlayCardAction(random.choice(hand_cards)) if hand_cards else None
 
         hand_dicts = [c.to_dict() for c in hand_cards]
@@ -66,7 +68,7 @@ class LLMScientistSolo(LLMScientist):
                 card_value = response.get("card", "").strip()
 
                 # Find the card in hand
-                from eleusis.game_engine_solo import PlayCardAction
+                from eleusis.game_engine import PlayCardAction
                 card = self._parse_card(card_value, hand_cards)
                 if card:
                     logger.info(f"{self.name} plays {card}")
@@ -81,7 +83,7 @@ class LLMScientistSolo(LLMScientist):
         # Fallback: play random card
         logger.warning(f"{self.name} using random fallback")
         import random
-        from eleusis.game_engine_solo import PlayCardAction
+        from eleusis.game_engine import PlayCardAction
         return PlayCardAction(random.choice(hand_cards))
 
 
@@ -203,7 +205,7 @@ def play_round_solo(
     engine = GameEngineSolo(
         game_state,
         rule,
-        game_master=game_master_client,
+        rule_compiler_client=game_master_client,
         rule_validator=validator,
         hand_size=hand_size,
         wrong_guess_penalty=wrong_guess_penalty,

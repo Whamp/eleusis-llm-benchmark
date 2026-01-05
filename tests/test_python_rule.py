@@ -3,7 +3,7 @@
 import pytest
 
 from eleusis.cards import Card, Suit
-from eleusis.game_engine_solo import Rule
+from eleusis.game_engine import Rule
 
 
 class TestRule:
@@ -184,3 +184,58 @@ return any(c.rank%2==0 for c in mainline)
         rule = Rule(description, code)
 
         assert rule.description() == description
+
+    def test_set_builtin(self) -> None:
+        """Test that set() builtin is available."""
+        code = """
+if not mainline:
+    return True
+# Accept if card rank not already in mainline (no duplicates)
+existing_ranks = set(c.rank for c in mainline)
+return card.rank not in existing_ranks
+"""
+        rule = Rule("No duplicate ranks", code)
+
+        # First card always accepted
+        assert rule.evaluate(Card(5, Suit.HEARTS), [])
+
+        # Different rank accepted
+        mainline = [Card(5, Suit.HEARTS)]
+        assert rule.evaluate(Card(3, Suit.CLUBS), mainline)
+
+        # Same rank rejected
+        assert not rule.evaluate(Card(5, Suit.DIAMONDS), mainline)
+
+    def test_range_builtin(self) -> None:
+        """Test that range() builtin is available."""
+        code = """
+# Accept ranks 1-7 only (low cards)
+return card.rank in range(1, 8)
+"""
+        rule = Rule("Low cards only (1-7)", code)
+
+        assert rule.evaluate(Card(1, Suit.HEARTS), [])
+        assert rule.evaluate(Card(7, Suit.HEARTS), [])
+        assert not rule.evaluate(Card(8, Suit.HEARTS), [])
+        assert not rule.evaluate(Card(13, Suit.HEARTS), [])
+
+    def test_reversed_builtin(self) -> None:
+        """Test that reversed() builtin is available."""
+        code = """
+if not mainline:
+    return True
+# Accept if card rank > first card in reversed mainline (i.e., last card)
+rev_list = list(reversed(mainline))
+return card.rank > rev_list[0].rank
+"""
+        rule = Rule("Rank higher than last card", code)
+
+        # First card
+        assert rule.evaluate(Card(5, Suit.HEARTS), [])
+
+        # Higher than last (5) - accepted
+        mainline = [Card(5, Suit.HEARTS)]
+        assert rule.evaluate(Card(7, Suit.CLUBS), mainline)
+
+        # Lower than last (5) - rejected
+        assert not rule.evaluate(Card(3, Suit.DIAMONDS), mainline)

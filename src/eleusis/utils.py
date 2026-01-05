@@ -2,6 +2,8 @@
 
 import re
 
+__all__ = ["model_spec_to_display_name"]
+
 
 def model_spec_to_display_name(model_spec: str) -> str:
     """Convert model spec to readable display name.
