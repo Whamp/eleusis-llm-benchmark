@@ -5,7 +5,7 @@ import random
 from dataclasses import dataclass
 
 from eleusis.cards import Card, Suit
-from eleusis.game_engine import Rule
+from eleusis.game_engine_solo import Rule
 
 logger = logging.getLogger(__name__)
 

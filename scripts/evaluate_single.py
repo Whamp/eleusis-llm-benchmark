@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 from eleusis.game_engine_solo import Rule
 from eleusis.game_runner_solo import play_round_solo
 from eleusis.logging_utils import setup_logging
+from eleusis.utils import model_spec_to_display_name
 
 # Load environment variables
 load_dotenv()
@@ -94,24 +95,6 @@ def apply_cli_overrides(config: dict, args) -> dict:
         config["rules"]["index"] = args.rule_index
 
     return config
-
-
-def _model_spec_to_display_name(model_spec: str) -> str:
-    """Convert model spec to readable display name."""
-    # Remove provider prefix
-    if ":" in model_spec:
-        _, model_name = model_spec.split(":", 1)
-    else:
-        model_name = model_spec
-
-    # Extract last part after /
-    if "/" in model_name:
-        model_name = model_name.split("/")[-1]
-
-    # Clean up common suffixes and format
-    model_name = model_name.replace("-", " ").replace("_", " ")
-    model_name = re.sub(r'\s+', ' ', model_name).strip()
-    return model_name.title()
 
 
 def generate_output_tag(args, player_name: str) -> str:
@@ -275,8 +258,8 @@ def main():
 
     # Derive player display name from model spec
     player_model = config["model"]
-    player_display_name = _model_spec_to_display_name(player_model)
-    game_master_display_name = _model_spec_to_display_name(config["game_master"]["model_name"])
+    player_display_name = model_spec_to_display_name(player_model)
+    game_master_display_name = model_spec_to_display_name(config["game_master"]["model_name"])
 
     # Generate output tag for this run
     output_tag = generate_output_tag(args, player_display_name)

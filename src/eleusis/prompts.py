@@ -1,8 +1,5 @@
 """Prompt templates for LLM interactions in Eleusis."""
 
-from pathlib import Path
-import yaml
-
 
 # ================================================================================================
 
@@ -28,74 +25,46 @@ You MUST finish with a properly closed </{xml_tag}> tag containing valid JSON.
 - Ensure all JSON braces and brackets are properly closed
 """
 
-# Common game rules explanation used across prompts
-def _load_game_config() -> dict:
-    """Load game config from config_tournament.yaml"""
-    config_path = Path(__file__).parent.parent.parent / "config_tournament.yaml"
-    with open(config_path) as f:
-        config = yaml.safe_load(f)
-    return config["game"]
-
 
 def get_eleusis_rules() -> str:
-    """Generate ELEUSIS game rules using values from config_tournament.yaml"""
-    game_config = _load_game_config()
+    """Generate ELEUSIS game rules explanation for LLM context."""
+    return """=== ELEUSIS GAME RULES ===
 
-    cards_per_scientist = game_config['cards_per_scientist']
-    card_reject_penalty = game_config['card_reject_penalty']
-    no_play_correct_reduction = game_config['no_play_correct_reduction']
-    no_play_incorrect_penalty = game_config['no_play_incorrect_penalty']
-    wrong_guess_penalty = game_config['wrong_guess_penalty']
-    correct_guess_bonus = game_config['correct_guess_bonus']
-
-    return f"""=== ELEUSIS GAME RULES ===
-
-This is simplified version of the card game Eleusis.
+This is a card game where a secret rule determines which cards may be played.
 
 ## Overview
 
-A **Rule-maker** invents a secret rule governing which cards may be
-played. The players (**Scientists**) take turns playing cards, learning from each
-acceptance or rejection, and trying to deduce the rule.
+A **Rule-maker** invents a secret rule governing which cards may be accepted.
+Players attempt to deduce the rule by playing cards and observing which are accepted or rejected.
 
 ## Components
 
-- **Players:** typically 2 to 4 scientists
-- **Cards:** 2 standard 52-card decks shuffled together into a single 104-card draw pile
+- **Cards:** 2 standard 52-card decks shuffled together (104 cards total)
     - Ranks: Ace = 1 (low), 2–10, Jack = 11, Queen = 12, King = 13
     - Suits: Hearts ♥️ (red), Diamonds ♦️ (red), Clubs ♣️ (black), Spades ♠️ (black)
-
-## Game Structure
-
-A full game consists of several rounds, so that the rule changes at every round. 
-The player with the *lowest* total score at the end wins.
 
 ## Layout
 
 The playing area consists of:
 
-- **Mainline:** A horizontal row of accepted cards, ordered left-to-right by time of
-  acceptance.
+- **Mainline:** A horizontal row of accepted cards, ordered left-to-right by time of acceptance
 - **Sidelines:** Vertical columns beneath mainline cards. When a card is rejected, it is
-  placed in a column below the mainline card it was played after.
+  placed in a column below the mainline card it was played after
 
 The entire layout (mainline and all sidelines) is visible to all players at all times.
 
 ---
 
-## Setup
+## The Secret Rule
 
-### Secret rule
-
-Before dealing, the Rule-maker privately writes down a deterministic rule that decides
-whether a newly played card is **in** (accepted) or **out** (rejected).
+The secret rule is deterministic and decides whether a newly played card is **accepted** or **rejected**.
 
 **The rule must:**
 - Depend only on information visible in the mainline: the candidate card and/or any
   previously accepted mainline cards (their suits, colors, ranks, parity, positions, etc.)
 - For the first card played, evaluate based solely on that card's properties (since
   no mainline exists yet)
-- Give a unique, unambiguous answer (in or out) for every possible card in every
+- Give a unique, unambiguous answer (accepted or rejected) for every possible card in every
   possible mainline state
 
 **The rule must NOT:**
@@ -114,98 +83,8 @@ These examples illustrate appropriate rule complexity:
 - "If the last mainline card is red, play a card with rank ≤ 7. If black, play a card
   with rank ≥ 7."
 
-
-### Deal Hands
-
-Each Scientist player is dealt **{cards_per_scientist} cards**. The Rule-maker receives no cards.
-
-The Rule-maker draws cards one at a time from the top of the deck until finding a card
-that satisfies the rule when evaluated as a first card (with an empty mainline). 
-
-## Turn Structure
-
-On their turn, a Scientist must choose exactly one action:
-- **A. Play a card**, or
-- **B. Declare "no play"**
-
-After resolving the action, play passes to the next Scientist clockwise.
-
-### A. Play a Card
-
-1. The Scientist selects one card from their hand that they believe is **in** under the secret rule.
-2. They place it face-up to the right of the current last mainline card.
-3. The Rule-maker announces the judgment:
-
-   **If "In" (accepted):**
-    - The card remains in place as the new last mainline card.
-    - The Scientist does **not** draw. Their hand size decreases by 1.
-    - The Scientist may now optionally **attempt to guess the rule** (see below).
-
-   **If "Out" (rejected):**
-    - The card is moved to a sideline column directly below the last mainline card.
-    - The Scientist **draws {card_reject_penalty} card** from the deck.
-
-The turn then ends.
-
-### B. Declare "No Play"
-
-A Scientist uses this if they believe **none** of their cards would be accepted.
-
-1. The Scientist reveals their entire hand to all players.
-2. The Rule-maker checks whether any card in the hand would be **in** if played now:
-
-   **If correct (no legal card exists):**
-    - The Scientist chooses one card from their hand.
-    - That card is placed in a sideline below the last mainline card.
-    - The Scientist receives N-{no_play_correct_reduction} new cards from the deck, where N is their hand size
-    - All the old cards are discarded.
-    - The Scientist may now optionally **attempt to guess the rule** (see below).
-
-   **If incorrect (at least one legal card exists):**
-    - The Rule-maker selects one of the legal cards and places it as the new last mainline card.
-    - The Scientist **draws {no_play_incorrect_penalty} penalty card** from the deck.
-
-The turn then ends.
-
----
-
-## Guessing the Rule
-
-Immediately after successfully playing an **in** card, or making a correct no-play, the Scientist may optionally attempt to state the secret rule.
-
-The Rule-maker judges whether the stated rule is **equivalent** to the secret rule. Two
-rules are equivalent if and only if they produce identical in/out judgments for every
-possible (card, mainline-state) pair.
-
-Note: The wording does not need to match exactly. Only logical equivalence matters.
-
-- **Correct guess:** The round ends immediately.
-- **Incorrect guess:** The Rule-maker announces the guess is wrong (without explaining
-  why). The Scientist **draws {wrong_guess_penalty} cards** from the deck. Play continues with the next
-  Scientist.
-
-
-## End of Round
-
-A round ends when:
-1. A Scientist **correctly guesses the rule**, or
-2. The **deck is exhausted** and play cannot continue.
-
----
-
-## Scoring
-
-- Each get +1 point per card remaining in hand
-- If a scientist guessed correctly, they receive **{correct_guess_bonus} bonus points** (added to their hand score, can
-result in negative) |
-
-**Lower scores are better.**
-After all rounds completed (each player having been Rule-maker the same number of
-times), the player with the lowest total score wins.
-
 === END OF THE ELEUSIS GAME RULES ===
 """
-
 
 
 # ================================================================================================
@@ -252,7 +131,7 @@ def get_rule_compilation_prompt(rule_text: str) -> str:
     return True/False
     </CODE>
 
-    Example: 
+    Example:
     Rule is "Cards must alternate between red and black colors."
     <CODE>
     if not mainline:
@@ -261,11 +140,11 @@ def get_rule_compilation_prompt(rule_text: str) -> str:
     return card.color != last_card.color
     </CODE>
 
-    Example: 
+    Example:
     Rule is "Only cards with even ranks (2,4,6,8,10,12) are accepted."
     <CODE>
     return card.rank % 2 == 0
-    </CODE> 
+    </CODE>
     """
 
 # ================================================================================================
@@ -281,7 +160,7 @@ def get_library_generation_prompt(num_rules: int = 20) -> str:
 
 === YOUR TASK: CREATE A LIBRARY OF {num_rules} SECRET RULES ===
 
-=== WHAT IS A RULE AND HOW TO CREATE ONE === 
+=== WHAT IS A RULE AND HOW TO CREATE ONE ===
 
 A rule is a deterministic function that decides whether a newly played card is
 **in** (accepted) or **out** (rejected) based on the current mainline state.
@@ -301,10 +180,6 @@ RULE CONSTRAINTS:
 Aim for rules that are deducible within 15-25 plays.
 At a given point in the game, about 20-40% of possible cards should be legal plays.
 Avoid rules so complex that random guessing is the only viable strategy.
-Since your score equals the second-lowest Scientist score, you benefit when Scientists
-can make progress.
-An unsolvable rule leads to high hand counts for everyone — including
-you.
 Avoid rules that depend on complex sequences or deep history; or has a singular
 behavior for the first card, etc.
 
@@ -344,7 +219,7 @@ The code should:
 
 EXAMPLE:
 <RULE>
-  <NAME>Alternating Colors</NAME> 
+  <NAME>Alternating Colors</NAME>
   <DESCRIPTION>Cards must alternate between red and black colors.</DESCRIPTION>
   <CODE>
 if not mainline:
@@ -376,113 +251,14 @@ Answer below by providing all rules, each wrapped in <RULE> XML tags as shown ab
 # ================================================================================================
 
 
-def get_action_selection_prompt(
-    compact_board: str,
-    hand_cards: list[dict],
-    deck_remaining: int,
-    play_history: list[dict],
-    failed_guesses: list[dict] | None = None,
-) -> str:
-    """Generate prompt for LLM to select a move as Scientist."""
-    hand_str = ", ".join([c["symbol"] for c in hand_cards])
+def get_card_evaluation_prompt(rule_code: str) -> str:
+    """Generate prompt for LLM to evaluate if a card satisfies a rule."""
+    return f"""You are evaluating whether a card satisfies a rule in the Eleusis card game.
 
-    # Format play history
-    history_str = ""
-    if play_history:
-        history_str = "\n\nYOUR PREVIOUS ATTEMPTS:\n"
-        for entry in play_history[-10:]:  # Show last 10 attempts
-            action_type = entry.get("action", "unknown")
-            card = entry.get("card", "N/A")
-            reasoning_summary = entry.get("reasoning_summary", "")
-            accepted = entry.get("accepted")
+The rule is implemented as:
+```python
+{rule_code}
+```
 
-            if accepted is not None:
-                result = "✓ ACCEPTED" if accepted else "✗ REJECTED"
-                history_str += f"- {card}: {result}\n"
-                if reasoning_summary:
-                    history_str += f"  Your reasoning: {reasoning_summary}\n"
-            elif action_type == "no_play":
-                correct = entry.get("correct", False)
-                result = "✓ CORRECT" if correct else "✗ INCORRECT"
-                history_str += f"- NO-PLAY: {result}\n"
-                if reasoning_summary:
-                    history_str += f"  Your reasoning: {reasoning_summary}\n"
-
-    # Format failed guesses history
-    failed_guesses_str = ""
-    if failed_guesses:
-        failed_guesses_str = "\n\nFAILED RULE GUESSES (by all players):\n"
-        for entry in failed_guesses:
-            player = entry.get("player", "Unknown")
-            guess = entry.get("guess", "")
-            failed_guesses_str += f"- {player}: \"{guess}\"\n"
-
-    return f"""
-    
-**YOU PLAY AS A SCIENTIST IN A GAME OF ELEUSIS, YOUR TASK IS TO SELECT YOUR NEXT ACTION**
-
-{get_eleusis_rules()}
-
-=== YOUR TASK: CHOOSE YOUR ACTION ===
-
-You are a Scientist trying to deduce the secret rule.
-
-CURRENT BOARD (mainline + sideline cards in brackets at the position they have been
-played and rejected):
-{compact_board}
-
-FAILED RULE GUESSES SO FAR (IF ANY):
-{failed_guesses_str}
-ALL OF THOSE GUESSES WERE INCORRECT, THEY DO NOT MATCH THE SECRET RULE.
-
-YOUR HAND: {hand_str}
-
-DECK REMAINING: {deck_remaining} cards
-
-YOUR PLAY HISTORY:
-{history_str}
-
-YOUR OPTIONS:
-1. PLAY a card: Specify the card from your hand (e.g., "5♥")
-2. NO-PLAY: Use the value "no_play" if you believe no card in your hand will be accepted
-
-OUTPUT FORMAT:
-You can freely reason step by step about this case in your response.
-Then your response should end with your final decision wrapped in XML tags.
-
-<your reasoning about the situation>
-<ACTION>
-{{
-    "reasoning_summary": "A summary of your analysis of the pattern and why you're playing this card/no-play",
-    "action": "5♥" or "no_play",
-    "tentative_rule": "Your current best guess about the rule (always provide this, it has to be unequivocal)",
-    "confidence_level": 0-10 (your confidence in the tentative_rule, 0=lowest, you have no clue, 10=maximum, you are 100% sure),
-    "guess_rule_if_accepted": true or false (whether to officially guess if accepted)
-}}
-</ACTION>
-
-IMPORTANT ABOUT GUESSING:
-- You must ALWAYS provide a "tentative_rule" describing your current belief about the
-  secret rule, even if you're not confident. This helps track your evolving understanding.
-  This rule has to be unequivocal (no "maybe", etc.)
-- Provide a "confidence_level" from 0-10 indicating how confident you are in your tentative_rule.
-  (0 = no clue, 10 = 100% sure). This has no direct gameplay effect but helps you reflect on your certainty.
-- Set "guess_rule_if_accepted" to true ONLY when you're confident in your tentative_rule.
-- If your action succeeds (card accepted or correct no-play) AND guess_rule_if_accepted
-  is true, your tentative_rule will be officially submitted to the referee.
-- **If your guess is CORRECT: You win the round immediately!**
-- **If your guess is INCORRECT: You draw 1 penalty card and continue playing.**
-- Since incorrect guesses have a penalty, only guess when you're reasonably confident.
-
-
-Example:
-<ACTION>
-{{
-    "reasoning_summary": "I see red and black cards alternating. My 3♥ is red, last card was black.",
-    "action": "3♥",
-    "tentative_rule": "Cards must alternate between red and black colors",
-    "confidence_level": 7,
-    "guess_rule_if_accepted": false
-}}
-</ACTION>
-"""
+Given a card and the current mainline, determine if the card should be ACCEPTED or REJECTED.
+Respond with only "ACCEPTED" or "REJECTED"."""

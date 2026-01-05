@@ -1,36 +1,17 @@
 """Game runner for solo pattern discovery mode."""
 
 import logging
-import re
 
 from eleusis.game_engine_solo import GameEngineSolo, GuessRuleAction, Rule
-from eleusis.game_master import GameMaster
 from eleusis.game_state import GameState
 from eleusis.llm_client import create_client
 from eleusis.player import LLMScientist
 from eleusis.rule_factory import RuleFactory
 from eleusis.rules import RuleValidator
 from eleusis.prompts_solo import get_solo_action_selection_prompt
+from eleusis.utils import model_spec_to_display_name
 
 logger = logging.getLogger(__name__)
-
-
-def _model_spec_to_display_name(model_spec: str) -> str:
-    """Convert model spec to readable display name."""
-    # Remove provider prefix
-    if ":" in model_spec:
-        _, model_name = model_spec.split(":", 1)
-    else:
-        model_name = model_spec
-
-    # Extract last part after /
-    if "/" in model_name:
-        model_name = model_name.split("/")[-1]
-
-    # Clean up common suffixes and format
-    model_name = model_name.replace("-", " ").replace("_", " ")
-    model_name = re.sub(r'\s+', ' ', model_name).strip()
-    return model_name.title()
 
 
 class LLMScientistSolo(LLMScientist):
@@ -134,7 +115,7 @@ def play_round_solo(
     game_master_cfg = config["game_master"]
 
     player_model = config["model"]
-    player_display_name = _model_spec_to_display_name(player_model)
+    player_display_name = model_spec_to_display_name(player_model)
 
     max_tokens = llm_config["max_tokens"]
     max_continuation = llm_config.get("max_continuation_attempts", 3)
@@ -165,9 +146,7 @@ def play_round_solo(
         logger.info("=" * 80)
         logger.info("")
 
-        # Initialize game master for rule operations
-        game_master = GameMaster(llm_client=game_master_client)
-        logger.info("✓ Game master initialized")
+        logger.info("✓ Game master client initialized")
 
         # Reset usage stats for new round
         game_master_client.reset_usage_stats()
@@ -204,7 +183,6 @@ def play_round_solo(
         logger.info("")
     else:
         logger.info(f"[Round {round_number}] Using provided rule")
-        game_master = GameMaster(llm_client=game_master_client)
         validator = RuleValidator()
 
     # ---------------
@@ -225,7 +203,7 @@ def play_round_solo(
     engine = GameEngineSolo(
         game_state,
         rule,
-        game_master=game_master,
+        game_master=game_master_client,
         rule_validator=validator,
         hand_size=hand_size,
         wrong_guess_penalty=wrong_guess_penalty,

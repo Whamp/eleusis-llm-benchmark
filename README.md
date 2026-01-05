@@ -180,10 +180,8 @@ Rules are filtered by acceptance rate (configurable in config.yaml) to ensure pl
 |------|-------------|
 | `cards.py` | Card representation (rank 1-13, 4 suits) |
 | `game_state.py` | Game state: mainline, sidelines, hands, deck |
-| `game_engine.py` | Rule class, action processing |
-| `game_engine_solo.py` | Simplified solo mode engine |
+| `game_engine_solo.py` | Solo mode engine with Rule class |
 | `game_runner_solo.py` | Solo round orchestration |
-| `game_master.py` | Rule description → Python code |
 | `providers/` | LLM clients (OpenRouter, HuggingFace) |
 | `prompts.py` | Prompt templates |
 
@@ -198,25 +196,6 @@ Rules are filtered by acceptance rate (configurable in config.yaml) to ensure pl
 Rules are compiled into sandboxed Python with limited builtins:
 - Allowed: `len`, `sum`, `min`, `max`, `abs`, `any`, `all`
 - Available: `card.rank`, `card.color`, `card.suit.suit_name`, `mainline`
-
----
-
-## Tournament Mode (Multi-player)
-
-Multiple LLM "Scientists" compete to deduce a secret rule with full game mechanics.
-
-```bash
-# Single round
-uv run scripts/play_single_round.py
-
-# Multi-round tournament
-uv run scripts/play_tournament.py
-
-# Analyze results
-uv run scripts/tournament_analysis.py results/tournament_results_TIMESTAMP.json
-```
-
-Configuration in `config_tournament.yaml` with multiple players, hand management, and penalties.
 
 ---
 
