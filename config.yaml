@@ -9,25 +9,23 @@ providers:
     api_key_env: "OPENROUTER_API_KEY"
     referer: "eleusis-benchmark"
 
-# Model configuration
-models:
-  max_tokens: 4096
-  max_llm_retries: 3
-  max_continuation_attempts: 3
 
-  # Model names support provider prefixes:
-  #   "hf:model-name" → HuggingFace Inference Providers
-  #   "openrouter:model-name" → OpenRouter API
-  #   "model-name" (no prefix) → defaults to HuggingFace
+# Game settings
+game:
+  num_rounds: 50
+  max_turns: 40
+  hand_size: 12
+  wrong_guess_penalty: 2
 
-  # Game master model (rule compilation)
-  game_master:
-    name: "hf:openai/gpt-oss-120b"
-    temperature: 0.8
-    display_name: "GPT OSS 120B"
+
+# Game master model configuration
+game_master:
+  model_name: "hf:openai/gpt-oss-120b"
+  temperature: 0.8
+
 
 # Rule source configuration
-rule_source:
+rules:
   library_path: "rules.json"
   min_acceptance: 0.15
   max_acceptance: 0.55
@@ -35,38 +33,20 @@ rule_source:
   index: 1
   rounds_per_rule: 1
 
-# Solo game settings
-solo_game:
-  num_rounds: 50
-  max_turns: 40
-  pause_after_turn: false
 
-  # Game parameters
-  hand_size: 12
-  wrong_guess_penalty: 2
+# LLM configuration
+llm:
+  max_tokens: 4096
+  max_llm_retries: 3
+  max_continuation_attempts: 3
+  temperature: 0.7
 
-  # Player model
-#  player:
-#    name: "hf:Qwen/Qwen3-4B-Thinking-2507"
-#    temperature: 0.7
-#    display_name: "Qwen3-4B-Thinking-2507"
-
-#  player:
-#    name: "hf:openai/gpt-oss-120b"
-#    temperature: 0.7
-#    display_name: "GPT OSS 120B"
-#
-#  player:
-#    name: "hf:deepseek-ai/DeepSeek-R1:fastest"
-#    temperature: 0.7
-#    display_name: "DeepSeek-R1"
-#
-  player:
-    name: "openrouter:anthropic/claude-haiku-4.5"
-    temperature: 0.7
-    display_name: "Claude 4.5 Haiku"
-
-#  player:
-#    name: "openrouter:openai/gpt-5.2"
-#    temperature: 0.7
-#    display_name: "GPT 5.2"
+# Model names support provider prefixes:
+#   "hf:model-name" → HuggingFace Inference Providers
+#   "openrouter:model-name" → OpenRouter API
+model: "hf:Qwen/Qwen3-4B-Thinking-2507"
+#model: "hf:openai/gpt-oss-120b"
+#model: "openrouter:openai/gpt-5.2"
+#model: "openrouter:anthropic/claude-haiku-4.5"
+#model: "hf:Qwen3-4B-Thinking-2507"
+#model: "hf:deepseek-ai/DeepSeek-R1:fastest"

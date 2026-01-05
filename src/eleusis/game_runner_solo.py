@@ -1,6 +1,7 @@
 """Game runner for solo pattern discovery mode."""
 
 import logging
+import re
 
 from eleusis.game_engine_solo import GameEngineSolo, GuessRuleAction, Rule
 from eleusis.game_master import GameMaster
@@ -12,6 +13,24 @@ from eleusis.rules import RuleValidator
 from eleusis.prompts_solo import get_solo_action_selection_prompt
 
 logger = logging.getLogger(__name__)
+
+
+def _model_spec_to_display_name(model_spec: str) -> str:
+    """Convert model spec to readable display name."""
+    # Remove provider prefix
+    if ":" in model_spec:
+        _, model_name = model_spec.split(":", 1)
+    else:
+        model_name = model_spec
+
+    # Extract last part after /
+    if "/" in model_name:
+        model_name = model_name.split("/")[-1]
+
+    # Clean up common suffixes and format
+    model_name = model_name.replace("-", " ").replace("_", " ")
+    model_name = re.sub(r'\s+', ' ', model_name).strip()
+    return model_name.title()
 
 
 class LLMScientistSolo(LLMScientist):
@@ -110,15 +129,18 @@ def play_round_solo(
     # (1) Client initialization
     # --------------------
 
-    solo_config = config.get("solo_game", config.get("game"))
-    player_cfg = solo_config["player"]
-    max_tokens = config["models"]["max_tokens"]
+    game_config = config["game"]
+    llm_config = config["llm"]
+    game_master_cfg = config["game_master"]
 
-    game_master_cfg = config["models"]["game_master"]
-    max_continuation = config["models"].get("max_continuation_attempts", 3)
+    player_model = config["model"]
+    player_display_name = _model_spec_to_display_name(player_model)
+
+    max_tokens = llm_config["max_tokens"]
+    max_continuation = llm_config.get("max_continuation_attempts", 3)
 
     game_master_client = create_client(
-        game_master_cfg["name"],
+        game_master_cfg["model_name"],
         temperature=game_master_cfg["temperature"],
         max_tokens=max_tokens,
         role="game_master",
@@ -126,10 +148,10 @@ def play_round_solo(
     )
 
     scientist_client = create_client(
-        player_cfg["name"],
-        temperature=player_cfg["temperature"],
+        player_model,
+        temperature=llm_config["temperature"],
         max_tokens=max_tokens,
-        role=player_cfg["display_name"],
+        role=player_display_name,
         max_continuation_attempts=max_continuation,
     )
 
@@ -153,21 +175,21 @@ def play_round_solo(
 
         validator = RuleValidator()
 
-        rule_source_cfg = config["rule_source"]
+        rules_cfg = config["rules"]
 
-        min_acceptance = rule_source_cfg.get("min_acceptance", 0.0)
-        max_acceptance = rule_source_cfg.get("max_acceptance", 1.0)
+        min_acceptance = rules_cfg.get("min_acceptance", 0.0)
+        max_acceptance = rules_cfg.get("max_acceptance", 1.0)
 
         logger.info("Loading rule from library...")
         logger.info(f"Acceptance rate bounds: [{min_acceptance:.2%}, {max_acceptance:.2%}]")
 
         # Use provided start_rule_index for resume support, otherwise use config default
-        start_index = start_rule_index if start_rule_index is not None else rule_source_cfg.get("index", 0)
+        start_index = start_rule_index if start_rule_index is not None else rules_cfg.get("index", 0)
         logger.info(f"Rule factory starting at index: {start_index}")
 
         rule_factory = RuleFactory(
-            library_path=rule_source_cfg["library_path"],
-            selection=rule_source_cfg["selection"],
+            library_path=rules_cfg["library_path"],
+            selection=rules_cfg["selection"],
             min_acceptance=min_acceptance,
             max_acceptance=max_acceptance,
             start_index=start_index,
@@ -194,11 +216,11 @@ def play_round_solo(
     logger.info("=" * 80)
     logger.info("")
 
-    player_name = player_cfg['display_name']
+    player_name = player_display_name
     game_state = GameState([player_name])
 
-    hand_size = solo_config.get('hand_size', 12)
-    wrong_guess_penalty = solo_config.get('wrong_guess_penalty', 3)
+    hand_size = game_config.get('hand_size', 12)
+    wrong_guess_penalty = game_config.get('wrong_guess_penalty', 3)
 
     engine = GameEngineSolo(
         game_state,
@@ -219,10 +241,10 @@ def play_round_solo(
     logger.info("")
 
     # Determine max_turns_limit first
-    max_turns_limit = max_turns or solo_config.get("max_turns", 40)
+    max_turns_limit = max_turns or game_config.get("max_turns", 40)
 
     # Create scientist player
-    max_llm_retries = config["models"]["max_llm_retries"]
+    max_llm_retries = llm_config["max_llm_retries"]
     scientist = LLMScientistSolo(
         player_name,
         scientist_client,
@@ -364,7 +386,7 @@ def play_round_solo(
         turn_count += 1
 
         # Pause after turn if configured
-        if solo_config.get("pause_after_turn", False):
+        if game_config.get("pause_after_turn", False):
             input(f"[Turn {turn_count} complete] Press Enter to continue...")
 
     # -------------

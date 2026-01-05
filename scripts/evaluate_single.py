@@ -53,8 +53,6 @@ Examples:
                         help='Path to resume folder (e.g., results/solo_evaluation_20251205_151306)')
     parser.add_argument('--player', type=str,
                         help='Player model spec (e.g., "openrouter:anthropic/claude-haiku")')
-    parser.add_argument('--player-name', type=str,
-                        help='Player display name (auto-generated from model if not provided)')
     parser.add_argument('--num-rounds', type=int,
                         help='Number of rounds to play')
     parser.add_argument('--rule-index', type=int,
@@ -77,33 +75,23 @@ def load_config(config_path: str) -> dict:
 
 def apply_cli_overrides(config: dict, args) -> dict:
     """Apply CLI argument overrides to config."""
-    solo_config = config.get("solo_game", config.get("game", {}))
+    game_config = config["game"]
 
     # Player model override
     if args.player:
-        solo_config["player"]["name"] = args.player
-        # Auto-generate display name if not provided
-        if args.player_name:
-            solo_config["player"]["display_name"] = args.player_name
-        else:
-            # Extract readable name from model spec
-            solo_config["player"]["display_name"] = _model_spec_to_display_name(args.player)
-
-    # Player display name override (without changing model)
-    elif args.player_name:
-        solo_config["player"]["display_name"] = args.player_name
+        config["model"] = args.player
 
     # Number of rounds override
     if args.num_rounds is not None:
-        solo_config["num_rounds"] = args.num_rounds
+        game_config["num_rounds"] = args.num_rounds
 
     # Max turns override
     if args.max_turns is not None:
-        solo_config["max_turns"] = args.max_turns
+        game_config["max_turns"] = args.max_turns
 
     # Rule index override
     if args.rule_index is not None:
-        config["rule_source"]["index"] = args.rule_index
+        config["rules"]["index"] = args.rule_index
 
     return config
 
@@ -239,8 +227,8 @@ def load_and_filter_rules_from_library(config: dict) -> list[dict]:
     import json
     from pathlib import Path
 
-    rule_source_cfg = config["rule_source"]
-    library_path = Path(rule_source_cfg["library_path"])
+    rules_cfg = config["rules"]
+    library_path = Path(rules_cfg["library_path"])
 
     if not library_path.exists():
         logger.error(f"Rule library not found: {library_path}")
@@ -250,8 +238,8 @@ def load_and_filter_rules_from_library(config: dict) -> list[dict]:
         data = json.load(f)
 
     all_rules = data.get("rules", [])
-    min_acceptance = rule_source_cfg.get("min_acceptance", 0.0)
-    max_acceptance = rule_source_cfg.get("max_acceptance", 1.0)
+    min_acceptance = rules_cfg.get("min_acceptance", 0.0)
+    max_acceptance = rules_cfg.get("max_acceptance", 1.0)
 
     # Filter rules by acceptance rate if present
     filtered_rules = []
@@ -279,14 +267,19 @@ def main():
     config = load_config(args.config)
     config = apply_cli_overrides(config, args)
 
-    # Load solo config (after overrides applied)
-    solo_config = config.get("solo_game", config.get("game"))
-    num_rounds = solo_config.get("num_rounds", 10)
-    rounds_per_rule = config["rule_source"].get("rounds_per_rule", 1)
-    player_cfg = solo_config["player"]
+    # Load config sections (after overrides applied)
+    game_config = config["game"]
+    rules_cfg = config["rules"]
+    num_rounds = game_config.get("num_rounds", 10)
+    rounds_per_rule = rules_cfg.get("rounds_per_rule", 1)
+
+    # Derive player display name from model spec
+    player_model = config["model"]
+    player_display_name = _model_spec_to_display_name(player_model)
+    game_master_display_name = _model_spec_to_display_name(config["game_master"]["model_name"])
 
     # Generate output tag for this run
-    output_tag = generate_output_tag(args, player_cfg["display_name"])
+    output_tag = generate_output_tag(args, player_display_name)
 
     # Setup logging with tag in filename
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -303,7 +296,7 @@ def main():
             logger.error("Failed to load checkpoint")
             return
 
-        if not validate_resume_config(checkpoint['config'], solo_config):
+        if not validate_resume_config(checkpoint['config'], game_config):
             return
 
         # Check if selection mode is sequential
@@ -343,15 +336,15 @@ def main():
         logger.info(f"Rounds per rule: {rounds_per_rule}")
         if current_rule:
             logger.info(f"Reusing rule: {current_rule.description()[:80]}...")
-        logger.info(f"  - Game Master: {config['models']['game_master']['display_name']}")
-        logger.info(f"  - Player: {player_cfg['display_name']}")
+        logger.info(f"  - Game Master: {game_master_display_name}")
+        logger.info(f"  - Player: {player_display_name}")
         logger.info("")
     else:
         # Fresh start
         folder_name = f"solo_evaluation_{timestamp}_{output_tag}"
         start_round = 1
         current_rule = None
-        rule_factory_index = config["rule_source"].get("index", 0)
+        rule_factory_index = rules_cfg.get("index", 0)
 
         logger.info("=" * 80)
         logger.info(f"SOLO MODE EVALUATION - {num_rounds} ROUNDS")
@@ -359,8 +352,8 @@ def main():
         logger.info(f"Log file: {log_file}")
         logger.info(f"Output folder: results/{folder_name}")
         logger.info(f"Rounds per rule: {rounds_per_rule}")
-        logger.info(f"  - Game Master: {config['models']['game_master']['display_name']}")
-        logger.info(f"  - Player: {player_cfg['display_name']}")
+        logger.info(f"  - Game Master: {game_master_display_name}")
+        logger.info(f"  - Player: {player_display_name}")
         logger.info("")
 
         # Load all rules from library upfront (for self-contained checkpoint)
@@ -376,14 +369,14 @@ def main():
             'config': {
                 'num_rounds': num_rounds,
                 'rounds_per_rule': rounds_per_rule,
-                'game_master': config['models']['game_master']['display_name'],
-                'game_master_model': config['models']['game_master']['name'],
-                'player': player_cfg['display_name'],
-                'player_model': player_cfg['name'],
-                'hand_size': solo_config.get('hand_size', 12),
-                'max_turns': solo_config.get('max_turns', 40),
-                'wrong_guess_penalty': solo_config.get('wrong_guess_penalty', 3),
-                'max_continuation_attempts': config['models'].get('max_continuation_attempts', 3),
+                'game_master': game_master_display_name,
+                'game_master_model': config['game_master']['model_name'],
+                'player': player_display_name,
+                'player_model': player_model,
+                'hand_size': game_config.get('hand_size', 12),
+                'max_turns': game_config.get('max_turns', 40),
+                'wrong_guess_penalty': game_config.get('wrong_guess_penalty', 3),
+                'max_continuation_attempts': config['llm'].get('max_continuation_attempts', 3),
             },
             'rounds': [],
             'statistics': {
@@ -397,10 +390,10 @@ def main():
                 'completed_rounds': 0,
                 'total_rounds': num_rounds,
                 'rule_factory_state': {
-                    'selection': config["rule_source"]["selection"],
+                    'selection': rules_cfg["selection"],
                     'current_index': rule_factory_index,
-                    'min_acceptance': config["rule_source"].get("min_acceptance", 0.0),
-                    'max_acceptance': config["rule_source"].get("max_acceptance", 1.0),
+                    'min_acceptance': rules_cfg.get("min_acceptance", 0.0),
+                    'max_acceptance': rules_cfg.get("max_acceptance", 1.0),
                 },
                 'current_rule': None,
                 'rules_consumed': [],
@@ -482,10 +475,10 @@ def main():
             'completed_rounds': round_num,
             'total_rounds': num_rounds,
             'rule_factory_state': {
-                'selection': config["rule_source"]["selection"],
+                'selection': rules_cfg["selection"],
                 'current_index': rule_factory_index,
-                'min_acceptance': config["rule_source"].get("min_acceptance", 0.0),
-                'max_acceptance': config["rule_source"].get("max_acceptance", 1.0),
+                'min_acceptance': rules_cfg.get("min_acceptance", 0.0),
+                'max_acceptance': rules_cfg.get("max_acceptance", 1.0),
             },
             'current_rule': {
                 'description': current_rule.description() if current_rule else None,
@@ -533,7 +526,7 @@ def main():
     evaluation_results['statistics']['average_turns_when_successful'] = avg_turns_success
     evaluation_results['statistics']['average_failed_guesses'] = avg_failed_guesses
 
-    logger.info(f"Player: {player_cfg['display_name']}")
+    logger.info(f"Player: {player_display_name}")
     logger.info(f"Rounds played: {num_rounds}")
     logger.info("")
     logger.info(f"Success rate: {success_rate:.1f}% ({stats['successful_rounds']}/{num_rounds})")

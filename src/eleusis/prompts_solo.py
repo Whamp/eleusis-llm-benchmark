@@ -12,7 +12,7 @@ def _load_game_config() -> dict:
     config_path = Path(__file__).parent.parent.parent / "config.yaml"
     with open(config_path) as f:
         config = yaml.safe_load(f)
-    return config.get("solo_game", config.get("game"))
+    return config.get("game")
 
 
 def get_solo_rules() -> str:
