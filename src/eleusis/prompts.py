@@ -6,27 +6,39 @@ import yaml
 
 # ================================================================================================
 
-def get_continuation_prompt(xml_tag: str) -> str:
-    """Get prompt for completing truncated structured response."""
-    return f"""Please continue and COMPLETE your response now.
-    DO NOT REASON ABOUT IT FURTHER, just provide the missing content.
-    You MUST start your response immediately with the <{xml_tag}> tag.
-    You MUST finish with a properly closed </{xml_tag}> tag containing valid JSON.
-    - Include the complete JSON object in the XML tags
-    - Ensure all JSON braces and brackets are properly closed
+def get_continuation_prompt(xml_tag: str, force_answer: bool = False) -> str:
+    """Get prompt for completing truncated structured response.
+
+    Args:
+        xml_tag: The XML tag to use for the response
+        force_answer: If True, use stronger instruction to prevent further reasoning
+    """
+    if force_answer:
+        # Stronger prompt for reasoning models that keep thinking
+        return f"""STOP. Output ONLY the final answer now.
+DO NOT think further. DO NOT reason. DO NOT use <think> tags.
+Immediately output the <{xml_tag}> tag with valid JSON inside, then close with </{xml_tag}>.
+Start your response with: <{xml_tag}>"""
+    else:
+        return f"""Please continue and COMPLETE your response now.
+DO NOT REASON ABOUT IT FURTHER, just provide the missing content.
+You MUST start your response immediately with the <{xml_tag}> tag.
+You MUST finish with a properly closed </{xml_tag}> tag containing valid JSON.
+- Include the complete JSON object in the XML tags
+- Ensure all JSON braces and brackets are properly closed
 """
 
 # Common game rules explanation used across prompts
 def _load_game_config() -> dict:
-    """Load game config from config.yaml"""
-    config_path = Path(__file__).parent.parent.parent / "config.yaml"
+    """Load game config from config_tournament.yaml"""
+    config_path = Path(__file__).parent.parent.parent / "config_tournament.yaml"
     with open(config_path) as f:
         config = yaml.safe_load(f)
     return config["game"]
 
 
 def get_eleusis_rules() -> str:
-    """Generate ELEUSIS game rules using values from config.yaml"""
+    """Generate ELEUSIS game rules using values from config_tournament.yaml"""
     game_config = _load_game_config()
 
     cards_per_scientist = game_config['cards_per_scientist']

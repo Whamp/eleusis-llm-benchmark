@@ -1,0 +1,14 @@
+# Example models file for parallel evaluation
+# One model spec per line
+# Lines starting with # are comments
+# Empty lines are ignored
+
+# OpenRouter models
+openrouter:anthropic/claude-3.5-haiku
+openrouter:google/gemini-2.0-flash-001
+openrouter:openai/gpt-4o-mini
+openrouter:meta-llama/llama-3.1-70b-instruct
+
+# HuggingFace models (via Inference Providers)
+# hf:openai/gpt-oss-120b
+# hf:Qwen/Qwen3-4B

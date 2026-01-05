@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from eleusis.cards import Card
 from eleusis.game_engine import Action, NoPlayAction, PlayCardAction
 from eleusis.game_state import GameState
-from eleusis.llm_client import HuggingFaceClient
+from eleusis.llm_client import BaseLLMClient
 from eleusis.prompts import get_action_selection_prompt
 
 logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ class LLMScientist(Player):
     def __init__(
         self,
         name: str,
-        llm_client: HuggingFaceClient,
+        llm_client: BaseLLMClient,
         max_retries: int = 3,
     ) -> None:
         """Initialize LLM scientist."""

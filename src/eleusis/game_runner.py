@@ -5,7 +5,7 @@ import logging
 from eleusis.game_engine import GameEngine, GuessRuleAction, Rule
 from eleusis.game_master import GameMaster
 from eleusis.game_state import GameState
-from eleusis.llm_client import HuggingFaceClient
+from eleusis.llm_client import create_client
 from eleusis.player import LLMScientist
 from eleusis.rule_factory import RuleFactory
 from eleusis.rules import RuleValidator
@@ -39,22 +39,25 @@ def play_round(
 
     player_configs = config["models"]["players"]
     max_tokens = config["models"]["max_tokens"]
+    max_continuation = config["models"].get("max_continuation_attempts", 3)
 
     game_master_cfg = config["models"]["game_master"]
-    game_master_client = HuggingFaceClient(
-        model_name=game_master_cfg["name"],
+    game_master_client = create_client(
+        game_master_cfg["name"],
         temperature=game_master_cfg["temperature"],
         max_tokens=max_tokens,
-        role="game_master"
+        role="game_master",
+        max_continuation_attempts=max_continuation,
     )
 
     scientist_clients = []
     for player_cfg in player_configs:
-        client = HuggingFaceClient(
-            model_name=player_cfg["name"],
+        client = create_client(
+            player_cfg["name"],
             temperature=player_cfg["temperature"],
             max_tokens=max_tokens,
-            role=player_cfg["display_name"]
+            role=player_cfg["display_name"],
+            max_continuation_attempts=max_continuation,
         )
         scientist_clients.append(client)
 

@@ -3,6 +3,7 @@
 import argparse
 import json
 import logging
+import re
 from datetime import datetime
 from pathlib import Path
 
@@ -16,23 +17,131 @@ from eleusis.logging_utils import setup_logging
 # Load environment variables
 load_dotenv()
 
-# Load configuration
-config_path = Path(__file__).parent.parent / "config.yaml"
-with open(config_path) as f:
-    config = yaml.safe_load(f)
-
-# Logging setup
-timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-log_file = f"logs/solo_evaluation_{timestamp}.txt"
-setup_logging(log_file=log_file, console_level=logging.INFO, file_level=logging.DEBUG)
-logging.getLogger("httpx").setLevel(logging.WARNING)
-logger = logging.getLogger(__name__)
+# Module-level variables (initialized in main)
+config = None
+logger = None
+log_file = None
+timestamp = None
 
 
-def save_evaluation_results(evaluation_results: dict, timestamp: str) -> str:
+def parse_args():
+    """Parse command-line arguments."""
+    parser = argparse.ArgumentParser(
+        description='Evaluate single LLM in solo pattern discovery mode',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Run with defaults from config.yaml
+  python scripts/evaluate_single.py
+
+  # Override player model
+  python scripts/evaluate_single.py --player "openrouter:anthropic/claude-haiku"
+
+  # Run 20 rounds with a specific model and custom tag
+  python scripts/evaluate_single.py --player "openrouter:google/gemini-flash" --num-rounds 20 --tag gemini
+
+  # Start from rule index 10
+  python scripts/evaluate_single.py --rule-index 10
+
+  # Resume interrupted evaluation
+  python scripts/evaluate_single.py --resume results/solo_evaluation_20251205_151306
+"""
+    )
+    parser.add_argument('--config', type=str, default='config.yaml',
+                        help='Path to config file (default: config.yaml)')
+    parser.add_argument('--resume', type=str,
+                        help='Path to resume folder (e.g., results/solo_evaluation_20251205_151306)')
+    parser.add_argument('--player', type=str,
+                        help='Player model spec (e.g., "openrouter:anthropic/claude-haiku")')
+    parser.add_argument('--player-name', type=str,
+                        help='Player display name (auto-generated from model if not provided)')
+    parser.add_argument('--num-rounds', type=int,
+                        help='Number of rounds to play')
+    parser.add_argument('--rule-index', type=int,
+                        help='Starting rule index (for sequential selection)')
+    parser.add_argument('--max-turns', type=int,
+                        help='Maximum turns per round')
+    parser.add_argument('--tag', type=str,
+                        help='Tag to append to output folder name for identification')
+    return parser.parse_args()
+
+
+def load_config(config_path: str) -> dict:
+    """Load configuration from YAML file."""
+    path = Path(config_path)
+    if not path.is_absolute():
+        path = Path(__file__).parent.parent / config_path
+    with open(path) as f:
+        return yaml.safe_load(f)
+
+
+def apply_cli_overrides(config: dict, args) -> dict:
+    """Apply CLI argument overrides to config."""
+    solo_config = config.get("solo_game", config.get("game", {}))
+
+    # Player model override
+    if args.player:
+        solo_config["player"]["name"] = args.player
+        # Auto-generate display name if not provided
+        if args.player_name:
+            solo_config["player"]["display_name"] = args.player_name
+        else:
+            # Extract readable name from model spec
+            solo_config["player"]["display_name"] = _model_spec_to_display_name(args.player)
+
+    # Player display name override (without changing model)
+    elif args.player_name:
+        solo_config["player"]["display_name"] = args.player_name
+
+    # Number of rounds override
+    if args.num_rounds is not None:
+        solo_config["num_rounds"] = args.num_rounds
+
+    # Max turns override
+    if args.max_turns is not None:
+        solo_config["max_turns"] = args.max_turns
+
+    # Rule index override
+    if args.rule_index is not None:
+        config["rule_source"]["index"] = args.rule_index
+
+    return config
+
+
+def _model_spec_to_display_name(model_spec: str) -> str:
+    """Convert model spec to readable display name."""
+    # Remove provider prefix
+    if ":" in model_spec:
+        _, model_name = model_spec.split(":", 1)
+    else:
+        model_name = model_spec
+
+    # Extract last part after /
+    if "/" in model_name:
+        model_name = model_name.split("/")[-1]
+
+    # Clean up common suffixes and format
+    model_name = model_name.replace("-", " ").replace("_", " ")
+    model_name = re.sub(r'\s+', ' ', model_name).strip()
+    return model_name.title()
+
+
+def generate_output_tag(args, player_name: str) -> str:
+    """Generate output folder tag based on CLI args or player name."""
+    if args.tag:
+        return args.tag
+
+    # Create sanitized tag from player name
+    tag = player_name.lower()
+    tag = re.sub(r'[^a-z0-9]+', '_', tag)
+    tag = tag.strip('_')[:30]  # Limit length
+    return tag
+
+
+def save_evaluation_results(evaluation_results: dict, folder_name: str) -> str:
     """Save evaluation results to JSON file (incremental)."""
-    Path(f"results/solo_evaluation_{timestamp}").mkdir(parents=True, exist_ok=True)
-    output_file = f"results/solo_evaluation_{timestamp}/results.json"
+    Path(f"results/{folder_name}").mkdir(parents=True, exist_ok=True)
+    output_file = f"results/{folder_name}/results.json"
     with open(output_file, 'w') as f:
         json.dump(evaluation_results, f, indent=2)
     return output_file
@@ -161,17 +270,30 @@ def load_and_filter_rules_from_library(config: dict) -> list[dict]:
 
 def main():
     """Evaluate single player across multiple rounds."""
+    global config, logger, log_file, timestamp
 
     # Parse command-line arguments
-    parser = argparse.ArgumentParser(description='Evaluate single LLM in solo pattern discovery mode')
-    parser.add_argument('--resume', type=str, help='Path to resume folder (e.g., results/solo_evaluation_20251205_151306)')
-    args = parser.parse_args()
+    args = parse_args()
 
-    # Load solo config
+    # Load and configure
+    config = load_config(args.config)
+    config = apply_cli_overrides(config, args)
+
+    # Load solo config (after overrides applied)
     solo_config = config.get("solo_game", config.get("game"))
     num_rounds = solo_config.get("num_rounds", 10)
     rounds_per_rule = config["rule_source"].get("rounds_per_rule", 1)
     player_cfg = solo_config["player"]
+
+    # Generate output tag for this run
+    output_tag = generate_output_tag(args, player_cfg["display_name"])
+
+    # Setup logging with tag in filename
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_file = f"logs/solo_evaluation_{timestamp}_{output_tag}.txt"
+    setup_logging(log_file=log_file, console_level=logging.INFO, file_level=logging.DEBUG)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logger = logging.getLogger(__name__)
 
     # Load checkpoint if resuming
     checkpoint = None
@@ -200,8 +322,8 @@ def main():
 
     # Initialize or resume
     if checkpoint:
-        # Resume mode
-        timestamp_val = checkpoint['timestamp']
+        # Resume mode - use original folder name from checkpoint
+        folder_name = checkpoint.get('folder_name', f"solo_evaluation_{checkpoint['timestamp']}")
         evaluation_results = checkpoint
         start_round = checkpoint['checkpoint']['completed_rounds'] + 1
 
@@ -226,7 +348,7 @@ def main():
         logger.info("")
     else:
         # Fresh start
-        timestamp_val = timestamp
+        folder_name = f"solo_evaluation_{timestamp}_{output_tag}"
         start_round = 1
         current_rule = None
         rule_factory_index = config["rule_source"].get("index", 0)
@@ -235,6 +357,7 @@ def main():
         logger.info(f"SOLO MODE EVALUATION - {num_rounds} ROUNDS")
         logger.info("=" * 80)
         logger.info(f"Log file: {log_file}")
+        logger.info(f"Output folder: results/{folder_name}")
         logger.info(f"Rounds per rule: {rounds_per_rule}")
         logger.info(f"  - Game Master: {config['models']['game_master']['display_name']}")
         logger.info(f"  - Player: {player_cfg['display_name']}")
@@ -248,15 +371,19 @@ def main():
 
         # Initialize evaluation tracking
         evaluation_results = {
-            'timestamp': timestamp_val,
+            'timestamp': timestamp,
+            'folder_name': folder_name,
             'config': {
                 'num_rounds': num_rounds,
                 'rounds_per_rule': rounds_per_rule,
                 'game_master': config['models']['game_master']['display_name'],
+                'game_master_model': config['models']['game_master']['name'],
                 'player': player_cfg['display_name'],
+                'player_model': player_cfg['name'],
                 'hand_size': solo_config.get('hand_size', 12),
                 'max_turns': solo_config.get('max_turns', 40),
                 'wrong_guess_penalty': solo_config.get('wrong_guess_penalty', 3),
+                'max_continuation_attempts': config['models'].get('max_continuation_attempts', 3),
             },
             'rounds': [],
             'statistics': {
@@ -371,7 +498,7 @@ def main():
         }
 
         # Save incrementally after each round
-        output_file = save_evaluation_results(evaluation_results, timestamp_val)
+        output_file = save_evaluation_results(evaluation_results, folder_name)
         logger.info(f"Progress saved to: {output_file}")
 
         # Log round summary
@@ -417,7 +544,7 @@ def main():
     logger.info(f"Total score: {stats['total_score']}")
 
     # Save final results
-    output_file = save_evaluation_results(evaluation_results, timestamp_val)
+    output_file = save_evaluation_results(evaluation_results, folder_name)
 
     logger.info("")
     logger.info(f"Results saved to: {output_file}")

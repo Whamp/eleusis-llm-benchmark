@@ -2,7 +2,7 @@
 
 import logging
 
-from eleusis.llm_client import HuggingFaceClient
+from eleusis.llm_client import BaseLLMClient
 
 logger = logging.getLogger(__name__)
 
@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 class GameMaster:
     """Manages rule creation, conversion, and comparison using LLM."""
 
-    def __init__(self, llm_client: HuggingFaceClient):
+    def __init__(self, llm_client: BaseLLMClient):
         """Initialize game master with LLM client."""
         self.llm_client = llm_client
 

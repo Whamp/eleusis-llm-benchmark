@@ -1,81 +1,72 @@
-# Eleusis LLM Benchmark Configuration
+# Eleusis LLM Benchmark - Solo Mode Configuration
+# Single-player pattern discovery mode
+
+# Provider configuration
+providers:
+  huggingface:
+    api_key_env: "HF_TOKEN"
+  openrouter:
+    api_key_env: "OPENROUTER_API_KEY"
+    referer: "eleusis-benchmark"
 
 # Model configuration
 models:
+  max_tokens: 4096
+  max_llm_retries: 3
+  max_continuation_attempts: 3
 
-  max_tokens: 4096  # Maximum tokens for all models
-  max_llm_retries: 3  # Max retries for LLM when parsing fails
+  # Model names support provider prefixes:
+  #   "hf:model-name" → HuggingFace Inference Providers
+  #   "openrouter:model-name" → OpenRouter API
+  #   "model-name" (no prefix) → defaults to HuggingFace
 
-  # Model for game_master (rule maker, referee...)
+  # Game master model (rule compilation)
   game_master:
-    name: "openai/gpt-oss-120b"
+    name: "hf:openai/gpt-oss-120b"
     temperature: 0.8
     display_name: "GPT OSS 120B"
 
-
-  # Models for scientists (list determines number of players)
-  players:
-#    - name: "meta-llama/Llama-3.3-70B-Instruct"
-#      temperature: 0.7
-#      display_name: "Llama-3.3-70B-Instruct"
-#
-    - name: "openai/gpt-oss-120b"
-      temperature: 0.7
-      display_name: "GPT OSS 120B"
-#
-#    - name: "openai/gpt-oss-20b"
-#      temperature: 0.7
-#      display_name: "GPT OSS 20B"
-
-#    - name: "moonshotai/Kimi-K2-Thinking:fastest"
-#      temperature: 0.7
-#      display_name: "Kimi-K2-Thinking"
-
-    - name: "deepseek-ai/DeepSeek-R1:fastest"
-      temperature: 0.7
-      display_name: "DeepSeek-R1"
-
-    - name: "Qwen/Qwen3-235B-A22B-Thinking-2507:fastest"
-      temperature: 0.7
-      display_name: "Qwen3-235B-A22B-Thinking-2507"
-
-
 # Rule source configuration
 rule_source:
-  library_path: "rules.json"  # Path to rule library JSON file
-  min_acceptance: 0.15      # Minimum avg acceptance rate for rules in library
+  library_path: "rules.json"
+  min_acceptance: 0.15
   max_acceptance: 0.55
-  selection: "sequential"  # "random" or "sequential"
-  index: 1  # Starting index for sequential selection
-  tournament_rounds: 5  # Number of rounds in tournament mode
-  rounds_per_rule: 1  # How many rounds to play same rule before changing
+  selection: "sequential"
+  index: 1
+  rounds_per_rule: 1
 
-# Game settings (multi-player tournament mode)
-game:
+# Solo game settings
+solo_game:
+  num_rounds: 50
   max_turns: 40
-  pause_after_turn: false  # Wait for user input after each turn
+  pause_after_turn: false
 
   # Game parameters
-  cards_per_scientist: 12  # Initial hand size for each scientist
-  correct_guess_bonus: -6  # Points deducted for guessing rule correctly
-  wrong_guess_penalty: 2  # Penalty card for incorrect guess
-  card_reject_penalty: 2  # Cards drawn when a card is rejected
-  no_play_incorrect_penalty: 3  # Penalty cards for incorrect no-play
-  no_play_correct_reduction: 3  # Cards reduced from hand on correct no-play (min 1)
+  hand_size: 12
+  wrong_guess_penalty: 2
 
-# Solo mode settings (single-player pattern discovery)
-solo_game:
-  num_rounds: 50  # Number of evaluation rounds
-  max_turns: 40  # Maximum turns per round
-  pause_after_turn: false  # Wait for user input after each turn
+  # Player model
+#  player:
+#    name: "hf:Qwen/Qwen3-4B-Thinking-2507"
+#    temperature: 0.7
+#    display_name: "Qwen3-4B-Thinking-2507"
 
-  # Solo game parameters
-  hand_size: 12  # Constant hand size (always maintained)
-  wrong_guess_penalty: 2  # Score penalty for incorrect guess
-
-  # Player configuration
+#  player:
+#    name: "hf:openai/gpt-oss-120b"
+#    temperature: 0.7
+#    display_name: "GPT OSS 120B"
+#
+#  player:
+#    name: "hf:deepseek-ai/DeepSeek-R1:fastest"
+#    temperature: 0.7
+#    display_name: "DeepSeek-R1"
+#
   player:
-    name: "Qwen/Qwen3-4B-Thinking-2507"
+    name: "openrouter:anthropic/claude-haiku-4.5"
     temperature: 0.7
-    display_name: "Qwen3-4B-Thinking-2507"
+    display_name: "Claude 4.5 Haiku"
 
+#  player:
+#    name: "openrouter:openai/gpt-5.2"
+#    temperature: 0.7
+#    display_name: "GPT 5.2"

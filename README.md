@@ -1,161 +1,228 @@
 # Eleusis LLM Benchmark
 
-This project is a benchmark for evaluating large language models (LLMs) on their ability to understand and generate rules in the context of the card game Eleusis.
+A benchmark for evaluating LLMs on pattern discovery in card games. Models attempt to deduce secret rules by testing cards against hidden patterns.
 
-The core game is implemented in Python, following the provided simplified ruleset, see RULES.md for details.
-
-A testing framework is provided to facilitate the assessment of LLMs' performance in playing the game.
-
-Open source LLM are called using Hugging Face Inference Providers API.
-
-Closed source LLMs are called using their respective APIs.
+## Quick Start
 
 ```bash
-# Generate a library of rules
-uv run scripts/generate_rule_library.py --num-rules 50 --output rules.json
+# Install dependencies
+uv sync
 
-# Evaluate rules in library
-uv run scripts/evaluate_rules.py --library rules.json
+# Set up API keys in .env file
+echo "OPENROUTER_API_KEY=your_key" > .env
+echo "HF_TOKEN=your_hf_token" >> .env
 
-# Multi-player tournament mode
-uv run scripts/play_single_round.py  # Single round
-uv run scripts/play_tournament.py    # Multiple rounds
-uv run scripts/tournament_analysis.py results/tournament_results_TIMESTAMP.json
-
-# Solo mode (single-player pattern discovery)
+# Run solo evaluation (single model)
 uv run scripts/evaluate_single.py
+
+# Run parallel evaluation (multiple models)
+./scripts/run_parallel_eval.sh
 ```
 
+## Solo Mode (Primary)
 
-## Project Overview
+A single LLM player attempts to discover a hidden pattern as efficiently as possible.
 
-This is an LLM benchmark for pattern discovery in card games. The benchmark evaluates how well LLMs can deduce secret rules by testing cards against a hidden pattern.
+### Running Evaluations
 
-The project supports two modes:
+```bash
+# Default: uses config.yaml settings
+uv run scripts/evaluate_single.py
 
-### Tournament Mode (Multi-player)
-Multiple LLM "Scientists" compete to deduce a secret rule while managing their card hands. Based on the card game Eleusis with full game mechanics including hand management, penalties, and scoring.
+# Override player model
+uv run scripts/evaluate_single.py --player "openrouter:anthropic/claude-3.5-haiku"
 
-### Solo Mode (Single-player)
-A single LLM player attempts to discover the pattern as efficiently as possible. Simplified mechanics with constant hand size, focusing on pattern discovery speed and accuracy.
+# Custom rounds and tag for identification
+uv run scripts/evaluate_single.py --player "openrouter:google/gemini-2.0-flash-001" \
+    --num-rounds 20 --tag gemini
 
-Key concepts:
-- **Mainline**: Horizontal row of accepted cards, visible to all players
-- **Sideline**: Columns of rejected cards beneath mainline cards
-- **Rule**: A deterministic Python function that evaluates cards based only on the card and mainline state
-- **Scientists/Player**: LLM players who try to deduce the rule through experimentation
-- **Game Master**: LLM that generates rules and judges equivalence
+# Start from specific rule index
+uv run scripts/evaluate_single.py --rule-index 10
 
+# Resume interrupted evaluation
+uv run scripts/evaluate_single.py --resume results/solo_evaluation_20251205_151306
+```
 
-## Architecture
+### CLI Arguments
 
-### Core Game Components (src/eleusis/)
+| Argument | Description |
+|----------|-------------|
+| `--config FILE` | Config file path (default: config.yaml) |
+| `--player MODEL` | Model spec (e.g., `openrouter:anthropic/claude-haiku`) |
+| `--player-name NAME` | Display name (auto-generated if not provided) |
+| `--num-rounds N` | Number of rounds to play |
+| `--rule-index N` | Starting rule index (for sequential selection) |
+| `--max-turns N` | Max turns per round |
+| `--tag TAG` | Tag for output folder identification |
+| `--resume PATH` | Resume from checkpoint folder |
 
-**cards.py** - Card representation with rank (1-13) and suit (Hearts, Diamonds, Clubs, Spades)
+### Parallel Evaluation
 
-**game_state.py** - Game state including mainline, sidelines, player hands, deck, turn tracking
+Run multiple models in parallel:
 
-**game_engine.py**
-- `Rule` class: Wraps rule description and executable Python code. Compiles natural language rule into executable function that evaluates cards
-- `GameEngine`: Orchestrates game flow, processes actions (PlayCardAction, NoPlayAction, GuessRuleAction), manages scoring
-- Action types define player moves
+```bash
+# Run default models (edit DEFAULT_MODELS in script)
+./scripts/run_parallel_eval.sh
 
-**rules.py** - `RuleValidator` validates rules and compares guessed rules to actual rules:
-- Validation: Tests determinism, empty mainline handling, random scenarios
-- Comparison: Uses simulation-based comparison to check rule equivalence by playing multiple simulated games
+# Use custom models file
+./scripts/run_parallel_eval.sh -m models.txt
 
-**game_runner.py** - High-level orchestrator that sets up and runs complete rounds
+# 10 rounds each, max 2 parallel jobs
+./scripts/run_parallel_eval.sh -n 10 -j 2
+```
 
-**player.py**
-- `LLMScientist`: LLM-powered player that selects cards/actions and optionally guesses rules
-- `RandomScientist`: Random baseline player for testing
+**Options:**
+- `-m, --models FILE` - File with model specs (one per line)
+- `-n, --num-rounds N` - Rounds per evaluation
+- `-r, --rule-index N` - Starting rule index
+- `-j, --jobs N` - Max parallel jobs
+- `-c, --config FILE` - Base config file
 
-**game_master.py** - LLM-powered game master that:
-- Converts rule descriptions to executable Python code
+**Models file format** (see `models.txt.example`):
+```
+# Comments start with #
+openrouter:anthropic/claude-3.5-haiku
+openrouter:google/gemini-2.0-flash-001
+openrouter:openai/gpt-4o-mini
+```
 
-**llm_client.py** - `HuggingFaceClient` wraps Hugging Face Inference Providers API:
-- Handles API calls with retry logic
-- Extracts structured responses from XML tags or code blocks
-- Supports response continuation when truncated
-- Methods for code conversion and card evaluation
+### Game Mechanics
 
-**prompts.py** - Prompt templates for LLM interactions (move selection, rule generation for library, etc.)
+- Constant hand size (12 cards) - draw 1 after each play
+- Play a card each turn (no "no play" action)
+- Guess the rule at any time
+- Game ends on correct guess or max turns (40)
 
-### Key Workflows
+### Scoring
 
-**Rule Loading**: Rules are loaded from a pre-generated library (JSON file)
+- Correct guess: `score = max_turns - current_turn - (3 × failed_guesses)`
+- No correct guess: `score = 0`
+- Higher is better (rewards efficiency)
 
-**Turn Processing**: Player selects action → GameEngine processes (evaluate card, update state, apply penalties/bonuses) → optionally allow rule guess → advance turn
+### Resume Feature
 
-**Rule Comparison**: Player guesses rule → Game master converts guess to code → RuleValidator runs simulations comparing actual vs guessed → returns verdict
-
-### Configuration
-
-**config.yaml** - Controls all game parameters:
-- Model selection for game master and scientists (Hugging Face model names)
-- Rule library path and selection mode (random or sequential)
-- Game parameters (hand size, penalties, bonuses, max turns)
-- Tournament settings
-
-**HF_TOKEN** environment variable required for Hugging Face API access (use .env file)
-
-### Solo Mode Details
-
-Solo mode is a simplified single-player variant focused on pattern discovery efficiency:
-
-**Game Mechanics:**
-- Constant hand size (12 cards by default) - always draw 1 card after playing
-- No "no play" action - simply play a card each turn
-- Can guess the rule at any time (not restricted to successful plays)
-- Game ends when rule is guessed correctly or max turns reached (40 by default)
-
-**Scoring:**
-- If correct guess: `score = max_turns - current_turn - (3 × failed_guesses)`
-- If no correct guess: `score = 0`
-- Higher scores are better (reward efficiency: fewer turns, fewer wrong guesses)
-
-**Configuration:**
-Edit `config.yaml` under the `solo_game` section to configure:
-- Player model and temperature
-- Hand size (constant throughout game)
-- Max turns per round
-- Wrong guess penalty (default: 3 points per failed guess)
-- Number of evaluation rounds
-
-**Implementation:**
-- `game_engine_solo.py`: Simplified game engine for solo mode
-- `game_runner_solo.py`: Solo round orchestration
-- `prompts_solo.py`: Pattern discovery prompts (no "Eleusis" references)
-- `evaluate_single.py`: Multi-round evaluation script
-
-**Resume Interrupted Evaluations:**
-
-If an evaluation is interrupted (crash, Ctrl-C, etc.), you can resume from where it left off:
+Evaluations checkpoint after each round and can be resumed:
 
 ```bash
 uv run scripts/evaluate_single.py --resume results/solo_evaluation_20251205_151306
 ```
 
-**Requirements for resume:**
-- Works only with `selection: "sequential"` in config.yaml (deterministic rule order)
-- The results folder must contain a valid results.json file with checkpoint data
-- Configuration parameters (num_rounds, max_turns, hand_size, etc.) must match the original run
+Requirements:
+- Only works with `selection: "sequential"` in config
+- Config parameters must match original run
+- Checkpoints are self-contained (include all rules)
 
-**What happens on resume:**
-- Loads checkpoint state from results.json (rules, progress, statistics)
-- Validates configuration consistency with original run
-- Resumes from the next incomplete round
-- Continues using rules from the stored checkpoint (self-contained, no dependency on external rules.json)
-- Appends new results to the same results.json file
+## Configuration
 
-**Checkpoint data:**
-The resume feature stores complete rule information in results.json, making checkpoints self-contained. Even if the rules.json file changes or is deleted, resume will work using the stored rules.
+### config.yaml
 
-## Development Notes
+```yaml
+providers:
+  openrouter:
+    api_key_env: "OPENROUTER_API_KEY"
+  huggingface:
+    api_key_env: "HF_TOKEN"
 
-- Rules are compiled into sandboxed Python functions with limited builtins (len, sum, min, max, any, all)
-- Rule code must be function body only, not full function definition
-- Simulation-based rule comparison is used to validate guesses
+models:
+  game_master:
+    name: "hf:openai/gpt-oss-120b"  # For rule compilation
+
+rule_source:
+  library_path: "rules.json"
+  selection: "sequential"  # or "random"
+  index: 0                 # starting index
+  min_acceptance: 0.15     # filter rules by acceptance rate
+  max_acceptance: 0.55
+
+solo_game:
+  num_rounds: 50
+  max_turns: 40
+  hand_size: 12
+  wrong_guess_penalty: 2
+  player:
+    name: "openrouter:anthropic/claude-3.5-haiku"
+    temperature: 0.7
+```
+
+### Model Specification
+
+Models are specified with provider prefix:
+- `openrouter:anthropic/claude-3.5-haiku` - OpenRouter API
+- `hf:meta-llama/Llama-3.3-70B` - HuggingFace Inference Providers
+
+### Environment Variables
+
+Create a `.env` file:
+```
+OPENROUTER_API_KEY=your_openrouter_key
+HF_TOKEN=your_huggingface_token
+```
+
+## Rule Library
+
+Rules are loaded from a pre-generated JSON library:
+
+```bash
+# Generate new rules
+uv run scripts/generate_rule_library.py --num-rules 50 --output rules.json
+
+# Evaluate rule acceptance rates
+uv run scripts/evaluate_rules.py --library rules.json
+```
+
+Rules are filtered by acceptance rate (configurable in config.yaml) to ensure playable difficulty.
+
+## Architecture
+
+### Core Components (src/eleusis/)
+
+| File | Description |
+|------|-------------|
+| `cards.py` | Card representation (rank 1-13, 4 suits) |
+| `game_state.py` | Game state: mainline, sidelines, hands, deck |
+| `game_engine.py` | Rule class, action processing |
+| `game_engine_solo.py` | Simplified solo mode engine |
+| `game_runner_solo.py` | Solo round orchestration |
+| `game_master.py` | Rule description → Python code |
+| `providers/` | LLM clients (OpenRouter, HuggingFace) |
+| `prompts.py` | Prompt templates |
+
+### Key Concepts
+
+- **Mainline**: Row of accepted cards (visible to player)
+- **Sideline**: Rejected cards shown below mainline
+- **Rule**: Deterministic Python function evaluating `(card, mainline) → bool`
+
+### Rule Compilation
+
+Rules are compiled into sandboxed Python with limited builtins:
+- Allowed: `len`, `sum`, `min`, `max`, `abs`, `any`, `all`
+- Available: `card.rank`, `card.color`, `card.suit.suit_name`, `mainline`
+
+---
+
+## Tournament Mode (Multi-player)
+
+Multiple LLM "Scientists" compete to deduce a secret rule with full game mechanics.
+
+```bash
+# Single round
+uv run scripts/play_single_round.py
+
+# Multi-round tournament
+uv run scripts/play_tournament.py
+
+# Analyze results
+uv run scripts/tournament_analysis.py results/tournament_results_TIMESTAMP.json
+```
+
+Configuration in `config_tournament.yaml` with multiple players, hand management, and penalties.
+
+---
+
+## Development
+
+- Rules must be function body only (no `def`)
+- Rule comparison uses simulation-based equivalence testing
 - Failed guesses are tracked to prevent duplicates
-- Logging: Uses Python logging module with separate console/file levels
-- Game state uses compact string representation for efficient LLM prompting
+- Logging: Python logging with console/file levels

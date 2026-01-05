@@ -15,8 +15,8 @@ from eleusis.logging_utils import setup_logging
 # Load environment variables
 load_dotenv()
 
-# Load configuration
-config_path = Path(__file__).parent.parent / "config.yaml"
+# Load configuration (tournament mode uses config_tournament.yaml)
+config_path = Path(__file__).parent.parent / "config_tournament.yaml"
 with open(config_path) as f:
     config = yaml.safe_load(f)
 
