@@ -140,10 +140,14 @@ class GameEngineSolo:
         self.hand_size = hand_size
         self.wrong_guess_penalty = wrong_guess_penalty
 
-    def setup_game(self) -> None:
-        """Deal initial hand and place starter card."""
-        # Shuffle deck
-        self.state.deck.shuffle()
+    def setup_game(self, round_seed: int | None = None) -> None:
+        """Deal initial hand and place starter card.
+
+        Args:
+            round_seed: Seed for reproducible deck shuffling. If None, uses random shuffle.
+        """
+        # Shuffle deck with optional seed for reproducibility
+        self.state.deck.shuffle(seed=round_seed)
 
         # Deal cards to the single player
         player = self.state.players[0]

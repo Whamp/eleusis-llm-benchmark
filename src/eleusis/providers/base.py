@@ -77,6 +77,7 @@ class BaseLLMClient(ABC):
         max_tokens: int = 4096,
         role: str = "unknown",
         max_continuation_attempts: int = 3,
+        seed: int | None = None,
     ) -> None:
         self.model_name = model_name
         self.api_key = api_key
@@ -85,6 +86,7 @@ class BaseLLMClient(ABC):
         self.max_tokens = max_tokens
         self.role = role
         self.max_continuation_attempts = max_continuation_attempts
+        self.seed = seed
         self.call_metrics: list[LLMCallMetrics] = []
         self.generate_metrics: list[GenerateMetrics] = []
         self.reasoning_model_type = detect_reasoning_model_type(model_name)

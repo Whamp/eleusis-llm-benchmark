@@ -74,10 +74,18 @@ class Deck:
                 for rank in range(1, NUM_CARDS + 1):
                     self._cards.append(Card(rank, suit))
 
-    def shuffle(self) -> None:
-        """Shuffle the deck in place."""
+    def shuffle(self, seed: int | None = None) -> None:
+        """Shuffle the deck in place.
+
+        Args:
+            seed: Random seed for reproducible shuffling. If None, uses global RNG.
+        """
         cards_list = list(self._cards)
-        random.shuffle(cards_list)
+        if seed is not None:
+            rng = random.Random(seed)
+            rng.shuffle(cards_list)
+        else:
+            random.shuffle(cards_list)
         self._cards = deque(cards_list)
 
     def draw(self) -> Card:

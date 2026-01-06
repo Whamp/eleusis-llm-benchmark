@@ -253,7 +253,6 @@ def main():
     # Load config sections (after overrides applied)
     game_config = config["game"]
     rules_cfg = config["rules"]
-    num_rounds = game_config.get("num_rounds", 10)
     rounds_per_rule = rules_cfg.get("rounds_per_rule", 1)
 
     # Derive player display name from model spec
@@ -270,6 +269,14 @@ def main():
     setup_logging(log_file=log_file, console_level=logging.INFO, file_level=logging.DEBUG)
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logger = logging.getLogger(__name__)
+
+    # Handle num_rounds=0: use entire filtered rule library
+    num_rounds = game_config.get("num_rounds", 10)
+    if num_rounds == 0:
+        filtered_rules = load_and_filter_rules_from_library(config)
+        num_rounds = len(filtered_rules)
+        game_config["num_rounds"] = num_rounds
+        logger.info(f"num_rounds=0: using entire filtered library ({num_rounds} rules)")
 
     # Load checkpoint if resuming
     checkpoint = None

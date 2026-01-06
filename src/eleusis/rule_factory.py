@@ -67,11 +67,15 @@ class RuleFactory:
             if "avg_acceptance_rate" in rule_dict:
                 acceptance_rate = rule_dict["avg_acceptance_rate"]
                 if not self._is_acceptance_rate_valid(acceptance_rate):
-                    logger.info(
-                        f"Skipping rule '{rule_dict.get('name', 'unknown')}' "
-                        f"(acceptance rate {acceptance_rate:.2%} outside bounds "
-                        f"[{self.min_acceptance:.2%}, {self.max_acceptance:.2%}])"
+                    # Yellow ANSI warning for skipped rules
+                    rule_name = rule_dict.get('name', 'unknown')
+                    msg = (
+                        f"Skipping rule '{rule_name}': "
+                        f"acceptance rate {acceptance_rate:.1%} outside bounds "
+                        f"[{self.min_acceptance:.1%}, {self.max_acceptance:.1%}]"
                     )
+                    print(f"\033[93m⚠ {msg}\033[0m")  # Yellow warning to console
+                    logger.info(msg)
                     continue
 
             description = rule_dict["description"]

@@ -26,6 +26,7 @@ class OpenRouterClient(BaseLLMClient):
         role: str = "unknown",
         max_continuation_attempts: int = 3,
         referer: str = "eleusis-benchmark",
+        seed: int | None = None,
     ) -> None:
         """Initialize OpenRouter client.
 
@@ -38,6 +39,7 @@ class OpenRouterClient(BaseLLMClient):
             role: Role identifier for metrics
             max_continuation_attempts: Max continuation attempts for truncated responses
             referer: HTTP Referer header for OpenRouter
+            seed: Random seed for reproducibility (not guaranteed by all models)
         """
         super().__init__(
             model_name=model_name,
@@ -47,6 +49,7 @@ class OpenRouterClient(BaseLLMClient):
             max_tokens=max_tokens,
             role=role,
             max_continuation_attempts=max_continuation_attempts,
+            seed=seed,
         )
 
         self.referer = referer
@@ -84,6 +87,10 @@ class OpenRouterClient(BaseLLMClient):
                     "max_tokens": self.max_tokens,
                     "temperature": self.temperature,
                 }
+
+                # Add seed for reproducibility if provided
+                if self.seed is not None:
+                    api_kwargs["seed"] = self.seed
 
                 # Try to disable thinking for reasoning models on continuation
                 extra_body = {}

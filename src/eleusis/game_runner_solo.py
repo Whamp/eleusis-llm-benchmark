@@ -122,12 +122,15 @@ def play_round_solo(
     max_tokens = llm_config["max_tokens"]
     max_continuation = llm_config.get("max_continuation_attempts", 3)
 
+    llm_seed = llm_config.get("seed")
+
     game_master_client = create_client(
         game_master_cfg["model_name"],
         temperature=game_master_cfg["temperature"],
         max_tokens=max_tokens,
         role="game_master",
         max_continuation_attempts=max_continuation,
+        seed=llm_seed,
     )
 
     scientist_client = create_client(
@@ -136,6 +139,7 @@ def play_round_solo(
         max_tokens=max_tokens,
         role=player_display_name,
         max_continuation_attempts=max_continuation,
+        seed=llm_seed,
     )
 
     # --------------------
@@ -211,8 +215,18 @@ def play_round_solo(
         wrong_guess_penalty=wrong_guess_penalty,
     )
 
-    # Setup game
-    engine.setup_game()
+    # Compute round seed from rule code for reproducibility
+    # Different models evaluating the same rule will get the same initial deck/hand
+    base_seed = config.get("seed")
+    if base_seed is not None:
+        rule_hash = hash(rule.get_code()) & 0xFFFFFFFF  # Consistent hash from rule code
+        round_seed = (base_seed + rule_hash) & 0xFFFFFFFF
+        logger.info(f"Using round seed: {round_seed} (base_seed={base_seed}, rule_hash={rule_hash})")
+    else:
+        round_seed = None
+
+    # Setup game with optional seed for reproducibility
+    engine.setup_game(round_seed=round_seed)
 
     logger.info("✓ Game setup complete")
     logger.info(f"✓ Starter card placed: {game_state.mainline.get_last()}")

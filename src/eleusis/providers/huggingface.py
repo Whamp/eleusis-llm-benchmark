@@ -23,6 +23,7 @@ class HuggingFaceClient(BaseLLMClient):
         max_tokens: int = 4096,
         role: str = "unknown",
         max_continuation_attempts: int = 3,
+        seed: int | None = None,
     ) -> None:
         """Initialize HuggingFace client using Inference Providers."""
         super().__init__(
@@ -33,6 +34,7 @@ class HuggingFaceClient(BaseLLMClient):
             max_tokens=max_tokens,
             role=role,
             max_continuation_attempts=max_continuation_attempts,
+            seed=seed,
         )
 
         if self.api_key:
@@ -67,6 +69,10 @@ class HuggingFaceClient(BaseLLMClient):
                     "max_tokens": self.max_tokens,
                     "temperature": self.temperature,
                 }
+
+                # Add seed for reproducibility if provided
+                if self.seed is not None:
+                    api_kwargs["seed"] = self.seed
 
                 # Try to disable thinking for reasoning models on continuation
                 if disable_thinking and self.reasoning_model_type:

@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:openrouter.ai)",
+      "Bash(python3:*)",
+      "Bash(chmod:*)",
+      "Bash(./scripts/run_parallel_eval.sh:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
