@@ -1,6 +1,7 @@
 """Evaluate rules by measuring acceptance rates with random cards."""
 
 import argparse
+import ast
 import json
 import logging
 import random
@@ -10,6 +11,28 @@ from eleusis.cards import Card, Suit
 from eleusis.game_engine import Rule
 
 logger = logging.getLogger(__name__)
+
+
+def code_complexity(code: str) -> dict:
+    """Return AST node count and cyclomatic complexity for Python code."""
+    tree = ast.parse(code)
+
+    node_count = 0
+    cyclomatic = 1  # base complexity
+
+    for node in ast.walk(tree):
+        node_count += 1
+
+        if isinstance(node, (ast.If, ast.While, ast.For, ast.ExceptHandler)):
+            cyclomatic += 1
+        elif isinstance(node, ast.BoolOp):
+            # each 'and'/'or' adds (n-1) decision points
+            cyclomatic += len(node.values) - 1
+
+    return {
+        'node_count': node_count,
+        'cyclomatic': cyclomatic
+    }
 
 
 def simulate_random_plays(rule: Rule, num_plays: int = 50) -> dict:
@@ -92,11 +115,17 @@ def evaluate_rule(
     logger.info(f"  Acceptance rate: {avg_acceptance_rate:.1%}")
     logger.info(f"  Avg mainline length: {avg_mainline_length:.1f}")
 
+    # Compute code complexity metrics
+    complexity = code_complexity(code)
+    logger.info(f"  Complexity: nodes={complexity['node_count']}, cyclomatic={complexity['cyclomatic']}")
+
     return {
         "avg_acceptance_rate": avg_acceptance_rate,
         "avg_mainline_length": avg_mainline_length,
         "num_simulations": num_simulations,
         "plays_per_simulation": plays_per_simulation,
+        "node_count": complexity["node_count"],
+        "cyclomatic_complexity": complexity["cyclomatic"],
     }
 
 
