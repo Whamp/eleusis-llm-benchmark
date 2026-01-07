@@ -1,6 +1,7 @@
 """Game runner for solo pattern discovery mode."""
 
 import logging
+import time
 
 from eleusis.game_engine import GameEngineSolo, GuessRuleAction, Rule
 from eleusis.game_state import GameState
@@ -105,8 +106,10 @@ def play_round_solo(
 
     Returns:
         dict with round_number, turn_count, rule_description, rule_code,
-        success, score, game_over_reason
+        success, score, game_over_reason, wall_clock_seconds
     """
+    # Track wall-clock time for the entire round
+    round_start_time = time.time()
 
     # --------------------
     # (1) Client initialization
@@ -408,4 +411,5 @@ def play_round_solo(
         'game_over_reason': game_over_reason,
         'llm_usage': llm_usage,
         'turns': turn_data_list,
+        'wall_clock_seconds': round(time.time() - round_start_time, 2),
     }

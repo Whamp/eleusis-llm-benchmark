@@ -92,8 +92,12 @@ class OpenRouterClient(BaseLLMClient):
                 if self.seed is not None:
                     api_kwargs["seed"] = self.seed
 
+                # Build extra_body for OpenRouter-specific features
+                extra_body = {
+                    "usage": {"include": True},  # Enable cost and detailed token tracking
+                }
+
                 # Try to disable thinking for reasoning models on continuation
-                extra_body = {}
                 if disable_thinking and self.reasoning_model_type:
                     logger.info("Attempting to disable thinking for continuation")
                     # Different models may support different parameters
@@ -104,8 +108,7 @@ class OpenRouterClient(BaseLLMClient):
                         # Try generic thinking disable
                         extra_body["thinking"] = {"type": "disabled"}
 
-                if extra_body:
-                    api_kwargs["extra_body"] = extra_body
+                api_kwargs["extra_body"] = extra_body
 
                 completion = self.client.chat.completions.create(**api_kwargs)
 
@@ -140,6 +143,8 @@ class OpenRouterClient(BaseLLMClient):
         continuation_depth: int,
     ) -> LLMCallMetrics:
         """Extract metrics from API response."""
+        from eleusis.providers.base import estimate_reasoning_tokens
+
         duration = end_time - start_time
 
         # Default values
@@ -147,6 +152,7 @@ class OpenRouterClient(BaseLLMClient):
         completion_tokens = 0
         total_tokens = 0
         reasoning_tokens = None
+        cost_usd = None
 
         if hasattr(completion, 'usage') and completion.usage:
             usage = completion.usage
@@ -154,19 +160,38 @@ class OpenRouterClient(BaseLLMClient):
             completion_tokens = usage.completion_tokens or 0
             total_tokens = usage.total_tokens or 0
 
-            # Check for reasoning tokens (DeepSeek R1 includes this)
-            if hasattr(usage, 'reasoning_tokens'):
+            # Extract cost (OpenRouter provides this with usage.include=True)
+            if hasattr(usage, 'cost'):
+                cost_usd = usage.cost
+
+            # Check for reasoning tokens in completion_tokens_details (preferred)
+            if hasattr(usage, 'completion_tokens_details') and usage.completion_tokens_details:
+                details = usage.completion_tokens_details
+                if hasattr(details, 'reasoning_tokens') and details.reasoning_tokens:
+                    reasoning_tokens = details.reasoning_tokens
+
+            # Fallback: check direct reasoning_tokens field
+            if reasoning_tokens is None and hasattr(usage, 'reasoning_tokens'):
                 reasoning_tokens = usage.reasoning_tokens
 
         # Check for reasoning content in message (DeepSeek R1 style)
         has_reasoning = False
         if hasattr(choice.message, 'reasoning_content') and choice.message.reasoning_content:
             has_reasoning = True
+            # Estimate tokens if not provided by API
+            if reasoning_tokens is None:
+                reasoning_tokens = estimate_reasoning_tokens(choice.message.reasoning_content)
         elif hasattr(choice.message, 'reasoning') and choice.message.reasoning:
             has_reasoning = True
+            # Estimate tokens if not provided by API
+            if reasoning_tokens is None:
+                reasoning_tokens = estimate_reasoning_tokens(choice.message.reasoning)
         # Also check for <think> tags in content (Qwen style)
         elif choice.message.content and "<think>" in choice.message.content:
             has_reasoning = True
+            # Estimate tokens if not provided by API
+            if reasoning_tokens is None:
+                reasoning_tokens = estimate_reasoning_tokens(choice.message.content)
 
         metrics = LLMCallMetrics(
             model_name=self.model_name,
@@ -183,6 +208,7 @@ class OpenRouterClient(BaseLLMClient):
             is_continuation=is_continuation,
             continuation_depth=continuation_depth,
             provider=self.provider_name,
+            cost_usd=cost_usd,
         )
 
         logger.debug(

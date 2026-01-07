@@ -23,11 +23,12 @@ class LLMCallMetrics:
     finish_reason: str
     has_reasoning: bool
     timestamp: float
-    # New fields
-    reasoning_tokens: int | None = None  # If available from API
+    # Optional fields
+    reasoning_tokens: int | None = None  # If available from API or estimated
     is_continuation: bool = False  # Was this a continuation call?
     continuation_depth: int = 0  # 0=initial, 1=first continuation, etc.
     provider: str = "unknown"
+    cost_usd: float | None = None  # Cost in USD (OpenRouter only)
 
 
 @dataclass
@@ -63,6 +64,31 @@ def detect_reasoning_model_type(model_name: str) -> str | None:
         return "qwen-thinking"  # Kimi uses similar format
 
     return None
+
+
+def estimate_reasoning_tokens(content: str) -> int | None:
+    """Estimate reasoning tokens from <think> blocks or raw reasoning text.
+
+    Uses a simple heuristic: ~1.3 tokens per word (conservative estimate).
+    Returns None if no reasoning content found.
+    """
+    if not content:
+        return None
+
+    # Try to extract <think> block content
+    match = re.search(r'<think>(.*?)</think>', content, re.DOTALL)
+    if match:
+        thinking_text = match.group(1)
+    else:
+        # Assume entire content is reasoning (for .reasoning field)
+        thinking_text = content
+
+    if not thinking_text.strip():
+        return None
+
+    # Heuristic: ~1.3 tokens per word (covers subword tokenization)
+    word_count = len(thinking_text.split())
+    return int(word_count * 1.3)
 
 
 class BaseLLMClient(ABC):
@@ -322,6 +348,7 @@ class BaseLLMClient(ABC):
                 "completion_tokens": 0,
                 "total_tokens": 0,
                 "reasoning_tokens": 0,
+                "cost_usd": None,
                 "duration_seconds": 0.0,
                 "throughput_tokens_per_sec": 0.0,
                 "call_count": 0,
@@ -335,6 +362,7 @@ class BaseLLMClient(ABC):
         total_completion = sum(m.completion_tokens for m in self.call_metrics)
         total_tokens = sum(m.total_tokens for m in self.call_metrics)
         total_reasoning = sum(m.reasoning_tokens or 0 for m in self.call_metrics)
+        total_cost = sum(m.cost_usd for m in self.call_metrics if m.cost_usd is not None)
         total_duration = sum(m.duration_seconds for m in self.call_metrics)
         continuation_calls = sum(1 for m in self.call_metrics if m.is_continuation)
         calls_requiring_continuation = sum(
@@ -346,6 +374,7 @@ class BaseLLMClient(ABC):
             "completion_tokens": total_completion,
             "total_tokens": total_tokens,
             "reasoning_tokens": total_reasoning if total_reasoning > 0 else None,
+            "cost_usd": round(total_cost, 6) if total_cost > 0 else None,
             "duration_seconds": round(total_duration, 2),
             "throughput_tokens_per_sec": round(total_completion / total_duration if total_duration > 0 else 0, 2),
             "call_count": len(self.call_metrics),

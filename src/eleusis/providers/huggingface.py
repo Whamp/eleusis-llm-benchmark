@@ -115,6 +115,8 @@ class HuggingFaceClient(BaseLLMClient):
         continuation_depth: int,
     ) -> LLMCallMetrics:
         """Extract metrics from API response."""
+        from eleusis.providers.base import estimate_reasoning_tokens
+
         duration = end_time - start_time
 
         # Default values
@@ -129,16 +131,23 @@ class HuggingFaceClient(BaseLLMClient):
             completion_tokens = usage.completion_tokens
             total_tokens = usage.total_tokens
 
-            # Check for reasoning tokens (some providers include this)
+            # Check for reasoning tokens from API (some providers include this)
             if hasattr(usage, 'reasoning_tokens'):
                 reasoning_tokens = usage.reasoning_tokens
 
-        # Check for reasoning field on message
-        has_reasoning = (
-            hasattr(choice.message, 'reasoning')
-            and choice.message.reasoning is not None
-            and choice.message.reasoning != ""
-        )
+        # Check for reasoning field on message (gpt-oss style)
+        has_reasoning = False
+        if hasattr(choice.message, 'reasoning') and choice.message.reasoning:
+            has_reasoning = True
+            # Estimate tokens if not provided by API
+            if reasoning_tokens is None:
+                reasoning_tokens = estimate_reasoning_tokens(choice.message.reasoning)
+        # Also check for <think> tags in content (Qwen/Kimi style)
+        elif choice.message.content and "<think>" in choice.message.content:
+            has_reasoning = True
+            # Estimate tokens if not provided by API
+            if reasoning_tokens is None:
+                reasoning_tokens = estimate_reasoning_tokens(choice.message.content)
 
         metrics = LLMCallMetrics(
             model_name=self.model_name,

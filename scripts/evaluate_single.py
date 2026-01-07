@@ -449,6 +449,7 @@ def main():
             'game_over_reason': result['game_over_reason'],
             'llm_usage': result['llm_usage'],
             'turns': result['turns'],
+            'wall_clock_seconds': result['wall_clock_seconds'],
         })
 
         # Update statistics

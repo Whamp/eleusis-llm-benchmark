@@ -7,7 +7,11 @@ set -e
 MODELS=(
     "openrouter:google/gemini-3-flash-preview"
     "hf:openai/gpt-oss-120b"
-#    "openrouter:anthropic/claude-3.5-haiku"
+    "hf:openai/gpt-oss-20b"
+    "hf:zai-org/GLM-4.7"
+    "openrouter:anthropic/claude-4.5-opus"
+    "openrouter:x-ai/grok-4"
+    "openrouter:openai/gpt-5.2"
 )
 
 echo "Running parallel evaluation for ${#MODELS[@]} models..."
