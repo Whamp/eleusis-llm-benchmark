@@ -172,6 +172,44 @@ uv run scripts/evaluate_rules.py --library rules.json
 
 Rules are filtered by acceptance rate (configurable in config.yaml) to ensure playable difficulty.
 
+## Data Analysis
+
+Analyze evaluation results across multiple models:
+
+```bash
+uv run scripts/analyze_results.py
+```
+
+Outputs are saved to `results/analysis/`.
+
+### Analyses Performed
+
+**1. Basic Model Comparison**
+Compare models on success rate, average score, turns to completion, and token efficiency (score per 1K tokens). Identifies which models solve rules most efficiently.
+
+**2. Confidence Calibration**
+Measure how well models' self-reported confidence (0-10) predicts actual guess accuracy. Detects overconfidence by comparing mean confidence when correct vs wrong.
+
+**3. Rule Complexity Analysis**
+Correlate success rate with rule complexity using two metrics from `rules.json`:
+- **Cyclomatic complexity**: Number of decision branches in the rule code
+- **Node count**: AST size (total nodes in the parsed code)
+
+Also analyzes success rate vs rule selectivity (acceptance rate).
+
+**4. Learning Curves**
+Track confidence trajectory and card acceptance rate over turns to understand how models learn during a round.
+
+### Output Files
+
+| File | Description |
+|------|-------------|
+| `basic_metrics.csv` | Model comparison table |
+| `basic_metrics.png` | Bar charts for key metrics |
+| `confidence_calibration.png` | Calibration curve + confidence distributions |
+| `complexity_analysis.png` | Success vs complexity (cyclomatic + node count) |
+| `learning_curves.png` | Metrics over turn progression |
+
 ## Architecture
 
 ### Core Components (src/eleusis/)

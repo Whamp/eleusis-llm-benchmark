@@ -34,7 +34,7 @@ rules:
   min_acceptance: 0.01
   max_acceptance: 0.99
   selection: "sequential"
-  index: 1
+  index: 0
   rounds_per_rule: 1
 
 

@@ -1,58 +1,52 @@
 
 # IDEAS FOR IMPROVEMENTS
 
-## Priority
-- system prompt ? differentiate reasoning and non-reasoning calls ?
+## Future Analysis Ideas (LLM-as-judge, embeddings, manual labeling)
 
-## Later
-- implement a seed in config.yaml to make the game reproducible for testing purposes (for both random in the game logic, and to be passed to the LLM client)
-- Make sure the code is robust to various llm failures (timeouts, rate limits, invalid responses, etc.) so that it does not crash the game.
+These extend beyond the quantitative metrics in `scripts/analyze_results.py`.
 
-## Complexity measurement on evaluate rules:
+### 1. Reasoning Intent Classification (LLM-as-judge)
 
-Example of code snippet for inspiration
+**Goal**: Understand whether models are playing strategically or just trying to satisfy the rule.
 
-```
-import ast
+Classify each turn's `reasoning_summary` into:
+- **Confirmation**: Trying to get accepted (support current hypothesis)
+- **Falsification**: Deliberately testing if a card will be rejected
+- **Exploration**: Testing to discriminate between multiple hypotheses
 
-def code_complexity(code: str) -> dict:
-    """Return AST node count and cyclomatic complexity for Python code."""
-    tree = ast.parse(code)
-    
-    node_count = 0
-    cyclomatic = 1  # base complexity
-    
-    for node in ast.walk(tree):
-        node_count += 1
-        
-        if isinstance(node, (ast.If, ast.While, ast.For, ast.ExceptHandler)):
-            cyclomatic += 1
-        elif isinstance(node, ast.BoolOp):
-            # each 'and'/'or' adds (n-1) decision points
-            cyclomatic += len(node.values) - 1
-    
-    return {
-        'node_count': node_count,
-        'cyclomatic': cyclomatic
-    }
+**Key questions**:
+- Do models that falsify more often succeed more often?
+- How does intent distribution change over turns (early exploration → late confirmation)?
 
+### 2. Hypothesis Evolution Analysis (Embeddings)
 
-# Test it
-if __name__ == "__main__":
-    rules = [
-        ("always_true", "return True"),
-        ("rank_higher", "if not mainline:\n    return True\nreturn card.rank > mainline[-1].rank"),
-        ("same_suit_or_rank", "if not mainline:\n    return True\nlast = mainline[-1]\nreturn card.suit == last.suit or card.rank == last.rank"),
-    ]
-    
-    for name, code in rules:
-        result = code_complexity(code)
-        print(f"{name:20} -> nodes: {result['node_count']:2}, cyclomatic: {result['cyclomatic']}")
-```
+**Goal**: Track how `tentative_rule` evolves toward the actual rule over turns.
 
-Output would look something like:
-```
-always_true          -> nodes:  4, cyclomatic: 1
-rank_higher          -> nodes: 18, cyclomatic: 2
-same_suit_or_rank    -> nodes: 26, cyclomatic: 3
-```
+Use sentence embeddings to compute similarity between each turn's `tentative_rule` and the actual `rule_description`, then plot the trajectory.
+
+**Key questions**:
+- Do models show "eureka moments" (sudden jump in similarity) or gradual convergence?
+- Are there cases of "hypothesis regression" (getting closer then farther)?
+
+### 3. Failure Mode Taxonomy (Manual + LLM)
+
+**Goal**: Categorize why models fail.
+
+**Categories**:
+- **Never found**: `tentative_rule` never approximated actual rule
+- **Found but didn't guess**: Had correct hypothesis but waited too long
+- **Overconfident wrong**: Multiple high-confidence incorrect guesses
+- **Complexity overwhelm**: Hypothesis kept getting more complex without settling
+
+### 4. Strategic Card Selection Quality (Simulation)
+
+**Goal**: Evaluate whether the played card was informative given the hand and hypothesis.
+
+For each turn, compute "information gain" - how much the played card narrowed down the hypothesis space.
+
+### Priority Order
+
+1. **Failure Mode Taxonomy** - Most actionable for understanding model weaknesses
+2. **Hypothesis Evolution** - Visually compelling, shows reasoning process
+3. **Reasoning Intent** - Reveals strategic vs non-strategic behavior
+4. **Card Selection Quality** - Most technically complex, do last
