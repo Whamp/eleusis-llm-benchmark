@@ -174,10 +174,16 @@ def convert_old_format_to_checkpoint(old_results: dict) -> dict | None:
     return old_results
 
 
-def validate_resume_config(checkpoint_config: dict, current_config: dict) -> bool:
-    """Validate that critical config matches between checkpoint and current run."""
+def validate_resume_config(checkpoint_config: dict, current_config: dict, current_player_model: str | None = None) -> bool:
+    """Validate that critical config matches between checkpoint and current run.
+
+    Args:
+        checkpoint_config: The 'config' dict from the checkpoint
+        current_config: The current game config dict
+        current_player_model: If provided, validate that player model matches checkpoint
+    """
     critical_keys = [
-        "num_rounds", "max_turns", "hand_size", "wrong_guess_penalty"
+        "max_turns", "hand_size", "wrong_guess_penalty"
     ]
 
     for key in critical_keys:
@@ -186,6 +192,17 @@ def validate_resume_config(checkpoint_config: dict, current_config: dict) -> boo
         if checkpoint_val != current_val:
             logger.error(f"Config mismatch: {key} changed from {checkpoint_val} to {current_val}")
             logger.error("Cannot resume with different configuration")
+            return False
+
+    # Validate player model if explicitly provided via CLI
+    if current_player_model:
+        checkpoint_player = checkpoint_config.get("player_model")
+        if checkpoint_player and current_player_model != checkpoint_player:
+            logger.error(f"Player model mismatch:")
+            logger.error(f"  Checkpoint: {checkpoint_player}")
+            logger.error(f"  Current:    {current_player_model}")
+            logger.error("Cannot resume with different player model")
+            logger.error("Remove --player flag to use checkpoint's model, or start a new evaluation")
             return False
 
     return True
@@ -253,55 +270,82 @@ def main():
     # Load config sections (after overrides applied)
     game_config = config["game"]
     rules_cfg = config["rules"]
-    rounds_per_rule = rules_cfg.get("rounds_per_rule", 1)
 
-    # Derive player display name from model spec
-    player_model = config["model"]
-    player_display_name = model_spec_to_display_name(player_model)
-    game_master_display_name = model_spec_to_display_name(config["game_master"]["model_name"])
-
-    # Generate output tag for this run
-    output_tag = generate_output_tag(args, player_display_name)
-
-    # Setup logging with tag in filename
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_file = f"logs/solo_evaluation_{timestamp}_{output_tag}.txt"
-    setup_logging(log_file=log_file, console_level=logging.INFO, file_level=logging.DEBUG)
-    logging.getLogger("httpx").setLevel(logging.WARNING)
-    logger = logging.getLogger(__name__)
-
-    # Handle num_rounds=0: use entire filtered rule library
-    num_rounds = game_config.get("num_rounds", 10)
-    if num_rounds == 0:
-        filtered_rules = load_and_filter_rules_from_library(config)
-        num_rounds = len(filtered_rules)
-        game_config["num_rounds"] = num_rounds
-        logger.info(f"num_rounds=0: using entire filtered library ({num_rounds} rules)")
-
-    # Load checkpoint if resuming
+    # Load checkpoint FIRST if resuming (before setting up logging)
+    # This allows us to use checkpoint values for player/GM names
     checkpoint = None
     if args.resume:
+        # Temporarily setup minimal logging for checkpoint loading
+        logging.basicConfig(level=logging.INFO, format='%(message)s')
+        temp_logger = logging.getLogger(__name__)
+
         checkpoint = load_checkpoint(args.resume)
         if not checkpoint:
-            logger.error("Failed to load checkpoint")
+            temp_logger.error("Failed to load checkpoint")
             return
 
-        if not validate_resume_config(checkpoint['config'], game_config):
+        # Validate config compatibility (pass CLI player model if explicitly provided)
+        if not validate_resume_config(checkpoint['config'], game_config, args.player):
             return
 
         # Check if selection mode is sequential
         rule_selection = checkpoint['checkpoint']['rule_factory_state']['selection']
         if rule_selection != 'sequential':
-            logger.error("Resume only supported for sequential rule selection")
-            logger.error(f"Checkpoint uses: {rule_selection}")
+            temp_logger.error("Resume only supported for sequential rule selection")
+            temp_logger.error(f"Checkpoint uses: {rule_selection}")
             return
 
         # Check if already completed
         completed = checkpoint['checkpoint']['completed_rounds']
         total = checkpoint['checkpoint']['total_rounds']
         if completed >= total:
-            logger.info(f"Evaluation already complete ({completed}/{total} rounds)")
+            temp_logger.info(f"Evaluation already complete ({completed}/{total} rounds)")
             return
+
+    # Derive player/GM names and rounds_per_rule - from checkpoint when resuming
+    if checkpoint:
+        # Use checkpoint values to ensure consistency with original evaluation
+        player_model = checkpoint['config']['player_model']
+        player_display_name = checkpoint['config']['player']
+        game_master_display_name = checkpoint['config']['game_master']
+        rounds_per_rule = checkpoint['config']['rounds_per_rule']
+        # Override config model to match checkpoint (for actual game play)
+        config["model"] = player_model
+    else:
+        player_model = config["model"]
+        player_display_name = model_spec_to_display_name(player_model)
+        game_master_display_name = model_spec_to_display_name(config["game_master"]["model_name"])
+        rounds_per_rule = rules_cfg.get("rounds_per_rule", 1)
+
+    # Generate output tag - from checkpoint folder name when resuming
+    if checkpoint:
+        checkpoint_folder = checkpoint.get('folder_name', f"solo_evaluation_{checkpoint['timestamp']}")
+        # Extract tag from folder name for log file consistency
+        output_tag = checkpoint_folder.replace(f"solo_evaluation_{checkpoint['timestamp']}_", "")
+        if output_tag == checkpoint_folder:  # No tag in folder name
+            output_tag = player_display_name.lower().replace(" ", "_")[:30]
+    else:
+        output_tag = generate_output_tag(args, player_display_name)
+
+    # Setup logging with tag in filename
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    Path("logs").mkdir(exist_ok=True)
+    log_file = f"logs/solo_evaluation_{timestamp}_{output_tag}.txt"
+    setup_logging(log_file=log_file, console_level=logging.INFO, file_level=logging.DEBUG)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logger = logging.getLogger(__name__)
+
+    # Determine num_rounds - from checkpoint when resuming, else from config
+    if checkpoint:
+        num_rounds = checkpoint['checkpoint']['total_rounds']
+    else:
+        num_rounds = game_config.get("num_rounds", 10)
+        # Handle num_rounds=0: use entire filtered rule library
+        if num_rounds == 0:
+            filtered_rules = load_and_filter_rules_from_library(config)
+            num_rounds = len(filtered_rules)
+            game_config["num_rounds"] = num_rounds
+            logger.info(f"num_rounds=0: using entire filtered library ({num_rounds} rules)")
 
     # Initialize or resume
     if checkpoint:
