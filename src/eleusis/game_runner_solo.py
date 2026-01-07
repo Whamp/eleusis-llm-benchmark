@@ -94,6 +94,7 @@ def play_round_solo(
     rule: Rule | None = None,
     max_turns: int | None = None,
     start_rule_index: int | None = None,
+    rules_list: list[dict] | None = None,
 ) -> dict:
     """Play a single round of solo pattern discovery.
 
@@ -103,6 +104,7 @@ def play_round_solo(
         rule: Optional rule to reuse (if None, generate/load new rule)
         max_turns: Optional override for max turns
         start_rule_index: Starting index for RuleFactory (for resume support)
+        rules_list: Pre-loaded rules list (for resume, takes precedence over library file)
 
     Returns:
         dict with round_number, turn_count, rule_description, rule_code,
@@ -151,7 +153,7 @@ def play_round_solo(
 
     if rule is None:
         logger.info("=" * 80)
-        logger.info(f"[Round {round_number}] PHASE 1: RULE GENERATION")
+        logger.info(f"[Round {round_number}] PHASE 1: RULE LOADING")
         logger.info("=" * 80)
         logger.info("")
 
@@ -176,11 +178,12 @@ def play_round_solo(
         logger.info(f"Rule factory starting at index: {start_index}")
 
         rule_factory = RuleFactory(
-            library_path=rules_cfg["library_path"],
+            library_path=rules_cfg["library_path"] if rules_list is None else None,
             selection=rules_cfg["selection"],
             min_acceptance=min_acceptance,
             max_acceptance=max_acceptance,
             start_index=start_index,
+            rules_list=rules_list,
         )
 
         rule = rule_factory.create_rule()

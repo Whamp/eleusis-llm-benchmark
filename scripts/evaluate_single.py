@@ -359,14 +359,36 @@ def main():
             checkpoint['checkpoint'].get('current_rule')
         )
 
-        rule_factory_index = checkpoint['checkpoint']['rule_factory_state']['current_index']
+        # Load rules library and consumed rules from checkpoint
+        checkpoint_rules_library = checkpoint['checkpoint'].get('rules_library')
+        rules_consumed = checkpoint['checkpoint'].get('rules_consumed', [])
+        completed_rounds = checkpoint['checkpoint']['completed_rounds']
+        total_rounds = checkpoint['checkpoint']['total_rounds']
+
+        # Validate: consumed rules count == completed rounds
+        if len(rules_consumed) != completed_rounds:
+            logger.error(f"Mismatch: {len(rules_consumed)} rules consumed but {completed_rounds} rounds completed")
+            return
+
+        # Validate: library size == total rounds
+        if len(checkpoint_rules_library) != total_rounds:
+            logger.error(f"Mismatch: {len(checkpoint_rules_library)} rules in library but {total_rounds} total rounds")
+            return
+
+        # Filter to unconsumed rules only (match by description)
+        consumed_descriptions = {r['description'] for r in rules_consumed}
+        unconsumed_rules = [r for r in checkpoint_rules_library if r['description'] not in consumed_descriptions]
+
+        # Start from index 0 of the filtered (unconsumed) list
+        checkpoint_rules_library = unconsumed_rules
+        rule_factory_index = 0
 
         logger.info("=" * 80)
         logger.info(f"RESUMING SOLO MODE EVALUATION")
         logger.info("=" * 80)
         logger.info(f"Log file: {log_file}")
-        logger.info(f"Resuming from round {start_round} / {checkpoint['checkpoint']['total_rounds']}")
-        logger.info(f"Rule factory index: {rule_factory_index}")
+        logger.info(f"Resuming from round {start_round} / {total_rounds}")
+        logger.info(f"Rules consumed: {len(rules_consumed)}, unconsumed: {len(unconsumed_rules)}")
         logger.info(f"Rounds per rule: {rounds_per_rule}")
         if current_rule:
             logger.info(f"Reusing rule: {current_rule.description()[:80]}...")
@@ -379,6 +401,7 @@ def main():
         start_round = 1
         current_rule = None
         rule_factory_index = rules_cfg.get("index", 0)
+        checkpoint_rules_library = None  # Will load from file
 
         logger.info("=" * 80)
         logger.info(f"SOLO MODE EVALUATION - {num_rounds} ROUNDS")
@@ -460,6 +483,7 @@ def main():
             round_number=round_num,
             rule=current_rule,
             start_rule_index=rule_factory_index if need_new_rule else None,
+            rules_list=checkpoint_rules_library,
         )
 
         # Update current rule for reuse and track consumption

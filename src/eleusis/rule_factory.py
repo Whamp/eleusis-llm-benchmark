@@ -17,13 +17,19 @@ class RuleFactory:
 
     def __init__(
         self,
-        library_path: str,
+        library_path: str | None = None,
         selection: str = "random",
         min_acceptance: float = 0.0,
         max_acceptance: float = 1.0,
         start_index: int = 0,
+        rules_list: list[dict] | None = None,
     ) -> None:
-        """Initialize rule factory."""
+        """Initialize rule factory.
+
+        Args:
+            library_path: Path to rules.json file (used if rules_list not provided)
+            rules_list: Pre-loaded list of rule dicts (takes precedence over library_path)
+        """
         self.library_path = library_path
         self.selection = selection
         self.min_acceptance = min_acceptance
@@ -31,7 +37,20 @@ class RuleFactory:
         self._library_index = start_index
         self._library_rules: list[dict] | None = None
 
-        self._load_library()
+        if rules_list is not None:
+            self._library_rules = rules_list
+            logger.info(f"Using pre-loaded rules list ({len(rules_list)} rules)")
+        elif library_path is not None:
+            self._load_library()
+        else:
+            raise ValueError("Either library_path or rules_list must be provided")
+
+        # Validate start_index is within bounds
+        if self._library_index >= len(self._library_rules):
+            raise IndexError(
+                f"Rule index {self._library_index} out of bounds. "
+                f"Library has {len(self._library_rules)} rules (indices 0-{len(self._library_rules)-1})."
+            )
 
     def _load_library(self) -> None:
         """Load rule library from JSON file."""
