@@ -219,8 +219,8 @@ def restore_rule_from_checkpoint(rule_data: dict | None) -> Rule | None:
     return Rule(description, code)
 
 
-def load_and_filter_rules_from_library(config: dict) -> list[dict]:
-    """Load all rules from library and filter by acceptance rate.
+def load_rules_from_library(config: dict) -> list[dict]:
+    """Load all rules from library.
 
     Returns list of rule dicts with 'description', 'code', 'name', etc.
     """
@@ -237,23 +237,9 @@ def load_and_filter_rules_from_library(config: dict) -> list[dict]:
     with open(library_path) as f:
         data = json.load(f)
 
-    all_rules = data.get("rules", [])
-    min_acceptance = rules_cfg.get("min_acceptance", 0.0)
-    max_acceptance = rules_cfg.get("max_acceptance", 1.0)
-
-    # Filter rules by acceptance rate if present
-    filtered_rules = []
-    for rule in all_rules:
-        if "avg_acceptance_rate" in rule:
-            rate = rule["avg_acceptance_rate"]
-            if min_acceptance <= rate <= max_acceptance:
-                filtered_rules.append(rule)
-        else:
-            # No acceptance rate info, include by default
-            filtered_rules.append(rule)
-
-    logger.info(f"Loaded {len(all_rules)} rules from library, {len(filtered_rules)} match acceptance criteria")
-    return filtered_rules
+    rules = data.get("rules", [])
+    logger.info(f"Loaded {len(rules)} rules from library")
+    return rules
 
 
 def main():
@@ -340,12 +326,12 @@ def main():
         num_rounds = checkpoint['checkpoint']['total_rounds']
     else:
         num_rounds = game_config.get("num_rounds", 10)
-        # Handle num_rounds=0: use entire filtered rule library
+        # Handle num_rounds=0: use entire rule library
         if num_rounds == 0:
-            filtered_rules = load_and_filter_rules_from_library(config)
-            num_rounds = len(filtered_rules)
+            all_rules = load_rules_from_library(config)
+            num_rounds = len(all_rules)
             game_config["num_rounds"] = num_rounds
-            logger.info(f"num_rounds=0: using entire filtered library ({num_rounds} rules)")
+            logger.info(f"num_rounds=0: using entire library ({num_rounds} rules)")
 
     # Initialize or resume
     if checkpoint:
@@ -365,19 +351,22 @@ def main():
         completed_rounds = checkpoint['checkpoint']['completed_rounds']
         total_rounds = checkpoint['checkpoint']['total_rounds']
 
-        # Validate: consumed rules count == completed rounds
-        if len(rules_consumed) != completed_rounds:
-            logger.error(f"Mismatch: {len(rules_consumed)} rules consumed but {completed_rounds} rounds completed")
+        # Validate: consumed rules count matches expected for completed rounds
+        # With rounds_per_rule > 1, we consume fewer rules than rounds
+        expected_consumed = (completed_rounds + rounds_per_rule - 1) // rounds_per_rule
+        if len(rules_consumed) != expected_consumed:
+            logger.error(f"Mismatch: {len(rules_consumed)} rules consumed but expected {expected_consumed} for {completed_rounds} rounds")
             return
 
-        # Validate: library size == total rounds
-        if len(checkpoint_rules_library) != total_rounds:
-            logger.error(f"Mismatch: {len(checkpoint_rules_library)} rules in library but {total_rounds} total rounds")
+        # Validate: library has enough rules for total rounds
+        expected_rules_needed = (total_rounds + rounds_per_rule - 1) // rounds_per_rule
+        if len(checkpoint_rules_library) < expected_rules_needed:
+            logger.error(f"Not enough rules: {len(checkpoint_rules_library)} in library but need {expected_rules_needed}")
             return
 
-        # Filter to unconsumed rules only (match by description)
-        consumed_descriptions = {r['description'] for r in rules_consumed}
-        unconsumed_rules = [r for r in checkpoint_rules_library if r['description'] not in consumed_descriptions]
+        # Filter to unconsumed rules only (match by name)
+        consumed_names = {r['name'] for r in rules_consumed}
+        unconsumed_rules = [r for r in checkpoint_rules_library if r['name'] not in consumed_names]
 
         # Start from index 0 of the filtered (unconsumed) list
         checkpoint_rules_library = unconsumed_rules
@@ -415,7 +404,7 @@ def main():
 
         # Load all rules from library upfront (for self-contained checkpoint)
         logger.info("Loading rules library...")
-        all_rules_library = load_and_filter_rules_from_library(config)
+        all_rules_library = load_rules_from_library(config)
         logger.info(f"Stored {len(all_rules_library)} rules in checkpoint for resume support")
         logger.info("")
 
@@ -449,8 +438,6 @@ def main():
                 'rule_factory_state': {
                     'selection': rules_cfg["selection"],
                     'current_index': rule_factory_index,
-                    'min_acceptance': rules_cfg.get("min_acceptance", 0.0),
-                    'max_acceptance': rules_cfg.get("max_acceptance", 1.0),
                 },
                 'current_rule': None,
                 'rules_consumed': [],
@@ -490,20 +477,26 @@ def main():
         if generated_new_rule:
             current_rule = Rule(result['rule_description'], result['rule_code'])
 
-            # Increment rule_factory_index and store consumed rule (only for newly generated rules)
+            # Increment rule_factory_index for RuleFactory (used for start position on next rule)
             rule_factory_index += 1
 
-            # Add newly consumed rule to rules_consumed list
+            # Add newly consumed rule to rules_consumed list (using metadata from play_round_solo)
             if 'rules_consumed' not in evaluation_results.get('checkpoint', {}):
                 if 'checkpoint' not in evaluation_results:
                     evaluation_results['checkpoint'] = {}
                 evaluation_results['checkpoint']['rules_consumed'] = []
 
+            rule_metadata = result.get('rule_metadata', {}) or {}
             evaluation_results['checkpoint']['rules_consumed'].append({
-                'index': rule_factory_index - 1,
+                'name': rule_metadata.get('name'),
                 'description': current_rule.description(),
                 'code': current_rule.get_code(),
+                'rounds_completed': 1,
             })
+        else:
+            # Reusing rule - increment rounds_completed for current rule
+            if evaluation_results.get('checkpoint', {}).get('rules_consumed'):
+                evaluation_results['checkpoint']['rules_consumed'][-1]['rounds_completed'] += 1
 
         # Update evaluation results
         evaluation_results['rounds'].append({
@@ -536,8 +529,6 @@ def main():
             'rule_factory_state': {
                 'selection': rules_cfg["selection"],
                 'current_index': rule_factory_index,
-                'min_acceptance': rules_cfg.get("min_acceptance", 0.0),
-                'max_acceptance': rules_cfg.get("max_acceptance", 1.0),
             },
             'current_rule': {
                 'description': current_rule.description() if current_rule else None,

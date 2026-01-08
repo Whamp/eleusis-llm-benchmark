@@ -19,8 +19,6 @@ class RuleFactory:
         self,
         library_path: str | None = None,
         selection: str = "random",
-        min_acceptance: float = 0.0,
-        max_acceptance: float = 1.0,
         start_index: int = 0,
         rules_list: list[dict] | None = None,
     ) -> None:
@@ -28,12 +26,12 @@ class RuleFactory:
 
         Args:
             library_path: Path to rules.json file (used if rules_list not provided)
+            selection: "sequential" or "random"
+            start_index: Starting index for sequential selection
             rules_list: Pre-loaded list of rule dicts (takes precedence over library_path)
         """
         self.library_path = library_path
         self.selection = selection
-        self.min_acceptance = min_acceptance
-        self.max_acceptance = max_acceptance
         self._library_index = start_index
         self._library_rules: list[dict] | None = None
 
@@ -67,53 +65,37 @@ class RuleFactory:
 
         logger.info(f"Loaded {len(self._library_rules)} rules from {path}")
 
-    def _is_acceptance_rate_valid(self, rate: float) -> bool:
-        """Check if acceptance rate is within configured bounds."""
-        return self.min_acceptance <= rate <= self.max_acceptance
+    def create_rule_with_metadata(self) -> tuple[Rule, dict]:
+        """Create rule and return with full metadata from library.
 
-    def create_rule(self) -> Rule:
-        """Create rule from pre-generated library, filtering by acceptance rate."""
-        max_attempts = len(self._library_rules)
+        Returns:
+            Tuple of (Rule, metadata_dict) where metadata contains:
+            - name: Unique rule name from library
+            - description: Rule description
+            - code: Rule Python code
+        """
+        if self.selection == "random":
+            rule_dict = random.choice(self._library_rules)
+        else:  # sequential
+            rule_dict = self._library_rules[self._library_index]
+            self._library_index = (self._library_index + 1) % len(self._library_rules)
 
-        for attempt in range(max_attempts):
-            if self.selection == "random":
-                rule_dict = random.choice(self._library_rules)
-            else:  # sequential
-                rule_dict = self._library_rules[self._library_index]
-                self._library_index = (self._library_index + 1) % len(self._library_rules)
+        description = rule_dict["description"]
+        code = rule_dict["code"]
+        name = rule_dict.get("name", "library_rule")
 
-            # Check if rule has pre-evaluated acceptance rate
-            if "avg_acceptance_rate" in rule_dict:
-                acceptance_rate = rule_dict["avg_acceptance_rate"]
-                if not self._is_acceptance_rate_valid(acceptance_rate):
-                    # Yellow ANSI warning for skipped rules
-                    rule_name = rule_dict.get('name', 'unknown')
-                    msg = (
-                        f"Skipping rule '{rule_name}': "
-                        f"acceptance rate {acceptance_rate:.1%} outside bounds "
-                        f"[{self.min_acceptance:.1%}, {self.max_acceptance:.1%}]"
-                    )
-                    print(f"\033[93m⚠ {msg}\033[0m")  # Yellow warning to console
-                    logger.info(msg)
-                    continue
+        logger.info(f"Using library rule: {name}")
+        logger.info(f"Description: {description}")
 
-            description = rule_dict["description"]
-            code = rule_dict["code"]
-            name = rule_dict.get("name", "library_rule")
+        if "avg_acceptance_rate" in rule_dict:
+            rate = rule_dict["avg_acceptance_rate"]
+            logger.info(f"Pre-evaluated acceptance rate: {rate:.2%}")
 
-            logger.info(f"Using library rule: {name}")
-            logger.info(f"Description: {description}")
+        logger.debug(f"Code:\n{code}")
 
-            if "avg_acceptance_rate" in rule_dict:
-                rate = rule_dict["avg_acceptance_rate"]
-                logger.info(f"Pre-evaluated acceptance rate: {rate:.2%}")
-
-            logger.debug(f"Code:\n{code}")
-
-            return Rule(description, code)
-
-        # If we exhausted all rules without finding one in bounds
-        raise RuntimeError(
-            f"No rules found in library with acceptance rate in range "
-            f"[{self.min_acceptance:.2%}, {self.max_acceptance:.2%}]"
-        )
+        metadata = {
+            "name": rule_dict.get("name"),
+            "description": description,
+            "code": code,
+        }
+        return Rule(description, code), metadata

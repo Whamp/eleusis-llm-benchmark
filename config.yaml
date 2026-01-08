@@ -31,8 +31,6 @@ game_master:
 # Rule source configuration
 rules:
   library_path: "rules.json"
-  min_acceptance: 0.01
-  max_acceptance: 0.99
   selection: "sequential"
   index: 0
   rounds_per_rule: 1

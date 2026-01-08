@@ -9,7 +9,9 @@
       "Bash(ls:*)",
       "Bash(find:*)",
       "Bash(git lfs:*)",
-      "Bash(git ls-files:*)"
+      "Bash(git ls-files:*)",
+      "Bash(ps:*)",
+      "Bash(sort:*)"
     ],
     "deny": [],
     "ask": []

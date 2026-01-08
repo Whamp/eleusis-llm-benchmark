@@ -131,8 +131,6 @@ rule_source:
   library_path: "rules.json"
   selection: "sequential"  # or "random"
   index: 0                 # starting index
-  min_acceptance: 0.15     # filter rules by acceptance rate
-  max_acceptance: 0.55
 
 solo_game:
   num_rounds: 50

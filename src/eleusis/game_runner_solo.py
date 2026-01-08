@@ -151,6 +151,8 @@ def play_round_solo(
     # (2) Rule generation
     # --------------------
 
+    rule_metadata = None  # Will be set if we generate a new rule
+
     if rule is None:
         logger.info("=" * 80)
         logger.info(f"[Round {round_number}] PHASE 1: RULE LOADING")
@@ -167,11 +169,7 @@ def play_round_solo(
 
         rules_cfg = config["rules"]
 
-        min_acceptance = rules_cfg.get("min_acceptance", 0.0)
-        max_acceptance = rules_cfg.get("max_acceptance", 1.0)
-
         logger.info("Loading rule from library...")
-        logger.info(f"Acceptance rate bounds: [{min_acceptance:.2%}, {max_acceptance:.2%}]")
 
         # Use provided start_rule_index for resume support, otherwise use config default
         start_index = start_rule_index if start_rule_index is not None else rules_cfg.get("index", 0)
@@ -180,13 +178,11 @@ def play_round_solo(
         rule_factory = RuleFactory(
             library_path=rules_cfg["library_path"] if rules_list is None else None,
             selection=rules_cfg["selection"],
-            min_acceptance=min_acceptance,
-            max_acceptance=max_acceptance,
             start_index=start_index,
             rules_list=rules_list,
         )
 
-        rule = rule_factory.create_rule()
+        rule, rule_metadata = rule_factory.create_rule_with_metadata()
 
         logger.info("")
         logger.info("=" * 80)
@@ -408,6 +404,7 @@ def play_round_solo(
         'turn_count': turn_count,
         'rule_description': rule.description(),
         'rule_code': rule.get_code(),
+        'rule_metadata': rule_metadata,  # Includes name, index from library (None if rule was reused)
         'success': success,
         'score': final_score,
         'failed_guesses': engine.failed_guess_count,
