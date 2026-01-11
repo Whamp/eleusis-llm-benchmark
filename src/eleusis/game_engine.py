@@ -58,8 +58,11 @@ class Rule:
             logger.debug(f"  [Rule Debug] {' '.join(str(arg) for arg in args)}")
 
         # Safe execution environment
+        # Note: __import__ is needed for Python internals (property access, exceptions)
         safe_globals = {
             "__builtins__": {
+                # Python internals (required for property access, etc.)
+                "__import__": __import__,
                 # Type constructors
                 "bool": bool,
                 "int": int,
