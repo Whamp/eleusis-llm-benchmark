@@ -31,6 +31,24 @@ def get_rule_compile_prompt(rule_text: str) -> str:
     - Handle empty mainline (first card) with: if not mainline:
     - Return True (accepted) or False (rejected)
 
+    SANDBOX RESTRICTIONS - Only these operations are available:
+    - Types: bool, int, str, list, tuple, set, dict
+    - Iteration: range(), reversed(), sorted(), enumerate(), zip()
+    - Aggregation: len(), sum(), min(), max(), abs(), any(), all()
+    - Math: round(), divmod()
+    - List/string methods work normally: .index(), slicing, etc.
+    - Standard arithmetic and comparisons: +, -, *, /, //, %, ==, !=, <, >, <=, >=
+    - Logical operators: and, or, not, in
+
+    DO NOT USE (will cause errors):
+    - import statements (no math, collections, etc.)
+    - File operations, eval, exec, or any external calls
+
+    Common patterns that work:
+    - Prime ranks: primes = {{2, 3, 5, 7, 11, 13}}; card.rank in primes
+    - Suit values: suit_val = {{"hearts":1, "diamonds":2, "clubs":3, "spades":4}}[card.suit.suit_name]
+    - Floor division: x // 2 instead of math.floor(x/2)
+
     RESPONSE FORMAT (function body only, enclosed in <CODE> tags):
 
     <CODE>
@@ -112,6 +130,23 @@ The code should:
 - Handle empty mainline (first card) with: if not mainline:
 - Return True (accepted) or False (rejected)
 
+SANDBOX RESTRICTIONS - Only these operations are available:
+- Types: bool, int, str, list, tuple, set, dict
+- Iteration: range(), reversed(), sorted(), enumerate(), zip()
+- Aggregation: len(), sum(), min(), max(), abs(), any(), all()
+- Math: round(), divmod()
+- List/string methods work normally: .index(), slicing, etc.
+- Standard arithmetic and comparisons: +, -, *, /, //, %, ==, !=, <, >, <=, >=
+- Logical operators: and, or, not, in
+
+DO NOT USE (will cause errors):
+- import statements (no math, collections, etc.)
+- File operations, eval, exec, or any external calls
+
+Common patterns that work:
+- Prime ranks: primes = {{2, 3, 5, 7, 11, 13}}; card.rank in primes
+- Suit values: suit_val = {{"hearts":1, "diamonds":2, "clubs":3, "spades":4}}[card.suit.suit_name]
+- Floor division: x // 2 instead of math.floor(x/2)
 
 <RULE>
   <NAME>Rule Name Here</NAME>

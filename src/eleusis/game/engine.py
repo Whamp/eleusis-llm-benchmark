@@ -52,21 +52,25 @@ class Rule:
             """Print function for debugging rule execution."""
             logger.debug(f"  [Rule Debug] {' '.join(str(arg) for arg in args)}")
 
-        # Safe execution environment
+        # Safe execution environment - restricted sandbox for rule code
+        # No __import__ to prevent arbitrary imports
         safe_globals = {
             "__builtins__": {
-                "__import__": __import__,
+                # Types
                 "bool": bool,
                 "int": int,
                 "str": str,
                 "list": list,
                 "tuple": tuple,
                 "set": set,
+                "dict": dict,
+                # Iteration
                 "range": range,
                 "reversed": reversed,
                 "sorted": sorted,
                 "enumerate": enumerate,
                 "zip": zip,
+                # Aggregation
                 "len": len,
                 "sum": sum,
                 "min": min,
@@ -74,6 +78,10 @@ class Rule:
                 "abs": abs,
                 "any": any,
                 "all": all,
+                # Math
+                "round": round,
+                "divmod": divmod,
+                # Debug
                 "print": debug_print,
             },
             "Card": Card,

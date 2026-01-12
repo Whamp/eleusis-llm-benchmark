@@ -89,17 +89,83 @@ return card.rank > last_card.rank
         assert rule.evaluate(Card(8, Suit.CLUBS), mainline)
         assert not rule.evaluate(Card(3, Suit.DIAMONDS), mainline)
 
-    def test_imports_allowed_for_rule_logic(self) -> None:
-        """Test that imports are allowed for rule logic (e.g. math)."""
+    def test_imports_not_allowed(self) -> None:
+        """Test that import statements fail in sandbox."""
         code = """
 import math
 return math.floor(card.rank / 2) % 2 == 0
 """
+        rule = Rule("Uses import", code)
+
+        # Should fail - imports are not allowed in sandbox
+        with pytest.raises((ImportError, NameError)):
+            rule.evaluate(Card(4, Suit.HEARTS), [])
+
+    def test_inline_math_operations(self) -> None:
+        """Test that inline math works without imports."""
+        code = """
+# Use floor division instead of math.floor
+return (card.rank // 2) % 2 == 0
+"""
         rule = Rule("Floor of rank/2 is even", code)
 
-        # Should work - imports are allowed in sandbox
-        assert rule.evaluate(Card(4, Suit.HEARTS), [])  # floor(4/2)=2, even
-        assert not rule.evaluate(Card(6, Suit.HEARTS), [])  # floor(6/2)=3, odd
+        # Should work with inline floor division
+        assert rule.evaluate(Card(4, Suit.HEARTS), [])  # 4//2=2, even
+        assert not rule.evaluate(Card(6, Suit.HEARTS), [])  # 6//2=3, odd
+
+    def test_dict_builtin(self) -> None:
+        """Test that dict builtin is available for suit mappings."""
+        code = """
+if not mainline:
+    return True
+suit_value = {"hearts":1, "diamonds":2, "clubs":3, "spades":4}[card.suit.suit_name]
+diff = abs(card.rank - mainline[-1].rank)
+return diff == suit_value
+"""
+        rule = Rule("Rank diff equals suit value", code)
+
+        # First card always accepted
+        assert rule.evaluate(Card(5, Suit.HEARTS), [])
+
+        # Hearts = 1, so diff must be 1
+        mainline = [Card(5, Suit.CLUBS)]
+        assert rule.evaluate(Card(6, Suit.HEARTS), mainline)  # diff=1, hearts=1
+        assert not rule.evaluate(Card(8, Suit.HEARTS), mainline)  # diff=3, hearts=1
+
+    def test_round_builtin(self) -> None:
+        """Test that round() builtin is available."""
+        code = """
+# Accept if rounded average of mainline ranks is less than card rank
+if not mainline:
+    return True
+avg = sum(c.rank for c in mainline) / len(mainline)
+return card.rank > round(avg)
+"""
+        rule = Rule("Rank greater than rounded average", code)
+
+        # First card always accepted
+        assert rule.evaluate(Card(5, Suit.HEARTS), [])
+
+        # Mainline [5], avg=5, round(5)=5, card 6 > 5
+        mainline = [Card(5, Suit.HEARTS)]
+        assert rule.evaluate(Card(6, Suit.CLUBS), mainline)
+        assert not rule.evaluate(Card(4, Suit.CLUBS), mainline)
+
+    def test_divmod_builtin(self) -> None:
+        """Test that divmod() builtin is available."""
+        code = """
+# Accept if quotient and remainder of rank/4 sum to an even number
+q, r = divmod(card.rank, 4)
+return (q + r) % 2 == 0
+"""
+        rule = Rule("Divmod sum is even", code)
+
+        # rank 4: divmod(4,4) = (1,0), 1+0=1 odd -> reject
+        assert not rule.evaluate(Card(4, Suit.HEARTS), [])
+        # rank 5: divmod(5,4) = (1,1), 1+1=2 even -> accept
+        assert rule.evaluate(Card(5, Suit.HEARTS), [])
+        # rank 8: divmod(8,4) = (2,0), 2+0=2 even -> accept
+        assert rule.evaluate(Card(8, Suit.HEARTS), [])
 
     def test_safe_globals_no_open(self) -> None:
         """Test that file operations are not allowed."""
