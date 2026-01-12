@@ -5,7 +5,7 @@ import logging
 import re
 import time
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class LLMCallMetrics:
     """Metrics for a single LLM API call."""
     model_name: str
-    role: str  # "game_master" or player display name
+    role: str
     prompt_tokens: int
     completion_tokens: int
     total_tokens: int
@@ -23,35 +23,27 @@ class LLMCallMetrics:
     finish_reason: str
     has_reasoning: bool
     timestamp: float
-    # Optional fields
-    reasoning_tokens: int | None = None  # If available from API or estimated
-    is_continuation: bool = False  # Was this a continuation call?
-    continuation_depth: int = 0  # 0=initial, 1=first continuation, etc.
+    reasoning_tokens: int | None = None
+    is_continuation: bool = False
+    continuation_depth: int = 0
     provider: str = "unknown"
-    cost_usd: float | None = None  # Cost in USD (OpenRouter only)
+    cost_usd: float | None = None
 
 
 @dataclass
 class GenerateMetrics:
     """Metrics for a single generate() call (may include multiple API calls)."""
-    total_calls: int  # Number of API calls for this generate()
-    continuation_count: int  # How many continuations were needed
+    total_calls: int
+    continuation_count: int
     total_prompt_tokens: int
     total_completion_tokens: int
     total_reasoning_tokens: int | None
     total_duration_seconds: float
-    success: bool  # Did we get valid response?
+    success: bool
 
 
 def detect_reasoning_model_type(model_name: str) -> str | None:
-    """Detect reasoning model type from model name.
-
-    Returns:
-        - "gpt-oss": Uses .reasoning field on message
-        - "qwen-thinking": Uses <think> tags in content
-        - "deepseek-r1": Uses reasoning_content field
-        - None: Standard model (no special reasoning)
-    """
+    """Detect reasoning model type from model name."""
     model_lower = model_name.lower()
 
     if "gpt-oss" in model_lower:
@@ -61,34 +53,44 @@ def detect_reasoning_model_type(model_name: str) -> str | None:
     elif "deepseek" in model_lower and "r1" in model_lower:
         return "deepseek-r1"
     elif "kimi" in model_lower and "thinking" in model_lower:
-        return "qwen-thinking"  # Kimi uses similar format
+        return "qwen-thinking"
 
     return None
 
 
 def estimate_reasoning_tokens(content: str) -> int | None:
-    """Estimate reasoning tokens from <think> blocks or raw reasoning text.
-
-    Uses a simple heuristic: ~1.3 tokens per word (conservative estimate).
-    Returns None if no reasoning content found.
-    """
+    """Estimate reasoning tokens from <think> blocks or raw reasoning text."""
     if not content:
         return None
 
-    # Try to extract <think> block content
     match = re.search(r'<think>(.*?)</think>', content, re.DOTALL)
     if match:
         thinking_text = match.group(1)
     else:
-        # Assume entire content is reasoning (for .reasoning field)
         thinking_text = content
 
     if not thinking_text.strip():
         return None
 
-    # Heuristic: ~1.3 tokens per word (covers subword tokenization)
     word_count = len(thinking_text.split())
     return int(word_count * 1.3)
+
+
+def _get_continuation_prompt(xml_tag: str, force_answer: bool = False) -> str:
+    """Get prompt for completing truncated structured response."""
+    if force_answer:
+        return f"""STOP. Output ONLY the final answer now.
+DO NOT think further. DO NOT reason. DO NOT use <think> tags.
+Immediately output the <{xml_tag}> tag with valid JSON inside, then close with </{xml_tag}>.
+Start your response with: <{xml_tag}>"""
+    else:
+        return f"""Please continue and COMPLETE your response now.
+DO NOT REASON ABOUT IT FURTHER, just provide the missing content.
+You MUST start your response immediately with the <{xml_tag}> tag.
+You MUST finish with a properly closed </{xml_tag}> tag containing valid JSON.
+- Include the complete JSON object in the XML tags
+- Ensure all JSON braces and brackets are properly closed
+"""
 
 
 class BaseLLMClient(ABC):
@@ -123,7 +125,7 @@ class BaseLLMClient(ABC):
     @property
     @abstractmethod
     def provider_name(self) -> str:
-        """Return the provider name (e.g., 'huggingface', 'openrouter')."""
+        """Return the provider name."""
         pass
 
     @abstractmethod
@@ -134,17 +136,7 @@ class BaseLLMClient(ABC):
         continuation_depth: int = 0,
         disable_thinking: bool = False,
     ) -> tuple[object, LLMCallMetrics]:
-        """Make a single API call and return response + metrics.
-
-        Args:
-            messages: Chat messages to send
-            is_continuation: Whether this is a continuation call
-            continuation_depth: How many continuations deep we are
-            disable_thinking: Try to disable reasoning/thinking if possible
-
-        Returns:
-            Tuple of (API response choice, metrics for this call)
-        """
+        """Make a single API call and return response + metrics."""
         pass
 
     def generate(
@@ -153,21 +145,10 @@ class BaseLLMClient(ABC):
         xml_tag: str | None = None,
         return_dict: bool = False
     ) -> str | dict:
-        """Generate text or structured response with automatic continuation.
-
-        Args:
-            prompt: The prompt string to send to LLM
-            xml_tag: Optional XML tag name to extract content from
-            return_dict: If True, parse extracted/raw content as JSON
-
-        Returns:
-            str: Raw or XML-extracted text (if return_dict=False)
-            dict: Parsed JSON object (if return_dict=True)
-        """
+        """Generate text or structured response with automatic continuation."""
         start_time = time.time()
         calls_in_generate = []
 
-        # Make initial API call
         messages = [{"role": "user", "content": prompt}]
         response, metrics = self._call_api(messages, is_continuation=False, continuation_depth=0)
         calls_in_generate.append(metrics)
@@ -175,7 +156,6 @@ class BaseLLMClient(ABC):
 
         logger.info(f"Finish reason: {metrics.finish_reason}")
 
-        # Handle truncation by continuing
         if metrics.finish_reason == "length":
             logger.warning("Response was truncated, attempting continuation.")
             content, continuation_metrics = self._continue_response(
@@ -183,18 +163,14 @@ class BaseLLMClient(ABC):
             )
             calls_in_generate.extend(continuation_metrics)
         else:
-            # No truncation - process response
             content = response.message.content
 
-            # Extract from XML tag if specified
             if xml_tag:
                 content = self._extract_content_from_response(content, [xml_tag], try_code_blocks=True)
 
-            # Parse as JSON if requested
             if return_dict:
                 content = json.loads(content)
 
-        # Record generate-level metrics
         total_duration = time.time() - start_time
         gen_metrics = GenerateMetrics(
             total_calls=len(calls_in_generate),
@@ -218,39 +194,29 @@ class BaseLLMClient(ABC):
         depth: int = 1,
     ) -> tuple[str | dict, list[LLMCallMetrics]]:
         """Continue truncated response with escalating strategies."""
-        from eleusis.prompts import get_continuation_prompt
-
         continuation_metrics = []
 
-        # Build message with partial response
         assistant_msg = {
             "role": "assistant",
             "content": partial_response_message.content,
         }
-        # Preserve reasoning if available (for gpt-oss style)
         if hasattr(partial_response_message, 'reasoning') and partial_response_message.reasoning:
             assistant_msg["reasoning"] = partial_response_message.reasoning
 
         messages.append(assistant_msg)
 
-        # Escalating strategy based on depth
-        disable_thinking = depth >= 2  # Try to disable thinking on 2nd+ continuation
+        disable_thinking = depth >= 2
 
-        # Request continuation
         tag_name = xml_tag if xml_tag else "RESPONSE"
-        continuation_prompt = get_continuation_prompt(tag_name, force_answer=(depth >= 2))
+        continuation_prompt = _get_continuation_prompt(tag_name, force_answer=(depth >= 2))
 
-        # For <think> tag models on deeper continuations, try prefilling
         if depth >= 2 and self.reasoning_model_type in ("qwen-thinking", "deepseek-r1"):
-            # Add a hint to skip thinking
             continuation_prompt = f"</think>\n{continuation_prompt}"
 
         messages.append({"role": "user", "content": continuation_prompt})
 
-        # Check if we've exceeded max attempts
         if depth > self.max_continuation_attempts:
             logger.error(f"Max continuation attempts ({self.max_continuation_attempts}) exceeded")
-            # Return what we have
             combined_content = partial_response_message.content
             if xml_tag:
                 combined_content = self._extract_content_from_response(
@@ -260,7 +226,6 @@ class BaseLLMClient(ABC):
                 return json.loads(combined_content), continuation_metrics
             return combined_content, continuation_metrics
 
-        # Get continuation
         response, metrics = self._call_api(
             messages,
             is_continuation=True,
@@ -270,7 +235,6 @@ class BaseLLMClient(ABC):
         continuation_metrics.append(metrics)
         self.call_metrics.append(metrics)
 
-        # Recursively handle further truncation
         if metrics.finish_reason == "length":
             logger.warning(f"Continuation {depth} was also truncated, continuing again...")
             content, more_metrics = self._continue_response(
@@ -279,16 +243,13 @@ class BaseLLMClient(ABC):
             continuation_metrics.extend(more_metrics)
             return content, continuation_metrics
 
-        # Combine partial + continuation
         combined_content = partial_response_message.content + response.message.content
 
-        # Extract from XML tag if specified
         if xml_tag:
             combined_content = self._extract_content_from_response(
                 combined_content, [xml_tag], try_code_blocks=True
             )
 
-        # Parse as JSON if requested
         if return_dict:
             return json.loads(combined_content), continuation_metrics
 
@@ -303,7 +264,6 @@ class BaseLLMClient(ABC):
         """Extract content from XML tags or markdown code blocks."""
         extracted = None
 
-        # Try XML tags first
         if xml_tags:
             for tag in xml_tags:
                 pattern = f"<{tag}>(.*?)</{tag}>"
@@ -312,7 +272,6 @@ class BaseLLMClient(ABC):
                     extracted = match.group(1).strip()
                     break
 
-        # Fallback to code blocks if requested and XML extraction failed
         if not extracted and try_code_blocks:
             if "```json" in response_text:
                 start = response_text.find("```json") + 7
@@ -327,18 +286,10 @@ class BaseLLMClient(ABC):
 
     def convert_rule_to_code(self, rule_text: str) -> str | None:
         """Convert natural language rule to Python code."""
-        from eleusis.prompts import get_rule_compilation_prompt
+        from eleusis.prompts import get_rule_compile_prompt
 
-        prompt = get_rule_compilation_prompt(rule_text)
+        prompt = get_rule_compile_prompt(rule_text)
         return self.generate(prompt, xml_tag="CODE")
-
-    def evaluate_rule_on_card(self, rule_text: str, card: dict, mainline: list[dict]) -> bool:
-        """Evaluate if card is IN or OUT according to rule."""
-        from eleusis.prompts import get_card_evaluation_prompt
-
-        prompt = get_card_evaluation_prompt(rule_text, card, mainline)
-        result = self.generate(prompt, return_dict=True)
-        return result["result"].lower() == "in"
 
     def get_usage_stats(self) -> dict:
         """Get aggregated usage statistics for this client."""
@@ -357,7 +308,6 @@ class BaseLLMClient(ABC):
                 "provider": self.provider_name,
             }
 
-        # Aggregate metrics
         total_prompt = sum(m.prompt_tokens for m in self.call_metrics)
         total_completion = sum(m.completion_tokens for m in self.call_metrics)
         total_tokens = sum(m.total_tokens for m in self.call_metrics)

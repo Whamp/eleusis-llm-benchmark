@@ -1,94 +1,18 @@
-"""Game runner for solo pattern discovery mode."""
+"""Game runner for pattern discovery mode."""
 
 import logging
 import time
 
-from eleusis.game_engine import GameEngineSolo, GuessRuleAction, Rule
-from eleusis.game_state import GameState
-from eleusis.llm_client import create_client
-from eleusis.player import LLMScientist
-from eleusis.rule_factory import RuleFactory
-from eleusis.rules import RuleValidator
-from eleusis.prompts import get_solo_action_selection_prompt
+from eleusis.game import GameEngine, GameState, GuessRuleAction, Rule, RuleFactory, RuleValidator
+from eleusis.llm import LLMScientist, create_client
 from eleusis.utils import model_spec_to_display_name
 
-__all__ = ["LLMScientistSolo", "play_round_solo"]
+__all__ = ["play_round"]
 
 logger = logging.getLogger(__name__)
 
 
-class LLMScientistSolo(LLMScientist):
-    """Scientist player for solo mode with modified prompt."""
-
-    def __init__(self, name: str, llm_client, max_retries: int = 3, engine=None, max_turns: int = 40):
-        """Initialize with engine reference for accessing failed_guess_count."""
-        super().__init__(name, llm_client, max_retries)
-        self.engine = engine
-        self.max_turns = max_turns
-
-    def _select_move(self, game_state, current_player):
-        """Select a card to play using solo mode prompt."""
-        hand_cards = current_player.hand.get_all_cards()
-        if not hand_cards:
-            # Should not happen in solo mode with constant hand size
-            logger.error("Empty hand in solo mode - should not happen!")
-            import random
-            from eleusis.game_engine import PlayCardAction
-            return PlayCardAction(random.choice(hand_cards)) if hand_cards else None
-
-        hand_dicts = [c.to_dict() for c in hand_cards]
-        compact_board = game_state.to_compact_string()
-        deck_remaining = game_state.deck.remaining_count()
-        failed_guesses = game_state.failed_rule_guesses
-
-        # Calculate current turn number (total turns taken so far)
-        current_turn = game_state.round_number
-
-        # Get failed guess count from engine
-        failed_guess_count = self.engine.failed_guess_count if self.engine else 0
-
-        prompt = get_solo_action_selection_prompt(
-            compact_board=compact_board,
-            hand_cards=hand_dicts,
-            deck_remaining=deck_remaining,
-            play_history=self.play_history,
-            failed_guesses=failed_guesses,
-            current_turn=current_turn,
-            max_turns=self.max_turns,
-            failed_guess_count=failed_guess_count,
-        )
-
-        for attempt in range(self.max_retries):
-            try:
-                response = self.llm_client.generate(prompt, xml_tag="ACTION", return_dict=True)
-
-                # Store response for history tracking
-                self.last_action_response = response
-
-                # Parse card field
-                card_value = response.get("card", "").strip()
-
-                # Find the card in hand
-                from eleusis.game_engine import PlayCardAction
-                card = self._parse_card(card_value, hand_cards)
-                if card:
-                    logger.info(f"{self.name} plays {card}")
-                    tentative = response.get("tentative_rule", "")
-                    if tentative:
-                        logger.debug(f"{self.name}'s tentative rule: {tentative}")
-                    return PlayCardAction(card)
-
-            except Exception as e:
-                logger.warning(f"Move selection attempt {attempt + 1} failed: {e}")
-
-        # Fallback: play random card
-        logger.warning(f"{self.name} using random fallback")
-        import random
-        from eleusis.game_engine import PlayCardAction
-        return PlayCardAction(random.choice(hand_cards))
-
-
-def play_round_solo(
+def play_round(
     config: dict,
     round_number: int,
     rule: Rule | None = None,
@@ -96,7 +20,7 @@ def play_round_solo(
     start_rule_index: int | None = None,
     rules_list: list[dict] | None = None,
 ) -> dict:
-    """Play a single round of solo pattern discovery.
+    """Play a single round of pattern discovery.
 
     Args:
         config: Full game configuration dict
@@ -110,7 +34,6 @@ def play_round_solo(
         dict with round_number, turn_count, rule_description, rule_code,
         success, score, game_over_reason, wall_clock_seconds
     """
-    # Track wall-clock time for the entire round
     round_start_time = time.time()
 
     # --------------------
@@ -126,7 +49,6 @@ def play_round_solo(
 
     max_tokens = llm_config["max_tokens"]
     max_continuation = llm_config.get("max_continuation_attempts", 3)
-
     llm_seed = llm_config.get("seed")
 
     game_master_client = create_client(
@@ -151,7 +73,7 @@ def play_round_solo(
     # (2) Rule generation
     # --------------------
 
-    rule_metadata = None  # Will be set if we generate a new rule
+    rule_metadata = None
 
     if rule is None:
         logger.info("=" * 80)
@@ -161,7 +83,6 @@ def play_round_solo(
 
         logger.info("✓ Game master client initialized")
 
-        # Reset usage stats for new round
         game_master_client.reset_usage_stats()
         scientist_client.reset_usage_stats()
 
@@ -171,7 +92,6 @@ def play_round_solo(
 
         logger.info("Loading rule from library...")
 
-        # Use provided start_rule_index for resume support, otherwise use config default
         start_index = start_rule_index if start_rule_index is not None else rules_cfg.get("index", 0)
         logger.info(f"Rule factory starting at index: {start_index}")
 
@@ -203,12 +123,12 @@ def play_round_solo(
     logger.info("")
 
     player_name = player_display_name
-    game_state = GameState([player_name])
+    game_state = GameState(player_name)
 
     hand_size = game_config.get('hand_size', 12)
     wrong_guess_penalty = game_config.get('wrong_guess_penalty', 3)
 
-    engine = GameEngineSolo(
+    engine = GameEngine(
         game_state,
         rule,
         rule_compiler_client=game_master_client,
@@ -218,16 +138,14 @@ def play_round_solo(
     )
 
     # Compute round seed from rule code for reproducibility
-    # Different models evaluating the same rule will get the same initial deck/hand
     base_seed = config.get("seed")
     if base_seed is not None:
-        rule_hash = hash(rule.get_code()) & 0xFFFFFFFF  # Consistent hash from rule code
+        rule_hash = hash(rule.get_code()) & 0xFFFFFFFF
         round_seed = (base_seed + rule_hash) & 0xFFFFFFFF
         logger.info(f"Using round seed: {round_seed} (base_seed={base_seed}, rule_hash={rule_hash})")
     else:
         round_seed = None
 
-    # Setup game with optional seed for reproducibility
     engine.setup_game(round_seed=round_seed)
 
     logger.info("✓ Game setup complete")
@@ -236,19 +154,17 @@ def play_round_solo(
     logger.info(f"✓ Deck has {game_state.deck.remaining_count()} cards remaining")
     logger.info("")
 
-    # Determine max_turns_limit first
     max_turns_limit = max_turns or game_config.get("max_turns", 40)
 
-    # Create scientist player
     max_llm_retries = llm_config["max_llm_retries"]
-    scientist = LLMScientistSolo(
+    scientist = LLMScientist(
         player_name,
         scientist_client,
         max_retries=max_llm_retries,
         engine=engine,
         max_turns=max_turns_limit,
     )
-    logger.info(f"✓ Solo player initialized: {scientist.name}")
+    logger.info(f"✓ Player initialized: {scientist.name}")
     logger.info("")
 
     # --------------
@@ -264,35 +180,30 @@ def play_round_solo(
     turn_data_list = []
 
     while turn_count < max_turns_limit and not engine.is_game_over():
-        current_player_state = game_state.get_current_player()
+        player = game_state.player
 
-        # Capture state BEFORE action
         mainline_before = game_state.to_compact_string()
-        hand_before = [str(c) for c in current_player_state.hand.get_all_cards()]
+        hand_before = [str(c) for c in player.hand.get_all_cards()]
 
-        # Log turn header
         logger.info("=" * 80)
         logger.info(f"[Round {round_number}] TURN {turn_count + 1}: {player_name}")
         logger.info("=" * 80)
         logger.info(f"Board: {game_state.to_compact_string()}")
         logger.info(f"Deck remaining: {game_state.deck.remaining_count()} cards")
-        hand_cards = current_player_state.hand.get_all_cards()
+        hand_cards = player.hand.get_all_cards()
         hand_str = ", ".join([str(c) for c in hand_cards])
         logger.info(f"Hand ({len(hand_cards)} cards): {hand_str}")
         logger.info("")
 
-        # Update the round_number to track turn for prompt
-        game_state.round_number = turn_count + 1
+        game_state.turn_number = turn_count + 1
 
         try:
             action = scientist.get_action(game_state)
         except Exception as e:
             logger.error(f"Error getting action: {e}", exc_info=True)
-            game_state.advance_turn()
             turn_count += 1
             continue
 
-        # Log ACTION details from LLM response
         if scientist.last_action_response:
             reasoning_summary = scientist.last_action_response.get("reasoning_summary", "")
             tentative_rule = scientist.last_action_response.get("tentative_rule", "")
@@ -305,22 +216,19 @@ def play_round_solo(
             logger.info(f"Will guess: {guess_rule}")
             logger.info("")
 
-        # Check if player wants to guess
         will_guess = (
             scientist.last_action_response
             and scientist.last_action_response.get("guess_rule", False)
         )
 
-        # Get tentative rule if available
         guess_text = (
             scientist.last_action_response.get("tentative_rule", "")
             if scientist.last_action_response
             else ""
         )
 
-        play_result = engine.play_turn(action, advance_turn=False)
+        play_result = engine.play_turn(action)
 
-        # Create turn data entry
         turn_data = {
             "turn_number": turn_count + 1,
             "player": player_name,
@@ -336,22 +244,18 @@ def play_round_solo(
             "guess_attempt": None
         }
 
-        # Log result
         logger.info(f"Action: {play_result['action']}")
         if "card" in play_result:
             logger.info(f"Card played: {play_result['card']}")
             logger.info(f"Result: {'ACCEPTED ✓' if play_result.get('accepted') else 'REJECTED ✗'}")
 
-        # Record the play result
         scientist.record_action_result(play_result)
 
-        # Execute the guess if needed
         if will_guess and guess_text:
             logger.info("")
             logger.info(f"{player_name} is guessing the rule...")
-            result = engine.play_turn(GuessRuleAction(guess_text))  # This will advance turn
+            result = engine.play_turn(GuessRuleAction(guess_text))
 
-            # Add guess data to turn
             if "guess" in result:
                 turn_data["guess_attempt"] = {
                     "guess": result["guess"],
@@ -359,11 +263,8 @@ def play_round_solo(
                     "reasoning": result.get("reasoning", "")
                 }
         else:
-            # No guess - manually advance turn
-            game_state.advance_turn()
             result = play_result
 
-        # Store turn data
         turn_data_list.append(turn_data)
 
         if "guess" in result:
@@ -381,7 +282,6 @@ def play_round_solo(
         logger.info("")
         turn_count += 1
 
-        # Pause after turn if configured
         if game_config.get("pause_after_turn", False):
             input(f"[Turn {turn_count} complete] Press Enter to continue...")
 
@@ -389,11 +289,9 @@ def play_round_solo(
     # (5) Scoring
     # -------------
 
-    scores = engine.calculate_scores(max_turns_limit, turn_count)
+    score = engine.calculate_score(max_turns_limit, turn_count)
     success = engine.rule_guessed
-    final_score = scores[player_name]
 
-    # Collect LLM usage statistics
     llm_usage = {
         "game_master": game_master_client.get_usage_stats(),
         "player": scientist_client.get_usage_stats(),
@@ -404,9 +302,9 @@ def play_round_solo(
         'turn_count': turn_count,
         'rule_description': rule.description(),
         'rule_code': rule.get_code(),
-        'rule_metadata': rule_metadata,  # Includes name, index from library (None if rule was reused)
+        'rule_metadata': rule_metadata,
         'success': success,
-        'score': final_score,
+        'score': score,
         'failed_guesses': engine.failed_guess_count,
         'game_over_reason': game_over_reason,
         'llm_usage': llm_usage,

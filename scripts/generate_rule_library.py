@@ -9,10 +9,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from eleusis.game_engine import Rule
-from eleusis.llm_client import HuggingFaceClient
+from eleusis.game import Rule, RuleValidator
+from eleusis.llm import HuggingFaceClient
 from eleusis.prompts import get_library_generation_prompt
-from eleusis.rules import RuleValidator
 
 logger = logging.getLogger(__name__)
 

@@ -2,8 +2,7 @@
 
 import pytest
 
-from eleusis.cards import Card, Suit
-from eleusis.game_engine import Rule
+from eleusis.game import Card, Rule, Suit
 
 
 class TestRule:
@@ -90,17 +89,17 @@ return card.rank > last_card.rank
         assert rule.evaluate(Card(8, Suit.CLUBS), mainline)
         assert not rule.evaluate(Card(3, Suit.DIAMONDS), mainline)
 
-    def test_safe_globals_no_imports(self) -> None:
-        """Test that imports are not allowed."""
+    def test_imports_allowed_for_rule_logic(self) -> None:
+        """Test that imports are allowed for rule logic (e.g. math)."""
         code = """
-import os
-return True
+import math
+return math.floor(card.rank / 2) % 2 == 0
 """
-        rule = Rule("Malicious import", code)
+        rule = Rule("Floor of rank/2 is even", code)
 
-        # Should fail at runtime due to import not being available
-        with pytest.raises(ImportError):
-            rule.evaluate(Card(5, Suit.HEARTS), [])
+        # Should work - imports are allowed in sandbox
+        assert rule.evaluate(Card(4, Suit.HEARTS), [])  # floor(4/2)=2, even
+        assert not rule.evaluate(Card(6, Suit.HEARTS), [])  # floor(6/2)=3, odd
 
     def test_safe_globals_no_open(self) -> None:
         """Test that file operations are not allowed."""

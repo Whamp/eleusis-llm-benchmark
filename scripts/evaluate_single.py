@@ -10,10 +10,9 @@ from pathlib import Path
 import yaml
 from dotenv import load_dotenv
 
-from eleusis.game_engine import Rule
-from eleusis.game_runner_solo import play_round_solo
-from eleusis.logging_utils import setup_logging
-from eleusis.utils import model_spec_to_display_name
+from eleusis.game import Rule
+from eleusis.runner import play_round
+from eleusis.utils import model_spec_to_display_name, setup_logging
 
 # Load environment variables
 load_dotenv()
@@ -465,7 +464,7 @@ def main():
         generated_new_rule = current_rule is None
 
         # Play round with rule_factory_index
-        result = play_round_solo(
+        result = play_round(
             config=config,
             round_number=round_num,
             rule=current_rule,
@@ -480,7 +479,7 @@ def main():
             # Increment rule_factory_index for RuleFactory (used for start position on next rule)
             rule_factory_index += 1
 
-            # Add newly consumed rule to rules_consumed list (using metadata from play_round_solo)
+            # Add newly consumed rule to rules_consumed list (using metadata from play_round)
             if 'rules_consumed' not in evaluation_results.get('checkpoint', {}):
                 if 'checkpoint' not in evaluation_results:
                     evaluation_results['checkpoint'] = {}

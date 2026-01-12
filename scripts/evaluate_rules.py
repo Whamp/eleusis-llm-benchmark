@@ -7,8 +7,7 @@ import logging
 import random
 from pathlib import Path
 
-from eleusis.cards import Card, Suit
-from eleusis.game_engine import Rule
+from eleusis.game import Card, Rule, Suit
 
 logger = logging.getLogger(__name__)
 

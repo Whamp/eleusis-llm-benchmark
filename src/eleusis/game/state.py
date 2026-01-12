@@ -3,7 +3,7 @@
 import json
 from dataclasses import dataclass, field
 
-from eleusis.cards import Card, Deck, Hand
+from eleusis.game.cards import Card, Deck, Hand
 
 __all__ = ["Mainline", "Sideline", "PlayerState", "GameState"]
 
@@ -62,7 +62,7 @@ class Sideline:
 
 @dataclass
 class PlayerState:
-    """State for a single player (scientist)."""
+    """State for a single player."""
 
     name: str
     hand: Hand = field(default_factory=Hand)
@@ -81,32 +81,23 @@ class PlayerState:
 
 
 class GameState:
-    """Complete game state visible to all players."""
+    """Complete game state for solo mode."""
 
-    def __init__(self, player_names: list[str]) -> None:
-        """Initialize game state with player names (scientists only)."""
-
+    def __init__(self, player_name: str) -> None:
+        """Initialize game state with player name."""
         self.mainline = Mainline()
         self.sidelines: dict[int, Sideline] = {}
         self.deck = Deck()
-        self.players: list[PlayerState] = []
-        self.failed_rule_guesses: list[dict] = []  # Global history of failed guesses
-
-        for name in player_names:
-            self.players.append(PlayerState(name=name))
-
-        self.current_turn_index = 0
-        self.round_number = 1
+        self._player = PlayerState(name=player_name)
+        self.failed_rule_guesses: list[dict] = []
+        self.turn_number = 1
         self.game_over = False
         self.winner: str | None = None
 
-    def get_current_player(self) -> PlayerState:
-        """Get the player whose turn it is."""
-        return self.players[self.current_turn_index]
-
-    def advance_turn(self) -> None:
-        """Move to next player's turn."""
-        self.current_turn_index = (self.current_turn_index + 1) % len(self.players)
+    @property
+    def player(self) -> PlayerState:
+        """Get the player."""
+        return self._player
 
     def add_sideline_card(self, card: Card) -> None:
         """Add a rejected card to the sideline for the current mainline position."""
@@ -115,10 +106,10 @@ class GameState:
             self.sidelines[mainline_index] = Sideline(mainline_index)
         self.sidelines[mainline_index].add_card(card)
 
-    def record_failed_guess(self, player_name: str, guess_text: str) -> None:
-        """Record a failed rule guess for all players to see."""
+    def record_failed_guess(self, guess_text: str) -> None:
+        """Record a failed rule guess."""
         self.failed_rule_guesses.append({
-            "player": player_name,
+            "player": self._player.name,
             "guess": guess_text
         })
 
@@ -131,10 +122,7 @@ class GameState:
         mainline_cards = self.mainline.get_all()
 
         for i, card in enumerate(mainline_cards):
-            # Add the accepted card
             result.append(str(card))
-
-            # Add rejected cards (sideline) AFTER this position
             if i in self.sidelines:
                 rejected = self.sidelines[i].get_cards()
                 for r_card in rejected:
@@ -148,7 +136,7 @@ class GameState:
 
         return " ".join(result)
 
-    def to_json(self, current_player_name: str | None = None) -> str:
+    def to_json(self) -> str:
         """Serialize game state to JSON for LLM consumption."""
         state_dict = {
             "mainline": self.mainline.to_dict(),
@@ -156,17 +144,10 @@ class GameState:
                 str(idx): sideline.to_dict()["cards"]
                 for idx, sideline in self.sidelines.items()
             },
-            "players": {},
+            "player": self._player.to_dict(reveal_hand=True),
             "deck_remaining": self.deck.remaining_count(),
-            "current_turn": self.get_current_player().name,
-            "round": self.round_number,
+            "turn": self.turn_number,
         }
-
-        # Add player info (reveal hand only for current player)
-        for player in self.players:
-            reveal = current_player_name is not None and player.name == current_player_name
-            state_dict["players"][player.name] = player.to_dict(reveal_hand=reveal)
-
         return json.dumps(state_dict, indent=2)
 
     def to_dict(self) -> dict:
@@ -177,10 +158,9 @@ class GameState:
                 str(idx): sideline.to_dict()["cards"]
                 for idx, sideline in self.sidelines.items()
             },
-            "players": {p.name: p.to_dict() for p in self.players},
+            "player": self._player.to_dict(),
             "deck_remaining": self.deck.remaining_count(),
-            "current_turn": self.get_current_player().name,
-            "round": self.round_number,
+            "turn": self.turn_number,
             "game_over": self.game_over,
             "winner": self.winner,
         }
