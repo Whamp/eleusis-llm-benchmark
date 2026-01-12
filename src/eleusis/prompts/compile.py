@@ -2,122 +2,26 @@
 
 from eleusis.prompts.game_rules import get_eleusis_rules
 
-__all__ = ["get_rule_compile_prompt", "get_library_generation_prompt"]
+__all__ = ["get_rule_compile_prompt"]
 
 
 def get_rule_compile_prompt(rule_text: str) -> str:
-    """Generate prompt for LLM to convert a game rule into Python code."""
+    """Generate prompt for LLM to convert a rule into Python code with a nickname."""
     return f"""
+=== YOUR TASK: CONVERT A RULE INTO PYTHON CODE AND GIVE IT A NICKNAME ===
 
-    === YOUR TASK : CONVERT A RULE ABOUT CARDS INTO PYTHON CODE ===
-
-    The context is a game of ELEUSIS, where a secret rule determines whether a played card is
-    accepted (in) or rejected (out) based on the current mainline of accepted cards.
-
-    {get_eleusis_rules()}
-
-    === YOUR TASK : CONVERT THE FOLLOWING RULE INTO PYTHON CODE ===
-
-    Rule: {rule_text}
-
-    CRITICAL: Generate ONLY the function body code, NOT a complete function definition.
-    Do NOT start with "def", do NOT define a new function.
-    We will wrap your code in a function automatically.
-
-    The code should:
-    - Use available properties: card.rank (1-13), card.color ("red"/"black")
-    - Use card.suit.suit_name ("hearts", "diamonds", "clubs", "spades")
-    - Have access to mainline: list of Card objects
-    - Handle empty mainline (first card) with: if not mainline:
-    - Return True (accepted) or False (rejected)
-
-    SANDBOX RESTRICTIONS - Only these operations are available:
-    - Types: bool, int, str, list, tuple, set, dict
-    - Iteration: range(), reversed(), sorted(), enumerate(), zip()
-    - Aggregation: len(), sum(), min(), max(), abs(), any(), all()
-    - Math: round(), divmod()
-    - List/string methods work normally: .index(), slicing, etc.
-    - Standard arithmetic and comparisons: +, -, *, /, //, %, ==, !=, <, >, <=, >=
-    - Logical operators: and, or, not, in
-
-    DO NOT USE (will cause errors):
-    - import statements (no math, collections, etc.)
-    - File operations, eval, exec, or any external calls
-
-    Common patterns that work:
-    - Prime ranks: primes = {{2, 3, 5, 7, 11, 13}}; card.rank in primes
-    - Suit values: suit_val = {{"hearts":1, "diamonds":2, "clubs":3, "spades":4}}[card.suit.suit_name]
-    - Floor division: x // 2 instead of math.floor(x/2)
-
-    RESPONSE FORMAT (function body only, enclosed in <CODE> tags):
-
-    <CODE>
-    # Python code that implements the rule
-    # Available: card.rank (1-13), card.color ("red"/"black"),
-    #            card.suit.suit_name ("hearts", "diamonds", "clubs", "spades")
-    #            mainline: list of Card objects
-    # Must handle empty mainline (first card)
-    if not mainline:
-        # Your logic here
-        return True/False
-    # Your logic here
-    return True/False
-    </CODE>
-
-    Example:
-    Rule is "Cards must alternate between red and black colors."
-    <CODE>
-    if not mainline:
-        return True
-    last_card = mainline[-1]
-    return card.color != last_card.color
-    </CODE>
-
-    Example:
-    Rule is "Only cards with even ranks (2,4,6,8,10,12) are accepted."
-    <CODE>
-    return card.rank % 2 == 0
-    </CODE>
-    """
-
-
-def get_library_generation_prompt(num_rules: int = 20) -> str:
-    """Generate prompt for LLM to create multiple rules at once."""
-    return f"""
-
-**YOU PLAY AS THE RULE-MAKER IN A CARD GAME OF ELEUSIS**
+You are given a natural language description of a rule for the Eleusis card game.
+Your task is to:
+1. Create a short snake_case nickname for the rule (e.g., "alternating_colors", "even_ranks_only")
+2. Convert the rule into Python code
 
 {get_eleusis_rules()}
 
-=== YOUR TASK: CREATE A LIBRARY OF {num_rules} SECRET RULES ===
+=== RULE TO CONVERT ===
 
-=== WHAT IS A RULE AND HOW TO CREATE ONE ===
+Rule: {rule_text}
 
-A rule is a deterministic function that decides whether a newly played card is
-**in** (accepted) or **out** (rejected) based on the current mainline state.
-
-RULE CONSTRAINTS:
-1. DETERMINISTIC: Same card + same mainline → always same result
-2. CAN depend on:
-   - Candidate card properties (rank, even/odd, face/pip, suit, color, etc.)
-   - Previously ACCEPTED mainline cards (their properties and positions)
-3. CANNOT depend on:
-   - Rejected cards (cards in brackets)
-   - Hidden information (deck, players' hands)
-   - Player identity, turn order, or randomness
-4. MUST work with EMPTY mainline (any first card must have a valid answer IN or OUT)
-
-**IMPORTANT Guidance for Rule-makers:**
-Aim for rules that are deducible within 15-25 plays.
-At a given point in the game, about 20-40% of possible cards should be legal plays.
-Avoid rules so complex that random guessing is the only viable strategy.
-Avoid rules that depend on complex sequences or deep history; or has a singular
-behavior for the first card, etc.
-
-
-OUTPUT FORMAT:
-You should both output the description of the rule and the Python code implementing it.
-Wrap your entire response in XML tags as shown below
+=== CODE REQUIREMENTS ===
 
 CRITICAL: Generate ONLY the function body code, NOT a complete function definition.
 Do NOT start with "def", do NOT define a new function.
@@ -148,49 +52,38 @@ Common patterns that work:
 - Suit values: suit_val = {{"hearts":1, "diamonds":2, "clubs":3, "spades":4}}[card.suit.suit_name]
 - Floor division: x // 2 instead of math.floor(x/2)
 
-<RULE>
-  <NAME>Rule Name Here</NAME>
-  <DESCRIPTION>Natural language description of the rule (1-2 sentences)</DESCRIPTION>
-    <CODE>
-    # Python code that implements the rule
-    # Available: card.rank (1-13), card.color ("red"/"black"),
-    #            card.suit.suit_name ("hearts", "diamonds", "clubs", "spades")
-    #            mainline: list of Card objects
-    # Must handle empty mainline (first card)
-    if not mainline:
-        # Your logic here
-        return True/False
-    # Your logic here
-    return True/False
-    </CODE>
-</RULE>
+=== RESPONSE FORMAT ===
 
-EXAMPLE:
-<RULE>
-  <NAME>Alternating Colors</NAME>
-  <DESCRIPTION>Cards must alternate between red and black colors.</DESCRIPTION>
-  <CODE>
+Provide your response in this exact XML format:
+
+<NAME>snake_case_nickname</NAME>
+<CODE>
+# Your Python code here
+</CODE>
+
+=== EXAMPLES ===
+
+Rule: "Cards must alternate between red and black colors."
+<NAME>alternating_colors</NAME>
+<CODE>
 if not mainline:
     return True
-last_card = mainline[-1]
-return card.color != last_card.color
-  </CODE>
-</RULE>
+return card.color != mainline[-1].color
+</CODE>
 
+Rule: "Only cards with even ranks (2,4,6,8,10,12) are accepted."
+<NAME>even_ranks_only</NAME>
+<CODE>
+return card.rank % 2 == 0
+</CODE>
 
+Rule: "Each card must have a rank greater than or equal to the previous card."
+<NAME>rank_increasing</NAME>
+<CODE>
+if not mainline:
+    return True
+return card.rank >= mainline[-1].rank
+</CODE>
 
-Generate {num_rules} different rules for the Eleusis card game. Each rule should be:
-- DETERMINISTIC (same inputs always give same output)
-- PLAYABLE (not too complex, learnable in 15-25 plays)
-- DIVERSE (cover different types of patterns)
-
-COMPLEXITY MIX:
-- {num_rules // 3} Simple rules (e.g., "Even ranks only", "Red cards only", "Alternating colors", "Rank higher than previous")
-- {num_rules // 3} Medium rules (e.g., "Rank difference of 2 from previous", "Color alternates every two cards")
-- {num_rules - 2 * (num_rules // 3)} Harder rules (e.g., "Fibonacci sequence of ranks", "Prime number ranks only", "Suits in a specific repeating order")
-
-Generate {num_rules} unique, interesting, playable rules now.
-Do not overcomplicate the rules, a rule impossible to guess will not be fun, and will be rejected by the rule-maker.
-
-Answer below by providing all rules, each wrapped in <RULE> XML tags as shown above.
+Now convert the rule above. Provide ONLY the <NAME> and <CODE> tags, nothing else.
 """

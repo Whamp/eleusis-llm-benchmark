@@ -1,4 +1,4 @@
-"""Generate a library of rules for Eleusis games."""
+"""Compile human-written rules into a JSON library for Eleusis games."""
 
 import argparse
 import json
@@ -11,46 +11,69 @@ from dotenv import load_dotenv
 
 from eleusis.game import Rule, RuleValidator
 from eleusis.llm import HuggingFaceClient
-from eleusis.prompts import get_library_generation_prompt
+from eleusis.prompts import get_rule_compile_prompt
 
 logger = logging.getLogger(__name__)
 
 
-def extract_rules_from_response(response: str) -> list[dict]:
-    """Extract multiple rules from LLM response.
+def parse_rules_file(filepath: Path) -> list[str]:
+    """Parse rules file, returning list of rule descriptions.
 
-    Returns:
-        List of dicts with 'name', 'description', 'code' keys
+    Skips blank lines and lines starting with #.
     """
     rules = []
-
-    # Find all <RULE>...</RULE> blocks
-    rule_blocks = re.findall(r"<RULE>(.*?)</RULE>", response, re.DOTALL | re.IGNORECASE)
-
-    for rule_content in rule_blocks:
-        # Extract NAME
-        name_match = re.search(
-            r"<NAME>(.*?)</NAME>", rule_content, re.DOTALL | re.IGNORECASE
-        )
-        # Extract DESCRIPTION
-        desc_match = re.search(
-            r"<DESCRIPTION>(.*?)</DESCRIPTION>", rule_content, re.DOTALL | re.IGNORECASE
-        )
-        # Extract CODE
-        code_match = re.search(
-            r"<CODE>(.*?)</CODE>", rule_content, re.DOTALL | re.IGNORECASE
-        )
-
-        if name_match and desc_match and code_match:
-            rules.append({
-                "name": name_match.group(1).strip(),
-                "description": desc_match.group(1).strip(),
-                "code": code_match.group(1).strip(),
-            })
-        else:
-            logger.warning("Incomplete rule block, skipping")
-
+    with open(filepath) as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            rules.append(line)
     return rules
+
+
+def extract_name_and_code(response: str) -> tuple[str, str] | None:
+    """Extract name and code from LLM response.
+
+    Returns:
+        Tuple of (name, code) or None if extraction fails
+    """
+    name_match = re.search(r"<NAME>(.*?)</NAME>", response, re.DOTALL | re.IGNORECASE)
+    code_match = re.search(r"<CODE>(.*?)</CODE>", response, re.DOTALL | re.IGNORECASE)
+
+    if name_match and code_match:
+        return name_match.group(1).strip(), code_match.group(1).strip()
+    return None
+
+
+def compile_rule(
+    description: str,
+    llm_client: HuggingFaceClient,
+) -> dict | None:
+    """Compile a single rule description into name and code.
+
+    Returns:
+        Dict with name, description, code or None if compilation fails
+    """
+    prompt = get_rule_compile_prompt(description)
+
+    try:
+        response = llm_client.generate(prompt)
+        logger.debug(f"LLM response:\n{response}")
+    except Exception as e:
+        logger.error(f"LLM call failed: {e}")
+        return None
+
+    extracted = extract_name_and_code(response)
+    if not extracted:
+        logger.warning(f"Failed to extract name/code from response for: {description[:50]}...")
+        return None
+
+    name, code = extracted
+    return {
+        "name": name,
+        "description": description,
+        "code": code,
+    }
 
 
 def validate_and_save_rules(
@@ -59,14 +82,7 @@ def validate_and_save_rules(
     validator: RuleValidator,
     num_test_cases: int = 5,
 ) -> None:
-    """Validate rules and save valid ones to JSON.
-
-    Args:
-        rules: List of rule dicts with name, description, code
-        output_path: Path to output JSON file
-        validator: RuleValidator instance
-        num_test_cases: Number of test cases for validation
-    """
+    """Validate rules and save valid ones to JSON."""
     valid_rules = []
     invalid_rules = []
 
@@ -80,35 +96,24 @@ def validate_and_save_rules(
         logger.debug(f"Code:\n{code}")
 
         try:
-            # Create Rule
             rule = Rule(description, code)
-
-            # Validate
             validation = validator.validate_rule(rule, num_test_cases=num_test_cases)
 
             if validation.valid:
-                logger.info(f"✓ {name}: Valid")
-                rule_dict["index"] = len(valid_rules)
+                logger.info("  Valid")
                 valid_rules.append(rule_dict)
             else:
-                logger.warning(f"✗ {name}: Invalid - {', '.join(validation.issues)}")
-                invalid_rules.append({
-                    **rule_dict,
-                    "issues": validation.issues,
-                })
+                logger.warning(f"  Invalid - {', '.join(validation.issues)}")
+                invalid_rules.append({**rule_dict, "issues": validation.issues})
         except Exception as e:
-            logger.error(f"✗ {name}: Exception during validation - {e}")
-            invalid_rules.append({
-                **rule_dict,
-                "issues": [str(e)],
-            })
+            logger.error(f"  Exception during validation - {e}")
+            invalid_rules.append({**rule_dict, "issues": [str(e)]})
 
-    # Create output structure
     output = {
         "rules": valid_rules,
         "metadata": {
             "generated_at": datetime.now().isoformat(),
-            "total_generated": len(rules),
+            "total_compiled": len(rules),
             "valid_count": len(valid_rules),
             "invalid_count": len(invalid_rules),
         },
@@ -117,7 +122,6 @@ def validate_and_save_rules(
     if invalid_rules:
         output["invalid_rules"] = invalid_rules
 
-    # Save to JSON
     with open(output_path, "w") as f:
         json.dump(output, f, indent=2)
 
@@ -126,32 +130,31 @@ def validate_and_save_rules(
 
 
 def main():
-    """Main entry point for rule library generation."""
-    # Example usage : python scripts/generate_rule_library.py --num-rules 20 --output rules.json --model openai/gpt-oss-120b --max-tokens 16384 --test-cases 5
-    parser = argparse.ArgumentParser(description="Generate a library of Eleusis rules")
+    """Main entry point for rule library compilation."""
+    parser = argparse.ArgumentParser(description="Compile human-written rules into JSON")
     parser.add_argument(
-        "--num-rules",
-        type=int,
-        default=10,
-        help="Number of rules to generate (default: 10)",
+        "--input",
+        type=Path,
+        default=Path("rules.txt"),
+        help="Input rules file (default: rules.txt)",
     )
     parser.add_argument(
         "--output",
         type=Path,
         default=Path("rules.json"),
-        help="Output JSON file path (default: rules.json)",
+        help="Output JSON file (default: rules.json)",
     )
     parser.add_argument(
         "--model",
         type=str,
         default="openai/gpt-oss-120b",
-        help="Model to use for generation",
+        help="Model to use for compilation (default: openai/gpt-oss-120b)",
     )
     parser.add_argument(
         "--max-tokens",
         type=int,
-        default=16384,
-        help="Max tokens for generation (default: 16384)",
+        default=2048,
+        help="Max tokens for LLM response (default: 2048)",
     )
     parser.add_argument(
         "--test-cases",
@@ -169,43 +172,47 @@ def main():
 
     args = parser.parse_args()
 
-    # Load environment variables
     load_dotenv()
 
-    # Setup logging
     logging.basicConfig(
         level=getattr(logging, args.log_level),
         format="%(levelname)s - %(message)s",
     )
+
+    # Parse input file
+    logger.info(f"Reading rules from {args.input}")
+    rule_descriptions = parse_rules_file(args.input)
+    logger.info(f"Found {len(rule_descriptions)} rules to compile")
+
+    if not rule_descriptions:
+        logger.error("No rules found in input file")
+        return 1
 
     # Initialize clients
     logger.info(f"Initializing LLM client with model: {args.model}")
     llm_client = HuggingFaceClient(model_name=args.model, max_tokens=args.max_tokens)
     validator = RuleValidator()
 
-    # Generate rules
-    logger.info(f"Generating {args.num_rules} rules...")
-    prompt = get_library_generation_prompt(args.num_rules)
+    # Compile each rule
+    compiled_rules = []
+    for i, description in enumerate(rule_descriptions, 1):
+        logger.info(f"[{i}/{len(rule_descriptions)}] Compiling: {description[:60]}...")
+        result = compile_rule(description, llm_client)
+        if result:
+            compiled_rules.append(result)
+            logger.info(f"  -> {result['name']}")
+        else:
+            logger.warning("  -> Failed to compile")
 
-    try:
-        response = llm_client.generate(prompt)
-        logger.debug(f"Raw response:\n{response}")
-    except Exception as e:
-        logger.error(f"Failed to generate rules: {e}")
-        return 1
+    logger.info(f"Successfully compiled {len(compiled_rules)}/{len(rule_descriptions)} rules")
 
-    # Extract rules
-    logger.info("Extracting rules from response...")
-    rules = extract_rules_from_response(response)
-    logger.info(f"Extracted {len(rules)} rules")
-
-    if not rules:
-        logger.error("No rules extracted from response")
+    if not compiled_rules:
+        logger.error("No rules were successfully compiled")
         return 1
 
     # Validate and save
     logger.info("Validating and saving rules...")
-    validate_and_save_rules(rules, args.output, validator, args.test_cases)
+    validate_and_save_rules(compiled_rules, args.output, validator, args.test_cases)
 
     logger.info("Done!")
     return 0
