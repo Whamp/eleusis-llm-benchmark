@@ -47,54 +47,66 @@ def get_action_prompt(
         failed_guesses_str += "\nALL OF THESE GUESSES WERE INCORRECT. DO NOT REPEAT THEM.\n"
 
     return f"""
-**YOU ARE PLAYING A PATTERN DISCOVERY CARD GAME**
+# PATTERN DISCOVERY CARD GAME
+
+You are playing a single-player card game where your goal is to discover a hidden rule
+that determines which cards are accepted or rejected.
+This is your turn to play. Your task is to select a card from your hand to play, and optionally guess the hidden rule.
+
+## RULES OF THE GAME
 
 {get_game_rules()}
 
-=== YOUR TASK: CHOOSE YOUR NEXT ACTION ===
+## YOUR TASK: CHOOSE YOUR ACTION
 
-You are trying to discover the hidden rule that determines which cards are accepted.
+As a player, this is your turn to play and you must:
+1. Select a card from your hand to play.
+2. Optionally, make a guess about the hidden rule.
 
-CURRENT TURN: {current_turn} / {max_turns}
-CURRENT PENALTY ({failed_guess_count} wrong guesses): {wrong_guess_penalty * failed_guess_count}
-CURRENT SCORE: {max_turns} - {current_turn} - ({wrong_guess_penalty} × {failed_guess_count}) = {current_score}
+### CURRENT GAME STATE
 
-CURRENT BOARD (mainline + rejected cards in brackets):
+Turn: {current_turn} / {max_turns}
+Your current penalty: ({failed_guess_count} wrong guesses): {wrong_guess_penalty * failed_guess_count}
+Your current score: {max_turns} - {current_turn} - ({wrong_guess_penalty} × {failed_guess_count}) = {current_score}
+Remaining in the deck: {deck_remaining} cards
+
+#### CURRENT BOARD
+This is the mainline and sidelines so far. Rejected cards are shown in brackets after the mainline card they were played after.
+
 {compact_board}
 
-YOUR HAND: {hand_str}
+#### YOUR HAND
 
-DECK REMAINING: {deck_remaining} cards
+{hand_str}
 
-YOUR PLAY HISTORY:
+#### YOUR PLAY HISTORY
 {history_str}
 
-YOUR PREVIOUS FAILED RULE GUESSES, IF ANY:
+#### YOUR PREVIOUS FAILED RULE GUESSES (IF ANY)
 {failed_guesses_str}
 
----
-
-YOUR ACTION:
+#### YOUR ACTION:
 
 You must select a card from your hand to play. After playing, you can optionally guess the rule.
 
-OUTPUT FORMAT:
+### RESPONSE & OUTPUT FORMAT
 You can freely reason step by step about the pattern you observe.
-Then your response should end with your final decision wrapped in XML tags.
+Then your response should end with your final decision wrapped in XML tags as shown below.
 
+Format your response as follows:
 <your reasoning about the pattern>
-
 <ACTION>
 {{
     "reasoning_summary": "Brief summary of your analysis and why you're playing this card",
     "card": "5♥" (the card symbol from your hand),
     "tentative_rule": "Your current best guess about the rule (always provide this, must be unequivocal)",
-    "confidence_level": 0-10 (your confidence in the tentative_rule, 0=no clue, 10=certain),
+    "confidence_level": 0-10 (your confidence in the tentative_rule, 0="no clue", 3="30% confident", 7="70% confident", 10="certain"),
     "guess_rule": true or false (whether to officially guess the rule this turn)
 }}
 </ACTION>
 
-IMPORTANT GUIDANCE:
+
+#### IMPORTANT GUIDANCE
 
 1. **Card Selection**: You MUST select a card from your hand. The value should be the exact
    symbol (e.g., "5♥", "K♠", "A♦").
@@ -110,7 +122,7 @@ IMPORTANT GUIDANCE:
    - If INCORRECT: You lose {wrong_guess_penalty} points from your final score
    - Consider the trade-off: guessing early but wrong is costly, guessing late reduces your score
 
-Example:
+#### Example:
 <ACTION>
 {{
     "reasoning_summary": "I see red and black cards alternating. My 3♥ is red, last card was black.",

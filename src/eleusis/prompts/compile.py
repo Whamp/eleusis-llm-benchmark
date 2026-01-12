@@ -1,6 +1,6 @@
 """Rule compilation prompts for Eleusis."""
 
-from eleusis.prompts.game_rules import get_eleusis_rules
+from eleusis.prompts.game_rules import get_game_rules
 
 __all__ = ["get_rule_compile_prompt"]
 
@@ -8,20 +8,41 @@ __all__ = ["get_rule_compile_prompt"]
 def get_rule_compile_prompt(rule_text: str) -> str:
     """Generate prompt for LLM to convert a rule into Python code with a nickname."""
     return f"""
-=== YOUR TASK: CONVERT A RULE INTO PYTHON CODE AND GIVE IT A NICKNAME ===
 
-You are given a natural language description of a rule for the Eleusis card game.
+# YOUR TASK: CONVERT A RULE INTO PYTHON CODE AND GIVE IT A NICKNAME
+
+You are given a natural language description of a rule for the card game "Eleusis".
+ 
 Your task is to:
 1. Create a short snake_case nickname for the rule (e.g., "alternating_colors", "even_ranks_only")
-2. Convert the rule into Python code
+2. Convert the rule into Python code for automatic evaluation.
 
-{get_eleusis_rules()}
+## Game summary
+The game Eleusis involves playing cards from a standard deck. 
+Each card has a rank (1-13), a color (red or black) and a suit (hearts, diamonds, clubs, spades).
+The dealer has created a hidden rule that determines whether played cards are accepted or rejected.
+Cards are played one by one by the other players
+A card is placed into a "mainline" if they are accepted by the rule, or into "sidelines" if they are rejected.
+The rule determines whether a newly played card is accepted or rejected based on the current state of the mainline.
+The mainline is a sequence of previously accepted cards, in the order they were played.
+The players have to discover the hidden rule by playing cards and observing which ones are accepted or rejected.
+When evaluating a new card, only the properties of the card and the mainline are relevant.
 
-=== RULE TO CONVERT ===
+## YOUR TASK : converting a rule into Python code for automatic evaluation
+ 
+### Rule to convert
 
-Rule: {rule_text}
+The rule to convert is provided below.
 
-=== CODE REQUIREMENTS ===
+{rule_text}
+
+### Nickname requirements
+
+- The nickname should be a concise, descriptive identifier for the rule.
+- Use only lowercase letters and underscores to separate words (snake_case).
+- Avoid using special characters, spaces, or numbers in the nickname.
+
+### Code requirements
 
 CRITICAL: Generate ONLY the function body code, NOT a complete function definition.
 Do NOT start with "def", do NOT define a new function.
@@ -52,7 +73,7 @@ Common patterns that work:
 - Suit values: suit_val = {{"hearts":1, "diamonds":2, "clubs":3, "spades":4}}[card.suit.suit_name]
 - Floor division: x // 2 instead of math.floor(x/2)
 
-=== RESPONSE FORMAT ===
+## RESPONSE FORMAT
 
 Provide your response in this exact XML format:
 
@@ -61,7 +82,7 @@ Provide your response in this exact XML format:
 # Your Python code here
 </CODE>
 
-=== EXAMPLES ===
+## EXAMPLES
 
 Rule: "Cards must alternate between red and black colors."
 <NAME>alternating_colors</NAME>
