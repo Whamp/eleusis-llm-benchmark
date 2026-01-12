@@ -42,7 +42,7 @@ def play_round(
 
     game_config = config["game"]
     llm_config = config["llm"]
-    game_master_cfg = config["game_master"]
+    rule_compiler_cfg = config["rule_compiler"]
 
     player_model = config["model"]
     player_display_name = model_spec_to_display_name(player_model)
@@ -51,11 +51,11 @@ def play_round(
     max_continuation = llm_config.get("max_continuation_attempts", 3)
     llm_seed = llm_config.get("seed")
 
-    game_master_client = create_client(
-        game_master_cfg["model_name"],
-        temperature=game_master_cfg["temperature"],
+    rule_compiler_client = create_client(
+        rule_compiler_cfg["model_name"],
+        temperature=rule_compiler_cfg["temperature"],
         max_tokens=max_tokens,
-        role="game_master",
+        role="rule_compiler",
         max_continuation_attempts=max_continuation,
         seed=llm_seed,
     )
@@ -81,9 +81,9 @@ def play_round(
         logger.info("=" * 80)
         logger.info("")
 
-        logger.info("✓ Game master client initialized")
+        logger.info("✓ Rule compiler client initialized")
 
-        game_master_client.reset_usage_stats()
+        rule_compiler_client.reset_usage_stats()
         scientist_client.reset_usage_stats()
 
         validator = RuleValidator()
@@ -131,7 +131,7 @@ def play_round(
     engine = GameEngine(
         game_state,
         rule,
-        rule_compiler_client=game_master_client,
+        rule_compiler_client=rule_compiler_client,
         rule_validator=validator,
         hand_size=hand_size,
         wrong_guess_penalty=wrong_guess_penalty,
@@ -293,7 +293,7 @@ def play_round(
     success = engine.rule_guessed
 
     llm_usage = {
-        "game_master": game_master_client.get_usage_stats(),
+        "rule_compiler": rule_compiler_client.get_usage_stats(),
         "player": scientist_client.get_usage_stats(),
     }
 

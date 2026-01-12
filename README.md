@@ -123,9 +123,8 @@ providers:
   huggingface:
     api_key_env: "HF_TOKEN"
 
-models:
-  game_master:
-    name: "hf:openai/gpt-oss-120b"  # For rule compilation
+rule_compiler:
+  model_name: "hf:openai/gpt-oss-120b"  # Converts natural language rules to code
 
 rule_source:
   library_path: "rules.json"

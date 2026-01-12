@@ -62,7 +62,6 @@ class OpenRouterClient(BaseLLMClient):
         logger.debug(
             f"Calling OpenRouter API with {self.max_tokens} tokens, messages:\n{messages}"
         )
-        logger.debug(f"PROMPT:\n{messages[-1]['content']}")
 
         for attempt in range(self.max_retries):
             try:

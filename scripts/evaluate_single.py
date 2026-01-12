@@ -292,14 +292,14 @@ def main():
         # Use checkpoint values to ensure consistency with original evaluation
         player_model = checkpoint['config']['player_model']
         player_display_name = checkpoint['config']['player']
-        game_master_display_name = checkpoint['config']['game_master']
+        rule_compiler_display_name = checkpoint['config']['rule_compiler']
         rounds_per_rule = checkpoint['config']['rounds_per_rule']
         # Override config model to match checkpoint (for actual game play)
         config["model"] = player_model
     else:
         player_model = config["model"]
         player_display_name = model_spec_to_display_name(player_model)
-        game_master_display_name = model_spec_to_display_name(config["game_master"]["model_name"])
+        rule_compiler_display_name = model_spec_to_display_name(config["rule_compiler"]["model_name"])
         rounds_per_rule = rules_cfg.get("rounds_per_rule", 1)
 
     # Generate output tag - from checkpoint folder name when resuming
@@ -380,7 +380,7 @@ def main():
         logger.info(f"Rounds per rule: {rounds_per_rule}")
         if current_rule:
             logger.info(f"Reusing rule: {current_rule.description()[:80]}...")
-        logger.info(f"  - Game Master: {game_master_display_name}")
+        logger.info(f"  - Rule Compiler: {rule_compiler_display_name}")
         logger.info(f"  - Player: {player_display_name}")
         logger.info("")
     else:
@@ -397,7 +397,7 @@ def main():
         logger.info(f"Log file: {log_file}")
         logger.info(f"Output folder: results/{folder_name}")
         logger.info(f"Rounds per rule: {rounds_per_rule}")
-        logger.info(f"  - Game Master: {game_master_display_name}")
+        logger.info(f"  - Rule Compiler: {rule_compiler_display_name}")
         logger.info(f"  - Player: {player_display_name}")
         logger.info("")
 
@@ -414,8 +414,8 @@ def main():
             'config': {
                 'num_rounds': num_rounds,
                 'rounds_per_rule': rounds_per_rule,
-                'game_master': game_master_display_name,
-                'game_master_model': config['game_master']['model_name'],
+                'rule_compiler': rule_compiler_display_name,
+                'rule_compiler_model': config['rule_compiler']['model_name'],
                 'player': player_display_name,
                 'player_model': player_model,
                 'hand_size': game_config.get('hand_size', 12),

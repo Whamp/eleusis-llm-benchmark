@@ -68,6 +68,6 @@ uv run ruff check src/ scripts/ tests/
 
 `config.yaml` controls:
 - Provider API keys (via env vars)
-- Game master model (for rule compilation)
+- Rule compiler model (converts natural language rules to code)
 - Rule source and filtering
 - Game parameters (rounds, turns, hand size, penalties)

@@ -22,8 +22,8 @@ game:
 seed: 42
 
 
-# Game master model configuration
-game_master:
+# Rule compiler model configuration (converts natural language rules to code)
+rule_compiler:
   model_name: "hf:openai/gpt-oss-120b"
   temperature: 0.8
 

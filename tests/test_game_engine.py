@@ -177,12 +177,12 @@ class TestGameEngine:
             {"simulation_comparisons": 100, "simulation_mismatches": 0}  # metadata
         )
 
-        # Mock game master (LLM client)
-        mock_game_master = Mock()
+        # Mock rule compiler (LLM client)
+        mock_rule_compiler = Mock()
 
         engine = GameEngine(
             state, rule,
-            rule_compiler_client=mock_game_master,
+            rule_compiler_client=mock_rule_compiler,
             rule_validator=mock_validator,
             hand_size=12
         )
@@ -209,11 +209,11 @@ class TestGameEngine:
             {"simulation_comparisons": 50, "simulation_mismatches": 1}  # metadata
         )
 
-        mock_game_master = Mock()
+        mock_rule_compiler = Mock()
 
         engine = GameEngine(
             state, rule,
-            rule_compiler_client=mock_game_master,
+            rule_compiler_client=mock_rule_compiler,
             rule_validator=mock_validator,
             hand_size=12,
             wrong_guess_penalty=3
@@ -239,11 +239,11 @@ class TestGameEngine:
 
         mock_validator = Mock()
         mock_validator.compare_rules.return_value = (False, "Wrong", {})
-        mock_game_master = Mock()
+        mock_rule_compiler = Mock()
 
         engine = GameEngine(
             state, rule,
-            rule_compiler_client=mock_game_master,
+            rule_compiler_client=mock_rule_compiler,
             rule_validator=mock_validator,
             hand_size=12,
             wrong_guess_penalty=3
