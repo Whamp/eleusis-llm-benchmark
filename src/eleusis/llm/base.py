@@ -63,9 +63,14 @@ def estimate_reasoning_tokens(content: str) -> int | None:
     if not content:
         return None
 
+    # Try standard <think>...</think> format first
     match = re.search(r'<think>(.*?)</think>', content, re.DOTALL)
     if match:
         thinking_text = match.group(1)
+    elif "</think>" in content:
+        # Qwen3 Thinking format: may only have </think> without opening tag
+        # Everything before </think> is reasoning content
+        thinking_text = content.split("</think>", 1)[0]
     else:
         thinking_text = content
 
@@ -169,6 +174,7 @@ class BaseLLMClient(ABC):
                 content = self._extract_content_from_response(content, [xml_tag], try_code_blocks=True)
 
             if return_dict:
+                logger.debug(f"Parsing JSON from extracted content:\n{content[:500]}")
                 content = json.loads(content)
 
         total_duration = time.time() - start_time
@@ -262,14 +268,24 @@ class BaseLLMClient(ABC):
         try_code_blocks: bool = True,
     ) -> str:
         """Extract content from XML tags or markdown code blocks."""
+        # Strip thinking content if present (Qwen3 Thinking format)
+        # This prevents tags mentioned in reasoning from being matched
+        if "</think>" in response_text:
+            response_text = response_text.split("</think>", 1)[-1]
+
         extracted = None
 
         if xml_tags:
+            logger.debug(f"Response text length: {len(response_text)}, contains '<ACTION>': {'<ACTION>' in response_text}")
             for tag in xml_tags:
                 pattern = f"<{tag}>(.*?)</{tag}>"
-                match = re.search(pattern, response_text, re.DOTALL | re.IGNORECASE)
-                if match:
-                    extracted = match.group(1).strip()
+                # Use findall and take the last match - avoids false matches when
+                # the LLM mentions the tag in its reasoning before the actual tag
+                matches = re.findall(pattern, response_text, re.DOTALL | re.IGNORECASE)
+                logger.debug(f"Searching for <{tag}>: found {len(matches)} match(es)")
+                if matches:
+                    extracted = matches[-1].strip()
+                    logger.debug(f"Extracted {len(extracted)} chars from <{tag}> (using last match)")
                     break
 
         if not extracted and try_code_blocks:

@@ -3,10 +3,25 @@
 import logging
 import os
 import time
+from dataclasses import dataclass
 
 from huggingface_hub import InferenceClient
 
 from eleusis.llm.base import BaseLLMClient, LLMCallMetrics
+
+
+@dataclass
+class StreamedMessage:
+    """Message wrapper for streaming responses."""
+    content: str
+    reasoning: str | None = None
+
+
+@dataclass
+class StreamedChoice:
+    """Choice wrapper for streaming responses."""
+    message: StreamedMessage
+    finish_reason: str
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +39,7 @@ class HuggingFaceClient(BaseLLMClient):
         role: str = "unknown",
         max_continuation_attempts: int = 3,
         seed: int | None = None,
+        stream: bool = True,
     ) -> None:
         """Initialize HuggingFace client using Inference Providers."""
         super().__init__(
@@ -37,6 +53,7 @@ class HuggingFaceClient(BaseLLMClient):
             seed=seed,
         )
 
+        self.stream = stream
         if self.api_key:
             os.environ["HF_TOKEN"] = self.api_key
         self.client = InferenceClient(bill_to="huggingface")
@@ -53,6 +70,99 @@ class HuggingFaceClient(BaseLLMClient):
         disable_thinking: bool = False,
     ) -> tuple[object, LLMCallMetrics]:
         """Make a single API call with retry logic."""
+        if self.stream:
+            return self._call_api_streaming(
+                messages, is_continuation, continuation_depth, disable_thinking
+            )
+        return self._call_api_non_streaming(
+            messages, is_continuation, continuation_depth, disable_thinking
+        )
+
+    def _call_api_streaming(
+        self,
+        messages: list[dict],
+        is_continuation: bool = False,
+        continuation_depth: int = 0,
+        disable_thinking: bool = False,
+    ) -> tuple[StreamedChoice, LLMCallMetrics]:
+        """Make a streaming API call."""
+        logger.debug(
+            f"Calling HF API (streaming) with {self.max_tokens} tokens, messages:\n{messages}"
+        )
+
+        for attempt in range(self.max_retries):
+            try:
+                start_time = time.time()
+
+                api_kwargs = {
+                    "model": self.model_name,
+                    "messages": messages,
+                    "max_tokens": self.max_tokens,
+                    "temperature": self.temperature,
+                    "stream": True,
+                }
+
+                if self.seed is not None:
+                    api_kwargs["seed"] = self.seed
+
+                if disable_thinking and self.reasoning_model_type:
+                    if self.reasoning_model_type in ("gpt-oss", "deepseek-r1"):
+                        logger.info("Attempting to disable thinking for continuation")
+
+                stream = self.client.chat.completions.create(**api_kwargs)
+
+                content = ""
+                finish_reason = "stop"
+                chars_since_dot = 0
+                dots_printed = 0
+                for chunk in stream:
+                    if chunk.choices and chunk.choices[0].delta:
+                        delta = chunk.choices[0].delta
+                        if delta.content:
+                            content += delta.content
+                            chars_since_dot += len(delta.content)
+                            # Print a dot every ~100 tokens (~400 chars)
+                            if chars_since_dot >= 400:
+                                print(".", end="", flush=True)
+                                dots_printed += 1
+                                chars_since_dot = 0
+                        if chunk.choices[0].finish_reason:
+                            finish_reason = chunk.choices[0].finish_reason
+                if dots_printed > 0:
+                    print()  # Newline after dots
+
+                end_time = time.time()
+
+                choice = StreamedChoice(
+                    message=StreamedMessage(content=content),
+                    finish_reason=finish_reason,
+                )
+
+                metrics = self._extract_metrics_streaming(
+                    content, choice, start_time, end_time,
+                    is_continuation, continuation_depth
+                )
+
+                logger.debug(f"LLM response:\n{choice}")
+                return choice, metrics
+
+            except Exception as e:
+                logger.warning(f"Attempt {attempt + 1}/{self.max_retries} failed: {e}")
+                if attempt < self.max_retries - 1:
+                    time.sleep(2**attempt)
+                else:
+                    raise
+
+        raise RuntimeError("Max retries exceeded")
+
+    def _call_api_non_streaming(
+        self,
+        messages: list[dict],
+        is_continuation: bool = False,
+        continuation_depth: int = 0,
+        disable_thinking: bool = False,
+    ) -> tuple[object, LLMCallMetrics]:
+        """Make a non-streaming API call."""
         logger.debug(
             f"Calling HF API with {self.max_tokens} tokens, messages:\n{messages}"
         )
@@ -130,7 +240,8 @@ class HuggingFaceClient(BaseLLMClient):
             has_reasoning = True
             if reasoning_tokens is None:
                 reasoning_tokens = estimate_reasoning_tokens(choice.message.reasoning)
-        elif choice.message.content and "<think>" in choice.message.content:
+        elif choice.message.content and ("<think>" in choice.message.content or "</think>" in choice.message.content):
+            # Qwen3 Thinking models may only output </think> without opening tag
             has_reasoning = True
             if reasoning_tokens is None:
                 reasoning_tokens = estimate_reasoning_tokens(choice.message.content)
@@ -154,6 +265,54 @@ class HuggingFaceClient(BaseLLMClient):
 
         logger.debug(
             f"Metrics: {completion_tokens} tokens in {duration:.2f}s "
+            f"({metrics.throughput_tokens_per_sec:.2f} tok/s)"
+        )
+
+        return metrics
+
+    def _extract_metrics_streaming(
+        self,
+        content: str,
+        choice: StreamedChoice,
+        start_time: float,
+        end_time: float,
+        is_continuation: bool,
+        continuation_depth: int,
+    ) -> LLMCallMetrics:
+        """Extract metrics from streaming response (estimates token counts)."""
+        from eleusis.llm.base import estimate_reasoning_tokens
+
+        duration = end_time - start_time
+
+        # Streaming doesn't provide token counts, so we estimate
+        completion_tokens = int(len(content.split()) * 1.3)
+
+        has_reasoning = False
+        reasoning_tokens = None
+        if content and ("<think>" in content or "</think>" in content):
+            # Qwen3 Thinking models may only output </think> without opening tag
+            has_reasoning = True
+            reasoning_tokens = estimate_reasoning_tokens(content)
+
+        metrics = LLMCallMetrics(
+            model_name=self.model_name,
+            role=self.role,
+            prompt_tokens=0,  # Unknown for streaming
+            completion_tokens=completion_tokens,
+            total_tokens=completion_tokens,  # Best estimate
+            duration_seconds=duration,
+            throughput_tokens_per_sec=completion_tokens / duration if duration > 0 else 0,
+            finish_reason=choice.finish_reason,
+            has_reasoning=has_reasoning,
+            timestamp=start_time,
+            reasoning_tokens=reasoning_tokens,
+            is_continuation=is_continuation,
+            continuation_depth=continuation_depth,
+            provider=self.provider_name,
+        )
+
+        logger.debug(
+            f"Metrics (streaming, estimated): {completion_tokens} tokens in {duration:.2f}s "
             f"({metrics.throughput_tokens_per_sec:.2f} tok/s)"
         )
 
