@@ -3,252 +3,552 @@
     {
       "name": "even_ranks_only",
       "description": "Only cards with an even rank (2,4,6,8,10,12) may be played.",
-      "code": "return card.rank % 2 == 0"
+      "code": "return card.rank % 2 == 0",
+      "avg_acceptance_rate": 0.45,
+      "avg_mainline_length": 22.5,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 12,
+      "cyclomatic_complexity": 1
     },
     {
       "name": "odd_ranks_only",
       "description": "Only cards with an odd rank (1,3,5,7,9,11,13) may be played.",
-      "code": "return card.rank % 2 == 1"
+      "code": "return card.rank % 2 == 1",
+      "avg_acceptance_rate": 0.544,
+      "avg_mainline_length": 27.2,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 12,
+      "cyclomatic_complexity": 1
     },
     {
       "name": "face_cards_only",
       "description": "Only face cards (11,12,13) may be played.",
-      "code": "return card.rank in (11, 12, 13)"
+      "code": "return card.rank in (11, 12, 13)",
+      "avg_acceptance_rate": 0.198,
+      "avg_mainline_length": 9.9,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 13,
+      "cyclomatic_complexity": 1
     },
     {
       "name": "number_cards_only",
       "description": "Only number cards (1-10) may be played.",
-      "code": "return card.rank <= 10"
+      "code": "return card.rank <= 10",
+      "avg_acceptance_rate": 0.746,
+      "avg_mainline_length": 37.3,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 9,
+      "cyclomatic_complexity": 1
     },
     {
       "name": "multiples_of_three",
       "description": "Only ranks that are multiples of three (3,6,9,12) are allowed.",
-      "code": "return card.rank % 3 == 0"
+      "code": "return card.rank % 3 == 0",
+      "avg_acceptance_rate": 0.31,
+      "avg_mainline_length": 15.5,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 12,
+      "cyclomatic_complexity": 1
     },
     {
       "name": "ranks_5_to_9",
       "description": "Only cards whose rank is between 5 and 9 inclusive may be played.",
-      "code": "return 5 <= card.rank <= 9"
+      "code": "return 5 <= card.rank <= 9",
+      "avg_acceptance_rate": 0.352,
+      "avg_mainline_length": 17.6,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 11,
+      "cyclomatic_complexity": 1
     },
     {
       "name": "aces_or_kings_only",
       "description": "Only Aces (rank 1) or Kings (rank 13) may be placed.",
-      "code": "return card.rank in (1, 13)"
+      "code": "return card.rank in (1, 13)",
+      "avg_acceptance_rate": 0.152,
+      "avg_mainline_length": 7.6,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 12,
+      "cyclomatic_complexity": 1
     },
     {
       "name": "aces_only",
       "description": "Only Aces (rank 1) may be placed.",
-      "code": "return card.rank == 1"
+      "code": "return card.rank == 1",
+      "avg_acceptance_rate": 0.072,
+      "avg_mainline_length": 3.6,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 9,
+      "cyclomatic_complexity": 1
     },
     {
       "name": "perfect_square_ranks",
       "description": "Only ranks that are perfect squares (1, 4, 9) may be played.",
-      "code": "return card.rank in {1, 4, 9}"
+      "code": "return card.rank in {1, 4, 9}",
+      "avg_acceptance_rate": 0.258,
+      "avg_mainline_length": 12.9,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 12,
+      "cyclomatic_complexity": 1
     },
     {
       "name": "prime_ranks_only",
       "description": "Only prime number ranks (2,3,5,7,11,13) may be played.",
-      "code": "primes = {2, 3, 5, 7, 11, 13}\nreturn card.rank in primes"
+      "code": "primes = {2, 3, 5, 7, 11, 13}\nreturn card.rank in primes",
+      "avg_acceptance_rate": 0.45600000000000007,
+      "avg_mainline_length": 22.8,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 20,
+      "cyclomatic_complexity": 1
     },
     {
       "name": "multiples_of_4_or_5",
       "description": "Only ranks that are multiples of 4 or 5 (4, 5, 8, 10, 12) may be played.",
-      "code": "allowed = {4, 5, 8, 10, 12}\nreturn card.rank in allowed"
+      "code": "allowed = {4, 5, 8, 10, 12}\nreturn card.rank in allowed",
+      "avg_acceptance_rate": 0.388,
+      "avg_mainline_length": 19.4,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 19,
+      "cyclomatic_complexity": 1
     },
     {
       "name": "opposite_parity",
       "description": "Card rank must have opposite odd/even parity to the previous card's rank.",
-      "code": "if not mainline:\n    return True\nreturn (card.rank % 2) != (mainline[-1].rank % 2)"
+      "code": "if not mainline:\n    return True\nreturn (card.rank % 2) != (mainline[-1].rank % 2)",
+      "avg_acceptance_rate": 0.496,
+      "avg_mainline_length": 24.8,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 30,
+      "cyclomatic_complexity": 2
     },
     {
       "name": "alternating_face_number",
       "description": "Alternate face and number cards.",
-      "code": "if not mainline:\n    return True\nprev_is_face = mainline[-1].rank >= 11\ncurr_is_face = card.rank >= 11\nreturn curr_is_face != prev_is_face"
+      "code": "if not mainline:\n    return True\nprev_is_face = mainline[-1].rank >= 11\ncurr_is_face = card.rank >= 11\nreturn curr_is_face != prev_is_face",
+      "avg_acceptance_rate": 0.372,
+      "avg_mainline_length": 18.6,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 40,
+      "cyclomatic_complexity": 2
     },
     {
       "name": "rank_opposite_side",
       "description": "If the previous rank was <7, the new card must be >7. If the previous rank was >7, the new card must be <7. 7 is forbidden.",
-      "code": "if not mainline:\n    return True\nif card.rank == 7:\n    return False\nprev = mainline[-1].rank\nif prev == 7:\n    return False\nif prev < 7:\n    return card.rank > 7\nelse:\n    return card.rank < 7"
+      "code": "if not mainline:\n    return True\nif card.rank == 7:\n    return False\nprev = mainline[-1].rank\nif prev == 7:\n    return False\nif prev < 7:\n    return card.rank > 7\nelse:\n    return card.rank < 7",
+      "avg_acceptance_rate": 0.43,
+      "avg_mainline_length": 21.5,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 60,
+      "cyclomatic_complexity": 5
     },
     {
       "name": "no_consecutive_same_rank",
       "description": "No two consecutive cards may have the same rank.",
-      "code": "if not mainline:\n    return True\nreturn card.rank != mainline[-1].rank"
+      "code": "if not mainline:\n    return True\nreturn card.rank != mainline[-1].rank",
+      "avg_acceptance_rate": 0.9279999999999999,
+      "avg_mainline_length": 46.4,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 24,
+      "cyclomatic_complexity": 2
     },
     {
       "name": "alternating_digit_count",
       "description": "Digit Count: You must alternate between single-digit ranks (A\u20139) and double-digit ranks.",
-      "code": "if not mainline:\n    return True\ncurr_single = card.rank <= 9\nprev_single = mainline[-1].rank <= 9\nreturn curr_single != prev_single"
+      "code": "if not mainline:\n    return True\ncurr_single = card.rank <= 9\nprev_single = mainline[-1].rank <= 9\nreturn curr_single != prev_single",
+      "avg_acceptance_rate": 0.386,
+      "avg_mainline_length": 19.3,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 40,
+      "cyclomatic_complexity": 2
     },
     {
       "name": "rank_pairs",
       "description": "Rank repeats in pairs: ranks must come in doubles: (x, x), then a different rank (y, y), then different (z, z)\u2026",
-      "code": "if not mainline:\n    return True\nif len(mainline) % 2 == 1:\n    return card.rank == mainline[-1].rank\nelse:\n    return card.rank != mainline[-1].rank"
+      "code": "if not mainline:\n    return True\nif len(mainline) % 2 == 1:\n    return card.rank == mainline[-1].rank\nelse:\n    return card.rank != mainline[-1].rank",
+      "avg_acceptance_rate": 0.16,
+      "avg_mainline_length": 8.0,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 52,
+      "cyclomatic_complexity": 3
     },
     {
       "name": "parity_pairs",
       "description": "Parity repeats in pairs : two odd ranks, then two even ranks, then two odd ranks, etc.",
-      "code": "if not mainline:\n    return True\npos = len(mainline) + 1\npair_index = (pos - 1) // 2\nexpected_odd = pair_index % 2 == 0\nactual_odd = card.rank % 2 == 1\nreturn actual_odd == expected_odd"
+      "code": "if not mainline:\n    return True\npos = len(mainline) + 1\npair_index = (pos - 1) // 2\nexpected_odd = pair_index % 2 == 0\nactual_odd = card.rank % 2 == 1\nreturn actual_odd == expected_odd",
+      "avg_acceptance_rate": 0.508,
+      "avg_mainline_length": 25.4,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 61,
+      "cyclomatic_complexity": 2
     },
     {
       "name": "non_decreasing_ranks",
       "description": "Each card must have a rank greater than or equal to the previous card; any card may start the line. No cycle allowed.",
-      "code": "if not mainline:\n    return True\nreturn card.rank >= mainline[-1].rank"
+      "code": "if not mainline:\n    return True\nreturn card.rank >= mainline[-1].rank",
+      "avg_acceptance_rate": 0.128,
+      "avg_mainline_length": 6.4,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 24,
+      "cyclomatic_complexity": 2
     },
     {
       "name": "nonincreasing_no_cycle",
       "description": "Each card must have a rank less than or equal to the previous card; any card may start the line. No cycle allowed.",
-      "code": "if not mainline:\n    return True\nprev_rank = mainline[-1].rank\nif card.rank > prev_rank:\n    return False\n# reject if this rank has already appeared (prevents cycles/repeats)\nreturn card.rank not in [c.rank for c in mainline]"
+      "code": "if not mainline:\n    return True\nprev_rank = mainline[-1].rank\nif card.rank > prev_rank:\n    return False\n# reject if this rank has already appeared (prevents cycles/repeats)\nreturn card.rank not in [c.rank for c in mainline]",
+      "avg_acceptance_rate": 0.074,
+      "avg_mainline_length": 3.7,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 48,
+      "cyclomatic_complexity": 3
     },
     {
       "name": "strictly_increasing_rank_with_ace_wrap",
       "description": "Each card must have a rank strictly greater than the previous card; any card may start the line. Ace may follow King.",
-      "code": "if not mainline:\n    return True\nprev = mainline[-1].rank\nif prev == 13 and card.rank == 1:\n    return True\nreturn card.rank > prev"
+      "code": "if not mainline:\n    return True\nprev = mainline[-1].rank\nif prev == 13 and card.rank == 1:\n    return True\nreturn card.rank > prev",
+      "avg_acceptance_rate": 0.186,
+      "avg_mainline_length": 9.3,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 46,
+      "cyclomatic_complexity": 4
     },
     {
       "name": "decreasing_with_king_after_ace",
       "description": "Each card must have a rank strictly less than the previous card; any card may start the line. King may follow Ace.",
-      "code": "if not mainline:\n    return True\nprev = mainline[-1].rank\nreturn card.rank < prev or (prev == 1 and card.rank == 13)"
+      "code": "if not mainline:\n    return True\nprev = mainline[-1].rank\nreturn card.rank < prev or (prev == 1 and card.rank == 13)",
+      "avg_acceptance_rate": 0.194,
+      "avg_mainline_length": 9.7,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 45,
+      "cyclomatic_complexity": 4
     },
     {
       "name": "rank_diff_at_most_two",
       "description": "The absolute difference between this card\u2019s rank and the previous card\u2019s rank must be less than or equal to 2.",
-      "code": "if not mainline:\n    return True\nreturn abs(card.rank - mainline[-1].rank) <= 2"
+      "code": "if not mainline:\n    return True\nreturn abs(card.rank - mainline[-1].rank) <= 2",
+      "avg_acceptance_rate": 0.372,
+      "avg_mainline_length": 18.6,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 30,
+      "cyclomatic_complexity": 2
     },
     {
       "name": "adjacent_ranks_wrap",
       "description": "The absolute difference between this card\u2019s rank and the previous card\u2019s rank must be exactly 1. Ace may follow King and vice versa.",
-      "code": "if not mainline:\n    return True\nprev = mainline[-1].rank\nr = card.rank\nreturn abs(r - prev) == 1 or (r == 1 and prev == 13) or (r == 13 and prev == 1)"
+      "code": "if not mainline:\n    return True\nprev = mainline[-1].rank\nr = card.rank\nreturn abs(r - prev) == 1 or (r == 1 and prev == 13) or (r == 13 and prev == 1)",
+      "avg_acceptance_rate": 0.172,
+      "avg_mainline_length": 8.6,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 66,
+      "cyclomatic_complexity": 6
     },
     {
       "name": "consecutive_sum_gt_seven",
       "description": "Each pair of consecutive cards must have ranks that sum to more than 7.",
-      "code": "if not mainline:\n    return True\nreturn card.rank + mainline[-1].rank > 7"
+      "code": "if not mainline:\n    return True\nreturn card.rank + mainline[-1].rank > 7",
+      "avg_acceptance_rate": 0.908,
+      "avg_mainline_length": 45.4,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 27,
+      "cyclomatic_complexity": 2
     },
     {
       "name": "spades_only",
       "description": "Only cards of the suit spades may be played.",
-      "code": "return card.suit.suit_name == \"spades\""
+      "code": "return card.suit.suit_name == \"spades\"",
+      "avg_acceptance_rate": 0.21400000000000002,
+      "avg_mainline_length": 10.7,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 11,
+      "cyclomatic_complexity": 1
     },
     {
       "name": "major_suits_only",
       "description": "Major vs. Minor: Only cards from the \"Major Suits\" (Hearts and Spades) may be played.",
-      "code": "return card.suit.suit_name in (\"hearts\", \"spades\")"
+      "code": "return card.suit.suit_name in (\"hearts\", \"spades\")",
+      "avg_acceptance_rate": 0.47800000000000004,
+      "avg_mainline_length": 23.9,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 14,
+      "cyclomatic_complexity": 1
     },
     {
       "name": "spades_and_diamonds_only",
       "description": "Only spades and diamonds may be played.",
-      "code": "if not mainline:\n    return card.suit.suit_name in (\"spades\", \"diamonds\")\nreturn card.suit.suit_name in (\"spades\", \"diamonds\")"
+      "code": "if not mainline:\n    return card.suit.suit_name in (\"spades\", \"diamonds\")\nreturn card.suit.suit_name in (\"spades\", \"diamonds\")",
+      "avg_acceptance_rate": 0.446,
+      "avg_mainline_length": 22.3,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 32,
+      "cyclomatic_complexity": 2
     },
     {
       "name": "red_cards_only",
       "description": "Every card must be red (hearts or diamonds).",
-      "code": "if not mainline:\n    return card.color == \"red\"\nreturn card.color == \"red\""
+      "code": "if not mainline:\n    return card.color == \"red\"\nreturn card.color == \"red\"",
+      "avg_acceptance_rate": 0.492,
+      "avg_mainline_length": 24.6,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 22,
+      "cyclomatic_complexity": 2
     },
     {
       "name": "black_cards_only",
       "description": "Every card must be black (spades or clubs).",
-      "code": "return card.color == \"black\""
+      "code": "return card.color == \"black\"",
+      "avg_acceptance_rate": 0.488,
+      "avg_mainline_length": 24.4,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 9,
+      "cyclomatic_complexity": 1
     },
     {
       "name": "different_suit",
       "description": "The card must be of a different suit than the card just before it. Any card may start the line.",
-      "code": "if not mainline:\n    return True\nreturn card.suit.suit_name != mainline[-1].suit.suit_name"
+      "code": "if not mainline:\n    return True\nreturn card.suit.suit_name != mainline[-1].suit.suit_name",
+      "avg_acceptance_rate": 0.746,
+      "avg_mainline_length": 37.3,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 28,
+      "cyclomatic_complexity": 2
     },
     {
       "name": "different_suit_same_color",
       "description": "The card must be of a different suit than but same color as the card just before it. Any card may start the line.",
-      "code": "if not mainline:\n    return True\nprev = mainline[-1]\nreturn card.color == prev.color and card.suit.suit_name != prev.suit.suit_name"
+      "code": "if not mainline:\n    return True\nprev = mainline[-1]\nreturn card.color == prev.color and card.suit.suit_name != prev.suit.suit_name",
+      "avg_acceptance_rate": 0.276,
+      "avg_mainline_length": 13.8,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 45,
+      "cyclomatic_complexity": 3
     },
     {
       "name": "ordered_suit_cycle",
       "description": "Suits must repeat in the order hearts \u2192 spades \u2192 clubs \u2192 diamonds \u2192 hearts \u2026",
-      "code": "if not mainline:\n    return True\norder = [\"hearts\", \"spades\", \"clubs\", \"diamonds\"]\nlast_suit = mainline[-1].suit.suit_name\nidx = order.index(last_suit)\nexpected = order[(idx + 1) % 4]\nreturn card.suit.suit_name == expected"
+      "code": "if not mainline:\n    return True\norder = [\"hearts\", \"spades\", \"clubs\", \"diamonds\"]\nlast_suit = mainline[-1].suit.suit_name\nidx = order.index(last_suit)\nexpected = order[(idx + 1) % 4]\nreturn card.suit.suit_name == expected",
+      "avg_acceptance_rate": 0.284,
+      "avg_mainline_length": 14.2,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 67,
+      "cyclomatic_complexity": 2
     },
     {
       "name": "tri_cycle_suits",
       "description": "Suits repeat every three cards in the order hearts \u2192 clubs \u2192 spades \u2192 hearts \u2026 (diamonds never appear).",
-      "code": "order = (\"hearts\", \"clubs\", \"spades\")\nexpected = order[len(mainline) % 3]\nreturn card.suit.suit_name == expected"
+      "code": "order = (\"hearts\", \"clubs\", \"spades\")\nexpected = order[len(mainline) % 3]\nreturn card.suit.suit_name == expected",
+      "avg_acceptance_rate": 0.21600000000000003,
+      "avg_mainline_length": 10.8,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 35,
+      "cyclomatic_complexity": 1
     },
     {
       "name": "suit_pairs_alternating",
       "description": "Suits must appear in pairs: card 1 and 2 same suit, cards 3 and 4 same suit (different from 1 and 2), cards 5 and 6 same suit (different from 3 and 4), etc.",
-      "code": "if not mainline:\n    return True\n# Determine position of the new card (1-indexed)\n# len(mainline) is the number of cards already accepted\nif len(mainline) % 2 == 0:\n    # This card starts a new pair: must differ from the previous pair's suit\n    prev_suit = mainline[-1].suit.suit_name\n    return card.suit.suit_name != prev_suit\nelse:\n    # This card completes a pair: must match the suit of the first card in this pair\n    return card.suit.suit_name == mainline[-1].suit.suit_name"
+      "code": "if not mainline:\n    return True\n# Determine position of the new card (1-indexed)\n# len(mainline) is the number of cards already accepted\nif len(mainline) % 2 == 0:\n    # This card starts a new pair: must differ from the previous pair's suit\n    prev_suit = mainline[-1].suit.suit_name\n    return card.suit.suit_name != prev_suit\nelse:\n    # This card completes a pair: must match the suit of the first card in this pair\n    return card.suit.suit_name == mainline[-1].suit.suit_name",
+      "avg_acceptance_rate": 0.354,
+      "avg_mainline_length": 17.7,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 65,
+      "cyclomatic_complexity": 3
     },
     {
       "name": "suit_changes_every_three",
       "description": "The suit changes every three cards; the first three may be any suit, the next three must be a different suit, and so on.",
-      "code": "if not mainline:\n    return True\n\ni = len(mainline)                 # index of the new card (0\u2011based)\ngroup = i // 3\npos_in_group = i % 3\n\nif group == 0:\n    # first three cards may be any suit\n    return True\n\nif pos_in_group == 0:\n    # first card of a new three\u2011card block must differ from previous block's suit\n    prev_suit = mainline[i - 1].suit.suit_name\n    return card.suit.suit_name != prev_suit\nelse:\n    # subsequent cards in the block must match the block's suit\n    block_suit = mainline[i - pos_in_group].suit.suit_name\n    return card.suit.suit_name == block_suit"
+      "code": "if not mainline:\n    return True\n\ni = len(mainline)                 # index of the new card (0\u2011based)\ngroup = i // 3\npos_in_group = i % 3\n\nif group == 0:\n    # first three cards may be any suit\n    return True\n\nif pos_in_group == 0:\n    # first card of a new three\u2011card block must differ from previous block's suit\n    prev_suit = mainline[i - 1].suit.suit_name\n    return card.suit.suit_name != prev_suit\nelse:\n    # subsequent cards in the block must match the block's suit\n    block_suit = mainline[i - pos_in_group].suit.suit_name\n    return card.suit.suit_name == block_suit",
+      "avg_acceptance_rate": 0.38,
+      "avg_mainline_length": 19.0,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 101,
+      "cyclomatic_complexity": 4
     },
     {
       "name": "suit_diff_last_two",
       "description": "The card\u2019s suit must differ from each of the previous two suits (if they exist).",
-      "code": "if not mainline:\n    return True\nreturn all(card.suit.suit_name != m.suit.suit_name for m in mainline[-2:])"
+      "code": "if not mainline:\n    return True\nreturn all(card.suit.suit_name != m.suit.suit_name for m in mainline[-2:])",
+      "avg_acceptance_rate": 0.534,
+      "avg_mainline_length": 26.7,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 38,
+      "cyclomatic_complexity": 2
     },
     {
       "name": "alternating_groups",
       "description": "Hearts and spades form Group A; clubs and diamonds form Group B. Alternate between groups.",
-      "code": "if not mainline:\n    return True\nprev_group = mainline[-1].suit.suit_name in (\"hearts\", \"spades\")\ncurr_group = card.suit.suit_name in (\"hearts\", \"spades\")\nreturn curr_group != prev_group"
+      "code": "if not mainline:\n    return True\nprev_group = mainline[-1].suit.suit_name in (\"hearts\", \"spades\")\ncurr_group = card.suit.suit_name in (\"hearts\", \"spades\")\nreturn curr_group != prev_group",
+      "avg_acceptance_rate": 0.536,
+      "avg_mainline_length": 26.8,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 50,
+      "cyclomatic_complexity": 2
     },
     {
       "name": "alternating_colors",
       "description": "Cards must alternate between red and black colors.",
-      "code": "if not mainline:\n    return True\nreturn card.color != mainline[-1].color"
+      "code": "if not mainline:\n    return True\nreturn card.color != mainline[-1].color",
+      "avg_acceptance_rate": 0.564,
+      "avg_mainline_length": 28.2,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 24,
+      "cyclomatic_complexity": 2
     },
     {
       "name": "color_triplet_blocks",
       "description": "Colors must be the same in triplets: the first three cards must be the same color, the next three must be the opposite color, and so on.",
-      "code": "if not mainline:\n    return True\nbase_color = mainline[0].color\npos = len(mainline)  # index where the new card would be placed\nblock = pos // 3\nrequired_color = base_color if block % 2 == 0 else (\"black\" if base_color == \"red\" else \"red\")\nreturn card.color == required_color"
+      "code": "if not mainline:\n    return True\nbase_color = mainline[0].color\npos = len(mainline)  # index where the new card would be placed\nblock = pos // 3\nrequired_color = base_color if block % 2 == 0 else (\"black\" if base_color == \"red\" else \"red\")\nreturn card.color == required_color",
+      "avg_acceptance_rate": 0.506,
+      "avg_mainline_length": 25.3,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 65,
+      "cyclomatic_complexity": 2
     },
     {
       "name": "max_two_consecutive_color",
       "description": "No more than two consecutive cards may be the same color.",
-      "code": "if not mainline:\n    return True\nif len(mainline) < 2:\n    return True\nif mainline[-1].color == mainline[-2].color == card.color:\n    return False\nreturn True"
+      "code": "if not mainline:\n    return True\nif len(mainline) < 2:\n    return True\nif mainline[-1].color == mainline[-2].color == card.color:\n    return False\nreturn True",
+      "avg_acceptance_rate": 0.726,
+      "avg_mainline_length": 36.3,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 49,
+      "cyclomatic_complexity": 4
     },
     {
       "name": "even_match_odd_mismatch",
       "description": "If the previous rank is even, the suit must match the previous suit; if odd, the suit must differ.",
-      "code": "if not mainline:\n    return True\nprev = mainline[-1]\nif prev.rank % 2 == 0:\n    return card.suit.suit_name == prev.suit.suit_name\nelse:\n    return card.suit.suit_name != prev.suit.suit_name"
+      "code": "if not mainline:\n    return True\nprev = mainline[-1]\nif prev.rank % 2 == 0:\n    return card.suit.suit_name == prev.suit.suit_name\nelse:\n    return card.suit.suit_name != prev.suit.suit_name",
+      "avg_acceptance_rate": 0.434,
+      "avg_mainline_length": 21.7,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 59,
+      "cyclomatic_complexity": 3
     },
     {
       "name": "even_keep_color_odd_switch",
       "description": "If the previous rank is even, the new card must keep the same color; if odd, the color must switch.",
-      "code": "if not mainline:\n    return True\nprev = mainline[-1]\nif prev.rank % 2 == 0:\n    return card.color == prev.color\nelse:\n    return card.color != prev.color"
+      "code": "if not mainline:\n    return True\nprev = mainline[-1]\nif prev.rank % 2 == 0:\n    return card.color == prev.color\nelse:\n    return card.color != prev.color",
+      "avg_acceptance_rate": 0.534,
+      "avg_mainline_length": 26.7,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 51,
+      "cyclomatic_complexity": 3
     },
     {
       "name": "red_prime_ranks",
       "description": "Only red cards whose rank is prime numbers (2,3,5,7,11,13) may be played.",
-      "code": "primes = {2, 3, 5, 7, 11, 13}\nif not mainline:\n    return card.color == \"red\" and card.rank in primes\nreturn card.color == \"red\" and card.rank in primes"
+      "code": "primes = {2, 3, 5, 7, 11, 13}\nif not mainline:\n    return card.color == \"red\" and card.rank in primes\nreturn card.color == \"red\" and card.rank in primes",
+      "avg_acceptance_rate": 0.21400000000000002,
+      "avg_mainline_length": 10.7,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 52,
+      "cyclomatic_complexity": 4
     },
     {
       "name": "share_color_or_parity",
       "description": "Each card must share at least one property with the previous card: same color, or same parity.",
-      "code": "if not mainline:\n    return True\nprev = mainline[-1]\nreturn card.color == prev.color or (card.rank % 2) == (prev.rank % 2)"
+      "code": "if not mainline:\n    return True\nprev = mainline[-1]\nreturn card.color == prev.color or (card.rank % 2) == (prev.rank % 2)",
+      "avg_acceptance_rate": 0.728,
+      "avg_mainline_length": 36.4,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 47,
+      "cyclomatic_complexity": 3
     },
     {
       "name": "red_increase_black_decrease",
       "description": "If the previous card was red, rank must increase; if black, rank must decrease. Ace may follow King and vice versa.",
-      "code": "if not mainline:\n    return True\nprev = mainline[-1]\nif prev.color == \"red\":\n    return card.rank > prev.rank or (prev.rank == 13 and card.rank == 1)\nelse:\n    return card.rank < prev.rank or (prev.rank == 1 and card.rank == 13)"
+      "code": "if not mainline:\n    return True\nprev = mainline[-1]\nif prev.color == \"red\":\n    return card.rank > prev.rank or (prev.rank == 13 and card.rank == 1)\nelse:\n    return card.rank < prev.rank or (prev.rank == 1 and card.rank == 13)",
+      "avg_acceptance_rate": 0.264,
+      "avg_mainline_length": 13.2,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 84,
+      "cyclomatic_complexity": 7
     },
     {
       "name": "face_red_number_black",
       "description": "Face cards must be red; number cards (1-10) must be black.",
-      "code": "if card.rank >= 11:\n    return card.color == \"red\"\nreturn card.color == \"black\""
+      "code": "if card.rank >= 11:\n    return card.color == \"red\"\nreturn card.color == \"black\"",
+      "avg_acceptance_rate": 0.484,
+      "avg_mainline_length": 24.2,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 25,
+      "cyclomatic_complexity": 2
     },
     {
       "name": "face_card_suit_imposes",
       "description": "Face cards imposes the suit: if a face card is played, the next card must match its suit. Otherwise, the next card must be a different suit than it.",
-      "code": "if not mainline:\n    return True\nprev = mainline[-1]\nif prev.rank in (11, 12, 13):\n    return card.suit.suit_name == prev.suit.suit_name\nelse:\n    return card.suit.suit_name != prev.suit.suit_name"
+      "code": "if not mainline:\n    return True\nprev = mainline[-1]\nif prev.rank in (11, 12, 13):\n    return card.suit.suit_name == prev.suit.suit_name\nelse:\n    return card.suit.suit_name != prev.suit.suit_name",
+      "avg_acceptance_rate": 0.53,
+      "avg_mainline_length": 26.5,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 60,
+      "cyclomatic_complexity": 3
     },
     {
       "name": "no_match_consecutive",
       "description": "No attribute match rule: between consecutive cards, none of {color, parity, face-vs-number} may match.",
-      "code": "if not mainline:\n    return True\nprev = mainline[-1]\ncolor_ok = card.color != prev.color\nparity_ok = (card.rank % 2) != (prev.rank % 2)\nface_ok = (card.rank >= 11) != (prev.rank >= 11)\nreturn color_ok and parity_ok and face_ok"
+      "code": "if not mainline:\n    return True\nprev = mainline[-1]\ncolor_ok = card.color != prev.color\nparity_ok = (card.rank % 2) != (prev.rank % 2)\nface_ok = (card.rank >= 11) != (prev.rank >= 11)\nreturn color_ok and parity_ok and face_ok",
+      "avg_acceptance_rate": 0.096,
+      "avg_mainline_length": 4.8,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 78,
+      "cyclomatic_complexity": 4
     },
     {
       "name": "high_low_switch",
       "description": "The High/Low Switch: If the previous card was Red, the played card must be High (8\u2013K). If the previous card was Black, the played card must be Low (A\u20137).",
-      "code": "if not mainline:\n    return True\nprev = mainline[-1]\nif prev.color == \"red\":\n    return 8 <= card.rank <= 13\nelse:  # prev.color == \"black\"\n    return 1 <= card.rank <= 7"
+      "code": "if not mainline:\n    return True\nprev = mainline[-1]\nif prev.color == \"red\":\n    return 8 <= card.rank <= 13\nelse:  # prev.color == \"black\"\n    return 1 <= card.rank <= 7",
+      "avg_acceptance_rate": 0.49800000000000005,
+      "avg_mainline_length": 24.9,
+      "num_simulations": 10,
+      "plays_per_simulation": 50,
+      "node_count": 46,
+      "cyclomatic_complexity": 3
     }
   ],
   "metadata": {
@@ -256,5 +556,9 @@
     "total_compiled": 50,
     "valid_count": 50,
     "invalid_count": 0
+  },
+  "evaluation_params": {
+    "num_simulations": 10,
+    "plays_per_simulation": 50
   }
 }
