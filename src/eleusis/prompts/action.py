@@ -93,8 +93,14 @@ You must select a card from your hand to play. After playing, you can optionally
 You can freely reason step by step about the pattern you observe.
 Then your response should end with your final decision wrapped in XML tags as shown below.
 
+You will be asked to provide the following in your response:
+- A reasoning summary explaining your thought process about the pattern so far and why you are playing the selected card.
+- The card you are playing from your hand (must be one of the cards listed in your hand).
+- Your current best guess about the hidden rule (must be clear and unequivocal).
+- Your confidence level in your tentative rule on a scale of 0-10 (1="10% confident / 10% probability to be correct", 3="30% confident / 30% probability to be correct", 7="70% confident / 70% probability to be correct", 10="certain to be correct").
+- Whether you want to officially guess the rule this turn (true or false). Only set to true if you are confident enough to make an official guess. If you set to false, your guess will not be evaluated this turn and will have no consequence.
+
 Format your response as follows:
-<your reasoning about the pattern>
 <ACTION>
 {{
     "reasoning_summary": "Brief summary of your analysis and why you're playing this card",
