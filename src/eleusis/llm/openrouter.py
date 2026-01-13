@@ -81,12 +81,17 @@ class OpenRouterClient(BaseLLMClient):
                     "usage": {"include": True},
                 }
 
-                if disable_thinking and self.reasoning_model_type:
-                    logger.info("Attempting to disable thinking for continuation")
-                    if self.reasoning_model_type == "deepseek-r1":
-                        extra_body["thinking"] = {"type": "disabled"}
-                    elif self.reasoning_model_type in ("qwen-thinking", "gpt-oss"):
-                        extra_body["thinking"] = {"type": "disabled"}
+                # Use capabilities if probed, else fall back to string-based detection
+                should_disable = False
+                if disable_thinking:
+                    if self.capabilities and self.capabilities.supports_disable_thinking:
+                        should_disable = True
+                    elif self.reasoning_model_type in ("deepseek-r1", "qwen-thinking", "gpt-oss"):
+                        should_disable = True  # Fallback if no probe
+
+                if should_disable:
+                    logger.info("Disabling thinking for continuation")
+                    extra_body["thinking"] = {"type": "disabled"}
 
                 api_kwargs["extra_body"] = extra_body
 

@@ -105,13 +105,15 @@ class HuggingFaceClient(BaseLLMClient):
                 if self.seed is not None:
                     api_kwargs["seed"] = self.seed
 
-                if disable_thinking and self.reasoning_model_type:
-                    if self.reasoning_model_type in ("gpt-oss", "deepseek-r1"):
-                        logger.info("Attempting to disable thinking for continuation")
+                # HuggingFace Inference API doesn't support disable_thinking.
+                # The continuation prompt's </think> injection handles this instead.
+                if disable_thinking and self.capabilities and self.capabilities.has_reasoning:
+                    logger.debug("disable_thinking not supported by HF; using prompt injection")
 
                 stream = self.client.chat.completions.create(**api_kwargs)
 
                 content = ""
+                reasoning = ""
                 finish_reason = "stop"
                 chars_since_dot = 0
                 dots_printed = 0
@@ -126,6 +128,9 @@ class HuggingFaceClient(BaseLLMClient):
                                 print(".", end="", flush=True)
                                 dots_printed += 1
                                 chars_since_dot = 0
+                        # Capture reasoning field if present (GPT-OSS, etc.)
+                        if hasattr(delta, 'reasoning') and delta.reasoning:
+                            reasoning += delta.reasoning
                         if chunk.choices[0].finish_reason:
                             finish_reason = chunk.choices[0].finish_reason
                 if dots_printed > 0:
@@ -134,7 +139,10 @@ class HuggingFaceClient(BaseLLMClient):
                 end_time = time.time()
 
                 choice = StreamedChoice(
-                    message=StreamedMessage(content=content),
+                    message=StreamedMessage(
+                        content=content,
+                        reasoning=reasoning if reasoning else None
+                    ),
                     finish_reason=finish_reason,
                 )
 
@@ -181,9 +189,10 @@ class HuggingFaceClient(BaseLLMClient):
                 if self.seed is not None:
                     api_kwargs["seed"] = self.seed
 
-                if disable_thinking and self.reasoning_model_type:
-                    if self.reasoning_model_type in ("gpt-oss", "deepseek-r1"):
-                        logger.info("Attempting to disable thinking for continuation")
+                # HuggingFace Inference API doesn't support disable_thinking.
+                # The continuation prompt's </think> injection handles this instead.
+                if disable_thinking and self.capabilities and self.capabilities.has_reasoning:
+                    logger.debug("disable_thinking not supported by HF; using prompt injection")
 
                 completion = self.client.chat.completions.create(**api_kwargs)
 
@@ -289,7 +298,13 @@ class HuggingFaceClient(BaseLLMClient):
 
         has_reasoning = False
         reasoning_tokens = None
-        if content and ("<think>" in content or "</think>" in content):
+
+        # Check for reasoning field first (GPT-OSS, etc.)
+        if choice.message.reasoning:
+            has_reasoning = True
+            reasoning_tokens = estimate_reasoning_tokens(choice.message.reasoning)
+        # Then check for think tags in content (Qwen, DeepSeek)
+        elif content and ("<think>" in content or "</think>" in content):
             # Qwen3 Thinking models may only output </think> without opening tag
             has_reasoning = True
             reasoning_tokens = estimate_reasoning_tokens(content)

@@ -42,6 +42,32 @@ class GenerateMetrics:
     success: bool
 
 
+@dataclass
+class ModelCapabilities:
+    """Runtime-detected model capabilities."""
+    # Reasoning format detection
+    has_reasoning: bool = False
+    # Possible values:
+    #   "field:reasoning_content" - GPT-OSS style separate field
+    #   "field:reasoning" - Kimi/Claude style separate field
+    #   "tags:think" - <think>...</think> tags in content (DeepSeek, Qwen)
+    #   "hidden" - reasoning tokens counted but content not exposed (encrypted)
+    #   None - no reasoning detected
+    reasoning_format: str | None = None
+    thinking_tags_malformed: bool = False  # True if model omits opening <think> tag (Qwen behavior)
+
+    # API support
+    supports_disable_thinking: bool = False
+
+    # Metadata from probe
+    probe_latency_seconds: float | None = None
+    probe_response_preview: str | None = None
+
+    # Provider info
+    provider: str = "unknown"
+    model_name: str = ""
+
+
 def detect_reasoning_model_type(model_name: str) -> str | None:
     """Detect reasoning model type from model name."""
     model_lower = model_name.lower()
@@ -79,6 +105,104 @@ def estimate_reasoning_tokens(content: str) -> int | None:
 
     word_count = len(thinking_text.split())
     return int(word_count * 1.3)
+
+
+# Probe prompt designed to elicit reasoning from thinking models
+PROBE_PROMPT = "What is the capital of the state containing Dallas?"
+
+
+def probe_model_capabilities(client: "BaseLLMClient") -> ModelCapabilities:
+    """Make a test call to detect model capabilities.
+
+    Args:
+        client: An LLM client instance to probe
+
+    Returns:
+        ModelCapabilities with detected reasoning format and features
+
+    Raises:
+        Exception: If API call fails (connectivity issues, invalid credentials, etc.)
+    """
+    caps = ModelCapabilities(
+        provider=client.provider_name,
+        model_name=client.model_name,
+    )
+
+    start_time = time.time()
+
+    # Make API call to inspect response structure
+    messages = [{"role": "user", "content": PROBE_PROMPT}]
+    response, metrics = client._call_api(messages)
+
+    caps.probe_latency_seconds = time.time() - start_time
+
+    # Extract message from response
+    message = response.message
+    content = message.content if hasattr(message, 'content') else ""
+    caps.probe_response_preview = content[:200] if content else ""
+
+    # Detect reasoning format from response structure
+    # Priority: explicit fields first, then inline tags
+
+    # Debug: log available fields on message object
+    msg_fields = [attr for attr in dir(message) if not attr.startswith('_')]
+    logger.debug(f"Message object fields: {msg_fields}")
+    if hasattr(message, 'reasoning'):
+        logger.debug(f"reasoning field value: {repr(message.reasoning)[:100]}")
+    if hasattr(message, 'reasoning_content'):
+        logger.debug(f"reasoning_content field value: {repr(message.reasoning_content)[:100]}")
+
+    # Check for reasoning_content field (GPT-OSS style)
+    if hasattr(message, 'reasoning_content') and message.reasoning_content:
+        caps.has_reasoning = True
+        caps.reasoning_format = "field:reasoning_content"
+        # OpenRouter supports disable_thinking for these models
+        caps.supports_disable_thinking = client.provider_name == "openrouter"
+        logger.info("Detected reasoning format: field:reasoning_content")
+
+    # Check for reasoning field (Claude style)
+    elif hasattr(message, 'reasoning') and message.reasoning:
+        caps.has_reasoning = True
+        caps.reasoning_format = "field:reasoning"
+        caps.supports_disable_thinking = client.provider_name == "openrouter"
+        logger.info("Detected reasoning format: field:reasoning")
+
+    # Check for think tags in content (DeepSeek, Qwen, Kimi)
+    elif content:
+        if "<think>" in content and "</think>" in content:
+            caps.has_reasoning = True
+            caps.reasoning_format = "tags:think"
+            caps.supports_disable_thinking = client.provider_name == "openrouter"
+            logger.info("Detected reasoning format: tags:think")
+        elif "</think>" in content and "<think>" not in content:
+            # Qwen malformed tags (missing opening tag)
+            caps.has_reasoning = True
+            caps.reasoning_format = "tags:think"
+            caps.thinking_tags_malformed = True
+            caps.supports_disable_thinking = client.provider_name == "openrouter"
+            logger.info("Detected reasoning format: tags:think (malformed)")
+
+    # Check for reasoning tokens in metrics (hidden/encrypted reasoning)
+    if not caps.has_reasoning and metrics.reasoning_tokens and metrics.reasoning_tokens > 0:
+        caps.has_reasoning = True
+        caps.reasoning_format = "hidden"  # Reasoning exists but content not exposed
+        logger.info(f"Detected reasoning via token count: {metrics.reasoning_tokens} tokens")
+
+    # Log result and compare with string-based detection
+    string_based_type = detect_reasoning_model_type(client.model_name)
+    if caps.has_reasoning:
+        if string_based_type and caps.reasoning_format:
+            logger.debug(f"Probe confirmed reasoning (string hint: {string_based_type})")
+    else:
+        if string_based_type:
+            logger.warning(
+                f"String-based hints '{string_based_type}' but probe found no reasoning. "
+                "May need longer prompt or reasoning not exposed."
+            )
+        else:
+            logger.info("No reasoning format detected (non-reasoning model)")
+
+    return caps
 
 
 def _get_continuation_prompt(xml_tag: str, force_answer: bool = False) -> str:
@@ -123,6 +247,7 @@ class BaseLLMClient(ABC):
         self.call_metrics: list[LLMCallMetrics] = []
         self.generate_metrics: list[GenerateMetrics] = []
         self.reasoning_model_type = detect_reasoning_model_type(model_name)
+        self.capabilities: ModelCapabilities | None = None  # Set by probe_model_capabilities()
 
         if self.reasoning_model_type:
             logger.info(f"Detected reasoning model type: {self.reasoning_model_type}")
@@ -216,7 +341,12 @@ class BaseLLMClient(ABC):
         tag_name = xml_tag if xml_tag else "RESPONSE"
         continuation_prompt = _get_continuation_prompt(tag_name, force_answer=(depth >= 2))
 
-        if depth >= 2 and self.reasoning_model_type in ("qwen-thinking", "deepseek-r1"):
+        # Inject </think> tag for models that use think tags, to close any open reasoning block
+        uses_think_tags = (
+            (self.capabilities and self.capabilities.reasoning_format == "tags:think")
+            or self.reasoning_model_type in ("qwen-thinking", "deepseek-r1")  # Fallback if no probe
+        )
+        if depth >= 2 and uses_think_tags:
             continuation_prompt = f"</think>\n{continuation_prompt}"
 
         messages.append({"role": "user", "content": continuation_prompt})

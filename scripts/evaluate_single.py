@@ -11,6 +11,7 @@ import yaml
 from dotenv import load_dotenv
 
 from eleusis.game import Rule
+from eleusis.llm import ModelCapabilities, create_client, probe_model_capabilities
 from eleusis.runner import play_round
 from eleusis.utils import model_spec_to_display_name, setup_logging
 
@@ -241,6 +242,37 @@ def load_rules_from_library(config: dict) -> list[dict]:
     return rules
 
 
+def preflight_check(model_spec: str) -> ModelCapabilities:
+    """Run pre-flight model check. Fails fast on issues.
+
+    Args:
+        model_spec: Model specification (e.g., "hf:model-name" or "openrouter:model-name")
+
+    Returns:
+        ModelCapabilities with detected reasoning format and features
+
+    Raises:
+        SystemExit: If pre-flight check fails
+    """
+    logger.info("Running pre-flight model check...")
+
+    try:
+        client = create_client(model_spec, max_tokens=200)
+        caps = probe_model_capabilities(client)
+    except Exception as e:
+        logger.error(f"Pre-flight check failed: {e}")
+        raise SystemExit(1)
+
+    logger.info(f"  Provider: {caps.provider}")
+    logger.info(f"  Reasoning format: {caps.reasoning_format or 'none'}")
+    logger.info(f"  Supports disable_thinking: {caps.supports_disable_thinking}")
+    logger.info(f"  Latency: {caps.probe_latency_seconds:.2f}s")
+    if caps.thinking_tags_malformed:
+        logger.warning("  Note: Model uses malformed think tags (missing opening tag)")
+
+    return caps
+
+
 def main():
     """Evaluate single player across multiple rounds."""
     global config, logger, log_file, timestamp
@@ -319,6 +351,14 @@ def main():
     setup_logging(log_file=log_file, console_level=logging.INFO, file_level=logging.DEBUG)
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logger = logging.getLogger(__name__)
+
+    # Run pre-flight model check (fails fast if model doesn't respond)
+    logger.info("=" * 80)
+    logger.info("PRE-FLIGHT MODEL CHECK")
+    logger.info("=" * 80)
+    preflight_check(player_model)  # Fails fast if model doesn't respond
+    logger.info("Pre-flight check passed!")
+    logger.info("")
 
     # Determine num_rounds - from checkpoint when resuming, else from config
     if checkpoint:
