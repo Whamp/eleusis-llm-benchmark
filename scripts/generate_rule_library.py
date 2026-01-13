@@ -9,7 +9,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from eleusis.game import Rule, RuleValidator
+from eleusis.game import Rule, RuleEvaluator, RuleValidator
 from eleusis.llm import HuggingFaceClient
 from eleusis.prompts import get_rule_compile_prompt
 
@@ -80,9 +80,10 @@ def validate_and_save_rules(
     rules: list[dict],
     output_path: Path,
     validator: RuleValidator,
+    evaluator: RuleEvaluator,
     num_test_cases: int = 5,
 ) -> None:
-    """Validate rules and save valid ones to JSON."""
+    """Validate and evaluate rules, save results to JSON."""
     valid_rules = []
     invalid_rules = []
 
@@ -100,7 +101,10 @@ def validate_and_save_rules(
             validation = validator.validate_rule(rule, num_test_cases=num_test_cases)
 
             if validation.valid:
-                logger.info("  Valid")
+                logger.info("  Valid - evaluating...")
+                eval_results = evaluator.evaluate(rule)
+                rule_dict.update(eval_results)
+                logger.info(f"  Acceptance rate: {eval_results['avg_acceptance_rate']:.1%}")
                 valid_rules.append(rule_dict)
             else:
                 logger.warning(f"  Invalid - {', '.join(validation.issues)}")
@@ -116,6 +120,10 @@ def validate_and_save_rules(
             "total_compiled": len(rules),
             "valid_count": len(valid_rules),
             "invalid_count": len(invalid_rules),
+        },
+        "evaluation_params": {
+            "num_simulations": evaluator.num_simulations,
+            "plays_per_simulation": evaluator.plays_per_simulation,
         },
     }
 
@@ -163,6 +171,18 @@ def main():
         help="Number of validation test cases per rule (default: 5)",
     )
     parser.add_argument(
+        "--num-simulations",
+        type=int,
+        default=10,
+        help="Number of simulations for acceptance rate evaluation (default: 10)",
+    )
+    parser.add_argument(
+        "--plays-per-simulation",
+        type=int,
+        default=50,
+        help="Number of random card plays per simulation (default: 50)",
+    )
+    parser.add_argument(
         "--log-level",
         type=str,
         default="INFO",
@@ -192,6 +212,10 @@ def main():
     logger.info(f"Initializing LLM client with model: {args.model}")
     llm_client = HuggingFaceClient(model_name=args.model, max_tokens=args.max_tokens)
     validator = RuleValidator()
+    evaluator = RuleEvaluator(
+        num_simulations=args.num_simulations,
+        plays_per_simulation=args.plays_per_simulation,
+    )
 
     # Compile each rule
     compiled_rules = []
@@ -210,9 +234,9 @@ def main():
         logger.error("No rules were successfully compiled")
         return 1
 
-    # Validate and save
-    logger.info("Validating and saving rules...")
-    validate_and_save_rules(compiled_rules, args.output, validator, args.test_cases)
+    # Validate, evaluate, and save
+    logger.info("Validating and evaluating rules...")
+    validate_and_save_rules(compiled_rules, args.output, validator, evaluator, args.test_cases)
 
     logger.info("Done!")
     return 0

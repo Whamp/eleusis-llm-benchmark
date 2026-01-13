@@ -30,11 +30,8 @@ uv run pytest tests/test_game_engine.py
 # Run specific test
 uv run pytest tests/test_game_engine.py::TestGameEngineSolo::test_game_setup
 
-# Compile human-written rules from rules.txt to rules.json
+# Compile human-written rules from rules.txt to rules.json (includes validation and evaluation)
 uv run scripts/generate_rule_library.py --input rules.txt --output rules.json
-
-# Evaluate rule acceptance rates (run after compilation)
-uv run scripts/evaluate_rules.py --library rules.json
 
 # Lint
 uv run ruff check src/ scripts/ tests/

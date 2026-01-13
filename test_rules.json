@@ -1,0 +1,54 @@
+{
+  "rules": [
+    {
+      "name": "even_ranks_only",
+      "description": "Only cards with an even rank (2,4,6,8,10,12) may be played.",
+      "code": "return card.rank % 2 == 0",
+      "avg_acceptance_rate": 0.47400000000000003,
+      "node_count": 12,
+      "cyclomatic_complexity": 1
+    },
+    {
+      "name": "opposite_parity_rank",
+      "description": "Card rank must have opposite odd/even parity to the previous card's rank.",
+      "code": "if not mainline:\n    return True\nreturn (card.rank % 2) != (mainline[-1].rank % 2)",
+      "avg_acceptance_rate": 0.48,
+      "node_count": 30,
+      "cyclomatic_complexity": 2
+    },
+    {
+      "name": "spades_only",
+      "description": "Only cards of the suit spades may be played.",
+      "code": "return card.suit.suit_name == \"spades\"",
+      "avg_acceptance_rate": 0.26,
+      "node_count": 11,
+      "cyclomatic_complexity": 1
+    },
+    {
+      "name": "different_suit_same_color",
+      "description": "The card must be of a different suit than but same color as the card just before it. Any card may start the line.",
+      "code": "if not mainline:\n    return True\nprev = mainline[-1]\nreturn card.color == prev.color and card.suit.suit_name != prev.suit.suit_name",
+      "avg_acceptance_rate": 0.278,
+      "node_count": 45,
+      "cyclomatic_complexity": 3
+    },
+    {
+      "name": "red_increase_black_decrease_wrap",
+      "description": "If the previous card was red, rank must increase; if black, rank must decrease. Ace may follow King and vice versa.",
+      "code": "if not mainline:\n    return True\nprev = mainline[-1]\nif prev.color == \"red\":\n    # rank must increase, allowing King (13) -> Ace (1)\n    return card.rank > prev.rank or (prev.rank == 13 and card.rank == 1)\nelse:  # prev.color == \"black\"\n    # rank must decrease, allowing Ace (1) -> King (13)\n    return card.rank < prev.rank or (prev.rank == 1 and card.rank == 13)",
+      "avg_acceptance_rate": 0.274,
+      "node_count": 84,
+      "cyclomatic_complexity": 7
+    }
+  ],
+  "metadata": {
+    "generated_at": "2026-01-13T11:01:00.322149",
+    "total_compiled": 5,
+    "valid_count": 5,
+    "invalid_count": 0
+  },
+  "evaluation_params": {
+    "num_simulations": 10,
+    "plays_per_simulation": 50
+  }
+}

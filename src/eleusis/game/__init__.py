@@ -4,6 +4,7 @@ from eleusis.game.cards import Card, Deck, Hand, Suit
 from eleusis.game.engine import Action, GameEngine, GuessRuleAction, PlayCardAction, Rule
 from eleusis.game.state import GameState, Mainline, PlayerState, Sideline
 from eleusis.game.validator import RuleFactory, RuleValidator, ValidationResult
+from eleusis.game.metrics import RuleEvaluator, code_complexity
 
 __all__ = [
     # Cards
@@ -26,4 +27,7 @@ __all__ = [
     "RuleValidator",
     "RuleFactory",
     "ValidationResult",
+    # Metrics
+    "RuleEvaluator",
+    "code_complexity",
 ]
