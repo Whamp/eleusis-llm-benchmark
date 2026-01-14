@@ -377,6 +377,13 @@ def main():
         evaluation_results = checkpoint
         start_round = checkpoint['checkpoint']['completed_rounds'] + 1
 
+        # Ensure new statistics fields exist (for backwards compatibility with old checkpoints)
+        stats = evaluation_results.setdefault('statistics', {})
+        stats.setdefault('total_output_tokens', 0)
+        stats.setdefault('total_reasoning_tokens', 0)
+        stats.setdefault('total_answer_tokens', 0)
+        stats.setdefault('total_wall_clock_seconds', 0.0)
+
         # Restore current rule from checkpoint (not from library)
         current_rule = restore_rule_from_checkpoint(
             checkpoint['checkpoint'].get('current_rule')
@@ -467,6 +474,10 @@ def main():
                 'failed_rounds': 0,
                 'total_turns': 0,
                 'total_failed_guesses': 0,
+                'total_output_tokens': 0,
+                'total_reasoning_tokens': 0,
+                'total_answer_tokens': 0,
+                'total_wall_clock_seconds': 0.0,
             },
             'checkpoint': {
                 'completed_rounds': 0,
@@ -558,6 +569,13 @@ def main():
         evaluation_results['statistics']['total_turns'] += result['turn_count']
         evaluation_results['statistics']['total_failed_guesses'] += result['failed_guesses']
 
+        # Aggregate token counts from player LLM usage
+        player_usage = result['llm_usage'].get('player', {})
+        evaluation_results['statistics']['total_output_tokens'] += player_usage.get('output_tokens', 0)
+        evaluation_results['statistics']['total_reasoning_tokens'] += player_usage.get('reasoning_tokens', 0)
+        evaluation_results['statistics']['total_answer_tokens'] += player_usage.get('answer_tokens', 0)
+        evaluation_results['statistics']['total_wall_clock_seconds'] += result.get('wall_clock_seconds', 0)
+
         # Update checkpoint (preserve rules_library from initial load)
         evaluation_results['checkpoint'] = {
             'completed_rounds': round_num,
@@ -621,6 +639,11 @@ def main():
     logger.info(f"Average turns (successful rounds only): {avg_turns_success:.1f}")
     logger.info(f"Average failed guesses per round: {avg_failed_guesses:.1f}")
     logger.info(f"Total score: {stats['total_score']}")
+    logger.info("")
+    logger.info(f"Total output tokens: {stats['total_output_tokens']:,}")
+    logger.info(f"Total reasoning tokens: {stats['total_reasoning_tokens']:,}")
+    logger.info(f"Total answer tokens: {stats['total_answer_tokens']:,}")
+    logger.info(f"Total wall clock time: {stats['total_wall_clock_seconds']:.1f}s")
 
     # Save final results
     output_file = save_evaluation_results(evaluation_results, folder_name)

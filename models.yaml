@@ -16,15 +16,15 @@ gpt-5.2:
   model_id: gpt-5.2
   reasoning_effort: medium  # none|minimal|low|medium|high|xhigh
 
-gemini-3-pro-preview:
+gemini-3-pro-preview-low:
   provider: google
   model_id: gemini-3-pro-preview
-  thinking_level: high  # low|high (cannot disable on Pro)
+  thinking_level: low
 
 gemini-3-flash-preview:
   provider: google
   model_id: gemini-3-flash-preview
-  thinking_level: low  # minimal|low|high
+  thinking_level: low
 
 grok-4:
   provider: xai

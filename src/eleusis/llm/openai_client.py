@@ -156,49 +156,79 @@ class OpenAIClient(BaseLLMClient):
         is_continuation: bool,
         continuation_depth: int,
     ) -> LLMCallMetrics:
-        """Extract metrics from API response."""
+        """Extract metrics from API response with normalized token fields.
+
+        OpenAI's output_tokens includes reasoning tokens, so:
+        - output_tokens = API output_tokens
+        - reasoning_tokens = API reasoning_tokens
+        - answer_tokens = output_tokens - reasoning_tokens
+        """
         duration = end_time - start_time
 
-        prompt_tokens = 0
-        completion_tokens = 0
-        reasoning_tokens = None
+        # --- RAW API VALUES ---
+        api_input_tokens = 0
+        api_output_tokens = 0
+        api_reasoning_tokens = None
 
         if hasattr(response, "usage") and response.usage:
-            prompt_tokens = response.usage.input_tokens or 0
-            completion_tokens = response.usage.output_tokens or 0
+            api_input_tokens = response.usage.input_tokens or 0
+            api_output_tokens = response.usage.output_tokens or 0
+            logger.debug(f"[OpenAI] RAW API usage: input_tokens={api_input_tokens}, output_tokens={api_output_tokens}")
+
             if hasattr(response.usage, "output_tokens_details"):
                 details = response.usage.output_tokens_details
+                logger.debug(f"[OpenAI] output_tokens_details: {details}")
                 if hasattr(details, "reasoning_tokens"):
-                    reasoning_tokens = details.reasoning_tokens
+                    api_reasoning_tokens = details.reasoning_tokens
+                    logger.debug(f"[OpenAI] RAW API reasoning_tokens={api_reasoning_tokens}")
+        else:
+            logger.debug("[OpenAI] No usage data in response")
 
-        total_tokens = prompt_tokens + completion_tokens
-        has_reasoning = reasoning_tokens is not None and reasoning_tokens > 0
+        # --- REASONING CONTENT ---
+        reasoning_text = choice.message.reasoning
+        reasoning_word_count = len(reasoning_text.split()) if reasoning_text else 0
+        logger.debug(f"[OpenAI] Reasoning content present: {reasoning_text is not None}, word_count={reasoning_word_count}")
+        if reasoning_text:
+            logger.debug(f"[OpenAI] Reasoning preview: {reasoning_text[:200]}...")
 
-        # Estimate reasoning tokens from content if not provided
-        if not has_reasoning and choice.message.reasoning:
+        # --- COMPUTED VALUES ---
+        prompt_tokens = api_input_tokens
+        output_tokens = api_output_tokens
+        reasoning_tokens = api_reasoning_tokens or 0
+        has_reasoning = reasoning_tokens > 0
+
+        # Estimate reasoning tokens from content if not provided by API
+        if not has_reasoning and reasoning_text:
             has_reasoning = True
-            word_count = len(choice.message.reasoning.split())
-            reasoning_tokens = int(word_count * 1.3)
+            reasoning_tokens = int(reasoning_word_count * 1.3)
+            logger.debug(f"[OpenAI] ESTIMATED reasoning_tokens: {reasoning_word_count} words × 1.3 = {reasoning_tokens}")
+        elif api_reasoning_tokens:
+            logger.debug(f"[OpenAI] Using NATIVE reasoning_tokens from API: {api_reasoning_tokens}")
+
+        answer_tokens = max(0, output_tokens - reasoning_tokens)
+
+        logger.debug(f"[OpenAI] FINAL token counts: prompt={prompt_tokens}, "
+                    f"output={output_tokens} (answer={answer_tokens} + reasoning={reasoning_tokens})")
 
         metrics = LLMCallMetrics(
             model_name=self.model_name,
             role=self.role,
             prompt_tokens=prompt_tokens,
-            completion_tokens=completion_tokens,
-            total_tokens=total_tokens,
+            output_tokens=output_tokens,
+            reasoning_tokens=reasoning_tokens,
+            answer_tokens=answer_tokens,
             duration_seconds=duration,
-            throughput_tokens_per_sec=completion_tokens / duration if duration > 0 else 0,
+            throughput_tokens_per_sec=output_tokens / duration if duration > 0 else 0,
             finish_reason=choice.finish_reason,
             has_reasoning=has_reasoning,
             timestamp=start_time,
-            reasoning_tokens=reasoning_tokens,
             is_continuation=is_continuation,
             continuation_depth=continuation_depth,
             provider=self.provider_name,
         )
 
         logger.debug(
-            f"Metrics: {completion_tokens} tokens in {duration:.2f}s "
+            f"[OpenAI] Metrics summary: {output_tokens} output tokens in {duration:.2f}s "
             f"({metrics.throughput_tokens_per_sec:.2f} tok/s)"
         )
 

@@ -194,6 +194,9 @@ def play_round(
 
         game_state.turn_number = turn_count + 1
 
+        # Track generate_metrics count before LLM call for per-turn token tracking
+        gen_metrics_before = len(scientist_client.generate_metrics)
+
         try:
             action = scientist.get_action(game_state)
         except Exception as e:
@@ -226,6 +229,15 @@ def play_round(
 
         play_result = engine.play_turn(action)
 
+        # Extract per-turn token metrics from any new generate_metrics
+        gen_metrics_after = len(scientist_client.generate_metrics)
+        turn_tokens = {"output_tokens": 0, "reasoning_tokens": 0, "answer_tokens": 0}
+        if gen_metrics_after > gen_metrics_before:
+            for gm in scientist_client.generate_metrics[gen_metrics_before:gen_metrics_after]:
+                turn_tokens["output_tokens"] += gm.total_output_tokens
+                turn_tokens["reasoning_tokens"] += gm.total_reasoning_tokens
+                turn_tokens["answer_tokens"] += gm.total_answer_tokens
+
         turn_data = {
             "turn_number": turn_count + 1,
             "player": player_name,
@@ -238,7 +250,8 @@ def play_round(
                 "accepted": play_result.get("accepted"),
                 "success": play_result.get("success"),
             },
-            "guess_attempt": None
+            "guess_attempt": None,
+            "tokens": turn_tokens,
         }
 
         logger.info(f"Action: {play_result['action']}")

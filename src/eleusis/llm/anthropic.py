@@ -144,22 +144,53 @@ class AnthropicClient(BaseLLMClient):
         is_continuation: bool,
         continuation_depth: int,
     ) -> LLMCallMetrics:
-        """Extract metrics from API response."""
+        """Extract metrics from API response with normalized token fields.
+
+        Anthropic's output_tokens INCLUDES thinking tokens (thinking may be summarized
+        in the returned block, but token count reflects actual usage). So:
+        - output_tokens = API output_tokens (ground truth)
+        - answer_tokens = estimated from visible content text
+        - reasoning_tokens = output_tokens - answer_tokens
+        """
         duration = end_time - start_time
 
-        prompt_tokens = response.usage.input_tokens
-        completion_tokens = response.usage.output_tokens
-        total_tokens = prompt_tokens + completion_tokens
+        # --- RAW API VALUES ---
+        api_input_tokens = response.usage.input_tokens
+        api_output_tokens = response.usage.output_tokens
+        logger.debug(f"[Anthropic] RAW API usage: input_tokens={api_input_tokens}, output_tokens={api_output_tokens}")
 
-        # Anthropic provides cache_read_input_tokens and cache_creation_input_tokens
-        # but we focus on core metrics here
+        # Check for any additional usage fields
+        if hasattr(response.usage, 'cache_read_input_tokens'):
+            logger.debug(f"[Anthropic] Cache tokens: read={getattr(response.usage, 'cache_read_input_tokens', None)}, "
+                        f"creation={getattr(response.usage, 'cache_creation_input_tokens', None)}")
 
+        # --- CONTENT ANALYSIS ---
         has_reasoning = choice.message.reasoning is not None
-        reasoning_tokens = None
-        if has_reasoning and choice.message.reasoning:
-            # Estimate reasoning tokens from text
-            word_count = len(choice.message.reasoning.split())
-            reasoning_tokens = int(word_count * 1.3)
+        reasoning_text = choice.message.reasoning if has_reasoning else None
+        reasoning_word_count = len(reasoning_text.split()) if reasoning_text else 0
+        logger.debug(f"[Anthropic] Reasoning block present: {has_reasoning}, word_count={reasoning_word_count} (may be summarized)")
+        if reasoning_text:
+            logger.debug(f"[Anthropic] Reasoning preview: {reasoning_text[:200]}...")
+
+        content_text = choice.message.content or ""
+        content_word_count = len(content_text.split())
+        logger.debug(f"[Anthropic] Content text: {content_word_count} words")
+
+        # --- COMPUTED VALUES ---
+        # output_tokens from API is the ground truth (includes both thinking + answer)
+        prompt_tokens = api_input_tokens
+        output_tokens = api_output_tokens
+
+        # Estimate answer tokens from visible content
+        answer_tokens = int(content_word_count * 1.3)
+        logger.debug(f"[Anthropic] ESTIMATED answer_tokens: {content_word_count} words × 1.3 = {answer_tokens}")
+
+        # Reasoning tokens = total - answer (clamped to 0)
+        reasoning_tokens = max(0, output_tokens - answer_tokens)
+        logger.debug(f"[Anthropic] COMPUTED reasoning_tokens: {output_tokens} - {answer_tokens} = {reasoning_tokens}")
+
+        logger.debug(f"[Anthropic] FINAL token counts: prompt={prompt_tokens}, "
+                    f"output={output_tokens} (answer={answer_tokens} + reasoning={reasoning_tokens})")
 
         # Map Anthropic stop reasons to standard finish reasons
         finish_reason = choice.finish_reason
@@ -172,21 +203,21 @@ class AnthropicClient(BaseLLMClient):
             model_name=self.model_name,
             role=self.role,
             prompt_tokens=prompt_tokens,
-            completion_tokens=completion_tokens,
-            total_tokens=total_tokens,
+            output_tokens=output_tokens,
+            reasoning_tokens=reasoning_tokens,
+            answer_tokens=answer_tokens,
             duration_seconds=duration,
-            throughput_tokens_per_sec=completion_tokens / duration if duration > 0 else 0,
+            throughput_tokens_per_sec=output_tokens / duration if duration > 0 else 0,
             finish_reason=finish_reason,
             has_reasoning=has_reasoning,
             timestamp=start_time,
-            reasoning_tokens=reasoning_tokens,
             is_continuation=is_continuation,
             continuation_depth=continuation_depth,
             provider=self.provider_name,
         )
 
         logger.debug(
-            f"Metrics: {completion_tokens} tokens in {duration:.2f}s "
+            f"[Anthropic] Metrics summary: {output_tokens} output tokens in {duration:.2f}s "
             f"({metrics.throughput_tokens_per_sec:.2f} tok/s)"
         )
 

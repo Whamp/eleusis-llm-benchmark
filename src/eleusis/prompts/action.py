@@ -85,9 +85,7 @@ This is the mainline and sidelines so far. Rejected cards are shown in brackets 
 
 ### Task description and formatting instructions
 
-You must select a card from your hand to play. After playing, you can optionally guess the rule.
-You can freely reason step by step about the pattern you observe.
-Then your response should end with your final decision wrapped in XML tags as shown below.
+You must select a card from your hand to play. You can optionally try to guess the rule.
 
 You will be asked to provide the following in your response:
 - A one sentence summary of your reasoning, explaining your thought process about the pattern so far and why you are playing the selected card.
@@ -106,7 +104,6 @@ Format your response as follows:
     "guess_rule": true or false (whether to officially try to guess the rule this turn)
 }}
 </ACTION>
-
 
 Always provide your current best hypothesis about the rule, even if you're uncertain. 
 If you set guess_rule to false, this guess will not be evaluated - it's just for your own tracking.

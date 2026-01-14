@@ -44,6 +44,12 @@ def build_rounds_dataframe(results: list[dict], rules_lib: dict) -> pd.DataFrame
         for round_data in result["rounds"]:
             rule_desc = round_data["rule_description"]
             rule_info = rules_lib.get(rule_desc, {})
+            player_usage = round_data["llm_usage"]["player"]
+
+            # Handle both old (total_tokens) and new (output_tokens) formats
+            output_tokens = player_usage.get("output_tokens", player_usage.get("total_tokens", 0))
+            reasoning_tokens = player_usage.get("reasoning_tokens", 0) or 0
+            answer_tokens = player_usage.get("answer_tokens", output_tokens - reasoning_tokens)
 
             rows.append({
                 "model": model,
@@ -55,7 +61,10 @@ def build_rounds_dataframe(results: list[dict], rules_lib: dict) -> pd.DataFrame
                 "failed_guesses": round_data["failed_guesses"],
                 "game_over_reason": round_data["game_over_reason"],
                 "rule_description": rule_desc,
-                "player_tokens": round_data["llm_usage"]["player"]["total_tokens"],
+                # Token metrics (normalized)
+                "output_tokens": output_tokens,
+                "reasoning_tokens": reasoning_tokens,
+                "answer_tokens": answer_tokens,
                 "wall_clock_seconds": round_data.get("wall_clock_seconds", 0),
                 # Rule complexity metrics
                 "cyclomatic_complexity": rule_info.get("cyclomatic_complexity"),
@@ -102,12 +111,18 @@ def analyze_basic_metrics(df_rounds: pd.DataFrame) -> pd.DataFrame:
         avg_score=("score", "mean"),
         avg_turns=("turn_count", "mean"),
         avg_failed_guesses=("failed_guesses", "mean"),
-        total_tokens=("player_tokens", "sum"),
+        # Token metrics (normalized)
+        total_output_tokens=("output_tokens", "sum"),
+        total_reasoning_tokens=("reasoning_tokens", "sum"),
+        total_answer_tokens=("answer_tokens", "sum"),
         total_score=("score", "sum"),
     ).reset_index()
 
-    # Token efficiency: score per 1K tokens
-    metrics["token_efficiency"] = (metrics["total_score"] / metrics["total_tokens"]) * 1000
+    # Token efficiency: score per 1K output tokens
+    metrics["token_efficiency"] = (metrics["total_score"] / metrics["total_output_tokens"]) * 1000
+
+    # Reasoning ratio: what fraction of output is reasoning
+    metrics["reasoning_ratio"] = metrics["total_reasoning_tokens"] / metrics["total_output_tokens"]
 
     # Average turns when successful
     successful = df_rounds[df_rounds["success"]]
@@ -155,7 +170,7 @@ def plot_basic_metrics(metrics: pd.DataFrame, output_dir: Path):
     # Token efficiency
     ax = axes[1, 1]
     ax.barh(metrics["model"], metrics["token_efficiency"])
-    ax.set_xlabel("Score per 1K Tokens")
+    ax.set_xlabel("Score per 1K Output Tokens")
     ax.set_title("Token Efficiency")
 
     plt.tight_layout()

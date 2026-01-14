@@ -12,18 +12,26 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class LLMCallMetrics:
-    """Metrics for a single LLM API call."""
+    """Metrics for a single LLM API call.
+
+    Token fields are normalized across providers:
+    - output_tokens: Total output (reasoning + answer)
+    - reasoning_tokens: Chain-of-thought/thinking tokens
+    - answer_tokens: Non-reasoning response tokens
+
+    Invariant: output_tokens = reasoning_tokens + answer_tokens
+    """
     model_name: str
     role: str
     prompt_tokens: int
-    completion_tokens: int
-    total_tokens: int
+    output_tokens: int      # Total output (reasoning + answer)
+    reasoning_tokens: int   # CoT/thinking tokens (0 if none)
+    answer_tokens: int      # Non-reasoning output tokens
     duration_seconds: float
     throughput_tokens_per_sec: float
     finish_reason: str
     has_reasoning: bool
     timestamp: float
-    reasoning_tokens: int | None = None
     is_continuation: bool = False
     continuation_depth: int = 0
     provider: str = "unknown"
@@ -36,8 +44,9 @@ class GenerateMetrics:
     total_calls: int
     continuation_count: int
     total_prompt_tokens: int
-    total_completion_tokens: int
-    total_reasoning_tokens: int | None
+    total_output_tokens: int
+    total_reasoning_tokens: int
+    total_answer_tokens: int
     total_duration_seconds: float
     success: bool
 
@@ -149,8 +158,9 @@ class BaseLLMClient(ABC):
             total_calls=len(calls_in_generate),
             continuation_count=len(calls_in_generate) - 1,
             total_prompt_tokens=sum(m.prompt_tokens for m in calls_in_generate),
-            total_completion_tokens=sum(m.completion_tokens for m in calls_in_generate),
-            total_reasoning_tokens=sum(m.reasoning_tokens or 0 for m in calls_in_generate) if any(m.reasoning_tokens for m in calls_in_generate) else None,
+            total_output_tokens=sum(m.output_tokens for m in calls_in_generate),
+            total_reasoning_tokens=sum(m.reasoning_tokens for m in calls_in_generate),
+            total_answer_tokens=sum(m.answer_tokens for m in calls_in_generate),
             total_duration_seconds=total_duration,
             success=True,
         )
@@ -254,13 +264,19 @@ class BaseLLMClient(ABC):
         return self.generate(prompt, xml_tag="CODE")
 
     def get_usage_stats(self) -> dict:
-        """Get aggregated usage statistics for this client."""
+        """Get aggregated usage statistics for this client.
+
+        Returns normalized token fields:
+        - output_tokens: Total output (reasoning + answer)
+        - reasoning_tokens: CoT/thinking tokens
+        - answer_tokens: Non-reasoning output
+        """
         if not self.call_metrics:
             return {
                 "prompt_tokens": 0,
-                "completion_tokens": 0,
-                "total_tokens": 0,
+                "output_tokens": 0,
                 "reasoning_tokens": 0,
+                "answer_tokens": 0,
                 "cost_usd": None,
                 "duration_seconds": 0.0,
                 "throughput_tokens_per_sec": 0.0,
@@ -271,9 +287,9 @@ class BaseLLMClient(ABC):
             }
 
         total_prompt = sum(m.prompt_tokens for m in self.call_metrics)
-        total_completion = sum(m.completion_tokens for m in self.call_metrics)
-        total_tokens = sum(m.total_tokens for m in self.call_metrics)
-        total_reasoning = sum(m.reasoning_tokens or 0 for m in self.call_metrics)
+        total_output = sum(m.output_tokens for m in self.call_metrics)
+        total_reasoning = sum(m.reasoning_tokens for m in self.call_metrics)
+        total_answer = sum(m.answer_tokens for m in self.call_metrics)
         total_cost = sum(m.cost_usd for m in self.call_metrics if m.cost_usd is not None)
         total_duration = sum(m.duration_seconds for m in self.call_metrics)
         continuation_calls = sum(1 for m in self.call_metrics if m.is_continuation)
@@ -283,12 +299,12 @@ class BaseLLMClient(ABC):
 
         return {
             "prompt_tokens": total_prompt,
-            "completion_tokens": total_completion,
-            "total_tokens": total_tokens,
-            "reasoning_tokens": total_reasoning if total_reasoning > 0 else None,
+            "output_tokens": total_output,
+            "reasoning_tokens": total_reasoning,
+            "answer_tokens": total_answer,
             "cost_usd": round(total_cost, 6) if total_cost > 0 else None,
             "duration_seconds": round(total_duration, 2),
-            "throughput_tokens_per_sec": round(total_completion / total_duration if total_duration > 0 else 0, 2),
+            "throughput_tokens_per_sec": round(total_output / total_duration if total_duration > 0 else 0, 2),
             "call_count": len(self.call_metrics),
             "continuation_calls": continuation_calls,
             "calls_requiring_continuation": calls_requiring_continuation,
@@ -303,8 +319,9 @@ class BaseLLMClient(ABC):
                     "model_name": m.model_name,
                     "role": m.role,
                     "prompt_tokens": m.prompt_tokens,
-                    "completion_tokens": m.completion_tokens,
+                    "output_tokens": m.output_tokens,
                     "reasoning_tokens": m.reasoning_tokens,
+                    "answer_tokens": m.answer_tokens,
                     "duration_seconds": round(m.duration_seconds, 3),
                     "finish_reason": m.finish_reason,
                     "is_continuation": m.is_continuation,
@@ -317,8 +334,9 @@ class BaseLLMClient(ABC):
                 {
                     "total_calls": g.total_calls,
                     "continuation_count": g.continuation_count,
-                    "total_tokens": g.total_prompt_tokens + g.total_completion_tokens,
+                    "output_tokens": g.total_output_tokens,
                     "reasoning_tokens": g.total_reasoning_tokens,
+                    "answer_tokens": g.total_answer_tokens,
                     "duration_seconds": round(g.total_duration_seconds, 3),
                 }
                 for g in self.generate_metrics

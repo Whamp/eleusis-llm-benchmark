@@ -145,32 +145,61 @@ class XAIClient(BaseLLMClient):
         is_continuation: bool,
         continuation_depth: int,
     ) -> LLMCallMetrics:
-        """Extract metrics from API response."""
+        """Extract metrics from API response with normalized token fields.
+
+        xAI follows OpenAI pattern - completion_tokens includes reasoning, so:
+        - output_tokens = API completion_tokens
+        - reasoning_tokens = API reasoning_tokens (if available)
+        - answer_tokens = output_tokens - reasoning_tokens
+        """
         duration = end_time - start_time
 
-        prompt_tokens = 0
-        completion_tokens = 0
-        reasoning_tokens = None
+        # --- RAW API VALUES ---
+        api_prompt_tokens = 0
+        api_completion_tokens = 0
+        api_reasoning_tokens = None
 
         if hasattr(completion, "usage") and completion.usage:
             usage = completion.usage
-            prompt_tokens = usage.prompt_tokens or 0
-            completion_tokens = usage.completion_tokens or 0
+            api_prompt_tokens = usage.prompt_tokens or 0
+            api_completion_tokens = usage.completion_tokens or 0
+            logger.debug(f"[xAI] RAW API usage: prompt_tokens={api_prompt_tokens}, completion_tokens={api_completion_tokens}")
 
             # Check for reasoning tokens in usage details
             if hasattr(usage, "completion_tokens_details") and usage.completion_tokens_details:
                 details = usage.completion_tokens_details
+                logger.debug(f"[xAI] completion_tokens_details: {details}")
                 if hasattr(details, "reasoning_tokens"):
-                    reasoning_tokens = details.reasoning_tokens
+                    api_reasoning_tokens = details.reasoning_tokens
+                    logger.debug(f"[xAI] RAW API reasoning_tokens={api_reasoning_tokens}")
+        else:
+            logger.debug("[xAI] No usage data in completion")
 
-        total_tokens = prompt_tokens + completion_tokens
-        has_reasoning = reasoning_tokens is not None and reasoning_tokens > 0
+        # --- REASONING CONTENT ---
+        reasoning_text = choice.message.reasoning
+        reasoning_word_count = len(reasoning_text.split()) if reasoning_text else 0
+        logger.debug(f"[xAI] Reasoning content present: {reasoning_text is not None}, word_count={reasoning_word_count}")
+        if reasoning_text:
+            logger.debug(f"[xAI] Reasoning preview: {reasoning_text[:200]}...")
+
+        # --- COMPUTED VALUES ---
+        prompt_tokens = api_prompt_tokens
+        output_tokens = api_completion_tokens
+        reasoning_tokens = api_reasoning_tokens or 0
+        has_reasoning = reasoning_tokens > 0
 
         # Estimate reasoning tokens from content if not provided but reasoning exists
-        if not has_reasoning and choice.message.reasoning:
+        if not has_reasoning and reasoning_text:
             has_reasoning = True
-            word_count = len(choice.message.reasoning.split())
-            reasoning_tokens = int(word_count * 1.3)
+            reasoning_tokens = int(reasoning_word_count * 1.3)
+            logger.debug(f"[xAI] ESTIMATED reasoning_tokens: {reasoning_word_count} words × 1.3 = {reasoning_tokens}")
+        elif api_reasoning_tokens:
+            logger.debug(f"[xAI] Using NATIVE reasoning_tokens from API: {api_reasoning_tokens}")
+
+        answer_tokens = max(0, output_tokens - reasoning_tokens)
+
+        logger.debug(f"[xAI] FINAL token counts: prompt={prompt_tokens}, "
+                    f"output={output_tokens} (answer={answer_tokens} + reasoning={reasoning_tokens})")
 
         # Map finish reasons
         finish_reason = choice.finish_reason
@@ -181,21 +210,21 @@ class XAIClient(BaseLLMClient):
             model_name=self.model_name,
             role=self.role,
             prompt_tokens=prompt_tokens,
-            completion_tokens=completion_tokens,
-            total_tokens=total_tokens,
+            output_tokens=output_tokens,
+            reasoning_tokens=reasoning_tokens,
+            answer_tokens=answer_tokens,
             duration_seconds=duration,
-            throughput_tokens_per_sec=completion_tokens / duration if duration > 0 else 0,
+            throughput_tokens_per_sec=output_tokens / duration if duration > 0 else 0,
             finish_reason=finish_reason,
             has_reasoning=has_reasoning,
             timestamp=start_time,
-            reasoning_tokens=reasoning_tokens,
             is_continuation=is_continuation,
             continuation_depth=continuation_depth,
             provider=self.provider_name,
         )
 
         logger.debug(
-            f"Metrics: {completion_tokens} tokens in {duration:.2f}s "
+            f"[xAI] Metrics summary: {output_tokens} output tokens in {duration:.2f}s "
             f"({metrics.throughput_tokens_per_sec:.2f} tok/s)"
         )
 
