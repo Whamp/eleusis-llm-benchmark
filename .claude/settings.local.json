@@ -12,7 +12,13 @@
       "Bash(git ls-files:*)",
       "Bash(ps:*)",
       "Bash(sort:*)",
-      "WebFetch(domain:docs.z.ai)"
+      "WebFetch(domain:docs.z.ai)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "WebFetch(domain:docs.x.ai)",
+      "WebFetch(domain:ai.google.dev)",
+      "WebFetch(domain:platform.openai.com)",
+      "WebFetch(domain:cookbook.openai.com)",
+      "WebFetch(domain:wandb.ai)"
     ],
     "deny": [],
     "ask": []

@@ -9,17 +9,15 @@ __all__ = ["model_spec_to_display_name", "ColoredFormatter", "setup_logging"]
 
 
 def model_spec_to_display_name(model_spec: str) -> str:
-    """Convert model spec to readable display name.
+    """Convert model key or model ID to readable display name.
 
     Examples:
-        "openrouter:anthropic/claude-3.5-haiku" -> "Claude 3.5 Haiku"
-        "hf:meta-llama/Llama-3.3-70B" -> "Llama 3.3 70b"
+        "claude-opus" -> "Claude Opus"
+        "deepseek-ai/DeepSeek-R1" -> "Deepseek R1"
     """
-    if ":" in model_spec:
-        _, model_name = model_spec.split(":", 1)
-    else:
-        model_name = model_spec
+    model_name = model_spec
 
+    # Strip provider prefix if present (e.g., from model_id)
     if "/" in model_name:
         model_name = model_name.split("/")[-1]
 

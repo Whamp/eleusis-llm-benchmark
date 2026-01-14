@@ -48,15 +48,13 @@ def play_round(
     player_display_name = model_spec_to_display_name(player_model)
 
     max_tokens = llm_config["max_tokens"]
-    max_continuation = llm_config.get("max_continuation_attempts", 3)
     llm_seed = llm_config.get("seed")
 
     rule_compiler_client = create_client(
-        rule_compiler_cfg["model_name"],
+        rule_compiler_cfg["model"],
         temperature=rule_compiler_cfg["temperature"],
         max_tokens=max_tokens,
         role="rule_compiler",
-        max_continuation_attempts=max_continuation,
         seed=llm_seed,
     )
 
@@ -65,7 +63,6 @@ def play_round(
         temperature=llm_config["temperature"],
         max_tokens=max_tokens,
         role=player_display_name,
-        max_continuation_attempts=max_continuation,
         seed=llm_seed,
     )
 

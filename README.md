@@ -8,8 +8,11 @@ A benchmark for evaluating LLMs on pattern discovery in card games. Models attem
 # Install dependencies
 uv sync
 
-# Set up API keys in .env file
-echo "OPENROUTER_API_KEY=your_key" > .env
+# Set up API keys in .env file (only the ones you need)
+echo "ANTHROPIC_API_KEY=your_key" > .env
+echo "OPENAI_API_KEY=your_key" >> .env
+echo "GOOGLE_API_KEY=your_key" >> .env
+echo "XAI_API_KEY=your_key" >> .env
 echo "HF_TOKEN=your_hf_token" >> .env
 
 # Run solo evaluation (single model)
@@ -29,12 +32,11 @@ A single LLM player attempts to discover a hidden pattern as efficiently as poss
 # Default: uses config.yaml settings
 uv run scripts/evaluate_single.py
 
-# Override player model
-uv run scripts/evaluate_single.py --player "openrouter:anthropic/claude-3.5-haiku"
+# Override player model (using model key from models.yaml)
+uv run scripts/evaluate_single.py --player "claude-opus"
 
 # Custom rounds and tag for identification
-uv run scripts/evaluate_single.py --player "openrouter:google/gemini-2.0-flash-001" \
-    --num-rounds 20 --tag gemini
+uv run scripts/evaluate_single.py --player "gpt-5.2" --num-rounds 20 --tag gpt
 
 # Start from specific rule index
 uv run scripts/evaluate_single.py --rule-index 10
@@ -48,8 +50,7 @@ uv run scripts/evaluate_single.py --resume results/solo_evaluation_20251205_1513
 | Argument | Description |
 |----------|-------------|
 | `--config FILE` | Config file path (default: config.yaml) |
-| `--player MODEL` | Model spec (e.g., `openrouter:anthropic/claude-haiku`) |
-| `--player-name NAME` | Display name (auto-generated if not provided) |
+| `--player MODEL` | Model key from models.yaml (e.g., `claude-opus`, `gpt-5.2`) |
 | `--num-rounds N` | Number of rounds to play |
 | `--rule-index N` | Starting rule index (for sequential selection) |
 | `--max-turns N` | Max turns per round |
@@ -81,9 +82,10 @@ Run multiple models in parallel:
 **Models file format** (see `models.txt.example`):
 ```
 # Comments start with #
-openrouter:anthropic/claude-3.5-haiku
-openrouter:google/gemini-2.0-flash-001
-openrouter:openai/gpt-4o-mini
+# Use model keys from models.yaml
+claude-opus
+gpt-5.2
+deepseek-r1
 ```
 
 ### Game Mechanics
@@ -114,44 +116,71 @@ Requirements:
 
 ## Configuration
 
+### models.yaml
+
+Model configurations with provider-specific settings:
+
+```yaml
+# Closed providers - direct API access
+claude-opus:
+  provider: anthropic
+  model_id: claude-opus-4-5-20251101
+  reasoning_budget: 8192  # Extended thinking budget
+
+gpt-5.2:
+  provider: openai
+  model_id: gpt-5.2
+  reasoning_effort: medium  # none|minimal|low|medium|high|xhigh
+
+gemini-3-pro:
+  provider: google
+  model_id: gemini-3-pro
+  thinking_level: high  # low|high
+
+grok-4:
+  provider: xai
+  model_id: grok-4-fast-reasoning
+
+# Open models - HuggingFace Inference Providers
+deepseek-r1:
+  provider: huggingface
+  model_id: deepseek-ai/DeepSeek-R1
+  hf_provider: together  # or novita, etc.
+  reasoning_format: think_tags  # think_tags or separate_field
+```
+
 ### config.yaml
 
 ```yaml
-providers:
-  openrouter:
-    api_key_env: "OPENROUTER_API_KEY"
-  huggingface:
-    api_key_env: "HF_TOKEN"
-
-rule_compiler:
-  model_name: "hf:openai/gpt-oss-120b"  # Converts natural language rules to code
-
-rule_source:
-  library_path: "rules.json"
-  selection: "sequential"  # or "random"
-  index: 0                 # starting index
-
-solo_game:
+game:
   num_rounds: 50
   max_turns: 40
   hand_size: 12
   wrong_guess_penalty: 2
-  player:
-    name: "openrouter:anthropic/claude-3.5-haiku"
-    temperature: 0.7
+
+rule_compiler:
+  model: gpt-oss-120b  # References key in models.yaml
+
+rules:
+  library_path: "rules.json"
+  selection: "sequential"
+
+llm:
+  max_tokens: 8192
+  temperature: 0.7
+
+model: deepseek-r1  # Model key from models.yaml
 ```
-
-### Model Specification
-
-Models are specified with provider prefix:
-- `openrouter:anthropic/claude-3.5-haiku` - OpenRouter API
-- `hf:meta-llama/Llama-3.3-70B` - HuggingFace Inference Providers
 
 ### Environment Variables
 
-Create a `.env` file:
+Create a `.env` file with the API keys you need:
+
 ```
-OPENROUTER_API_KEY=your_openrouter_key
+ANTHROPIC_API_KEY=your_anthropic_key
+OPENAI_API_KEY=your_openai_key
+GOOGLE_API_KEY=your_google_key
+XAI_API_KEY=your_xai_key
 HF_TOKEN=your_huggingface_token
 ```
 
@@ -216,9 +245,9 @@ Track confidence trajectory and card acceptance rate over turns to understand ho
 | `cards.py` | Card representation (rank 1-13, 4 suits) |
 | `game_state.py` | Game state: mainline, sidelines, hands, deck |
 | `game_engine.py` | Game engine with Rule class |
-| `game_runner_solo.py` | Solo round orchestration |
-| `providers/` | LLM clients (OpenRouter, HuggingFace) |
-| `prompts.py` | Prompt templates |
+| `runner.py` | Solo round orchestration |
+| `llm/` | LLM clients (Anthropic, OpenAI, Google, xAI, HuggingFace) |
+| `prompts/` | Prompt templates |
 
 ### Key Concepts
 

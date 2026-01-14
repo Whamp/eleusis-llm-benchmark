@@ -1,8 +1,8 @@
 """Test provider reasoning format detection.
 
 Usage:
-    uv run scripts/test_provider.py "hf:Qwen/Qwen3-4B-Thinking-2507"
-    uv run scripts/test_provider.py "openrouter:anthropic/claude-3.5-haiku"
+    uv run scripts/test_provider.py "deepseek-r1"
+    uv run scripts/test_provider.py "claude-opus"
     uv run scripts/test_provider.py --all
 """
 
@@ -27,27 +27,23 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Default models to test with --all flag
+# Default models to test with --all flag (keys from models.yaml)
 DEFAULT_MODELS = [
-    # 'hf:Qwen/Qwen3-4B-Thinking-2507',
-    # 'hf:openai/gpt-oss-20b',
-    # 'hf:openai/gpt-oss-120b',
-    'hf:deepseek-ai/DeepSeek-R1',
-    # 'hf:zai-org/GLM-4.7:zai-org',
-    # 'hf:moonshotai/Kimi-K2-Thinking:together',
-    # 'openrouter:openai/gpt-5.2',
-    # 'openrouter:google/gemini-3-flash-preview',
-    # 'openrouter:anthropic/claude-4.5-opus',
-    # 'openrouter:x-ai/grok-4'
+    'deepseek-r1',
+    'gpt-oss-120b',
+    # 'claude-opus',
+    # 'gpt-5.2',
+    # 'gemini-3-pro',
+    # 'grok-4',
 ]
 
 
-def probe_reasoning(model_spec: str) -> dict:
+def probe_reasoning(model_key: str) -> dict:
     """Probe model for reasoning format using generate() with automatic force-answer."""
-    logger.info(f"Probing: {model_spec}")
+    logger.info(f"Probing: {model_key}")
 
     result = {
-        "model": model_spec,
+        "model": model_key,
         "success": False,
         "reasoning_format": None,
         "thinking_tokens": None,
@@ -61,7 +57,7 @@ def probe_reasoning(model_spec: str) -> dict:
 
     try:
         start = time.time()
-        client = create_client(model_spec, max_tokens=2048)
+        client = create_client(model_key, max_tokens=2048)
 
         # Use generate() which handles force-answer automatically
         answer = client.generate(TEST_PROMPT)
@@ -151,7 +147,7 @@ def main():
     parser.add_argument(
         "model",
         nargs="?",
-        help="Model spec (e.g., 'hf:model-name' or 'openrouter:model-name')"
+        help="Model key from models.yaml (e.g., 'claude-opus', 'deepseek-r1')"
     )
     parser.add_argument(
         "--all",
@@ -173,8 +169,8 @@ def main():
         logger.info(f"Testing {len(models)} default models")
 
     results = []
-    for model_spec in models:
-        result = probe_reasoning(model_spec)
+    for model_key in models:
+        result = probe_reasoning(model_key)
         results.append(result)
         print_result(result)
 

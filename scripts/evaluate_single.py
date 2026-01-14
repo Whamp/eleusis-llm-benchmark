@@ -11,7 +11,7 @@ import yaml
 from dotenv import load_dotenv
 
 from eleusis.game import Rule
-from eleusis.llm import ModelCapabilities, create_client, probe_model_capabilities
+from eleusis.llm import create_client
 from eleusis.runner import play_round
 from eleusis.utils import model_spec_to_display_name, setup_logging
 
@@ -35,11 +35,11 @@ Examples:
   # Run with defaults from config.yaml
   python scripts/evaluate_single.py
 
-  # Override player model
-  python scripts/evaluate_single.py --player "openrouter:anthropic/claude-haiku"
+  # Override player model (using model key from models.yaml)
+  python scripts/evaluate_single.py --player "claude-opus"
 
   # Run 20 rounds with a specific model and custom tag
-  python scripts/evaluate_single.py --player "openrouter:google/gemini-flash" --num-rounds 20 --tag gemini
+  python scripts/evaluate_single.py --player "gpt-5.2" --num-rounds 20 --tag gpt
 
   # Start from rule index 10
   python scripts/evaluate_single.py --rule-index 10
@@ -53,7 +53,7 @@ Examples:
     parser.add_argument('--resume', type=str,
                         help='Path to resume folder (e.g., results/solo_evaluation_20251205_151306)')
     parser.add_argument('--player', type=str,
-                        help='Player model spec (e.g., "openrouter:anthropic/claude-haiku")')
+                        help='Player model key from models.yaml (e.g., "claude-opus", "gpt-5.2")')
     parser.add_argument('--num-rounds', type=int,
                         help='Number of rounds to play')
     parser.add_argument('--rule-index', type=int,
@@ -242,35 +242,33 @@ def load_rules_from_library(config: dict) -> list[dict]:
     return rules
 
 
-def preflight_check(model_spec: str) -> ModelCapabilities:
+def preflight_check(model_key: str) -> None:
     """Run pre-flight model check. Fails fast on issues.
 
     Args:
-        model_spec: Model specification (e.g., "hf:model-name" or "openrouter:model-name")
-
-    Returns:
-        ModelCapabilities with detected reasoning format and features
+        model_key: Model key from models.yaml (e.g., "claude-opus", "deepseek-r1")
 
     Raises:
         SystemExit: If pre-flight check fails
     """
+    import time
+
     logger.info("Running pre-flight model check...")
 
     try:
-        client = create_client(model_spec, max_tokens=200)
-        caps = probe_model_capabilities(client)
+        start = time.time()
+        client = create_client(model_key, max_tokens=200)
+        # Simple connectivity test
+        response = client.generate("Say 'hello' and nothing else.")
+        latency = time.time() - start
     except Exception as e:
         logger.error(f"Pre-flight check failed: {e}")
         raise SystemExit(1)
 
-    logger.info(f"  Provider: {caps.provider}")
-    logger.info(f"  Reasoning format: {caps.reasoning_format or 'none'}")
-    logger.info(f"  Supports disable_thinking: {caps.supports_disable_thinking}")
-    logger.info(f"  Latency: {caps.probe_latency_seconds:.2f}s")
-    if caps.thinking_tags_malformed:
-        logger.warning("  Note: Model uses malformed think tags (missing opening tag)")
-
-    return caps
+    logger.info(f"  Provider: {client.provider_name}")
+    logger.info(f"  Model: {client.model_name}")
+    logger.info(f"  Latency: {latency:.2f}s")
+    logger.info(f"  Response: {response[:100]}...")
 
 
 def main():
@@ -331,7 +329,7 @@ def main():
     else:
         player_model = config["model"]
         player_display_name = model_spec_to_display_name(player_model)
-        rule_compiler_display_name = model_spec_to_display_name(config["rule_compiler"]["model_name"])
+        rule_compiler_display_name = model_spec_to_display_name(config["rule_compiler"]["model"])
         rounds_per_rule = rules_cfg.get("rounds_per_rule", 1)
 
     # Generate output tag - from checkpoint folder name when resuming
@@ -455,13 +453,12 @@ def main():
                 'num_rounds': num_rounds,
                 'rounds_per_rule': rounds_per_rule,
                 'rule_compiler': rule_compiler_display_name,
-                'rule_compiler_model': config['rule_compiler']['model_name'],
+                'rule_compiler_model': config['rule_compiler']['model'],
                 'player': player_display_name,
                 'player_model': player_model,
                 'hand_size': game_config.get('hand_size', 12),
                 'max_turns': game_config.get('max_turns', 40),
                 'wrong_guess_penalty': game_config.get('wrong_guess_penalty', 3),
-                'max_continuation_attempts': config['llm'].get('max_continuation_attempts', 3),
             },
             'rounds': [],
             'statistics': {

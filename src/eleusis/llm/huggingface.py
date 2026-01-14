@@ -39,8 +39,18 @@ class HuggingFaceClient(BaseLLMClient):
         role: str = "unknown",
         seed: int | None = None,
         stream: bool = True,
+        hf_provider: str | None = None,
+        reasoning_format: str = "separate_field",
     ) -> None:
-        """Initialize HuggingFace client using Inference Providers."""
+        """Initialize HuggingFace client using Inference Providers.
+
+        Args:
+            hf_provider: Inference provider to use (e.g., "together", "novita").
+                        If None, uses HuggingFace's default routing.
+            reasoning_format: How reasoning is provided by the model:
+                            "think_tags" - reasoning in <think>...</think> tags in content
+                            "separate_field" - reasoning in separate API field
+        """
         super().__init__(
             model_name=model_name,
             api_key=api_key or os.getenv("HF_TOKEN"),
@@ -52,9 +62,17 @@ class HuggingFaceClient(BaseLLMClient):
         )
 
         self.stream = stream
+        self.hf_provider = hf_provider
+        self.reasoning_format = reasoning_format
+
         if self.api_key:
             os.environ["HF_TOKEN"] = self.api_key
-        self.client = InferenceClient(bill_to="huggingface")
+
+        # Initialize client with provider if specified
+        client_kwargs = {"bill_to": "huggingface"}
+        if self.hf_provider:
+            client_kwargs["provider"] = self.hf_provider
+        self.client = InferenceClient(**client_kwargs)
 
     @property
     def provider_name(self) -> str:
@@ -241,15 +259,18 @@ class HuggingFaceClient(BaseLLMClient):
                 reasoning_tokens = usage.reasoning_tokens
 
         has_reasoning = False
-        if hasattr(choice.message, 'reasoning') and choice.message.reasoning:
-            has_reasoning = True
-            if reasoning_tokens is None:
-                reasoning_tokens = estimate_reasoning_tokens(choice.message.reasoning)
-        elif choice.message.content and ("<think>" in choice.message.content or "</think>" in choice.message.content):
-            # Qwen3 Thinking models may only output </think> without opening tag
-            has_reasoning = True
-            if reasoning_tokens is None:
-                reasoning_tokens = estimate_reasoning_tokens(choice.message.content)
+        if self.reasoning_format == "separate_field":
+            # Check for reasoning in separate API field
+            if hasattr(choice.message, 'reasoning') and choice.message.reasoning:
+                has_reasoning = True
+                if reasoning_tokens is None:
+                    reasoning_tokens = estimate_reasoning_tokens(choice.message.reasoning)
+        elif self.reasoning_format == "think_tags":
+            # Check for <think>...</think> tags in content
+            if choice.message.content and ("<think>" in choice.message.content or "</think>" in choice.message.content):
+                has_reasoning = True
+                if reasoning_tokens is None:
+                    reasoning_tokens = estimate_reasoning_tokens(choice.message.content)
 
         metrics = LLMCallMetrics(
             model_name=self.model_name,
@@ -295,15 +316,16 @@ class HuggingFaceClient(BaseLLMClient):
         has_reasoning = False
         reasoning_tokens = None
 
-        # Check for reasoning field first (GPT-OSS, etc.)
-        if choice.message.reasoning:
-            has_reasoning = True
-            reasoning_tokens = estimate_reasoning_tokens(choice.message.reasoning)
-        # Then check for think tags in content (Qwen, DeepSeek)
-        elif content and ("<think>" in content or "</think>" in content):
-            # Qwen3 Thinking models may only output </think> without opening tag
-            has_reasoning = True
-            reasoning_tokens = estimate_reasoning_tokens(content)
+        if self.reasoning_format == "separate_field":
+            # Check for reasoning in separate API field
+            if choice.message.reasoning:
+                has_reasoning = True
+                reasoning_tokens = estimate_reasoning_tokens(choice.message.reasoning)
+        elif self.reasoning_format == "think_tags":
+            # Check for <think>...</think> tags in content
+            if content and ("<think>" in content or "</think>" in content):
+                has_reasoning = True
+                reasoning_tokens = estimate_reasoning_tokens(content)
 
         metrics = LLMCallMetrics(
             model_name=self.model_name,
