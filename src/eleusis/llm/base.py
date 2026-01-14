@@ -42,48 +42,6 @@ class GenerateMetrics:
     success: bool
 
 
-@dataclass
-class ModelCapabilities:
-    """Runtime-detected model capabilities."""
-    # Reasoning format detection
-    has_reasoning: bool = False
-    # Possible values:
-    #   "field:reasoning_content" - GPT-OSS style separate field
-    #   "field:reasoning" - Kimi/Claude style separate field
-    #   "tags:think" - <think>...</think> tags in content (DeepSeek, Qwen)
-    #   "hidden" - reasoning tokens counted but content not exposed (encrypted)
-    #   None - no reasoning detected
-    reasoning_format: str | None = None
-    thinking_tags_malformed: bool = False  # True if model omits opening <think> tag (Qwen behavior)
-
-    # API support
-    supports_disable_thinking: bool = False
-
-    # Metadata from probe
-    probe_latency_seconds: float | None = None
-    probe_response_preview: str | None = None
-
-    # Provider info
-    provider: str = "unknown"
-    model_name: str = ""
-
-
-def detect_reasoning_model_type(model_name: str) -> str | None:
-    """Detect reasoning model type from model name."""
-    model_lower = model_name.lower()
-
-    if "gpt-oss" in model_lower:
-        return "gpt-oss"
-    elif "qwen" in model_lower and "thinking" in model_lower:
-        return "qwen-thinking"
-    elif "deepseek" in model_lower and "r1" in model_lower:
-        return "deepseek-r1"
-    elif "kimi" in model_lower and "thinking" in model_lower:
-        return "qwen-thinking"
-
-    return None
-
-
 def estimate_reasoning_tokens(content: str) -> int | None:
     """Estimate reasoning tokens from <think> blocks or raw reasoning text."""
     if not content:
@@ -107,119 +65,10 @@ def estimate_reasoning_tokens(content: str) -> int | None:
     return int(word_count * 1.3)
 
 
-# Probe prompt designed to elicit reasoning from thinking models
-PROBE_PROMPT = "What is the capital of the state containing Dallas?"
-
-
-def probe_model_capabilities(client: "BaseLLMClient") -> ModelCapabilities:
-    """Make a test call to detect model capabilities.
-
-    Args:
-        client: An LLM client instance to probe
-
-    Returns:
-        ModelCapabilities with detected reasoning format and features
-
-    Raises:
-        Exception: If API call fails (connectivity issues, invalid credentials, etc.)
-    """
-    caps = ModelCapabilities(
-        provider=client.provider_name,
-        model_name=client.model_name,
-    )
-
-    start_time = time.time()
-
-    # Make API call to inspect response structure
-    messages = [{"role": "user", "content": PROBE_PROMPT}]
-    response, metrics = client._call_api(messages)
-
-    caps.probe_latency_seconds = time.time() - start_time
-
-    # Extract message from response
-    message = response.message
-    content = message.content if hasattr(message, 'content') else ""
-    caps.probe_response_preview = content[:200] if content else ""
-
-    # Detect reasoning format from response structure
-    # Priority: explicit fields first, then inline tags
-
-    # Debug: log available fields on message object
-    msg_fields = [attr for attr in dir(message) if not attr.startswith('_')]
-    logger.debug(f"Message object fields: {msg_fields}")
-    if hasattr(message, 'reasoning'):
-        logger.debug(f"reasoning field value: {repr(message.reasoning)[:100]}")
-    if hasattr(message, 'reasoning_content'):
-        logger.debug(f"reasoning_content field value: {repr(message.reasoning_content)[:100]}")
-
-    # Check for reasoning_content field (GPT-OSS style)
-    if hasattr(message, 'reasoning_content') and message.reasoning_content:
-        caps.has_reasoning = True
-        caps.reasoning_format = "field:reasoning_content"
-        # OpenRouter supports disable_thinking for these models
-        caps.supports_disable_thinking = client.provider_name == "openrouter"
-        logger.info("Detected reasoning format: field:reasoning_content")
-
-    # Check for reasoning field (Claude style)
-    elif hasattr(message, 'reasoning') and message.reasoning:
-        caps.has_reasoning = True
-        caps.reasoning_format = "field:reasoning"
-        caps.supports_disable_thinking = client.provider_name == "openrouter"
-        logger.info("Detected reasoning format: field:reasoning")
-
-    # Check for think tags in content (DeepSeek, Qwen, Kimi)
-    elif content:
-        if "<think>" in content and "</think>" in content:
-            caps.has_reasoning = True
-            caps.reasoning_format = "tags:think"
-            caps.supports_disable_thinking = client.provider_name == "openrouter"
-            logger.info("Detected reasoning format: tags:think")
-        elif "</think>" in content and "<think>" not in content:
-            # Qwen malformed tags (missing opening tag)
-            caps.has_reasoning = True
-            caps.reasoning_format = "tags:think"
-            caps.thinking_tags_malformed = True
-            caps.supports_disable_thinking = client.provider_name == "openrouter"
-            logger.info("Detected reasoning format: tags:think (malformed)")
-
-    # Check for reasoning tokens in metrics (hidden/encrypted reasoning)
-    if not caps.has_reasoning and metrics.reasoning_tokens and metrics.reasoning_tokens > 0:
-        caps.has_reasoning = True
-        caps.reasoning_format = "hidden"  # Reasoning exists but content not exposed
-        logger.info(f"Detected reasoning via token count: {metrics.reasoning_tokens} tokens")
-
-    # Log result and compare with string-based detection
-    string_based_type = detect_reasoning_model_type(client.model_name)
-    if caps.has_reasoning:
-        if string_based_type and caps.reasoning_format:
-            logger.debug(f"Probe confirmed reasoning (string hint: {string_based_type})")
-    else:
-        if string_based_type:
-            logger.warning(
-                f"String-based hints '{string_based_type}' but probe found no reasoning. "
-                "May need longer prompt or reasoning not exposed."
-            )
-        else:
-            logger.info("No reasoning format detected (non-reasoning model)")
-
-    return caps
-
-
-def _get_continuation_prompt(xml_tag: str, force_answer: bool = False) -> str:
-    """Get prompt for completing truncated structured response."""
-    if force_answer:
-        return f"""STOP. Output ONLY the final answer now.
-DO NOT think further. DO NOT reason. DO NOT use <think> tags.
-Immediately output the <{xml_tag}> tag with valid JSON inside, then close with </{xml_tag}>.
-Start your response with: <{xml_tag}>"""
-    else:
-        return f"""Please continue and COMPLETE your response now.
-DO NOT REASON ABOUT IT FURTHER, just provide the missing content.
-You MUST start your response immediately with the <{xml_tag}> tag.
-You MUST finish with a properly closed </{xml_tag}> tag containing valid JSON.
-- Include the complete JSON object in the XML tags
-- Ensure all JSON braces and brackets are properly closed
-"""
+# Force-answer prompt for truncated responses
+FORCE_ANSWER_PROMPT = """STOP reasoning. Output your answer NOW.
+You have already done your thinking. Do not think further.
+Immediately output the answer in the requested format."""
 
 
 class BaseLLMClient(ABC):
@@ -233,7 +82,6 @@ class BaseLLMClient(ABC):
         max_retries: int = 3,
         max_tokens: int = 4096,
         role: str = "unknown",
-        max_continuation_attempts: int = 3,
         seed: int | None = None,
     ) -> None:
         self.model_name = model_name
@@ -242,15 +90,9 @@ class BaseLLMClient(ABC):
         self.max_retries = max_retries
         self.max_tokens = max_tokens
         self.role = role
-        self.max_continuation_attempts = max_continuation_attempts
         self.seed = seed
         self.call_metrics: list[LLMCallMetrics] = []
         self.generate_metrics: list[GenerateMetrics] = []
-        self.reasoning_model_type = detect_reasoning_model_type(model_name)
-        self.capabilities: ModelCapabilities | None = None  # Set by probe_model_capabilities()
-
-        if self.reasoning_model_type:
-            logger.info(f"Detected reasoning model type: {self.reasoning_model_type}")
 
     @property
     @abstractmethod
@@ -275,23 +117,23 @@ class BaseLLMClient(ABC):
         xml_tag: str | None = None,
         return_dict: bool = False
     ) -> str | dict:
-        """Generate text or structured response with automatic continuation."""
+        """Generate text or structured response with single force-answer attempt on truncation."""
         start_time = time.time()
         calls_in_generate = []
 
         messages = [{"role": "user", "content": prompt}]
-        response, metrics = self._call_api(messages, is_continuation=False, continuation_depth=0)
+        response, metrics = self._call_api(messages)
         calls_in_generate.append(metrics)
         self.call_metrics.append(metrics)
 
         logger.info(f"Finish reason: {metrics.finish_reason}")
 
         if metrics.finish_reason == "length":
-            logger.warning("Response was truncated, attempting continuation.")
-            content, continuation_metrics = self._continue_response(
-                messages, response.message, xml_tag, return_dict, depth=1
+            logger.warning("Response truncated, attempting force-answer")
+            content, force_metrics = self._force_answer(
+                messages, response.message, metrics, xml_tag, return_dict
             )
-            calls_in_generate.extend(continuation_metrics)
+            calls_in_generate.append(force_metrics)
         else:
             content = response.message.content
 
@@ -316,69 +158,43 @@ class BaseLLMClient(ABC):
 
         return content
 
-    def _continue_response(
+    def _force_answer(
         self,
         messages: list[dict],
         partial_response_message,
+        initial_metrics: LLMCallMetrics,
         xml_tag: str | None,
         return_dict: bool,
-        depth: int = 1,
-    ) -> tuple[str | dict, list[LLMCallMetrics]]:
-        """Continue truncated response with escalating strategies."""
-        continuation_metrics = []
+    ) -> tuple[str | dict, LLMCallMetrics]:
+        """Single force-answer attempt. Raises RuntimeError if still truncated."""
+        # Build assistant message with truncated content
+        assistant_content = partial_response_message.content
 
-        assistant_msg = {
-            "role": "assistant",
-            "content": partial_response_message.content,
-        }
+        # Detect if reasoning is separate (field-based or token-counted)
+        has_separate_reasoning = (
+            (hasattr(partial_response_message, 'reasoning') and partial_response_message.reasoning)
+            or (hasattr(partial_response_message, 'reasoning_content') and partial_response_message.reasoning_content)
+            or (initial_metrics.reasoning_tokens and initial_metrics.reasoning_tokens > 0)
+        )
+
+        # If reasoning is NOT separate → assume inline (Qwen-style), close think block
+        if not has_separate_reasoning and "</think>" not in assistant_content:
+            assistant_content += "</think>"
+
+        assistant_msg = {"role": "assistant", "content": assistant_content}
         if hasattr(partial_response_message, 'reasoning') and partial_response_message.reasoning:
             assistant_msg["reasoning"] = partial_response_message.reasoning
 
         messages.append(assistant_msg)
+        messages.append({"role": "user", "content": FORCE_ANSWER_PROMPT})
 
-        disable_thinking = depth >= 2
-
-        tag_name = xml_tag if xml_tag else "RESPONSE"
-        continuation_prompt = _get_continuation_prompt(tag_name, force_answer=(depth >= 2))
-
-        # Inject </think> tag for models that use think tags, to close any open reasoning block
-        uses_think_tags = (
-            (self.capabilities and self.capabilities.reasoning_format == "tags:think")
-            or self.reasoning_model_type in ("qwen-thinking", "deepseek-r1")  # Fallback if no probe
-        )
-        if depth >= 2 and uses_think_tags:
-            continuation_prompt = f"</think>\n{continuation_prompt}"
-
-        messages.append({"role": "user", "content": continuation_prompt})
-
-        if depth > self.max_continuation_attempts:
-            logger.error(f"Max continuation attempts ({self.max_continuation_attempts}) exceeded")
-            combined_content = partial_response_message.content
-            if xml_tag:
-                combined_content = self._extract_content_from_response(
-                    combined_content, [xml_tag], try_code_blocks=True
-                )
-            if return_dict:
-                return json.loads(combined_content), continuation_metrics
-            return combined_content, continuation_metrics
-
-        response, metrics = self._call_api(
-            messages,
-            is_continuation=True,
-            continuation_depth=depth,
-            disable_thinking=disable_thinking,
-        )
-        continuation_metrics.append(metrics)
+        response, metrics = self._call_api(messages, disable_thinking=True)
         self.call_metrics.append(metrics)
 
         if metrics.finish_reason == "length":
-            logger.warning(f"Continuation {depth} was also truncated, continuing again...")
-            content, more_metrics = self._continue_response(
-                messages, response.message, xml_tag, return_dict, depth=depth + 1
-            )
-            continuation_metrics.extend(more_metrics)
-            return content, continuation_metrics
+            raise RuntimeError("Force-answer attempt still truncated")
 
+        # Combine original + force-answer content, then extract
         combined_content = partial_response_message.content + response.message.content
 
         if xml_tag:
@@ -387,9 +203,9 @@ class BaseLLMClient(ABC):
             )
 
         if return_dict:
-            return json.loads(combined_content), continuation_metrics
+            combined_content = json.loads(combined_content)
 
-        return combined_content, continuation_metrics
+        return combined_content, metrics
 
     def _extract_content_from_response(
         self,

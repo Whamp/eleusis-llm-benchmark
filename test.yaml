@@ -12,8 +12,8 @@ providers:
 
 # Game settings
 game:
-  num_rounds: 1  # Set to 0 to use entire rule library
-  max_turns: 20
+  num_rounds: 0  # Set to 0 to use entire rule library
+  max_turns: 40
   hand_size: 12
   wrong_guess_penalty: 2
 
@@ -30,7 +30,7 @@ rule_compiler:
 
 # Rule source configuration
 rules:
-  library_path: "rules.json"
+  library_path: "test_rules.json"
   selection: "sequential"
   index: 0
   rounds_per_rule: 1
@@ -47,5 +47,5 @@ llm:
 # Model names support provider prefixes:
 #   "hf:model-name" → HuggingFace Inference Providers
 #   "openrouter:model-name" → OpenRouter API
-model: "hf:openai/gpt-oss-20b"
+model: "hf:openai/gpt-oss-120b"
 #model: "openrouter:openai/gpt-5-nano"

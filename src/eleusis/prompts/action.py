@@ -25,8 +25,8 @@ def get_action_prompt(
     # Format play history
     history_str = ""
     if play_history:
-        history_str = "\n\nYOUR PREVIOUS ATTEMPTS:\n"
-        for entry in play_history[-15:]:
+        history_str = "\n\nYOUR LAST 10 ATTEMPTS:\n"
+        for entry in play_history[-10:]:
             card = entry.get("card", "N/A")
             reasoning_summary = entry.get("reasoning_summary", "")
             accepted = entry.get("accepted")

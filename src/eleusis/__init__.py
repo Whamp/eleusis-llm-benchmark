@@ -16,7 +16,8 @@ from eleusis.game import (
     RuleValidator,
     Suit,
 )
-from eleusis.llm import LLMScientist, create_client
+from eleusis.llm import create_client
+from eleusis.player import LLMScientist
 from eleusis.runner import play_round
 
 __all__ = [

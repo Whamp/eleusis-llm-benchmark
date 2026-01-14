@@ -24,7 +24,6 @@ class OpenRouterClient(BaseLLMClient):
         max_retries: int = 3,
         max_tokens: int = 4096,
         role: str = "unknown",
-        max_continuation_attempts: int = 3,
         referer: str = "eleusis-benchmark",
         seed: int | None = None,
     ) -> None:
@@ -36,7 +35,6 @@ class OpenRouterClient(BaseLLMClient):
             max_retries=max_retries,
             max_tokens=max_tokens,
             role=role,
-            max_continuation_attempts=max_continuation_attempts,
             seed=seed,
         )
 
@@ -81,16 +79,9 @@ class OpenRouterClient(BaseLLMClient):
                     "usage": {"include": True},
                 }
 
-                # Use capabilities if probed, else fall back to string-based detection
-                should_disable = False
+                # Pass disable_thinking through - API ignores if model doesn't support it
                 if disable_thinking:
-                    if self.capabilities and self.capabilities.supports_disable_thinking:
-                        should_disable = True
-                    elif self.reasoning_model_type in ("deepseek-r1", "qwen-thinking", "gpt-oss"):
-                        should_disable = True  # Fallback if no probe
-
-                if should_disable:
-                    logger.info("Disabling thinking for continuation")
+                    logger.info("Requesting disable_thinking for force-answer")
                     extra_body["thinking"] = {"type": "disabled"}
 
                 api_kwargs["extra_body"] = extra_body

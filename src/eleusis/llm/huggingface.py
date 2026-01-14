@@ -37,7 +37,6 @@ class HuggingFaceClient(BaseLLMClient):
         max_retries: int = 3,
         max_tokens: int = 4096,
         role: str = "unknown",
-        max_continuation_attempts: int = 3,
         seed: int | None = None,
         stream: bool = True,
     ) -> None:
@@ -49,7 +48,6 @@ class HuggingFaceClient(BaseLLMClient):
             max_retries=max_retries,
             max_tokens=max_tokens,
             role=role,
-            max_continuation_attempts=max_continuation_attempts,
             seed=seed,
         )
 
@@ -105,10 +103,9 @@ class HuggingFaceClient(BaseLLMClient):
                 if self.seed is not None:
                     api_kwargs["seed"] = self.seed
 
-                # HuggingFace Inference API doesn't support disable_thinking.
-                # The continuation prompt's </think> injection handles this instead.
-                if disable_thinking and self.capabilities and self.capabilities.has_reasoning:
-                    logger.debug("disable_thinking not supported by HF; using prompt injection")
+                # HuggingFace Inference API doesn't support disable_thinking
+                if disable_thinking:
+                    logger.debug("disable_thinking not supported by HF API")
 
                 stream = self.client.chat.completions.create(**api_kwargs)
 
@@ -189,10 +186,9 @@ class HuggingFaceClient(BaseLLMClient):
                 if self.seed is not None:
                     api_kwargs["seed"] = self.seed
 
-                # HuggingFace Inference API doesn't support disable_thinking.
-                # The continuation prompt's </think> injection handles this instead.
-                if disable_thinking and self.capabilities and self.capabilities.has_reasoning:
-                    logger.debug("disable_thinking not supported by HF; using prompt injection")
+                # HuggingFace Inference API doesn't support disable_thinking
+                if disable_thinking:
+                    logger.debug("disable_thinking not supported by HF API")
 
                 completion = self.client.chat.completions.create(**api_kwargs)
 

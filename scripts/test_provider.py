@@ -1,19 +1,8 @@
-"""Unified provider test script for HuggingFace and OpenRouter.
-
-Replaces scripts/test_openrouter.py and scripts/check_model_provider.py.
+"""Test provider reasoning format detection.
 
 Usage:
-    # Test specific model (default: full probe)
     uv run scripts/test_provider.py "hf:Qwen/Qwen3-4B-Thinking-2507"
     uv run scripts/test_provider.py "openrouter:anthropic/claude-3.5-haiku"
-
-    # Quick connectivity check only
-    uv run scripts/test_provider.py "hf:model-name" --quick
-
-    # Test disable_thinking support
-    uv run scripts/test_provider.py "openrouter:deepseek/deepseek-r1" --test-disable
-
-    # Test all default models
     uv run scripts/test_provider.py --all
 """
 
@@ -24,130 +13,138 @@ import time
 
 from dotenv import load_dotenv
 
-from eleusis.llm import create_client, probe_model_capabilities
+from eleusis.llm import create_client
+
+# Test prompt to elicit reasoning
+TEST_PROMPT = "What is the derivative of x^2 + 3x + ln(ln(x^2))?"
 
 load_dotenv()
 
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    format='%(asctime)s-%(levelname)s: %(message)s',
+    datefmt='%H:%M:%S'
 )
 logger = logging.getLogger(__name__)
 
 # Default models to test with --all flag
 DEFAULT_MODELS = [
-    'hf:Qwen/Qwen3-4B-Thinking-2507',
-    'hf:openai/gpt-oss-20b',
-    'hf:openai/gpt-oss-120b',
-    'hf:openai/gpt-oss-20b:together',
-    'hf:openai/gpt-oss-120b:together',
-    'hf:deepseek-ai/DeepSeek-R1:together',
-    'hf:zai-org/GLM-4.7:zai-org',
-    'hf:moonshotai/Kimi-K2-Thinking:together',
-    'openrouter:openai/gpt-5.2',
-    'openrouter:google/gemini-3-flash-preview',
-    'openrouter:anthropic/claude-4.5-opus',
-    'openrouter:x-ai/grok-4'
+    # 'hf:Qwen/Qwen3-4B-Thinking-2507',
+    # 'hf:openai/gpt-oss-20b',
+    # 'hf:openai/gpt-oss-120b',
+    'hf:deepseek-ai/DeepSeek-R1',
+    # 'hf:zai-org/GLM-4.7:zai-org',
+    # 'hf:moonshotai/Kimi-K2-Thinking:together',
+    # 'openrouter:openai/gpt-5.2',
+    # 'openrouter:google/gemini-3-flash-preview',
+    # 'openrouter:anthropic/claude-4.5-opus',
+    # 'openrouter:x-ai/grok-4'
 ]
 
 
-def test_connectivity(model_spec: str) -> bool:
-    """Basic connectivity test - verify API responds."""
-    logger.info(f"Testing connectivity: {model_spec}")
+def probe_reasoning(model_spec: str) -> dict:
+    """Probe model for reasoning format using generate() with automatic force-answer."""
+    logger.info(f"Probing: {model_spec}")
+
+    result = {
+        "model": model_spec,
+        "success": False,
+        "reasoning_format": None,
+        "thinking_tokens": None,
+        "answer_preview": None,
+        "reasoning_preview": None,
+        "latency": None,
+        "error": None,
+        "force_answer_used": False,
+        "total_calls": 0,
+    }
 
     try:
         start = time.time()
-        client = create_client(model_spec, max_tokens=50)
-        messages = [{"role": "user", "content": "Say 'OK'"}]
-        response, metrics = client._call_api(messages)
-        duration = time.time() - start
+        client = create_client(model_spec, max_tokens=2048)
 
-        content = response.message.content[:100] if response.message.content else "(empty)"
-        logger.info(f"  Response: {content}")
-        logger.info(f"  Latency: {duration:.2f}s")
-        logger.info(f"  Finish reason: {metrics.finish_reason}")
-        return True
-    except Exception as e:
-        logger.error(f"  Failed: {e}")
-        return False
+        # Use generate() which handles force-answer automatically
+        answer = client.generate(TEST_PROMPT)
+        result["latency"] = time.time() - start
 
+        # Get metrics from the call(s)
+        metrics_list = client.call_metrics
+        result["total_calls"] = len(metrics_list)
+        result["force_answer_used"] = len(metrics_list) > 1
 
-def test_full_probe(model_spec: str) -> bool:
-    """Full capability probe - detect reasoning format and features."""
-    logger.info(f"Running full probe: {model_spec}")
+        # Aggregate reasoning tokens from all calls
+        total_reasoning_tokens = sum(m.reasoning_tokens or 0 for m in metrics_list)
+        if total_reasoning_tokens > 0:
+            result["thinking_tokens"] = total_reasoning_tokens
 
-    try:
-        client = create_client(model_spec, max_tokens=500)
-        caps = probe_model_capabilities(client)
+        # Check first call's metrics for reasoning format detection
+        first_metrics = metrics_list[0] if metrics_list else None
 
-        logger.info(f"  Provider: {caps.provider}")
-        logger.info(f"  Has reasoning: {caps.has_reasoning}")
-        logger.info(f"  Reasoning format: {caps.reasoning_format or 'none'}")
-        logger.info(f"  Malformed tags: {caps.thinking_tags_malformed}")
-        logger.info(f"  Supports disable_thinking: {caps.supports_disable_thinking}")
-        logger.info(f"  Probe latency: {caps.probe_latency_seconds:.2f}s")
+        # Detect reasoning format from first call's has_reasoning flag and token count
+        if first_metrics:
+            if first_metrics.has_reasoning:
+                # Check if reasoning tokens came from API (field-based or hidden)
+                if first_metrics.reasoning_tokens and first_metrics.reasoning_tokens > 0:
+                    # Could be field-based or hidden - check if answer has think tags
+                    if "</think>" in answer or "<think>" in answer:
+                        result["reasoning_format"] = "tags:think (inline)"
+                    else:
+                        result["reasoning_format"] = "field-based or hidden"
+                else:
+                    # Reasoning detected via content inspection (think tags)
+                    result["reasoning_format"] = "tags:think (inline)"
+            elif total_reasoning_tokens > 0:
+                result["reasoning_format"] = "field-based or hidden"
 
-        if caps.probe_response_preview:
-            preview = caps.probe_response_preview.replace('\n', ' ')[:100]
-            logger.info(f"  Response preview: {preview}...")
-
-        return True
-    except Exception as e:
-        logger.error(f"  Probe failed: {e}")
-        return False
-
-
-def test_disable_thinking(model_spec: str) -> bool:
-    """Test if disable_thinking API parameter works."""
-    logger.info(f"Testing disable_thinking: {model_spec}")
-
-    try:
-        # First, probe to get capabilities
-        client = create_client(model_spec, max_tokens=500, run_probe=True)
-
-        if not client.capabilities:
-            logger.warning("  No capabilities detected, skipping")
-            return True
-
-        if not client.capabilities.has_reasoning:
-            logger.info("  Skipping: model doesn't use reasoning")
-            return True
-
-        if not client.capabilities.supports_disable_thinking:
-            logger.info("  Skipping: model doesn't support disable_thinking API")
-            return True
-
-        # Make a call with disable_thinking=True
-        logger.info("  Making call with disable_thinking=True...")
-        messages = [{"role": "user", "content": "What is 2+2? Think step by step."}]
-        response, metrics = client._call_api(messages, disable_thinking=True)
-
-        content = response.message.content or ""
-
-        # Check if thinking was suppressed
-        has_thinking = "<think>" in content or "</think>" in content
-        has_reasoning_field = (
-            (hasattr(response.message, 'reasoning_content') and response.message.reasoning_content) or
-            (hasattr(response.message, 'reasoning') and response.message.reasoning)
-        )
-
-        if has_thinking or has_reasoning_field:
-            logger.warning("  disable_thinking did NOT suppress reasoning")
-            logger.warning(f"    has_think_tags: {has_thinking}")
-            logger.warning(f"    has_reasoning_field: {has_reasoning_field}")
-            return False
+        # Set answer preview (generate() strips think tags automatically)
+        if answer:
+            result["answer_preview"] = answer[:300].replace('\n', ' ')
         else:
-            logger.info("  disable_thinking worked (no reasoning in response)")
-            return True
+            result["answer_preview"] = "(empty response)"
 
+        result["success"] = True
+
+    except RuntimeError as e:
+        if "truncated" in str(e).lower():
+            result["error"] = f"Force-answer failed: {e}"
+        else:
+            result["error"] = str(e)
+        logger.error(f"  Failed: {e}")
     except Exception as e:
-        logger.error(f"  Test failed: {e}")
-        return False
+        result["error"] = str(e)
+        logger.error(f"  Failed: {e}")
+
+    return result
+
+
+def print_result(result: dict) -> None:
+    """Print probe result."""
+    print(f"\n{'='*70}")
+    print(f"MODEL: {result['model']}")
+    print(f"{'='*70}")
+
+    if not result["success"]:
+        print(f"  ERROR: {result['error']}")
+        return
+
+    print(f"  Reasoning format: {result['reasoning_format'] or 'none'}")
+    print(f"  Thinking tokens: {result['thinking_tokens'] or 'n/a'}")
+    print(f"  Latency: {result['latency']:.2f}s")
+    print(f"  Total calls: {result['total_calls']}")
+    if result['force_answer_used']:
+        print(f"  Force-answer: YES (response was truncated)")
+
+    print(f"\n  Answer preview:")
+    print(f"    {result['answer_preview']}")
+
+    if result["reasoning_preview"]:
+        print(f"\n  Reasoning preview:")
+        print(f"    {result['reasoning_preview']}")
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Test LLM provider connectivity and capabilities",
+        description="Test LLM provider reasoning format",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__
     )
@@ -157,16 +154,6 @@ def main():
         help="Model spec (e.g., 'hf:model-name' or 'openrouter:model-name')"
     )
     parser.add_argument(
-        "--quick",
-        action="store_true",
-        help="Quick connectivity test only"
-    )
-    parser.add_argument(
-        "--test-disable",
-        action="store_true",
-        help="Test disable_thinking API support"
-    )
-    parser.add_argument(
         "--all",
         action="store_true",
         help="Test all default models"
@@ -174,67 +161,34 @@ def main():
 
     args = parser.parse_args()
 
-    # Validate args
     if not args.model and not args.all:
         parser.error("Must specify a model or use --all")
 
     if args.model and args.all:
         parser.error("Cannot specify both a model and --all")
 
-    # Determine models to test
+    models = DEFAULT_MODELS if args.all else [args.model]
+
     if args.all:
-        models = DEFAULT_MODELS
         logger.info(f"Testing {len(models)} default models")
-    else:
-        models = [args.model]
 
-    # Run tests
-    all_results = {}
-
+    results = []
     for model_spec in models:
-        logger.info("")
-        logger.info("=" * 70)
-        logger.info(f"MODEL: {model_spec}")
-        logger.info("=" * 70)
-
-        results = {}
-
-        # Always run connectivity test
-        results["connectivity"] = test_connectivity(model_spec)
-
-        # Run full probe unless --quick
-        if not args.quick:
-            results["probe"] = test_full_probe(model_spec)
-
-        # Run disable_thinking test if requested
-        if args.test_disable:
-            results["disable_thinking"] = test_disable_thinking(model_spec)
-
-        all_results[model_spec] = results
+        result = probe_reasoning(model_spec)
+        results.append(result)
+        print_result(result)
 
     # Summary
-    logger.info("")
-    logger.info("=" * 70)
-    logger.info("SUMMARY")
-    logger.info("=" * 70)
+    print(f"\n{'='*70}")
+    print("SUMMARY")
+    print(f"{'='*70}")
 
-    total_passed = 0
-    total_failed = 0
+    success_count = sum(1 for r in results if r["success"])
+    reasoning_count = sum(1 for r in results if r["success"] and r["reasoning_format"])
 
-    for model_spec, results in all_results.items():
-        logger.info(f"\n{model_spec}:")
-        for test_name, passed in results.items():
-            status = "PASS" if passed else "FAIL"
-            logger.info(f"  {test_name}: {status}")
-            if passed:
-                total_passed += 1
-            else:
-                total_failed += 1
+    print(f"Total: {len(results)} models, {success_count} succeeded, {reasoning_count} with reasoning")
 
-    logger.info("")
-    logger.info(f"Total: {total_passed + total_failed} tests, {total_passed} passed, {total_failed} failed")
-
-    sys.exit(0 if total_failed == 0 else 1)
+    sys.exit(0 if success_count == len(results) else 1)
 
 
 if __name__ == "__main__":
