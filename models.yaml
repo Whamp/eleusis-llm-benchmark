@@ -5,10 +5,10 @@
 # Closed Providers - Direct API Access
 # ============================================================================
 
-claude-opus:
+claude-opus-4.5:
   provider: anthropic
   model_id: claude-opus-4-5-20251101
-  reasoning_budget: 8192  # budget_tokens for extended thinking
+  reasoning_budget: 8000  # budget_tokens for extended thinking
   # For force-answer: thinking={"type": "disabled"}
 
 gpt-5.2:
@@ -16,10 +16,15 @@ gpt-5.2:
   model_id: gpt-5.2
   reasoning_effort: medium  # none|minimal|low|medium|high|xhigh
 
-gemini-3-pro:
+gemini-3-pro-preview:
   provider: google
-  model_id: gemini-3-pro
+  model_id: gemini-3-pro-preview
   thinking_level: high  # low|high (cannot disable on Pro)
+
+gemini-3-flash-preview:
+  provider: google
+  model_id: gemini-3-flash-preview
+  thinking_level: low  # minimal|low|high
 
 grok-4:
   provider: xai
@@ -40,18 +45,24 @@ deepseek-r1:
 
 kimi-k2:
   provider: huggingface
-  model_id: moonshotai/Kimi-K2-Instruct
-  hf_provider: novita
+  model_id: moonshotai/Kimi-K2-Thinking
+  hf_provider: together
   reasoning_format: separate_field
 
 glm-4.7:
   provider: huggingface
-  model_id: THUDM/GLM-4.7-0414-Thinking
-  hf_provider: novita
+  model_id: zai-org/GLM-4.7
+  hf_provider: zai-org
   reasoning_format: separate_field
 
 gpt-oss-120b:
   provider: huggingface
   model_id: openai/gpt-oss-120b
+  hf_provider: together
+  reasoning_format: separate_field
+
+gpt-oss-20b:
+  provider: huggingface
+  model_id: openai/gpt-oss-20b
   hf_provider: together
   reasoning_format: separate_field

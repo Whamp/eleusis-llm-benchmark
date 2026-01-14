@@ -1,5 +1,3 @@
-Only cards with an even rank (2,4,6,8,10,12) may be played.
-Card rank must have opposite odd/even parity to the previous card's rank.
-Only cards of the suit spades may be played.
+Only cards with an even rank (2,4,6,8,10,12)
+Only cards of the suit spades
 The card must be of a different suit than but same color as the card just before it. Any card may start the line.
-If the previous card was red, rank must increase; if black, rank must decrease. Ace may follow King and vice versa.

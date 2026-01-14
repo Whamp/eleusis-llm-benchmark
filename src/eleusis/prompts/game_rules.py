@@ -24,50 +24,31 @@ def get_game_rules() -> str:
     max_turns = game_config.get('max_turns', 40)
 
     return f"""
-    
-## RULES OF THE PATTERN DISCOVERY CARD GAME
-
+## RULES OF THE GAME
 ### Overview
+This is a single-player game. 
+A hidden rule created by the game master determines which cards are accepted or rejected. 
+Your goal is to play cards and discover the rule as efficiently as possible.
 
-This is a single-player pattern discovery card game. A hidden rule determines which cards
-are accepted or rejected. Your goal is to discover the rule as efficiently as possible.
-
-### Components
-
-- **Cards:** 2 standard 52-card decks shuffled together (104 cards total)
-    - Ranks: Ace = 1 (low), 2–10, Jack = 11, Queen = 12, King = 13
-    - Suits: Hearts ♥️ (red), Diamonds ♦️ (red), Clubs ♣️ (black), Spades ♠️ (black)
-
-### Layout
+Uses 2 standard 52-card decks shuffled together (104 cards total):
+- Ranks: Ace = 1 (low), 2–10, Jack = 11, Queen = 12, King = 13
+- Suits: Hearts ♥️ (red), Diamonds ♦️ (red), Clubs ♣️ (black), Spades ♠️ (black)
 
 The playing area consists of:
-
 - **Mainline:** A horizontal row of accepted cards, ordered left-to-right by time of acceptance
 - **Sidelines:** Vertical columns beneath mainline cards. When a card is rejected, it is
   placed in a column below the mainline card it was played after
-
-The entire layout (mainline and all sidelines) is visible at all times.
-
 
 ### Setup
 
 #### Secret Rule
 
-A deterministic rule decides whether a newly played card is **accepted** or **rejected**. 
-You do not know the rule at the start of the game.
-
-**The rule:**
-- Depends only on information visible in the mainline: the candidate card and/or any
-  previously accepted mainline cards (their suits, colors, ranks, parity, positions, etc.)
-- For the first card played, evaluates based solely on that card's properties (since
-  no mainline exists yet)
-- Gives a unique, unambiguous answer (accepted/rejected) for every possible card in every
-  possible mainline state
-
-**The rule does NOT:**
-- Reference sideline cards (rejected cards)
-- Depend on hidden information (cards in the deck, cards in your hand)
-- Include randomness or subjective judgment
+A deterministic secret rule is chosen by the game master. 
+The rule decides whether a newly played card is **accepted** or **rejected**. 
+The rule is simple enough to be described in a single sentence.
+The rule depends only on information visible in the mainline: the candidate card and/or any previously accepted mainline cards and their properties (their suits, colors, ranks, parity, positions, etc.)
+The rule gives a unique, unambiguous answer (accepted/rejected) for every possible card in every possible mainline state
+The rule is deterministic, objective, does not reference sideline rejected cards or hidden information (cards in the deck, cards in your hand)
 
 Examples of rules:
 - "The card must be a different color than the last mainline card." (Alternating red/black)
@@ -79,11 +60,9 @@ Examples of rules:
 
 #### Initial Deal
 
-You start with **{hand_size} cards** in your hand. This hand size remains constant throughout
-the game - you always draw 1 card after playing.
+You start with **{hand_size} cards** in your hand. This hand size remains constant throughout the game - you always draw 1 card after playing.
 
 A starter card that satisfies the rule is placed on the mainline to begin the game.
-
 
 ### Turn Structure
 
@@ -91,13 +70,13 @@ On each turn, you must:
 1. **Play a card** from your hand
 2. Receive feedback (accepted or rejected)
 3. **Draw 1 card** from the deck (maintaining constant hand size)
-4. Optionally **guess the rule** (see below)
+4. Optionally **try to guess the rule** to end the round (see below)
 
 #### Playing a Card
 
 1. Select one card from your hand to play
 2. Place it to the right of the current last mainline card
-3. Receive the judgment:
+3. Receive the judgment from the game master: **accepted** or **rejected**, based on the secret rule.
 
    **If Accepted:**
     - The card remains in place as the new last mainline card
@@ -111,40 +90,25 @@ Your hand size stays constant at {hand_size} cards (unless the deck runs out).
 
 ### Guessing the Rule
 
-When playing a card, you may attempt to state the rule.
+When playing a card, you may attempt to state the rule you believe governs acceptance/rejection.
 
-The referee judges whether your stated rule is **equivalent** to the secret rule. Two
-rules are equivalent if and only if they produce identical accepted/rejected judgments
-for every possible (card, mainline-state) pair.
-
-Note: The wording does not need to match exactly. Only logical equivalence matters.
+The game master judges whether your stated rule is **equivalent** to the secret rule. The wording does not need to match exactly. 
+Only logical equivalence matters.
 
 - **Correct guess:** The game ends immediately - you win!
 - **Incorrect guess:** The guess is recorded as wrong. A **penalty of {wrong_guess_penalty} points**
   is deducted from your final score. Play continues.
 
 
-### End of Game
+### End Game & Scoring
 
 The game ends when:
 1. You **correctly guess the rule**, or
 2. You reach the **maximum of {max_turns} turns** without guessing correctly
 
+Your score is calculated as follows: Score = {max_turns} - turn_number - ({wrong_guess_penalty} × number_of_failed_guesses)
 
-### Scoring
-
-Your score is calculated as follows:
-
-    Score = {max_turns} - turn_number - ({wrong_guess_penalty} × number_of_failed_guesses)
-
-Score can be negative.
-In particular if you didn't guess correctly by turn {max_turns}, you get - ({wrong_guess_penalty} × number_of_failed_guesses)
-
-**Higher scores are better.**
-The goal is to discover the rule quickly with few failed guesses.
+Score can be negative. **Higher scores are better**, so the goal is to discover the rule quickly with few failed guesses.
 
 ---
-
-This concludes the rules of the pattern discovery card game.
-
 """

@@ -100,20 +100,18 @@ class OpenAIClient(BaseLLMClient):
 
                 end_time = time.time()
 
-                # Extract content from response
-                text_content = ""
+                # Extract content from response using output_text helper
+                text_content = getattr(response, "output_text", "") or ""
+
+                # Try to extract reasoning from output items if available
                 reasoning_content = ""
-                for item in response.output:
-                    if hasattr(item, "content"):
-                        for content_block in item.content:
-                            if hasattr(content_block, "text"):
-                                text_content += content_block.text
-                    # Check for reasoning in the item
-                    if hasattr(item, "type") and item.type == "reasoning":
-                        if hasattr(item, "summary"):
-                            for summary_block in item.summary:
-                                if hasattr(summary_block, "text"):
-                                    reasoning_content += summary_block.text
+                if response.output:
+                    for item in response.output:
+                        if hasattr(item, "type") and item.type == "reasoning":
+                            if hasattr(item, "summary") and item.summary:
+                                for summary_block in item.summary:
+                                    if hasattr(summary_block, "text"):
+                                        reasoning_content += summary_block.text
 
                 # Determine finish reason
                 finish_reason = "stop"
@@ -121,6 +119,8 @@ class OpenAIClient(BaseLLMClient):
                     if hasattr(response, "incomplete_details"):
                         if response.incomplete_details.reason == "max_output_tokens":
                             finish_reason = "length"
+
+                logger.debug(f"Response output_text: {text_content[:200]}...")
 
                 choice = OpenAIChoice(
                     message=OpenAIMessage(

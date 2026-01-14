@@ -38,7 +38,7 @@ class AnthropicClient(BaseLLMClient):
         max_tokens: int = 4096,
         role: str = "unknown",
         seed: int | None = None,
-        reasoning_budget: int = 8192,
+        reasoning_budget: int = 2048,
     ) -> None:
         """Initialize Anthropic client."""
         super().__init__(

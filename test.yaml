@@ -1,19 +1,10 @@
 # Eleusis LLM Benchmark - Solo Mode Configuration
 # Single-player pattern discovery mode
 
-# Provider configuration
-providers:
-  huggingface:
-    api_key_env: "HF_TOKEN"
-  openrouter:
-    api_key_env: "OPENROUTER_API_KEY"
-    referer: "eleusis-benchmark"
-
-
 # Game settings
 game:
   num_rounds: 0  # Set to 0 to use entire rule library
-  max_turns: 40
+  max_turns: 20
   hand_size: 12
   wrong_guess_penalty: 2
 
@@ -24,7 +15,7 @@ seed: 42
 
 # Rule compiler model configuration (converts natural language rules to code)
 rule_compiler:
-  model_name: "hf:openai/gpt-oss-120b"
+  model: gpt-oss-120b  # References key in models.yaml
   temperature: 0.8
 
 
@@ -40,12 +31,10 @@ rules:
 llm:
   max_tokens: 8192
   max_llm_retries: 3
-  max_continuation_attempts: 3
   temperature: 0.7
   seed: 42  # Seed for LLM generation (not guaranteed deterministic, but helps reproducibility)
 
-# Model names support provider prefixes:
-#   "hf:model-name" → HuggingFace Inference Providers
-#   "openrouter:model-name" → OpenRouter API
-model: "hf:openai/gpt-oss-120b"
-#model: "openrouter:openai/gpt-5-nano"
+# Model key from models.yaml
+# Available: claude-opus, gpt-5.2, gemini-3-pro-preview, grok-4
+#            deepseek-r1, kimi-k2, glm-4.7, gpt-oss-120b, gpt-oss-20b
+model: kimi-k2

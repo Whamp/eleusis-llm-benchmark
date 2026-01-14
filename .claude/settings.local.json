@@ -18,7 +18,9 @@
       "WebFetch(domain:ai.google.dev)",
       "WebFetch(domain:platform.openai.com)",
       "WebFetch(domain:cookbook.openai.com)",
-      "WebFetch(domain:wandb.ai)"
+      "WebFetch(domain:wandb.ai)",
+      "Bash(done)",
+      "Bash([ -n \"$HF_TOKEN\" ])"
     ],
     "deny": [],
     "ask": []

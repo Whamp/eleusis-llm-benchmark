@@ -257,7 +257,7 @@ def preflight_check(model_key: str) -> None:
 
     try:
         start = time.time()
-        client = create_client(model_key, max_tokens=200)
+        client = create_client(model_key, max_tokens = 8192)
         # Simple connectivity test
         response = client.generate("Say 'hello' and nothing else.")
         latency = time.time() - start
