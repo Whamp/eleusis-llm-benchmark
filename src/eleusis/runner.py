@@ -1,5 +1,6 @@
 """Game runner for pattern discovery mode."""
 
+import hashlib
 import logging
 import time
 
@@ -135,9 +136,10 @@ def play_round(
     )
 
     # Compute round seed from rule code for reproducibility
+    # Use hashlib instead of hash() because Python's hash() is randomized per process
     base_seed = config.get("seed")
     if base_seed is not None:
-        rule_hash = hash(rule.get_code()) & 0xFFFFFFFF
+        rule_hash = int(hashlib.md5(rule.get_code().encode()).hexdigest(), 16) & 0xFFFFFFFF
         round_seed = (base_seed + rule_hash) & 0xFFFFFFFF
         logger.info(f"Using round seed: {round_seed} (base_seed={base_seed}, rule_hash={rule_hash})")
     else:
