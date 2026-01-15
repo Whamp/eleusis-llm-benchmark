@@ -4,7 +4,7 @@
       "name": "even_ranks_only",
       "description": "Only cards with an even rank (2,4,6,8,10,12)",
       "code": "return card.rank % 2 == 0",
-      "avg_acceptance_rate": 0.466,
+      "avg_acceptance_rate": 0.506,
       "node_count": 12,
       "cyclomatic_complexity": 1
     },
@@ -12,23 +12,63 @@
       "name": "spades_only",
       "description": "Only cards of the suit spades",
       "code": "return card.suit.suit_name == \"spades\"",
-      "avg_acceptance_rate": 0.248,
+      "avg_acceptance_rate": 0.264,
       "node_count": 11,
       "cyclomatic_complexity": 1
     },
     {
       "name": "different_suit_same_color",
       "description": "The card must be of a different suit than but same color as the card just before it. Any card may start the line.",
-      "code": "if not mainline:\n    return True\nprev = mainline[-1]\nreturn card.color == prev.color and card.suit.suit_name != prev.suit.suit_name",
+      "code": "if not mainline:\n    return True\nprev = mainline[-1]\nreturn card.suit.suit_name != prev.suit.suit_name and card.color == prev.color",
       "avg_acceptance_rate": 0.27,
       "node_count": 45,
       "cyclomatic_complexity": 3
+    },
+    {
+      "name": "only_face_cards",
+      "description": "Only face cards (11,12,13).",
+      "code": "return card.rank >= 11",
+      "avg_acceptance_rate": 0.196,
+      "node_count": 9,
+      "cyclomatic_complexity": 1
+    },
+    {
+      "name": "alternating_face_number",
+      "description": "Alternate face and number cards. Any card may start the line.",
+      "code": "if not mainline:\n    return True\nprev = mainline[-1]\nprev_is_face = prev.rank >= 11\ncurr_is_face = card.rank >= 11\nreturn prev_is_face != curr_is_face",
+      "avg_acceptance_rate": 0.378,
+      "node_count": 45,
+      "cyclomatic_complexity": 2
+    },
+    {
+      "name": "max_two_consecutive_same_color",
+      "description": "No more than two consecutive cards may be the same color. Any card may start the line.",
+      "code": "if not mainline:\n    return True\nif len(mainline) >= 2 and mainline[-1].color == mainline[-2].color and mainline[-1].color == card.color:\n    return False\nreturn True",
+      "avg_acceptance_rate": 0.754,
+      "node_count": 58,
+      "cyclomatic_complexity": 5
+    },
+    {
+      "name": "face_red_number_black",
+      "description": "Face cards must be red; number cards (1-10) must be black.",
+      "code": "if card.rank >= 11:\n    return card.color == \"red\"\nelse:\n    return card.color == \"black\"",
+      "avg_acceptance_rate": 0.502,
+      "node_count": 25,
+      "cyclomatic_complexity": 2
+    },
+    {
+      "name": "cyclic_suit_order",
+      "description": "Suits must repeat in the order hearts \u2192 spades \u2192 clubs \u2192 diamonds \u2192 hearts \u2026",
+      "code": "if not mainline:\n    return True\norder = [\"hearts\", \"spades\", \"clubs\", \"diamonds\"]\nprev = mainline[-1].suit.suit_name\nexpected = order[(order.index(prev) + 1) % 4]\nreturn card.suit.suit_name == expected",
+      "avg_acceptance_rate": 0.286,
+      "node_count": 62,
+      "cyclomatic_complexity": 2
     }
   ],
   "metadata": {
-    "generated_at": "2026-01-14T09:07:21.300632",
-    "total_compiled": 3,
-    "valid_count": 3,
+    "generated_at": "2026-01-15T10:37:46.165105",
+    "total_compiled": 8,
+    "valid_count": 8,
     "invalid_count": 0
   },
   "evaluation_params": {

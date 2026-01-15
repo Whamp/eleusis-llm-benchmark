@@ -138,7 +138,7 @@ class BaseLLMClient(ABC):
         logger.info(f"Finish reason: {metrics.finish_reason}")
 
         if metrics.finish_reason == "length":
-            logger.warning("Response truncated, attempting force-answer")
+            logger.warning(f"{self.model_name} Response truncated, attempting force-answer")
             content, force_metrics = self._force_answer(
                 messages, response.message, metrics, xml_tag, return_dict
             )

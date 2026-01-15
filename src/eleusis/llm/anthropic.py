@@ -127,7 +127,7 @@ class AnthropicClient(BaseLLMClient):
                 return choice, metrics
 
             except anthropic.APIError as e:
-                logger.warning(f"Attempt {attempt + 1}/{self.max_retries} failed: {e}")
+                logger.warning(f"{self.model_name} Attempt {attempt + 1}/{self.max_retries} failed: {e}")
                 if attempt < self.max_retries - 1:
                     time.sleep(2**attempt)
                 else:

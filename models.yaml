@@ -11,20 +11,30 @@ claude-opus-4.5:
   reasoning_budget: 8000  # budget_tokens for extended thinking
   # For force-answer: thinking={"type": "disabled"}
 
-gpt-5.2:
+gpt-5.2-medium:
   provider: openai
   model_id: gpt-5.2
   reasoning_effort: medium  # none|minimal|low|medium|high|xhigh
+
+gpt-5.2-high:
+  provider: openai
+  model_id: gpt-5.2
+  reasoning_effort: high  # none|minimal|low|medium|high|xhigh
 
 gemini-3-pro-preview-low:
   provider: google
   model_id: gemini-3-pro-preview
   thinking_level: low
 
-gemini-3-flash-preview:
+gemini-3-flash-preview-low:
   provider: google
   model_id: gemini-3-flash-preview
   thinking_level: low
+
+gemini-3-flash-preview-high:
+  provider: google
+  model_id: gemini-3-flash-preview
+  thinking_level: high
 
 grok-4:
   provider: xai
