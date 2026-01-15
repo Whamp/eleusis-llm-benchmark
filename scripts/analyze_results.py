@@ -1,8 +1,10 @@
 """Analyze evaluation results across multiple LLM runs."""
 
 import argparse
+import io
 import json
 import logging
+from datetime import datetime
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -12,10 +14,27 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
 
-def load_results(results_dir: Path) -> list[dict]:
-    """Load all results.json files from results directory."""
+class TeeWriter:
+    """Write to both a file and stdout."""
+
+    def __init__(self, file_path: Path):
+        self.file = open(file_path, "w")
+        self.buffer = io.StringIO()
+
+    def write(self, text: str):
+        self.file.write(text)
+        self.buffer.write(text)
+        print(text, end="")
+
+    def close(self):
+        self.file.close()
+
+
+def load_results(results_dir: Path) -> tuple[list[dict], list[str]]:
+    """Load all results.json files from results directory. Returns (results, folder_names)."""
     results = []
-    for folder in results_dir.iterdir():
+    folder_names = []
+    for folder in sorted(results_dir.iterdir()):
         if folder.is_dir() and folder.name.startswith("solo_evaluation_"):
             results_file = folder / "results.json"
             if results_file.exists():
@@ -23,16 +42,23 @@ def load_results(results_dir: Path) -> list[dict]:
                     data = json.load(f)
                     data["_folder"] = folder.name
                     results.append(data)
+                    folder_names.append(folder.name)
                     logger.info(f"Loaded: {folder.name}")
-    return results
+    return results, folder_names
 
 
-def load_rules_library(rules_path: Path) -> dict[str, dict]:
-    """Load rules.json and index by description for lookup."""
-    with open(rules_path) as f:
-        data = json.load(f)
-    # Index by description for easy lookup
-    return {r["description"]: r for r in data["rules"]}
+def build_rules_lookup(results: list[dict]) -> dict[str, dict]:
+    """Build rules lookup from embedded rules_library in results files."""
+    rules_lookup = {}
+    for result in results:
+        # rules_library is nested inside checkpoint
+        checkpoint = result.get("checkpoint", {})
+        rules_lib = checkpoint.get("rules_library", [])
+        for rule in rules_lib:
+            desc = rule.get("description")
+            if desc and desc not in rules_lookup:
+                rules_lookup[desc] = rule
+    return rules_lookup
 
 
 def build_rounds_dataframe(results: list[dict], rules_lib: dict) -> pd.DataFrame:
@@ -115,11 +141,11 @@ def analyze_basic_metrics(df_rounds: pd.DataFrame) -> pd.DataFrame:
         total_output_tokens=("output_tokens", "sum"),
         total_reasoning_tokens=("reasoning_tokens", "sum"),
         total_answer_tokens=("answer_tokens", "sum"),
-        total_score=("score", "sum"),
+        total_turns=("turn_count", "sum"),
     ).reset_index()
 
-    # Token efficiency: score per 1K output tokens
-    metrics["token_efficiency"] = (metrics["total_score"] / metrics["total_output_tokens"]) * 1000
+    # Output tokens per turn
+    metrics["output_tokens_per_turn"] = metrics["total_output_tokens"] / metrics["total_turns"]
 
     # Reasoning ratio: what fraction of output is reasoning
     metrics["reasoning_ratio"] = metrics["total_reasoning_tokens"] / metrics["total_output_tokens"]
@@ -138,7 +164,7 @@ def analyze_basic_metrics(df_rounds: pd.DataFrame) -> pd.DataFrame:
 
 def plot_basic_metrics(metrics: pd.DataFrame, output_dir: Path):
     """Generate bar charts for basic metrics."""
-    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+    fig, axes = plt.subplots(2, 3, figsize=(15, 10))
 
     # Success rate
     ax = axes[0, 0]
@@ -155,6 +181,14 @@ def plot_basic_metrics(metrics: pd.DataFrame, output_dir: Path):
     ax.set_xlabel("Average Score")
     ax.set_title("Average Score by Model")
 
+    # Average failed guesses
+    ax = axes[0, 2]
+    ax.barh(metrics["model"], metrics["avg_failed_guesses"])
+    ax.set_xlabel("Average Failed Guesses")
+    ax.set_title("Average Failed Guesses by Model")
+    for i, v in enumerate(metrics["avg_failed_guesses"]):
+        ax.text(v + 0.02, i, f"{v:.2f}", va="center")
+
     # Average turns (all vs successful)
     ax = axes[1, 0]
     x = range(len(metrics))
@@ -167,11 +201,22 @@ def plot_basic_metrics(metrics: pd.DataFrame, output_dir: Path):
     ax.set_title("Average Turns to Complete")
     ax.legend()
 
-    # Token efficiency
+    # Output tokens per turn
     ax = axes[1, 1]
-    ax.barh(metrics["model"], metrics["token_efficiency"])
-    ax.set_xlabel("Score per 1K Output Tokens")
-    ax.set_title("Token Efficiency")
+    ax.barh(metrics["model"], metrics["output_tokens_per_turn"])
+    ax.set_xlabel("Output Tokens per Turn")
+    ax.set_title("Output Tokens per Turn by Model")
+    for i, v in enumerate(metrics["output_tokens_per_turn"]):
+        ax.text(v + 10, i, f"{v:.0f}", va="center")
+
+    # Reasoning ratio
+    ax = axes[1, 2]
+    ax.barh(metrics["model"], metrics["reasoning_ratio"])
+    ax.set_xlabel("Reasoning Ratio")
+    ax.set_title("Reasoning Tokens / Output Tokens")
+    ax.set_xlim(0, 1)
+    for i, v in enumerate(metrics["reasoning_ratio"]):
+        ax.text(v + 0.02, i, f"{v:.1%}", va="center")
 
     plt.tight_layout()
     plt.savefig(output_dir / "basic_metrics.png", dpi=150)
@@ -288,54 +333,50 @@ def plot_confidence_calibration(df_turns: pd.DataFrame, output_dir: Path):
 # =============================================================================
 
 def analyze_complexity(df_rounds: pd.DataFrame) -> dict:
-    """Analyze success rate by rule complexity."""
+    """Analyze score by rule complexity."""
     # Filter to rounds with complexity data
     df = df_rounds.dropna(subset=["cyclomatic_complexity"])
 
-    # Success rate by cyclomatic complexity
+    # Score by cyclomatic complexity (use actual values, not bins)
     by_cyclomatic = df.groupby("cyclomatic_complexity").agg(
-        success_rate=("success", "mean"),
-        count=("success", "count"),
         avg_score=("score", "mean"),
+        count=("score", "count"),
+        success_rate=("success", "mean"),
     ).reset_index()
 
-    # Success rate by node_count bins
+    # Score by node_count (use actual values for small datasets)
     df_nodes = df.dropna(subset=["node_count"])
-    df_nodes["node_count_bin"] = pd.cut(
-        df_nodes["node_count"],
-        bins=[0, 15, 25, 35, 100],
-        labels=["1-15", "16-25", "26-35", "36+"]
-    )
-    by_node_count = df_nodes.groupby("node_count_bin", observed=True).agg(
-        success_rate=("success", "mean"),
-        count=("success", "count"),
+    by_node_count = df_nodes.groupby("node_count").agg(
         avg_score=("score", "mean"),
+        count=("score", "count"),
+        success_rate=("success", "mean"),
     ).reset_index()
 
-    # Success rate by acceptance rate bins
-    df["acceptance_bin"] = pd.cut(
-        df["avg_acceptance_rate"],
+    # Score by acceptance rate bins
+    df_accept = df.dropna(subset=["avg_acceptance_rate"]).copy()
+    df_accept["acceptance_bin"] = pd.cut(
+        df_accept["avg_acceptance_rate"],
         bins=[0, 0.2, 0.4, 0.6, 0.8, 1.0],
         labels=["0-20%", "20-40%", "40-60%", "60-80%", "80-100%"]
     )
-    by_acceptance = df.groupby("acceptance_bin", observed=True).agg(
-        success_rate=("success", "mean"),
-        count=("success", "count"),
+    by_acceptance = df_accept.groupby("acceptance_bin", observed=True).agg(
+        avg_score=("score", "mean"),
+        count=("score", "count"),
     ).reset_index()
 
-    # Model x cyclomatic complexity heatmap
+    # Model x cyclomatic complexity heatmap (score)
     heatmap_cyclomatic = df.pivot_table(
-        values="success",
+        values="score",
         index="model",
         columns="cyclomatic_complexity",
         aggfunc="mean"
     )
 
-    # Model x node_count_bin heatmap
+    # Model x node_count heatmap (score)
     heatmap_nodes = df_nodes.pivot_table(
-        values="success",
+        values="score",
         index="model",
-        columns="node_count_bin",
+        columns="node_count",
         aggfunc="mean"
     )
 
@@ -349,136 +390,129 @@ def analyze_complexity(df_rounds: pd.DataFrame) -> dict:
 
 
 def plot_complexity(df_rounds: pd.DataFrame, output_dir: Path):
-    """Plot success rate vs rule complexity."""
+    """Plot score vs rule complexity."""
     df = df_rounds.dropna(subset=["cyclomatic_complexity"])
-
-    # Create node_count bins
     df_nodes = df.dropna(subset=["node_count"]).copy()
-    df_nodes["node_count_bin"] = pd.cut(
-        df_nodes["node_count"],
-        bins=[0, 15, 25, 35, 100],
-        labels=["1-15", "16-25", "26-35", "36+"]
-    )
+
+    # Compute score range for consistent y-axis
+    score_max = df["score"].max() * 1.1 if not df.empty else 100
 
     fig, axes = plt.subplots(2, 3, figsize=(15, 10))
 
     # Row 1: Cyclomatic complexity
-    # Success rate by cyclomatic complexity
+    # Score by cyclomatic complexity
     ax = axes[0, 0]
     by_cc = df.groupby("cyclomatic_complexity").agg(
-        success_rate=("success", "mean"),
-        count=("success", "count"),
+        avg_score=("score", "mean"),
+        count=("score", "count"),
     ).reset_index()
-    ax.bar(by_cc["cyclomatic_complexity"], by_cc["success_rate"])
+    ax.bar(by_cc["cyclomatic_complexity"], by_cc["avg_score"])
     ax.set_xlabel("Cyclomatic Complexity")
-    ax.set_ylabel("Success Rate")
-    ax.set_title("Success Rate by Cyclomatic Complexity")
-    ax.set_ylim(0, 1)
-    for i, row in by_cc.iterrows():
-        ax.annotate(f"n={int(row['count'])}", (row["cyclomatic_complexity"], row["success_rate"] + 0.02),
+    ax.set_ylabel("Average Score")
+    ax.set_title("Score by Cyclomatic Complexity")
+    ax.set_ylim(0, score_max)
+    for _, row in by_cc.iterrows():
+        ax.annotate(f"n={int(row['count'])}", (row["cyclomatic_complexity"], row["avg_score"] + score_max * 0.02),
                     ha="center", fontsize=9)
 
-    # Success rate vs acceptance rate (scatter, colored by cyclomatic)
+    # Score vs acceptance rate (scatter, colored by cyclomatic)
     ax = axes[0, 1]
     rule_stats = df.groupby("rule_description").agg(
-        success_rate=("success", "mean"),
+        avg_score=("score", "mean"),
         avg_acceptance_rate=("avg_acceptance_rate", "first"),
         cyclomatic_complexity=("cyclomatic_complexity", "first"),
     ).reset_index()
     scatter = ax.scatter(
         rule_stats["avg_acceptance_rate"],
-        rule_stats["success_rate"],
+        rule_stats["avg_score"],
         c=rule_stats["cyclomatic_complexity"],
         cmap="viridis",
         alpha=0.7,
         s=50
     )
     ax.set_xlabel("Rule Acceptance Rate")
-    ax.set_ylabel("Success Rate")
-    ax.set_title("Success vs Selectivity (color=cyclomatic)")
+    ax.set_ylabel("Average Score")
+    ax.set_title("Score vs Selectivity (color=cyclomatic)")
     plt.colorbar(scatter, ax=ax, label="Cyclomatic Complexity")
 
-    # Model x cyclomatic complexity heatmap
+    # Model x cyclomatic complexity heatmap (score)
     ax = axes[0, 2]
     heatmap = df.pivot_table(
-        values="success",
+        values="score",
         index="model",
         columns="cyclomatic_complexity",
         aggfunc="mean"
     )
-    im = ax.imshow(heatmap.values, cmap="RdYlGn", aspect="auto", vmin=0, vmax=1)
+    im = ax.imshow(heatmap.values, cmap="RdYlGn", aspect="auto", vmin=0, vmax=score_max)
     ax.set_xticks(range(len(heatmap.columns)))
     ax.set_xticklabels(heatmap.columns.astype(int))
     ax.set_yticks(range(len(heatmap.index)))
     ax.set_yticklabels(heatmap.index)
     ax.set_xlabel("Cyclomatic Complexity")
     ax.set_title("Model × Cyclomatic Complexity")
-    plt.colorbar(im, ax=ax, label="Success Rate")
+    plt.colorbar(im, ax=ax, label="Avg Score")
     for i in range(len(heatmap.index)):
         for j in range(len(heatmap.columns)):
             val = heatmap.values[i, j]
             if not pd.isna(val):
-                ax.text(j, i, f"{val:.0%}", ha="center", va="center", fontsize=9)
+                ax.text(j, i, f"{val:.1f}", ha="center", va="center", fontsize=9)
 
-    # Row 2: Node count
-    # Success rate by node_count bins
+    # Row 2: Node count (using actual values, not bins)
     ax = axes[1, 0]
-    by_nc = df_nodes.groupby("node_count_bin", observed=True).agg(
-        success_rate=("success", "mean"),
-        count=("success", "count"),
+    by_nc = df_nodes.groupby("node_count").agg(
+        avg_score=("score", "mean"),
+        count=("score", "count"),
     ).reset_index()
-    ax.bar(range(len(by_nc)), by_nc["success_rate"])
-    ax.set_xticks(range(len(by_nc)))
-    ax.set_xticklabels(by_nc["node_count_bin"])
+    ax.bar(by_nc["node_count"].astype(str), by_nc["avg_score"])
     ax.set_xlabel("Node Count (AST size)")
-    ax.set_ylabel("Success Rate")
-    ax.set_title("Success Rate by Node Count")
-    ax.set_ylim(0, 1)
-    for i, row in by_nc.iterrows():
-        ax.annotate(f"n={int(row['count'])}", (i, row["success_rate"] + 0.02),
+    ax.set_ylabel("Average Score")
+    ax.set_title("Score by Node Count")
+    ax.set_ylim(0, score_max)
+    for i, row in enumerate(by_nc.itertuples()):
+        ax.annotate(f"n={int(row.count)}", (i, row.avg_score + score_max * 0.02),
                     ha="center", fontsize=9)
 
-    # Success rate vs acceptance rate (scatter, colored by node_count)
+    # Score vs acceptance rate (scatter, colored by node_count)
     ax = axes[1, 1]
     rule_stats_nc = df_nodes.groupby("rule_description").agg(
-        success_rate=("success", "mean"),
+        avg_score=("score", "mean"),
         avg_acceptance_rate=("avg_acceptance_rate", "first"),
         node_count=("node_count", "first"),
     ).reset_index()
     scatter = ax.scatter(
         rule_stats_nc["avg_acceptance_rate"],
-        rule_stats_nc["success_rate"],
+        rule_stats_nc["avg_score"],
         c=rule_stats_nc["node_count"],
         cmap="plasma",
         alpha=0.7,
         s=50
     )
     ax.set_xlabel("Rule Acceptance Rate")
-    ax.set_ylabel("Success Rate")
-    ax.set_title("Success vs Selectivity (color=node count)")
+    ax.set_ylabel("Average Score")
+    ax.set_title("Score vs Selectivity (color=node count)")
     plt.colorbar(scatter, ax=ax, label="Node Count")
 
-    # Model x node_count_bin heatmap
+    # Model x node_count heatmap (using actual values, score)
     ax = axes[1, 2]
     heatmap_nc = df_nodes.pivot_table(
-        values="success",
+        values="score",
         index="model",
-        columns="node_count_bin",
+        columns="node_count",
         aggfunc="mean"
     )
-    im = ax.imshow(heatmap_nc.values, cmap="RdYlGn", aspect="auto", vmin=0, vmax=1)
+    im = ax.imshow(heatmap_nc.values, cmap="RdYlGn", aspect="auto", vmin=0, vmax=score_max)
     ax.set_xticks(range(len(heatmap_nc.columns)))
-    ax.set_xticklabels(heatmap_nc.columns)
+    ax.set_xticklabels(heatmap_nc.columns.astype(int))
     ax.set_yticks(range(len(heatmap_nc.index)))
     ax.set_yticklabels(heatmap_nc.index)
     ax.set_xlabel("Node Count (AST size)")
     ax.set_title("Model × Node Count")
-    plt.colorbar(im, ax=ax, label="Success Rate")
+    plt.colorbar(im, ax=ax, label="Avg Score")
     for i in range(len(heatmap_nc.index)):
         for j in range(len(heatmap_nc.columns)):
             val = heatmap_nc.values[i, j]
             if not pd.isna(val):
-                ax.text(j, i, f"{val:.0%}", ha="center", va="center", fontsize=9)
+                ax.text(j, i, f"{val:.1f}", ha="center", va="center", fontsize=9)
 
     plt.tight_layout()
     plt.savefig(output_dir / "complexity_analysis.png", dpi=150)
@@ -530,86 +564,108 @@ def main():
     parser = argparse.ArgumentParser(description="Analyze Eleusis evaluation results")
     parser.add_argument("--results-dir", type=str, default="results",
                         help="Directory containing evaluation results")
-    parser.add_argument("--rules-file", type=str, default="rules.json",
-                        help="Path to rules library")
     parser.add_argument("--output-dir", type=str, default="results/analysis",
-                        help="Output directory for plots and tables")
+                        help="Base output directory (timestamped subfolder will be created)")
     args = parser.parse_args()
 
     results_dir = Path(args.results_dir)
-    rules_path = Path(args.rules_file)
-    output_dir = Path(args.output_dir)
+
+    # Create timestamped output folder
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_dir = Path(args.output_dir) / f"analysis_{timestamp}"
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    # Set up tee writer for text output
+    tee = TeeWriter(output_dir / "summary.txt")
+
+    def out(text: str):
+        """Write to both file and stdout."""
+        tee.write(text + "\n")
+
     # Load data
-    logger.info("=" * 60)
-    logger.info("Loading results...")
-    results = load_results(results_dir)
+    out("=" * 60)
+    out("Loading results...")
+    results, folder_names = load_results(results_dir)
     if not results:
-        logger.error("No results found!")
+        out("No results found!")
+        tee.close()
         return
 
-    logger.info(f"Loaded {len(results)} evaluation runs")
+    out(f"Loaded {len(results)} evaluation runs")
 
-    rules_lib = load_rules_library(rules_path)
-    logger.info(f"Loaded {len(rules_lib)} rules from library")
+    # Document source folders
+    out("\n" + "=" * 60)
+    out("SOURCE FOLDERS")
+    out("=" * 60)
+    for folder in folder_names:
+        out(f"  - {folder}")
+
+    # Build rules lookup from embedded rules_library in results files
+    rules_lib = build_rules_lookup(results)
+    out(f"\nExtracted {len(rules_lib)} unique rules from results files")
 
     # Build DataFrames
     df_rounds = build_rounds_dataframe(results, rules_lib)
     df_turns = build_turns_dataframe(results)
-    logger.info(f"Built DataFrames: {len(df_rounds)} rounds, {len(df_turns)} turns")
+    out(f"Built DataFrames: {len(df_rounds)} rounds, {len(df_turns)} turns")
 
     # Analysis 1: Basic metrics
-    logger.info("=" * 60)
-    logger.info("BASIC MODEL COMPARISON")
-    logger.info("=" * 60)
+    out("\n" + "=" * 60)
+    out("BASIC MODEL COMPARISON")
+    out("=" * 60)
     metrics = analyze_basic_metrics(df_rounds)
-    print("\n")
-    print(metrics.to_string(index=False))
-    print("\n")
+    out("")
+    out(metrics.to_string(index=False))
+    out("")
     metrics.to_csv(output_dir / "basic_metrics.csv", index=False)
     plot_basic_metrics(metrics, output_dir)
+    out(f"Saved: {output_dir / 'basic_metrics.png'}")
 
     # Analysis 2: Confidence calibration
-    logger.info("=" * 60)
-    logger.info("CONFIDENCE CALIBRATION")
-    logger.info("=" * 60)
+    out("\n" + "=" * 60)
+    out("CONFIDENCE CALIBRATION")
+    out("=" * 60)
     cal_stats = analyze_confidence_calibration(df_turns)
     if "error" not in cal_stats:
-        print(f"\nTotal guesses: {cal_stats['total_guesses']}")
-        print(f"Correct: {cal_stats['correct_guesses']}, Wrong: {cal_stats['wrong_guesses']}")
-        print(f"Mean confidence when correct: {cal_stats['mean_confidence_when_correct']:.1f}")
-        print(f"Mean confidence when wrong: {cal_stats['mean_confidence_when_wrong']:.1f}")
-        print("\nCalibration by confidence bin:")
-        print(cal_stats["calibration"].to_string(index=False))
-        print("\nPer-model breakdown:")
-        print(cal_stats["per_model"].to_string(index=False))
+        out(f"\nTotal guesses: {cal_stats['total_guesses']}")
+        out(f"Correct: {cal_stats['correct_guesses']}, Wrong: {cal_stats['wrong_guesses']}")
+        out(f"Mean confidence when correct: {cal_stats['mean_confidence_when_correct']:.1f}")
+        out(f"Mean confidence when wrong: {cal_stats['mean_confidence_when_wrong']:.1f}")
+        out("\nCalibration by confidence bin:")
+        out(cal_stats["calibration"].to_string(index=False))
+        out("\nPer-model breakdown:")
+        out(cal_stats["per_model"].to_string(index=False))
         plot_confidence_calibration(df_turns, output_dir)
+        out(f"\nSaved: {output_dir / 'confidence_calibration.png'}")
     else:
-        logger.warning(cal_stats["error"])
+        out(f"Warning: {cal_stats['error']}")
 
     # Analysis 3: Complexity analysis
-    logger.info("=" * 60)
-    logger.info("RULE COMPLEXITY ANALYSIS")
-    logger.info("=" * 60)
+    out("\n" + "=" * 60)
+    out("RULE COMPLEXITY ANALYSIS")
+    out("=" * 60)
     complexity_stats = analyze_complexity(df_rounds)
-    print("\nSuccess rate by cyclomatic complexity:")
-    print(complexity_stats["by_cyclomatic"].to_string(index=False))
-    print("\nSuccess rate by node count (AST size):")
-    print(complexity_stats["by_node_count"].to_string(index=False))
-    print("\nSuccess rate by acceptance rate:")
-    print(complexity_stats["by_acceptance"].to_string(index=False))
+    out("\nScore by cyclomatic complexity:")
+    out(complexity_stats["by_cyclomatic"].to_string(index=False))
+    out("\nScore by node count (AST size):")
+    out(complexity_stats["by_node_count"].to_string(index=False))
+    out("\nScore by acceptance rate:")
+    out(complexity_stats["by_acceptance"].to_string(index=False))
     plot_complexity(df_rounds, output_dir)
+    out(f"\nSaved: {output_dir / 'complexity_analysis.png'}")
 
     # Analysis 4: Learning curves
-    logger.info("=" * 60)
-    logger.info("LEARNING CURVES")
-    logger.info("=" * 60)
+    out("\n" + "=" * 60)
+    out("LEARNING CURVES")
+    out("=" * 60)
     plot_learning_curves(df_turns, output_dir)
+    out(f"Saved: {output_dir / 'learning_curves.png'}")
 
-    logger.info("=" * 60)
-    logger.info(f"Analysis complete! Outputs saved to: {output_dir}")
-    logger.info("=" * 60)
+    out("\n" + "=" * 60)
+    out(f"Analysis complete! Outputs saved to: {output_dir}")
+    out("=" * 60)
+
+    tee.close()
 
 
 if __name__ == "__main__":
