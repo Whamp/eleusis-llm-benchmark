@@ -20,7 +20,8 @@
       "WebFetch(domain:cookbook.openai.com)",
       "WebFetch(domain:wandb.ai)",
       "Bash(done)",
-      "Bash([ -n \"$HF_TOKEN\" ])"
+      "Bash([ -n \"$HF_TOKEN\" ])",
+      "Bash(bash -n:*)"
     ],
     "deny": [],
     "ask": []
