@@ -204,15 +204,6 @@ class GameEngine:
         """Process rule guess with simulation-based comparison."""
         logger.info(f"{player.name} guessed: {action.guess_text}")
 
-        logger.info("-" * 60)
-        logger.info("ACTUAL RULE:")
-        logger.info(f"Description: {self.rule.description()}")
-        logger.info(f"Python code:\n{self.rule.get_code()}")
-        logger.info("-" * 60)
-        logger.info("GUESSED RULE:")
-        logger.info(f"Description: {action.guess_text}")
-        logger.info("-" * 60)
-
         is_correct, reasoning, metadata = self.rule_validator.compare_rules(
             actual_rule=self.rule,
             guessed_rule_desc=action.guess_text,
@@ -221,6 +212,27 @@ class GameEngine:
             num_simulations=2,
             turns_per_simulation=10,
         )
+
+        # Log both rules with same format for comparison
+        logger.info("-" * 60)
+        logger.info("ACTUAL RULE:")
+        logger.info(f"Description: {self.rule.description()}")
+        logger.info(f"Python code:\n{self.rule.get_code()}")
+        logger.info("-" * 60)
+        logger.info("GUESSED RULE:")
+        logger.info(f"Description: {action.guess_text}")
+        guessed_code = metadata.get("guessed_code")
+        if guessed_code:
+            logger.info(f"Python code:\n{guessed_code}")
+            complexity = metadata.get("complexity_metrics")
+            if complexity:
+                logger.info(
+                    f"Complexity: nodes={complexity['node_count']}, "
+                    f"cyclomatic={complexity['cyclomatic']}"
+                )
+        else:
+            logger.info("Python code: (compilation failed)")
+        logger.info("-" * 60)
 
         logger.info(f"Simulation verdict: {is_correct}")
 

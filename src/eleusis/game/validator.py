@@ -8,6 +8,7 @@ from pathlib import Path
 
 from eleusis.game.cards import Card, Suit
 from eleusis.game.engine import Rule
+from eleusis.game.metrics import code_complexity
 
 __all__ = ["ValidationResult", "RuleValidator", "RuleFactory"]
 
@@ -127,9 +128,14 @@ class RuleValidator:
             )
         )
 
+        # Compute complexity metrics for guessed rule code
+        complexity_metrics = code_complexity(guessed_code) if guessed_code else None
+
         return sim_equivalent, sim_reasoning, {
             "simulation_comparisons": comparisons,
             "simulation_mismatches": mismatches,
+            "guessed_code": guessed_code,
+            "complexity_metrics": complexity_metrics,
         }
 
     def check_equivalence_by_simulation(

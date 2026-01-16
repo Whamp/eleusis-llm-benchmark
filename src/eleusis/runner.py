@@ -269,10 +269,14 @@ def play_round(
             result = engine.play_turn(GuessRuleAction(guess_text))
 
             if "guess" in result:
+                complexity = result.get("complexity_metrics") or {}
                 turn_data["guess_attempt"] = {
                     "guess": result["guess"],
                     "correct": result.get("correct", False),
-                    "reasoning": result.get("reasoning", "")
+                    "reasoning": result.get("reasoning", ""),
+                    "guessed_code": result.get("guessed_code"),
+                    "node_count": complexity.get("node_count"),
+                    "cyclomatic_complexity": complexity.get("cyclomatic"),
                 }
         else:
             result = play_result

@@ -19,7 +19,11 @@ Your task is to:
 
 ## Game summary
 The game Eleusis involves playing cards from a standard deck. 
-Each card has a rank (1-13), a color (red or black) and a suit (hearts, diamonds, clubs, spades).
+
+The game uses 2 standard 52-card decks shuffled together (104 cards total):
+- Ranks: Ace = 1 (low), 2–10, Jack = 11, Queen = 12, King = 13. Number cards are 1-10, face cards are 11-13.
+- Suits: Hearts ♥️ (red), Diamonds ♦️ (red), Clubs ♣️ (black), Spades ♠️ (black)
+
 The dealer has created a hidden rule that determines whether played cards are accepted or rejected.
 Cards are played one by one by the other players
 A card is placed into a "mainline" if they are accepted by the rule, or into "sidelines" if they are rejected.
