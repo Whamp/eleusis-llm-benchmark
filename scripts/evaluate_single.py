@@ -174,13 +174,14 @@ def convert_old_format_to_checkpoint(old_results: dict) -> dict | None:
     return old_results
 
 
-def validate_resume_config(checkpoint_config: dict, current_config: dict, current_player_model: str | None = None) -> bool:
+def validate_resume_config(checkpoint_config: dict, current_config: dict, current_player_model: str | None = None, log=None) -> bool:
     """Validate that critical config matches between checkpoint and current run.
 
     Args:
         checkpoint_config: The 'config' dict from the checkpoint
         current_config: The current game config dict
         current_player_model: If provided, validate that player model matches checkpoint
+        log: Logger instance to use for error messages
     """
     critical_keys = [
         "max_turns", "hand_size", "wrong_guess_penalty"
@@ -190,19 +191,19 @@ def validate_resume_config(checkpoint_config: dict, current_config: dict, curren
         checkpoint_val = checkpoint_config.get(key)
         current_val = current_config.get(key)
         if checkpoint_val != current_val:
-            logger.error(f"Config mismatch: {key} changed from {checkpoint_val} to {current_val}")
-            logger.error("Cannot resume with different configuration")
+            log.error(f"Config mismatch: {key} changed from {checkpoint_val} to {current_val}")
+            log.error("Cannot resume with different configuration")
             return False
 
     # Validate player model if explicitly provided via CLI
     if current_player_model:
         checkpoint_player = checkpoint_config.get("player_model")
         if checkpoint_player and current_player_model != checkpoint_player:
-            logger.error(f"Player model mismatch:")
-            logger.error(f"  Checkpoint: {checkpoint_player}")
-            logger.error(f"  Current:    {current_player_model}")
-            logger.error("Cannot resume with different player model")
-            logger.error("Remove --player flag to use checkpoint's model, or start a new evaluation")
+            log.error(f"Player model mismatch:")
+            log.error(f"  Checkpoint: {checkpoint_player}")
+            log.error(f"  Current:    {current_player_model}")
+            log.error("Cannot resume with different player model")
+            log.error("Remove --player flag to use checkpoint's model, or start a new evaluation")
             return False
 
     return True
@@ -300,7 +301,7 @@ def main():
             return
 
         # Validate config compatibility (pass CLI player model if explicitly provided)
-        if not validate_resume_config(checkpoint['config'], game_config, args.player):
+        if not validate_resume_config(checkpoint['config'], game_config, args.player, log=temp_logger):
             return
 
         # Check if selection mode is sequential

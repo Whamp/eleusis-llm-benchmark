@@ -36,12 +36,13 @@ gemini-3-flash-preview-high:
   model_id: gemini-3-flash-preview
   thinking_level: high
 
+grok-4-1-fast-reasoning:
+  provider: xai
+  model_id: grok-4-1-fast-reasoning
+
 grok-4:
   provider: xai
-  model_id: grok-4-fast-reasoning
-  # Alternative: grok-4-fast-non-reasoning for no reasoning
-  # Grok-4 always reasons at max capacity, no effort parameter
-
+  model_id: grok-4
 
 # ============================================================================
 # Open Models - HuggingFace Inference Providers
