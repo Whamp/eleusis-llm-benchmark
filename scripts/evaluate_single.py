@@ -174,41 +174,6 @@ def convert_old_format_to_checkpoint(old_results: dict) -> dict | None:
     return old_results
 
 
-def validate_resume_config(checkpoint_config: dict, current_config: dict, current_player_model: str | None = None, log=None) -> bool:
-    """Validate that critical config matches between checkpoint and current run.
-
-    Args:
-        checkpoint_config: The 'config' dict from the checkpoint
-        current_config: The current game config dict
-        current_player_model: If provided, validate that player model matches checkpoint
-        log: Logger instance to use for error messages
-    """
-    critical_keys = [
-        "max_turns", "hand_size", "wrong_guess_penalty"
-    ]
-
-    for key in critical_keys:
-        checkpoint_val = checkpoint_config.get(key)
-        current_val = current_config.get(key)
-        if checkpoint_val != current_val:
-            log.error(f"Config mismatch: {key} changed from {checkpoint_val} to {current_val}")
-            log.error("Cannot resume with different configuration")
-            return False
-
-    # Validate player model if explicitly provided via CLI
-    if current_player_model:
-        checkpoint_player = checkpoint_config.get("player_model")
-        if checkpoint_player and current_player_model != checkpoint_player:
-            log.error(f"Player model mismatch:")
-            log.error(f"  Checkpoint: {checkpoint_player}")
-            log.error(f"  Current:    {current_player_model}")
-            log.error("Cannot resume with different player model")
-            log.error("Remove --player flag to use checkpoint's model, or start a new evaluation")
-            return False
-
-    return True
-
-
 def restore_rule_from_checkpoint(rule_data: dict | None) -> Rule | None:
     """Restore Rule object from checkpoint data."""
     if not rule_data:
@@ -218,6 +183,39 @@ def restore_rule_from_checkpoint(rule_data: dict | None) -> Rule | None:
     if not description or not code:
         return None
     return Rule(description, code)
+
+
+def reconstruct_config_from_checkpoint(checkpoint: dict) -> dict:
+    """Reconstruct full config dict from checkpoint data for self-contained resume."""
+    cfg = checkpoint['config']
+    chk = checkpoint['checkpoint']
+
+    return {
+        'model': cfg['player_model'],
+        'seed': cfg.get('seed'),
+        'game': {
+            'num_rounds': cfg['num_rounds'],
+            'max_turns': cfg['max_turns'],
+            'hand_size': cfg['hand_size'],
+            'wrong_guess_penalty': cfg['wrong_guess_penalty'],
+        },
+        'llm': {
+            'max_tokens': cfg.get('llm_max_tokens', 8192),
+            'temperature': cfg.get('llm_temperature', 0.7),
+            'seed': cfg.get('llm_seed'),
+            'max_llm_retries': cfg.get('llm_max_retries', 3),
+        },
+        'rule_compiler': {
+            'model': cfg['rule_compiler_model'],
+            'temperature': cfg.get('rule_compiler_temperature', 0.8),
+        },
+        'rules': {
+            'library_path': None,  # Not needed, rules embedded in checkpoint
+            'selection': chk['rule_factory_state']['selection'],
+            'index': chk['rule_factory_state']['current_index'],
+            'rounds_per_rule': cfg['rounds_per_rule'],
+        },
+    }
 
 
 def load_rules_from_library(config: dict) -> list[dict]:
@@ -279,29 +277,28 @@ def main():
     # Parse command-line arguments
     args = parse_args()
 
-    # Load and configure
-    config = load_config(args.config)
-    config = apply_cli_overrides(config, args)
+    # Temporarily setup minimal logging for early messages
+    logging.basicConfig(level=logging.INFO, format='%(message)s')
+    temp_logger = logging.getLogger(__name__)
 
-    # Load config sections (after overrides applied)
-    game_config = config["game"]
-    rules_cfg = config["rules"]
-
-    # Load checkpoint FIRST if resuming (before setting up logging)
-    # This allows us to use checkpoint values for player/GM names
+    # Load checkpoint OR config.yaml (resume is self-contained, no config.yaml needed)
     checkpoint = None
     if args.resume:
-        # Temporarily setup minimal logging for checkpoint loading
-        logging.basicConfig(level=logging.INFO, format='%(message)s')
-        temp_logger = logging.getLogger(__name__)
-
         checkpoint = load_checkpoint(args.resume)
         if not checkpoint:
             temp_logger.error("Failed to load checkpoint")
             return
 
-        # Validate config compatibility (pass CLI player model if explicitly provided)
-        if not validate_resume_config(checkpoint['config'], game_config, args.player, log=temp_logger):
+        # Reconstruct full config from checkpoint (self-contained resume)
+        config = reconstruct_config_from_checkpoint(checkpoint)
+
+        # Validate CLI player model override if provided
+        if args.player and args.player != checkpoint['config']['player_model']:
+            temp_logger.error("Player model mismatch:")
+            temp_logger.error(f"  Checkpoint: {checkpoint['config']['player_model']}")
+            temp_logger.error(f"  CLI --player: {args.player}")
+            temp_logger.error("Cannot resume with different player model")
+            temp_logger.error("Remove --player flag to use checkpoint's model, or start a new evaluation")
             return
 
         # Check if selection mode is sequential
@@ -318,20 +315,23 @@ def main():
             temp_logger.info(f"Evaluation already complete ({completed}/{total} rounds)")
             return
 
-    # Derive player/GM names and rounds_per_rule - from checkpoint when resuming
-    if checkpoint:
-        # Use checkpoint values to ensure consistency with original evaluation
-        player_model = checkpoint['config']['player_model']
+        # Extract values from checkpoint for display/logging
+        player_model = config['model']
         player_display_name = checkpoint['config']['player']
         rule_compiler_display_name = checkpoint['config']['rule_compiler']
-        rounds_per_rule = checkpoint['config']['rounds_per_rule']
-        # Override config model to match checkpoint (for actual game play)
-        config["model"] = player_model
+        rounds_per_rule = config['rules']['rounds_per_rule']
     else:
+        # Fresh start - load config.yaml
+        config = load_config(args.config)
+        config = apply_cli_overrides(config, args)
         player_model = config["model"]
         player_display_name = model_spec_to_display_name(player_model)
         rule_compiler_display_name = model_spec_to_display_name(config["rule_compiler"]["model"])
-        rounds_per_rule = rules_cfg.get("rounds_per_rule", 1)
+        rounds_per_rule = config["rules"].get("rounds_per_rule", 1)
+
+    # Load config sections
+    game_config = config["game"]
+    rules_cfg = config["rules"]
 
     # Generate output tag - from checkpoint folder name when resuming
     if checkpoint:
@@ -462,11 +462,17 @@ def main():
                 'rounds_per_rule': rounds_per_rule,
                 'rule_compiler': rule_compiler_display_name,
                 'rule_compiler_model': config['rule_compiler']['model'],
+                'rule_compiler_temperature': config['rule_compiler'].get('temperature', 0.8),
                 'player': player_display_name,
                 'player_model': player_model,
                 'hand_size': game_config.get('hand_size', 12),
                 'max_turns': game_config.get('max_turns', 40),
                 'wrong_guess_penalty': game_config.get('wrong_guess_penalty', 3),
+                'seed': config.get('seed'),
+                'llm_max_tokens': config['llm'].get('max_tokens', 8192),
+                'llm_temperature': config['llm'].get('temperature', 0.7),
+                'llm_seed': config['llm'].get('seed'),
+                'llm_max_retries': config['llm'].get('max_llm_retries', 3),
             },
             'rounds': [],
             'statistics': {

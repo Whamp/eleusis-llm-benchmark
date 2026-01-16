@@ -50,7 +50,7 @@ uv run scripts/evaluate_single.py --player "openrouter:anthropic/claude-haiku" -
 
 **Key functions**:
 - `main()` - Orchestrates full evaluation, handles checkpointing
-- `load_checkpoint()` / `validate_resume_config()` - Resume support
+- `load_checkpoint()` / `reconstruct_config_from_checkpoint()` - Resume support (self-contained, no config.yaml needed)
 - `play_round()` - Delegates to `eleusis.runner.play_round()`
 
 ### Utility Scripts
