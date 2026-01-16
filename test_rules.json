@@ -4,7 +4,7 @@
       "name": "even_ranks_only",
       "description": "Only cards with an even rank (2,4,6,8,10,12)",
       "code": "return card.rank % 2 == 0",
-      "avg_acceptance_rate": 0.506,
+      "avg_acceptance_rate": 0.42000000000000004,
       "node_count": 12,
       "cyclomatic_complexity": 1
     },
@@ -12,63 +12,79 @@
       "name": "spades_only",
       "description": "Only cards of the suit spades",
       "code": "return card.suit.suit_name == \"spades\"",
-      "avg_acceptance_rate": 0.264,
+      "avg_acceptance_rate": 0.284,
       "node_count": 11,
       "cyclomatic_complexity": 1
     },
     {
       "name": "different_suit_same_color",
       "description": "The card must be of a different suit than but same color as the card just before it. Any card may start the line.",
-      "code": "if not mainline:\n    return True\nprev = mainline[-1]\nreturn card.suit.suit_name != prev.suit.suit_name and card.color == prev.color",
-      "avg_acceptance_rate": 0.27,
+      "code": "if not mainline:\n    return True\nprev = mainline[-1]\nreturn card.color == prev.color and card.suit.suit_name != prev.suit.suit_name",
+      "avg_acceptance_rate": 0.248,
       "node_count": 45,
       "cyclomatic_complexity": 3
     },
     {
-      "name": "only_face_cards",
+      "name": "face_cards_only",
       "description": "Only face cards (11,12,13).",
       "code": "return card.rank >= 11",
-      "avg_acceptance_rate": 0.196,
+      "avg_acceptance_rate": 0.27,
       "node_count": 9,
       "cyclomatic_complexity": 1
     },
     {
       "name": "alternating_face_number",
       "description": "Alternate face and number cards. Any card may start the line.",
-      "code": "if not mainline:\n    return True\nprev = mainline[-1]\nprev_is_face = prev.rank >= 11\ncurr_is_face = card.rank >= 11\nreturn prev_is_face != curr_is_face",
-      "avg_acceptance_rate": 0.378,
-      "node_count": 45,
+      "code": "if not mainline:\n    return True\nprev_is_face = mainline[-1].rank >= 11\ncurr_is_face = card.rank >= 11\nreturn prev_is_face != curr_is_face",
+      "avg_acceptance_rate": 0.354,
+      "node_count": 40,
       "cyclomatic_complexity": 2
     },
     {
-      "name": "max_two_consecutive_same_color",
+      "name": "max_two_consecutive_color",
       "description": "No more than two consecutive cards may be the same color. Any card may start the line.",
-      "code": "if not mainline:\n    return True\nif len(mainline) >= 2 and mainline[-1].color == mainline[-2].color and mainline[-1].color == card.color:\n    return False\nreturn True",
-      "avg_acceptance_rate": 0.754,
-      "node_count": 58,
-      "cyclomatic_complexity": 5
+      "code": "if not mainline:\n    return True\nif len(mainline) < 2:\n    return True\nif mainline[-1].color == mainline[-2].color == card.color:\n    return False\nreturn True",
+      "avg_acceptance_rate": 0.8039999999999999,
+      "node_count": 49,
+      "cyclomatic_complexity": 4
     },
     {
       "name": "face_red_number_black",
       "description": "Face cards must be red; number cards (1-10) must be black.",
-      "code": "if card.rank >= 11:\n    return card.color == \"red\"\nelse:\n    return card.color == \"black\"",
-      "avg_acceptance_rate": 0.502,
-      "node_count": 25,
+      "code": "if not mainline:\n    return True\nif card.rank >= 11:\n    return card.color == \"red\"\nelse:\n    return card.color == \"black\"",
+      "avg_acceptance_rate": 0.48,
+      "node_count": 32,
+      "cyclomatic_complexity": 3
+    },
+    {
+      "name": "hearts_spades_clubs_diamonds_cycle",
+      "description": "Suits must repeat in the order hearts \u2192 spades \u2192 clubs \u2192 diamonds \u2192 hearts \u2026",
+      "code": "order = [\"hearts\", \"spades\", \"clubs\", \"diamonds\"]\nif not mainline:\n    return card.suit.suit_name == \"hearts\"\nprev = mainline[-1].suit.suit_name\nexpected = order[(order.index(prev) + 1) % 4]\nreturn card.suit.suit_name == expected",
+      "avg_acceptance_rate": 0.24,
+      "node_count": 70,
       "cyclomatic_complexity": 2
     },
     {
-      "name": "cyclic_suit_order",
-      "description": "Suits must repeat in the order hearts \u2192 spades \u2192 clubs \u2192 diamonds \u2192 hearts \u2026",
-      "code": "if not mainline:\n    return True\norder = [\"hearts\", \"spades\", \"clubs\", \"diamonds\"]\nprev = mainline[-1].suit.suit_name\nexpected = order[(order.index(prev) + 1) % 4]\nreturn card.suit.suit_name == expected",
-      "avg_acceptance_rate": 0.286,
-      "node_count": 62,
+      "name": "paired_suits",
+      "description": "Suits must appear in pairs: card 1 and 2 same suit, cards 3 and 4 same suit (different from 1 and 2), cards 5 and 6 same suit (different from 3 and 4), etc.",
+      "code": "if not mainline:\n    return True\nidx = len(mainline)\nif idx % 2 == 0:  # start of a new pair\n    if idx >= 2:\n        return card.suit.suit_name != mainline[idx-2].suit.suit_name\n    else:\n        return True\nelse:  # second card of the pair\n    return card.suit.suit_name == mainline[idx-1].suit.suit_name",
+      "avg_acceptance_rate": 0.386,
+      "node_count": 77,
+      "cyclomatic_complexity": 4
+    },
+    {
+      "name": "red_prime_ranks",
+      "description": "Only red cards whose rank is prime numbers (2,3,5,7,11,13) may be played.",
+      "code": "primes = {2, 3, 5, 7, 11, 13}\nreturn card.color == \"red\" and card.rank in primes",
+      "avg_acceptance_rate": 0.21000000000000002,
+      "node_count": 29,
       "cyclomatic_complexity": 2
     }
   ],
   "metadata": {
-    "generated_at": "2026-01-15T10:37:46.165105",
-    "total_compiled": 8,
-    "valid_count": 8,
+    "generated_at": "2026-01-16T15:22:29.211815",
+    "total_compiled": 10,
+    "valid_count": 10,
     "invalid_count": 0
   },
   "evaluation_params": {

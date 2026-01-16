@@ -8,7 +8,7 @@
 claude-opus-4.5:
   provider: anthropic
   model_id: claude-opus-4-5-20251101
-  reasoning_budget: 8000  # budget_tokens for extended thinking
+  reasoning_budget: 16000  # budget_tokens for extended thinking
   # For force-answer: thinking={"type": "disabled"}
 
 gpt-5.2-medium:
@@ -21,10 +21,20 @@ gpt-5.2-high:
   model_id: gpt-5.2
   reasoning_effort: high  # none|minimal|low|medium|high|xhigh
 
+gpt-5.2-xhigh:
+  provider: openai
+  model_id: gpt-5.2
+  reasoning_effort: xhigh  # none|minimal|low|medium|high|xhigh
+
 gemini-3-pro-preview-low:
   provider: google
   model_id: gemini-3-pro-preview
   thinking_level: low
+
+gemini-3-pro-preview-high:
+  provider: google
+  model_id: gemini-3-pro-preview
+  thinking_level: high
 
 gemini-3-flash-preview-low:
   provider: google
