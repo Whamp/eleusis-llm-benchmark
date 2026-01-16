@@ -74,10 +74,9 @@ def estimate_reasoning_tokens(content: str) -> int | None:
     return int(word_count * 1.3)
 
 
-# Force-answer prompt for truncated responses
-FORCE_ANSWER_PROMPT = """STOP reasoning. Output your answer NOW.
-You have already done your thinking. Do not think further.
-Immediately output the answer in the requested format."""
+class TruncationError(Exception):
+    """Raised when LLM response is truncated due to max tokens."""
+    pass
 
 
 class BaseLLMClient(ABC):
@@ -138,20 +137,17 @@ class BaseLLMClient(ABC):
         logger.info(f"Finish reason: {metrics.finish_reason}")
 
         if metrics.finish_reason == "length":
-            logger.warning(f"{self.model_name} Response truncated, attempting force-answer")
-            content, force_metrics = self._force_answer(
-                messages, response.message, metrics, xml_tag, return_dict
-            )
-            calls_in_generate.append(force_metrics)
-        else:
-            content = response.message.content
+            logger.warning(f"{self.model_name} Response truncated (max tokens reached)")
+            raise TruncationError(f"Response truncated after {metrics.output_tokens} tokens")
 
-            if xml_tag:
-                content = self._extract_content_from_response(content, [xml_tag], try_code_blocks=True)
+        content = response.message.content
 
-            if return_dict:
-                logger.debug(f"Parsing JSON from extracted content:\n{content[:500]}")
-                content = json.loads(content)
+        if xml_tag:
+            content = self._extract_content_from_response(content, [xml_tag], try_code_blocks=True)
+
+        if return_dict:
+            logger.debug(f"Parsing JSON from extracted content:\n{content[:500]}")
+            content = json.loads(content)
 
         total_duration = time.time() - start_time
         gen_metrics = GenerateMetrics(
@@ -167,55 +163,6 @@ class BaseLLMClient(ABC):
         self.generate_metrics.append(gen_metrics)
 
         return content
-
-    def _force_answer(
-        self,
-        messages: list[dict],
-        partial_response_message,
-        initial_metrics: LLMCallMetrics,
-        xml_tag: str | None,
-        return_dict: bool,
-    ) -> tuple[str | dict, LLMCallMetrics]:
-        """Single force-answer attempt. Raises RuntimeError if still truncated."""
-        # Build assistant message with truncated content
-        assistant_content = partial_response_message.content
-
-        # Detect if reasoning is separate (field-based or token-counted)
-        has_separate_reasoning = (
-            (hasattr(partial_response_message, 'reasoning') and partial_response_message.reasoning)
-            or (hasattr(partial_response_message, 'reasoning_content') and partial_response_message.reasoning_content)
-            or (initial_metrics.reasoning_tokens and initial_metrics.reasoning_tokens > 0)
-        )
-
-        # If reasoning is NOT separate → assume inline (Qwen-style), close think block
-        if not has_separate_reasoning and "</think>" not in assistant_content:
-            assistant_content += "</think>"
-
-        assistant_msg = {"role": "assistant", "content": assistant_content}
-        if hasattr(partial_response_message, 'reasoning') and partial_response_message.reasoning:
-            assistant_msg["reasoning"] = partial_response_message.reasoning
-
-        messages.append(assistant_msg)
-        messages.append({"role": "user", "content": FORCE_ANSWER_PROMPT})
-
-        response, metrics = self._call_api(messages, disable_thinking=True)
-        self.call_metrics.append(metrics)
-
-        if metrics.finish_reason == "length":
-            raise RuntimeError("Force-answer attempt still truncated")
-
-        # Combine original + force-answer content, then extract
-        combined_content = partial_response_message.content + response.message.content
-
-        if xml_tag:
-            combined_content = self._extract_content_from_response(
-                combined_content, [xml_tag], try_code_blocks=True
-            )
-
-        if return_dict:
-            combined_content = json.loads(combined_content)
-
-        return combined_content, metrics
 
     def _extract_content_from_response(
         self,

@@ -7,6 +7,7 @@ import random
 from typing import TYPE_CHECKING
 
 from eleusis.game.cards import Card, Suit
+from eleusis.llm.base import TruncationError
 
 __all__ = ["LLMScientist"]
 
@@ -37,6 +38,9 @@ class LLMScientist:
         self.max_turns = max_turns
         self.play_history: list[dict] = []
         self.last_action_response: dict | None = None
+        # Retry tracking (reset each turn)
+        self.last_retry_count: int = 0
+        self.last_retry_causes: list[dict] = []
 
     def get_action(self, game_state: GameState) -> Action:
         """Get an action for the current game state."""
@@ -46,6 +50,12 @@ class LLMScientist:
         """Select a card to play using LLM."""
         from eleusis.game.engine import PlayCardAction
         from eleusis.prompts import get_action_prompt
+
+        # Reset retry tracking for this turn
+        self.last_retry_count = 0
+        self.last_retry_causes = []
+
+        REASONING_HINT = "\n\nIMPORTANT: DO NOT REASON TOO LONG ABOUT THIS."
 
         player = game_state.player
         hand_cards = player.hand.get_all_cards()
@@ -61,7 +71,7 @@ class LLMScientist:
         current_turn = game_state.turn_number
         failed_guess_count = self.engine.failed_guess_count if self.engine else 0
 
-        prompt = get_action_prompt(
+        base_prompt = get_action_prompt(
             compact_board=compact_board,
             hand_cards=hand_dicts,
             deck_remaining=deck_remaining,
@@ -73,7 +83,11 @@ class LLMScientist:
         )
 
         for attempt in range(self.max_retries):
+            cause = None
             try:
+                # Add hint on retries (attempt >= 1)
+                prompt = base_prompt + REASONING_HINT if attempt > 0 else base_prompt
+
                 response = self.llm_client.generate(prompt, xml_tag="ACTION", return_dict=True)
                 self.last_action_response = response
 
@@ -87,10 +101,28 @@ class LLMScientist:
                         logger.debug(f"{self.name}'s tentative rule: {tentative}")
                     return PlayCardAction(card)
 
-            except Exception as e:
-                logger.warning(f"Move selection attempt {attempt + 1} failed: {e}")
+                # Card parsing failed
+                cause = "card_parse_error"
+                logger.warning(f"{self.name} attempt {attempt + 1}: {cause} - card='{card_value}'")
 
-        logger.warning(f"{self.name} using random fallback")
+            except TruncationError as e:
+                cause = "max_token_reached"
+                logger.warning(f"{self.name} attempt {attempt + 1}: {cause} - {e}")
+
+            except Exception as e:
+                cause = "other_error"
+                logger.warning(
+                    f"{self.name} attempt {attempt + 1}: {cause} - {type(e).__name__}: {e}"
+                )
+
+            # Track this failed attempt
+            if cause:
+                self.last_retry_count = attempt + 1
+                self.last_retry_causes.append({"attempt": attempt + 1, "cause": cause})
+
+        logger.warning(
+            f"{self.name} using random fallback after {self.max_retries} failed attempts"
+        )
         return PlayCardAction(random.choice(hand_cards))
 
     def record_action_result(self, result: dict) -> None:

@@ -383,6 +383,8 @@ def main():
         stats.setdefault('total_reasoning_tokens', 0)
         stats.setdefault('total_answer_tokens', 0)
         stats.setdefault('total_wall_clock_seconds', 0.0)
+        stats.setdefault('total_retries', 0)
+        stats.setdefault('retry_by_cause', {})
 
         # Restore current rule from checkpoint (not from library)
         current_rule = restore_rule_from_checkpoint(
@@ -484,6 +486,8 @@ def main():
                 'total_reasoning_tokens': 0,
                 'total_answer_tokens': 0,
                 'total_wall_clock_seconds': 0.0,
+                'total_retries': 0,
+                'retry_by_cause': {},
             },
             'checkpoint': {
                 'completed_rounds': 0,
@@ -582,6 +586,15 @@ def main():
         evaluation_results['statistics']['total_answer_tokens'] += player_usage.get('answer_tokens', 0)
         evaluation_results['statistics']['total_wall_clock_seconds'] += result.get('wall_clock_seconds', 0)
 
+        # Aggregate retry counts from turns
+        for turn in result.get('turns', []):
+            retry_count = turn.get('retry_count', 0)
+            evaluation_results['statistics']['total_retries'] += retry_count
+            for retry_info in turn.get('retry_causes', []):
+                cause = retry_info.get('cause', 'unknown')
+                retry_by_cause = evaluation_results['statistics']['retry_by_cause']
+                retry_by_cause[cause] = retry_by_cause.get(cause, 0) + 1
+
         # Update checkpoint (preserve rules_library from initial load)
         evaluation_results['checkpoint'] = {
             'completed_rounds': round_num,
@@ -650,6 +663,11 @@ def main():
     logger.info(f"Total reasoning tokens: {stats['total_reasoning_tokens']:,}")
     logger.info(f"Total answer tokens: {stats['total_answer_tokens']:,}")
     logger.info(f"Total wall clock time: {stats['total_wall_clock_seconds']:.1f}s")
+    if stats.get('total_retries', 0) > 0:
+        logger.info("")
+        logger.info(f"Total LLM retries: {stats['total_retries']}")
+        for cause, count in stats.get('retry_by_cause', {}).items():
+            logger.info(f"  - {cause}: {count}")
 
     # Save final results
     output_file = save_evaluation_results(evaluation_results, folder_name)

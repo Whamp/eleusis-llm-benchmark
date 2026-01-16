@@ -166,7 +166,7 @@ rules:
   selection: "sequential"
 
 llm:
-  max_tokens: 8192
+  max_tokens: 16384
   temperature: 0.7
 
 model: deepseek-r1  # Model key from models.yaml
@@ -269,3 +269,4 @@ Rules are compiled into sandboxed Python with limited builtins:
 - Rule comparison uses simulation-based equivalence testing
 - Failed guesses are tracked to prevent duplicates
 - Logging: Python logging with console/file levels
+- LLM retries: Up to 3 attempts per turn with fallback to random card; retry causes tracked in results.json (`max_token_reached`, `card_parse_error`, `other_error`)

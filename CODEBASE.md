@@ -114,22 +114,25 @@ safe_globals = {"len": len, "sum": sum, "any": any, ...}
 ### `llm/` - LLM Integration
 
 #### `llm/base.py` - Base Client
-- **Classes**: `BaseLLMClient` (ABC), `LLMCallMetrics`, `GenerateMetrics`
+- **Classes**: `BaseLLMClient` (ABC), `LLMCallMetrics`, `GenerateMetrics`, `TruncationError`
 - **Key methods**:
-  - `generate(prompt, xml_tag, return_dict)` - Main generation with auto-continuation
+  - `generate(prompt, xml_tag, return_dict)` - Main generation, raises `TruncationError` on max tokens
   - `convert_rule_to_code(rule_text)` - Natural language to Python
   - `get_usage_stats()` - Token counts, costs
 
-**Auto-continuation** (line 159-256): If response is truncated (`finish_reason="length"`), automatically prompts for continuation with escalating strategies.
+**Truncation handling**: If `finish_reason="length"`, raises `TruncationError`. Retry logic is handled at the player level.
 
 #### `llm/player.py` - LLMScientist
 - **Class**: `LLMScientist`
 - **Key methods**:
   - `get_action(game_state) -> Action` - Decide what to play
-  - `_select_move()` - LLM-based card selection
+  - `_select_move()` - LLM-based card selection with retry logic
   - `record_action_result()` - Track play history
+- **Tracking fields**: `last_retry_count`, `last_retry_causes`
 
-**Card parsing** (line 108-152): Converts LLM output like "5♥" to `Card(5, Suit.HEARTS)`.
+**Retry logic**: Up to 3 attempts per turn. On retries, appends "DO NOT REASON TOO LONG" hint to prompt. Tracks causes: `max_token_reached`, `card_parse_error`, `other_error`. Falls back to random card after 3 failures.
+
+**Card parsing**: Converts LLM output like "5♥" to `Card(5, Suit.HEARTS)`.
 
 #### `llm/openrouter.py`, `llm/huggingface.py` - Providers
 Implement `_call_api()` for respective APIs. Both use openai-compatible SDK.
@@ -288,6 +291,28 @@ LLM responses use XML tags:
 
 ### Checkpointing
 Results saved after each round to `results/{folder}/results.json` with `checkpoint` field for resume.
+
+### Results JSON Structure
+Each turn in `results.json` includes:
+```json
+{
+  "turn_number": 1,
+  "llm_response": {"card": "5♥", "reasoning_summary": "..."},
+  "action_result": {"card": "5♥", "accepted": true},
+  "tokens": {"output_tokens": 500, "reasoning_tokens": 400},
+  "retry_count": 0,
+  "retry_causes": []
+}
+```
+
+**Retry tracking fields**:
+- `retry_count`: Number of failed attempts before success (0 = first attempt worked)
+- `retry_causes`: List of `{"attempt": N, "cause": "..."}` for each failure
+  - Causes: `max_token_reached`, `card_parse_error`, `other_error`
+
+**Statistics include**:
+- `total_retries`: Sum of all retry counts across all turns
+- `retry_by_cause`: Breakdown by cause type (e.g., `{"max_token_reached": 5, "card_parse_error": 2}`)
 
 ## Common Tasks
 

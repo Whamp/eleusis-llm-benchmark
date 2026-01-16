@@ -254,6 +254,8 @@ def play_round(
             },
             "guess_attempt": None,
             "tokens": turn_tokens,
+            "retry_count": scientist.last_retry_count,
+            "retry_causes": scientist.last_retry_causes.copy(),
         }
 
         logger.info(f"Action: {play_result['action']}")

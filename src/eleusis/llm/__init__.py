@@ -11,6 +11,7 @@ from eleusis.llm.base import (
     BaseLLMClient,
     GenerateMetrics,
     LLMCallMetrics,
+    TruncationError,
 )
 from eleusis.llm.google import GoogleClient
 from eleusis.llm.huggingface import HuggingFaceClient
@@ -29,6 +30,7 @@ __all__ = [
     "XAIClient",
     "LLMCallMetrics",
     "GenerateMetrics",
+    "TruncationError",
     "LLMScientist",
     "create_client",
     "load_model_config",
