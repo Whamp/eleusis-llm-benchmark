@@ -23,7 +23,32 @@ Invariant: `output_tokens = reasoning_tokens + answer_tokens`
 | GPT-OSS 120B | huggingface | Full text | Separate `reasoning` field | Yes (via stream_options) | No | answer_tokens |
 | GPT-OSS 20B | huggingface | Full text | Separate `reasoning` field | Yes (via stream_options) | No | answer_tokens |
 | GLM 4.7 | huggingface | Via field | `reasoning_content` field | Yes (via stream_options) | No | answer_tokens |
-| Grok 4 | xai | Unknown | Unknown | Yes | Unknown | TBD |
+| Grok 4 | xai | Hidden | N/A | Yes (answer only) | Yes | None |
+
+## API Field Reference
+
+This section documents the **raw API field names** and their semantics for each provider. Note that the same field name can mean different things across providers.
+
+### Field Semantics by Provider
+
+| Provider | API Field | Includes Reasoning? | Our Normalized Field |
+|----------|-----------|---------------------|----------------------|
+| Anthropic | `usage.output_tokens` | **Yes** (total) | `output_tokens` |
+| OpenAI | `usage.output_tokens` | **Yes** (total) | `output_tokens` |
+| OpenAI | `usage.output_tokens_details.reasoning_tokens` | N/A | `reasoning_tokens` |
+| Google | `usage_metadata.candidates_token_count` | **No** (answer only) | `answer_tokens` |
+| Google | `usage_metadata.thoughts_token_count` | N/A | `reasoning_tokens` |
+| HuggingFace | `usage.completion_tokens` | **Yes** (total) | `output_tokens` |
+| xAI | `usage.completion_tokens` | **No** (answer only) | `answer_tokens` |
+| xAI | `usage.completion_tokens_details.reasoning_tokens` | N/A | `reasoning_tokens` |
+
+### Key Insight: `completion_tokens` Means Different Things
+
+- **OpenAI/HuggingFace**: `completion_tokens` = answer + reasoning (total output)
+- **Google**: `candidates_token_count` = answer only, separate `thoughts_token_count`
+- **xAI**: `completion_tokens` = answer only (despite OpenAI-compatible API!)
+
+This is why xAI requires special handling - it uses OpenAI field names but Google semantics.
 
 ## Detailed Provider Information
 
@@ -167,6 +192,31 @@ reasoning_tokens = output_tokens - answer_tokens
 ```
 
 **Note**: The `reasoning_content` field availability may depend on the HuggingFace Inference Providers routing. Token counts reflect reasoning effort even if content is not exposed.
+
+---
+
+### xAI (Grok 4)
+
+**API**: xAI API (OpenAI-compatible endpoint)
+
+**Chain-of-Thought**:
+- Access: **Hidden** - reasoning not exposed in response
+- Format: N/A - `message.reasoning_content` field is null
+- Model performs reasoning internally but does not return the trace
+
+**Raw API Fields**:
+- `usage.prompt_tokens`: Input token count
+- `usage.completion_tokens`: **Answer tokens only** (excludes reasoning)
+- `usage.completion_tokens_details.reasoning_tokens`: Reasoning token count
+
+**Important**: Despite using an OpenAI-compatible API, xAI's `completion_tokens` field has **different semantics** than OpenAI's. OpenAI's `completion_tokens` includes reasoning; xAI's does not.
+
+**Normalization**:
+```
+answer_tokens = API usage.completion_tokens
+reasoning_tokens = API usage.completion_tokens_details.reasoning_tokens
+output_tokens = answer_tokens + reasoning_tokens  # COMPUTED
+```
 
 ---
 

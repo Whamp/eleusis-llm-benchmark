@@ -147,10 +147,10 @@ class XAIClient(BaseLLMClient):
     ) -> LLMCallMetrics:
         """Extract metrics from API response with normalized token fields.
 
-        xAI follows OpenAI pattern - completion_tokens includes reasoning, so:
-        - output_tokens = API completion_tokens
+        xAI follows Google pattern - completion_tokens is answer-only, so:
+        - answer_tokens = API completion_tokens
         - reasoning_tokens = API reasoning_tokens (if available)
-        - answer_tokens = output_tokens - reasoning_tokens
+        - output_tokens = answer_tokens + reasoning_tokens
         """
         duration = end_time - start_time
 
@@ -184,7 +184,6 @@ class XAIClient(BaseLLMClient):
 
         # --- COMPUTED VALUES ---
         prompt_tokens = api_prompt_tokens
-        output_tokens = api_completion_tokens
         reasoning_tokens = api_reasoning_tokens or 0
         has_reasoning = reasoning_tokens > 0
 
@@ -196,7 +195,9 @@ class XAIClient(BaseLLMClient):
         elif api_reasoning_tokens:
             logger.debug(f"[xAI] Using NATIVE reasoning_tokens from API: {api_reasoning_tokens}")
 
-        answer_tokens = max(0, output_tokens - reasoning_tokens)
+        # xAI: completion_tokens is answer-only (like Google), not total (like OpenAI)
+        answer_tokens = api_completion_tokens
+        output_tokens = answer_tokens + reasoning_tokens
 
         logger.debug(f"[xAI] FINAL token counts: prompt={prompt_tokens}, "
                     f"output={output_tokens} (answer={answer_tokens} + reasoning={reasoning_tokens})")
