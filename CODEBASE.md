@@ -1,19 +1,20 @@
 # Codebase Structure
 
-> Auto-generated developer documentation. Last updated: 2026-01-12
+> Auto-generated developer documentation. Last updated: 2026-01-16
 
 ## Overview
 
 Eleusis LLM Benchmark evaluates language models on **pattern discovery** using a card game. An LLM player receives cards and must deduce a hidden rule (e.g., "alternating colors") by observing which cards are accepted or rejected. The benchmark measures how efficiently models can form and test hypotheses.
 
-**Architecture**: Game engine (pure Python) + LLM providers (OpenRouter, HuggingFace) + evaluation scripts.
+**Architecture**: Game engine (pure Python) + LLM providers (Anthropic, OpenAI, Google, xAI, HuggingFace) + evaluation scripts.
 
 ## Tech Stack
 
 - **Python 3.11+** with type hints
 - **uv** for package management
 - **pydantic** for data validation
-- **openai** SDK for API calls (used by both providers)
+- **anthropic**, **openai**, **google-genai** SDKs for API calls
+- **huggingface-hub** for open model inference
 - **PyYAML** for configuration
 - **pandas/matplotlib** for analysis (optional)
 
@@ -25,17 +26,21 @@ src/eleusis/          # Main package
   llm/                # LLM providers and player logic
   prompts/            # Prompt templates
   runner.py           # Round orchestration
+  player.py           # LLM-based player
   utils.py            # Logging, utilities
 
 scripts/              # CLI entry points
   evaluate_single.py  # Main evaluation script
   analyze_results.py  # Post-hoc analysis
   generate_rule_library.py  # Rule generation
-  evaluate_rules.py   # Rule statistics
 
 tests/                # pytest tests
 results/              # Evaluation outputs (JSON)
 logs/                 # Debug logs
+
+models.yaml           # Model configurations (provider, model_id, options)
+config.yaml           # Game settings (rounds, turns, rules)
+rules.json            # Pre-generated rule library
 ```
 
 ## Entry Points
@@ -45,20 +50,20 @@ logs/                 # Debug logs
 Main evaluation script that runs multiple rounds of the game.
 
 ```bash
-uv run scripts/evaluate_single.py --player "openrouter:anthropic/claude-haiku" --num-rounds 10
+uv run scripts/evaluate_single.py --model "claude-opus-4.5" --num-rounds 10
 ```
 
 **Key functions**:
 - `main()` - Orchestrates full evaluation, handles checkpointing
 - `load_checkpoint()` / `reconstruct_config_from_checkpoint()` - Resume support (self-contained, no config.yaml needed)
-- `play_round()` - Delegates to `eleusis.runner.play_round()`
+- `preflight_check()` - Fast-fail connectivity test before evaluation
+- Delegates to `eleusis.runner.play_round()`
 
 ### Utility Scripts
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/generate_rule_library.py` | Generate rules.json with LLM |
-| `scripts/evaluate_rules.py` | Calculate acceptance rates for rules |
+| `scripts/generate_rule_library.py` | Compile human-written rules from rules.txt to rules.json |
 | `scripts/analyze_results.py` | Cross-model analysis and plots |
 
 ## Core Modules
@@ -68,6 +73,7 @@ uv run scripts/evaluate_single.py --player "openrouter:anthropic/claude-haiku" -
 Pure Python game logic with no LLM dependencies.
 
 #### `game/cards.py` - Card System
+- **Location**: `src/eleusis/game/cards.py`
 - **Classes**: `Suit` (enum), `Card` (frozen dataclass), `Deck`, `Hand`
 - **Key details**:
   - Ranks 1-13 (Ace=1, King=13)
@@ -76,6 +82,7 @@ Pure Python game logic with no LLM dependencies.
   - `Deck.shuffle(seed=N)` for reproducibility
 
 #### `game/state.py` - Game State
+- **Location**: `src/eleusis/game/state.py`
 - **Classes**: `GameState`, `PlayerState`, `Mainline`, `Sideline`
 - **Key pattern**: Single-player focused
   ```python
@@ -83,83 +90,110 @@ Pure Python game logic with no LLM dependencies.
   state.player.hand  # Access hand
   state.mainline.get_all()  # Accepted cards
   state.sidelines  # Dict of rejected cards by position
+  state.to_compact_string()  # "5♥ [3♠] 7♦" format
   ```
 
 #### `game/engine.py` - Core Engine
+- **Location**: `src/eleusis/game/engine.py`
 - **Classes**: `Rule`, `GameEngine`, `PlayCardAction`, `GuessRuleAction`
 - **Key methods**:
-  - `Rule.evaluate(card, mainline) -> bool` - Execute rule code
-  - `GameEngine.setup_game(seed)` - Deal hands, place starter
+  - `Rule.evaluate(card, mainline) -> bool` - Execute rule code in sandbox
+  - `GameEngine.setup_game(round_seed)` - Deal hands, place starter
   - `GameEngine.play_turn(action) -> dict` - Process action
   - `GameEngine.calculate_score(max_turns, current_turn) -> int`
 
-**Rule compilation** (line 39-88):
+**Rule compilation** (lines 39-96):
 ```python
 # Rules are function bodies only, wrapped into:
 def evaluate_rule(card, mainline):
     {code}
 
-# Safe globals limit available builtins
-safe_globals = {"len": len, "sum": sum, "any": any, ...}
+# Safe globals limit available builtins (no imports allowed)
+safe_globals = {"len": len, "sum": sum, "any": any, "all": all, ...}
 ```
 
 #### `game/validator.py` - Rule Validation
+- **Location**: `src/eleusis/game/validator.py`
 - **Classes**: `RuleValidator`, `RuleFactory`, `ValidationResult`
 - **Key methods**:
-  - `RuleValidator.compare_rules()` - Simulation-based equivalence
-  - `RuleFactory.create_rule_with_metadata()` - Load from library
+  - `RuleValidator.compare_rules()` - Simulation-based equivalence testing
+  - `RuleValidator.check_equivalence_by_simulation()` - Tests all 52 cards across multiple simulated turns
+  - `RuleFactory.create_rule_with_metadata()` - Load from library (sequential or random)
 
-**Equivalence checking** (line 135-214): Simulates gameplay with both rules, checking if they agree on all 52 cards across multiple turns.
+**Equivalence checking** (lines 141-220): Simulates gameplay with both rules, checking if they agree on all 52 cards across multiple turns. Returns mismatch details for debugging.
+
+#### `game/metrics.py` - Rule Metrics
+- **Location**: `src/eleusis/game/metrics.py`
+- **Functions**: `code_complexity()` - AST node count + cyclomatic complexity
+- **Classes**: `RuleEvaluator` - Simulates random plays to calculate acceptance rates
 
 ### `llm/` - LLM Integration
 
 #### `llm/base.py` - Base Client
+- **Location**: `src/eleusis/llm/base.py`
 - **Classes**: `BaseLLMClient` (ABC), `LLMCallMetrics`, `GenerateMetrics`, `TruncationError`
 - **Key methods**:
   - `generate(prompt, xml_tag, return_dict)` - Main generation, raises `TruncationError` on max tokens
   - `convert_rule_to_code(rule_text)` - Natural language to Python
-  - `get_usage_stats()` - Token counts, costs
+  - `get_usage_stats()` - Token counts (prompt, output, reasoning, answer)
+  - `_extract_content_from_response()` - XML tag and code block extraction
 
 **Truncation handling**: If `finish_reason="length"`, raises `TruncationError`. Retry logic is handled at the player level.
 
-#### `llm/player.py` - LLMScientist
+#### `llm/__init__.py` - Client Factory
+- **Location**: `src/eleusis/llm/__init__.py`
+- **Function**: `create_client(model_key, temperature, max_tokens, role, seed)`
+- **Function**: `load_model_config(model_key)` - Load from models.yaml
+
+Routes model keys to appropriate providers:
+```python
+create_client("claude-opus-4.5")    # → AnthropicClient
+create_client("gpt-5.2-medium")     # → OpenAIClient
+create_client("gemini-3-pro")       # → GoogleClient
+create_client("grok-4")             # → XAIClient
+create_client("deepseek-r1")        # → HuggingFaceClient
+```
+
+#### Provider Implementations
+
+| File | Provider | Key Config |
+|------|----------|------------|
+| `llm/anthropic.py` | Anthropic | `reasoning_budget` for extended thinking |
+| `llm/openai_client.py` | OpenAI | `reasoning_effort` (none→xhigh) |
+| `llm/google.py` | Google | `thinking_level` (low/high) |
+| `llm/xai.py` | xAI | Standard completion |
+| `llm/huggingface.py` | HuggingFace | `hf_provider`, `reasoning_format` |
+
+All implement `_call_api()` returning `(response, LLMCallMetrics)`.
+
+#### `player.py` - LLMScientist
+- **Location**: `src/eleusis/player.py`
 - **Class**: `LLMScientist`
 - **Key methods**:
   - `get_action(game_state) -> Action` - Decide what to play
   - `_select_move()` - LLM-based card selection with retry logic
+  - `_parse_card()` - Convert "5♥" to Card object
   - `record_action_result()` - Track play history
-- **Tracking fields**: `last_retry_count`, `last_retry_causes`
 
 **Retry logic**: Up to 3 attempts per turn. On retries, appends "DO NOT REASON TOO LONG" hint to prompt. Tracks causes: `max_token_reached`, `card_parse_error`, `other_error`. Falls back to random card after 3 failures.
-
-**Card parsing**: Converts LLM output like "5♥" to `Card(5, Suit.HEARTS)`.
-
-#### `llm/openrouter.py`, `llm/huggingface.py` - Providers
-Implement `_call_api()` for respective APIs. Both use openai-compatible SDK.
-
-#### `llm/__init__.py` - Factory
-```python
-def create_client(model_spec: str, ...) -> BaseLLMClient:
-    # "openrouter:model" -> OpenRouterClient
-    # "hf:model" -> HuggingFaceClient
-```
 
 ### `prompts/` - Prompt Templates
 
 #### `prompts/action.py`
-- `get_action_prompt()` - Player turn prompt with game state, hand, history
-
-#### `prompts/game_rules.py`
-- `get_game_rules()` - Full game explanation
-- `get_eleusis_rules()` - Card game basics
+- **Function**: `get_action_prompt()` - Player turn prompt with game state, hand, history
+- Returns structured prompt expecting `<ACTION>{"card": "5♥", ...}</ACTION>` response
 
 #### `prompts/compile.py`
-- `get_rule_compile_prompt()` - Convert rule description to Python
-- `get_library_generation_prompt()` - Generate multiple rules
+- **Function**: `get_rule_compile_prompt()` - Convert rule description to Python code
+- Includes sandbox restrictions and examples
+
+#### `prompts/game_rules.py`
+- **Function**: `get_game_rules()` - Full game explanation for LLM context
 
 ### `runner.py` - Round Orchestration
 
-**Function**: `play_round(config, round_number, rule, ...) -> dict`
+- **Location**: `src/eleusis/runner.py`
+- **Function**: `play_round(config, round_number, rule, ...) -> dict`
 
 Orchestrates a single round:
 1. Initialize LLM clients (rule compiler + player)
@@ -168,12 +202,22 @@ Orchestrates a single round:
 4. Main loop: `LLMScientist.get_action()` → `GameEngine.play_turn()`
 5. Return results with turn data, LLM usage, timing
 
+### `utils.py` - Utilities
+
+- **Location**: `src/eleusis/utils.py`
+- **Functions**:
+  - `model_spec_to_display_name()` - "claude-opus-4.5" → "Claude Opus 4.5"
+  - `setup_logging()` - Dual output: colored console + detailed file
+- **Classes**: `ColoredFormatter` - ANSI color codes for terminal
+
 ## Execution Flow
 
 ```
 evaluate_single.py::main()
     ↓
-    load config.yaml
+    load config.yaml + models.yaml
+    ↓
+    preflight_check(model_key)  # Fast-fail connectivity test
     ↓
     for each round:
         ↓
@@ -183,7 +227,7 @@ evaluate_single.py::main()
             ↓
             RuleFactory.create_rule_with_metadata()
             ↓
-            GameEngine.setup_game()
+            GameEngine.setup_game(round_seed)
             ↓
             while not game_over:
                 LLMScientist.get_action()
@@ -203,6 +247,10 @@ evaluate_single.py::main()
 ## Data Flow
 
 ```
+models.yaml (provider configs)
+    ↓ create_client()
+LLM clients (rule_compiler, player)
+
 rules.json (pre-generated)
     ↓ RuleFactory
 Rule object
@@ -218,22 +266,46 @@ results/{folder}/results.json
 
 ## Configuration
 
+### `models.yaml` Structure
+
+Define model configurations with provider-specific settings:
+
+```yaml
+# Closed providers
+claude-opus-4.5:
+  provider: anthropic
+  model_id: claude-opus-4-5-20251101
+  reasoning_budget: 8000
+
+gpt-5.2-medium:
+  provider: openai
+  model_id: gpt-5.2
+  reasoning_effort: medium
+
+# Open models via HuggingFace
+deepseek-r1:
+  provider: huggingface
+  model_id: deepseek-ai/DeepSeek-R1
+  hf_provider: together
+  reasoning_format: think_tags
+```
+
 ### `config.yaml` Structure
 
 ```yaml
-providers:           # API key env vars
-game:               # num_rounds, max_turns, hand_size, wrong_guess_penalty
-rule_compiler:      # Model for rule compilation
+game:               # num_rounds, max_turns, hand_size, wrong_guess_penalty, seed
+rule_compiler:      # Model key for rule compilation
 rules:              # library_path, selection (sequential/random), index
-llm:                # max_tokens, temperature, retries
-model:              # Player model spec (e.g., "openrouter:claude-haiku")
-seed:               # For reproducibility
+llm:                # max_tokens, temperature, max_llm_retries, seed
 ```
 
 ### Environment Variables
 
 ```bash
-OPENROUTER_API_KEY=...
+ANTHROPIC_API_KEY=...
+OPENAI_API_KEY=...
+GOOGLE_API_KEY=...
+XAI_API_KEY=...
 HF_TOKEN=...
 ```
 
@@ -260,12 +332,16 @@ uv run pytest              # Test
 ## Key Patterns & Conventions
 
 ### Model Specification
-```
-"openrouter:anthropic/claude-haiku"  → OpenRouter
-"hf:meta-llama/Llama-3.3-70B"        → HuggingFace
+
+Use model keys from `models.yaml`:
+```bash
+--model "claude-opus-4.5"    # Anthropic
+--model "gpt-5.2-high"       # OpenAI with high reasoning
+--model "deepseek-r1"        # HuggingFace via Together
 ```
 
 ### Rule Format
+
 Rules are **function bodies only** (no `def`):
 ```python
 # Correct
@@ -279,40 +355,42 @@ def evaluate_rule(card, mainline):
 ```
 
 ### Available in Rules
+
 - `card.rank` (1-13), `card.color` ("red"/"black"), `card.suit.suit_name`
 - `mainline` (list of previous accepted cards)
 - Builtins: `len`, `sum`, `min`, `max`, `any`, `all`, `range`, `set`, etc.
+- No imports allowed
 
 ### Structured Output
+
 LLM responses use XML tags:
 ```xml
-<ACTION>{"card": "5♥", "reasoning_summary": "...", ...}</ACTION>
+<ACTION>{"card": "5♥", "reasoning_summary": "...", "tentative_rule": "...", "confidence_level": 7, "guess_rule": false}</ACTION>
 ```
 
 ### Checkpointing
-Results saved after each round to `results/{folder}/results.json` with `checkpoint` field for resume.
+
+Results saved after each round to `results/{folder}/results.json` with `checkpoint` field for resume. Checkpoints are self-contained (include full rules library).
 
 ### Results JSON Structure
+
 Each turn in `results.json` includes:
 ```json
 {
   "turn_number": 1,
   "llm_response": {"card": "5♥", "reasoning_summary": "..."},
   "action_result": {"card": "5♥", "accepted": true},
-  "tokens": {"output_tokens": 500, "reasoning_tokens": 400},
+  "tokens": {"output_tokens": 500, "reasoning_tokens": 400, "answer_tokens": 100},
   "retry_count": 0,
-  "retry_causes": []
+  "retry_causes": [],
+  "guess_attempt": null
 }
 ```
 
-**Retry tracking fields**:
-- `retry_count`: Number of failed attempts before success (0 = first attempt worked)
-- `retry_causes`: List of `{"attempt": N, "cause": "..."}` for each failure
-  - Causes: `max_token_reached`, `card_parse_error`, `other_error`
-
 **Statistics include**:
-- `total_retries`: Sum of all retry counts across all turns
-- `retry_by_cause`: Breakdown by cause type (e.g., `{"max_token_reached": 5, "card_parse_error": 2}`)
+- `total_retries`: Sum of all retry counts
+- `retry_by_cause`: Breakdown by cause type
+- `total_output_tokens`, `total_reasoning_tokens`, `total_answer_tokens`
 
 ## Common Tasks
 
@@ -320,18 +398,17 @@ Each turn in `results.json` includes:
 
 1. Create `src/eleusis/llm/newprovider.py`
 2. Inherit from `BaseLLMClient`
-3. Implement `_call_api()` and `provider_name`
+3. Implement `_call_api()` and `provider_name` property
 4. Register in `llm/__init__.py::create_client()`
 
-### Add a New Prompt
+### Add a New Model
 
-1. Create function in appropriate `prompts/*.py` file
-2. Export in `prompts/__init__.py`
-3. Call from `llm/player.py` or `llm/base.py`
+1. Add entry to `models.yaml` with provider and model_id
+2. Include any provider-specific options (reasoning_budget, etc.)
 
 ### Modify Scoring
 
-Edit `GameEngine.calculate_score()` in `game/engine.py:252-269`.
+Edit `GameEngine.calculate_score()` in `game/engine.py:268-285`.
 
 ### Add Analysis Metric
 
