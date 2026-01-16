@@ -32,19 +32,16 @@ def parse_args():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Run with defaults from config.yaml
-  python scripts/evaluate_single.py
-
-  # Override player model (using model key from models.yaml)
-  python scripts/evaluate_single.py --player "claude-opus"
+  # Run evaluation with a model
+  python scripts/evaluate_single.py --model "claude-opus"
 
   # Run 20 rounds with a specific model and custom tag
-  python scripts/evaluate_single.py --player "gpt-5.2" --num-rounds 20 --tag gpt
+  python scripts/evaluate_single.py --model "gpt-5.2" --num-rounds 20 --tag gpt
 
   # Start from rule index 10
-  python scripts/evaluate_single.py --rule-index 10
+  python scripts/evaluate_single.py --model "gpt-5.2" --rule-index 10
 
-  # Resume interrupted evaluation
+  # Resume interrupted evaluation (model taken from checkpoint)
   python scripts/evaluate_single.py --resume results/solo_evaluation_20251205_151306
 """
     )
@@ -52,8 +49,8 @@ Examples:
                         help='Path to config file (default: config.yaml)')
     parser.add_argument('--resume', type=str,
                         help='Path to resume folder (e.g., results/solo_evaluation_20251205_151306)')
-    parser.add_argument('--player', type=str,
-                        help='Player model key from models.yaml (e.g., "claude-opus", "gpt-5.2")')
+    parser.add_argument('--model', type=str,
+                        help='Model key from models.yaml (required unless --resume)')
     parser.add_argument('--num-rounds', type=int,
                         help='Number of rounds to play')
     parser.add_argument('--rule-index', type=int,
@@ -77,10 +74,6 @@ def load_config(config_path: str) -> dict:
 def apply_cli_overrides(config: dict, args) -> dict:
     """Apply CLI argument overrides to config."""
     game_config = config["game"]
-
-    # Player model override
-    if args.player:
-        config["model"] = args.player
 
     # Number of rounds override
     if args.num_rounds is not None:
@@ -192,12 +185,12 @@ def reconstruct_config_from_checkpoint(checkpoint: dict) -> dict:
 
     return {
         'model': cfg['player_model'],
-        'seed': cfg.get('seed'),
         'game': {
             'num_rounds': cfg['num_rounds'],
             'max_turns': cfg['max_turns'],
             'hand_size': cfg['hand_size'],
             'wrong_guess_penalty': cfg['wrong_guess_penalty'],
+            'seed': cfg.get('seed'),
         },
         'llm': {
             'max_tokens': cfg.get('llm_max_tokens', 8192),
@@ -281,6 +274,11 @@ def main():
     logging.basicConfig(level=logging.INFO, format='%(message)s')
     temp_logger = logging.getLogger(__name__)
 
+    # Check required arguments
+    if not args.resume and not args.model:
+        temp_logger.error("--model is required (unless using --resume)")
+        return
+
     # Load checkpoint OR config.yaml (resume is self-contained, no config.yaml needed)
     checkpoint = None
     if args.resume:
@@ -292,13 +290,13 @@ def main():
         # Reconstruct full config from checkpoint (self-contained resume)
         config = reconstruct_config_from_checkpoint(checkpoint)
 
-        # Validate CLI player model override if provided
-        if args.player and args.player != checkpoint['config']['player_model']:
-            temp_logger.error("Player model mismatch:")
+        # Validate CLI model override if provided
+        if args.model and args.model != checkpoint['config']['player_model']:
+            temp_logger.error("Model mismatch:")
             temp_logger.error(f"  Checkpoint: {checkpoint['config']['player_model']}")
-            temp_logger.error(f"  CLI --player: {args.player}")
-            temp_logger.error("Cannot resume with different player model")
-            temp_logger.error("Remove --player flag to use checkpoint's model, or start a new evaluation")
+            temp_logger.error(f"  CLI --model: {args.model}")
+            temp_logger.error("Cannot resume with different model")
+            temp_logger.error("Remove --model flag to use checkpoint's model, or start a new evaluation")
             return
 
         # Check if selection mode is sequential
@@ -321,10 +319,11 @@ def main():
         rule_compiler_display_name = checkpoint['config']['rule_compiler']
         rounds_per_rule = config['rules']['rounds_per_rule']
     else:
-        # Fresh start - load config.yaml
+        # Fresh start - load config.yaml and set model from CLI
         config = load_config(args.config)
         config = apply_cli_overrides(config, args)
-        player_model = config["model"]
+        config["model"] = args.model  # Model comes from CLI, not config
+        player_model = args.model
         player_display_name = model_spec_to_display_name(player_model)
         rule_compiler_display_name = model_spec_to_display_name(config["rule_compiler"]["model"])
         rounds_per_rule = config["rules"].get("rounds_per_rule", 1)
@@ -468,7 +467,7 @@ def main():
                 'hand_size': game_config.get('hand_size', 12),
                 'max_turns': game_config.get('max_turns', 40),
                 'wrong_guess_penalty': game_config.get('wrong_guess_penalty', 3),
-                'seed': config.get('seed'),
+                'seed': game_config.get('seed'),
                 'llm_max_tokens': config['llm'].get('max_tokens', 8192),
                 'llm_temperature': config['llm'].get('temperature', 0.7),
                 'llm_seed': config['llm'].get('seed'),

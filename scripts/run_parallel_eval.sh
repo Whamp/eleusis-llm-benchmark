@@ -54,7 +54,7 @@ echo ""
 
 for model in "${MODELS[@]}"; do
     echo "[$(date '+%H:%M:%S')] Starting: $model"
-    uv run python scripts/evaluate_single.py --config "$CONFIG_FILE" --player "$model" &
+    uv run python scripts/evaluate_single.py --config "$CONFIG_FILE" --model "$model" &
     sleep 2
 done
 

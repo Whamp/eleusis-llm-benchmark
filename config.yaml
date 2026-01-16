@@ -7,10 +7,7 @@ game:
   max_turns: 40
   hand_size: 12
   wrong_guess_penalty: 2
-
-# Seed for reproducibility (same rule -> same initial hand/deck for different models)
-# Comment out or remove to use random shuffling
-seed: 42
+  seed: 42  # Seed for reproducibility (same rule -> same initial hand/deck)
 
 
 # Rule compiler model configuration (converts natural language rules to code)
@@ -33,8 +30,3 @@ llm:
   max_llm_retries: 3
   temperature: 0.7
   seed: 42  # Seed for LLM generation (not guaranteed deterministic, but helps reproducibility)
-
-# Model key from models.yaml
-# Available: claude-opus, gpt-5.2, gemini-3-pro, grok-4
-#            deepseek-r1, kimi-k2, glm-4.7, gpt-oss-120b, gpt-oss-20b
-model: gpt-oss-20b

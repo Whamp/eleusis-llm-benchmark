@@ -137,7 +137,7 @@ def play_round(
 
     # Compute round seed from rule code for reproducibility
     # Use hashlib instead of hash() because Python's hash() is randomized per process
-    base_seed = config.get("seed")
+    base_seed = config["game"].get("seed")
     if base_seed is not None:
         rule_hash = int(hashlib.md5(rule.get_code().encode()).hexdigest(), 16) & 0xFFFFFFFF
         round_seed = (base_seed + rule_hash) & 0xFFFFFFFF
