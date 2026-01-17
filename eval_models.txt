@@ -1,16 +1,16 @@
 # Closed providers
 claude-opus-4.5
-gpt-5.2-high
-gpt-5.2-xhigh
-gemini-3-pro-preview-low
-gemini-3-pro-preview-high
-gemini-3-flash-preview-high
-grok-4
-grok-4-1-fast-reasoning
+#gpt-5.2-high
+#gpt-5.2-xhigh
+#gemini-3-pro-preview-low
+#gemini-3-pro-preview-high
+#gemini-3-flash-preview-high
+#grok-4
+#grok-4-1-fast-reasoning
 
 # Open models via HuggingFace
-gpt-oss-20b
-gpt-oss-120b
-deepseek-r1
-kimi-k2
-glm-4.7
+#gpt-oss-20b
+#gpt-oss-120b
+#deepseek-r1
+#kimi-k2
+#glm-4.7

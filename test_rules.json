@@ -51,7 +51,7 @@
     {
       "name": "face_red_number_black",
       "description": "Face cards must be red; number cards (1-10) must be black.",
-      "code": "if not mainline:\n    return True\nif card.rank >= 11:\n    return card.color == \"red\"\nelse:\n    return card.color == \"black\"",
+      "code": "if card.rank >= 11:\n    return card.color == \"red\"\nelse:\n    return card.color == \"black\"",
       "avg_acceptance_rate": 0.48,
       "node_count": 32,
       "cyclomatic_complexity": 3
