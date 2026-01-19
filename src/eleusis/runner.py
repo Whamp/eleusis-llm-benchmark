@@ -20,6 +20,7 @@ def play_round(
     max_turns: int | None = None,
     start_rule_index: int | None = None,
     rules_list: list[dict] | None = None,
+    batch_round_index: int = 0,
 ) -> dict:
     """Play a single round of pattern discovery.
 
@@ -30,6 +31,8 @@ def play_round(
         max_turns: Optional override for max turns
         start_rule_index: Starting index for RuleFactory (for resume support)
         rules_list: Pre-loaded rules list (for resume, takes precedence over library file)
+        batch_round_index: Index within the current rule's batch (0 for first round with rule)
+            Used to ensure different deck shuffles when replaying same rule.
 
     Returns:
         dict with round_number, turn_count, rule_description, rule_code,
@@ -137,11 +140,13 @@ def play_round(
 
     # Compute round seed from rule code for reproducibility
     # Use hashlib instead of hash() because Python's hash() is randomized per process
+    # Include batch_round_index so same rule gets different shuffles in each round
     base_seed = config["game"].get("seed")
     if base_seed is not None:
         rule_hash = int(hashlib.md5(rule.get_code().encode()).hexdigest(), 16) & 0xFFFFFFFF
-        round_seed = (base_seed + rule_hash) & 0xFFFFFFFF
-        logger.info(f"Using round seed: {round_seed} (base_seed={base_seed}, rule_hash={rule_hash})")
+        round_seed = (base_seed + rule_hash + batch_round_index) & 0xFFFFFFFF
+        logger.info(f"Using round seed: {round_seed} "
+                    f"(base={base_seed}, rule_hash={rule_hash}, batch_idx={batch_round_index})")
     else:
         round_seed = None
 
@@ -293,7 +298,7 @@ def play_round(
                 logger.info("")
                 logger.info(f"Shadow evaluation for tentative rule (confidence={conf_level})...")
                 is_correct, reasoning, metadata = engine.evaluate_rule(guess_text)
-                verdict = "CORRECT ✓" if is_correct else "INCORRECT ✗"
+                verdict = "CORRECT ✅" if is_correct else "INCORRECT ❌"
                 logger.info(f"Shadow evaluation result: {verdict}")
 
                 complexity = metadata.get("complexity_metrics") or {}
@@ -313,10 +318,10 @@ def play_round(
             logger.info("")
             logger.info("RULE GUESS!")
             logger.info(f"Guess: {result['guess']}")
-            logger.info(f"Verdict: {'CORRECT ✓✓✓' if result.get('correct') else 'INCORRECT ✗'}")
+            logger.info(f"Verdict: {'CORRECT ✅✅✅' if result.get('correct') else 'INCORRECT ❌❌❌'}")
             if result.get("correct"):
                 logger.info("=" * 80)
-                logger.info(f"GAME OVER! {player_name} won on turn {turn_count + 1}!")
+                logger.info(f"{player_name} FOUND RULE ON TURN {turn_count + 1}!")
                 logger.info("=" * 80)
                 game_over_reason = "correct_guess"
                 break

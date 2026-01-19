@@ -50,7 +50,7 @@ rules.json            # Pre-generated rule library
 Main evaluation script that runs multiple rounds of the game.
 
 ```bash
-uv run scripts/evaluate_single.py --model "claude-opus-4.5" --num-rounds 10
+uv run scripts/evaluate_single.py --model "claude-opus-4.5" --num-rules 10
 ```
 
 **Key functions**:
@@ -293,7 +293,7 @@ deepseek-r1:
 ### `config.yaml` Structure
 
 ```yaml
-game:               # num_rounds, max_turns, hand_size, wrong_guess_penalty, seed
+game:               # num_rules, num_rounds_per_rule, max_turns, hand_size, wrong_guess_penalty, seed
 rule_compiler:      # Model key for rule compilation
 rules:              # library_path, selection (sequential/random), index
 llm:                # max_tokens, temperature, max_llm_retries, seed

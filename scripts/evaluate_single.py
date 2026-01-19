@@ -35,8 +35,8 @@ Examples:
   # Run evaluation with a model
   python scripts/evaluate_single.py --model "claude-opus"
 
-  # Run 20 rounds with a specific model and custom tag
-  python scripts/evaluate_single.py --model "gpt-5.2" --num-rounds 20 --tag gpt
+  # Test 20 rules with a specific model and custom tag
+  python scripts/evaluate_single.py --model "gpt-5.2" --num-rules 20 --tag gpt
 
   # Start from rule index 10
   python scripts/evaluate_single.py --model "gpt-5.2" --rule-index 10
@@ -51,8 +51,8 @@ Examples:
                         help='Path to resume folder (e.g., results/solo_evaluation_20251205_151306)')
     parser.add_argument('--model', type=str,
                         help='Model key from models.yaml (required unless --resume)')
-    parser.add_argument('--num-rounds', type=int,
-                        help='Number of rounds to play')
+    parser.add_argument('--num-rules', type=int,
+                        help='Number of distinct rules to test')
     parser.add_argument('--rule-index', type=int,
                         help='Starting rule index (for sequential selection)')
     parser.add_argument('--max-turns', type=int,
@@ -75,9 +75,9 @@ def apply_cli_overrides(config: dict, args) -> dict:
     """Apply CLI argument overrides to config."""
     game_config = config["game"]
 
-    # Number of rounds override
-    if args.num_rounds is not None:
-        game_config["num_rounds"] = args.num_rounds
+    # Number of rules override
+    if args.num_rules is not None:
+        game_config["num_rules"] = args.num_rules
 
     # Max turns override
     if args.max_turns is not None:
@@ -127,44 +127,10 @@ def load_checkpoint(resume_folder: str) -> dict | None:
 
     # Validate checkpoint structure
     if "checkpoint" not in checkpoint:
-        logger.warning("No checkpoint field in results.json - may be from older version")
-        logger.warning("Converting to checkpoint format...")
-        # Try to create checkpoint from old format
-        checkpoint = convert_old_format_to_checkpoint(checkpoint)
-        if not checkpoint:
-            return None
-
-    return checkpoint
-
-
-def convert_old_format_to_checkpoint(old_results: dict) -> dict | None:
-    """Convert old results format (without checkpoint) to new format."""
-    if not old_results.get('rounds'):
-        logger.error("No rounds found in results.json")
+        logger.error("No checkpoint field in results.json - incompatible format")
         return None
 
-    # Extract info from last round
-    rounds = old_results['rounds']
-    last_round = rounds[-1]
-
-    checkpoint_data = {
-        'completed_rounds': len(rounds),
-        'total_rounds': old_results.get('config', {}).get('num_rounds', 50),
-        'rule_factory_state': {
-            'selection': 'sequential',  # Assume sequential
-            'current_index': len(rounds),  # Best guess
-        },
-        'current_rule': {
-            'description': last_round.get('rule_description'),
-            'code': last_round.get('rule_code'),
-            'rounds_used_in_batch': 1,
-            'rounds_per_rule': 1,
-        },
-        'rules_consumed': []
-    }
-
-    old_results['checkpoint'] = checkpoint_data
-    return old_results
+    return checkpoint
 
 
 def restore_rule_from_checkpoint(rule_data: dict | None) -> Rule | None:
@@ -186,7 +152,8 @@ def reconstruct_config_from_checkpoint(checkpoint: dict) -> dict:
     return {
         'model': cfg['player_model'],
         'game': {
-            'num_rounds': cfg['num_rounds'],
+            'num_rules': cfg['num_rules'],
+            'num_rounds_per_rule': cfg['num_rounds_per_rule'],
             'max_turns': cfg['max_turns'],
             'hand_size': cfg['hand_size'],
             'wrong_guess_penalty': cfg['wrong_guess_penalty'],
@@ -206,7 +173,6 @@ def reconstruct_config_from_checkpoint(checkpoint: dict) -> dict:
             'library_path': None,  # Not needed, rules embedded in checkpoint
             'selection': chk['rule_factory_state']['selection'],
             'index': chk['rule_factory_state']['current_index'],
-            'rounds_per_rule': cfg['rounds_per_rule'],
         },
     }
 
@@ -317,7 +283,7 @@ def main():
         player_model = config['model']
         player_display_name = checkpoint['config']['player']
         rule_compiler_display_name = checkpoint['config']['rule_compiler']
-        rounds_per_rule = config['rules']['rounds_per_rule']
+        num_rounds_per_rule = config['game']['num_rounds_per_rule']
     else:
         # Fresh start - load config.yaml and set model from CLI
         config = load_config(args.config)
@@ -326,7 +292,7 @@ def main():
         player_model = args.model
         player_display_name = model_spec_to_display_name(player_model)
         rule_compiler_display_name = model_spec_to_display_name(config["rule_compiler"]["model"])
-        rounds_per_rule = config["rules"].get("rounds_per_rule", 1)
+        num_rounds_per_rule = config["game"].get("num_rounds_per_rule", 1)
 
     # Load config sections
     game_config = config["game"]
@@ -358,17 +324,27 @@ def main():
     logger.info("Pre-flight check passed!")
     logger.info("")
 
-    # Determine num_rounds - from checkpoint when resuming, else from config
+    # Determine num_rules and num_rounds - from checkpoint when resuming, else from config
     if checkpoint:
         num_rounds = checkpoint['checkpoint']['total_rounds']
+        num_rules = config['game']['num_rules']  # From reconstruct_config_from_checkpoint
     else:
-        num_rounds = game_config.get("num_rounds", 10)
-        # Handle num_rounds=0: use entire rule library
-        if num_rounds == 0:
+        num_rules = game_config.get("num_rules", 10)
+        # Handle num_rules=0: use entire rule library
+        if num_rules == 0:
             all_rules = load_rules_from_library(config)
-            num_rounds = len(all_rules)
-            game_config["num_rounds"] = num_rounds
-            logger.info(f"num_rounds=0: using entire library ({num_rounds} rules)")
+            num_rules = len(all_rules)
+            game_config["num_rules"] = num_rules
+            logger.info(f"num_rules=0: using entire library ({num_rules} rules)")
+        # Validate: rules library has enough rules for num_rules
+        else:
+            all_rules = load_rules_from_library(config)
+            if len(all_rules) < num_rules:
+                logger.error(f"Not enough rules: {len(all_rules)} available, {num_rules} requested")
+                return
+        # Compute total rounds
+        num_rounds = num_rules * num_rounds_per_rule
+        game_config["num_rounds"] = num_rounds  # Store for compatibility
 
     # Initialize or resume
     if checkpoint:
@@ -391,6 +367,10 @@ def main():
             checkpoint['checkpoint'].get('current_rule')
         )
 
+        # Restore current rule name from last consumed rule
+        rules_consumed_list = checkpoint['checkpoint'].get('rules_consumed', [])
+        current_rule_name = rules_consumed_list[-1]['name'] if rules_consumed_list else None
+
         # Load rules library and consumed rules from checkpoint
         checkpoint_rules_library = checkpoint['checkpoint'].get('rules_library')
         rules_consumed = checkpoint['checkpoint'].get('rules_consumed', [])
@@ -398,14 +378,14 @@ def main():
         total_rounds = checkpoint['checkpoint']['total_rounds']
 
         # Validate: consumed rules count matches expected for completed rounds
-        # With rounds_per_rule > 1, we consume fewer rules than rounds
-        expected_consumed = (completed_rounds + rounds_per_rule - 1) // rounds_per_rule
+        # With num_rounds_per_rule > 1, we consume fewer rules than rounds
+        expected_consumed = (completed_rounds + num_rounds_per_rule - 1) // num_rounds_per_rule
         if len(rules_consumed) != expected_consumed:
             logger.error(f"Mismatch: {len(rules_consumed)} rules consumed but expected {expected_consumed} for {completed_rounds} rounds")
             return
 
         # Validate: library has enough rules for total rounds
-        expected_rules_needed = (total_rounds + rounds_per_rule - 1) // rounds_per_rule
+        expected_rules_needed = (total_rounds + num_rounds_per_rule - 1) // num_rounds_per_rule
         if len(checkpoint_rules_library) < expected_rules_needed:
             logger.error(f"Not enough rules: {len(checkpoint_rules_library)} in library but need {expected_rules_needed}")
             return
@@ -424,7 +404,7 @@ def main():
         logger.info(f"Log file: {log_file}")
         logger.info(f"Resuming from round {start_round} / {total_rounds}")
         logger.info(f"Rules consumed: {len(rules_consumed)}, unconsumed: {len(unconsumed_rules)}")
-        logger.info(f"Rounds per rule: {rounds_per_rule}")
+        logger.info(f"Rounds per rule: {num_rounds_per_rule}")
         if current_rule:
             logger.info(f"Reusing rule: {current_rule.description()[:80]}...")
         logger.info(f"  - Rule Compiler: {rule_compiler_display_name}")
@@ -435,6 +415,7 @@ def main():
         folder_name = f"solo_evaluation_{timestamp}_{output_tag}"
         start_round = 1
         current_rule = None
+        current_rule_name = None
         rule_factory_index = rules_cfg.get("index", 0)
         checkpoint_rules_library = None  # Will load from file
 
@@ -443,7 +424,7 @@ def main():
         logger.info("=" * 80)
         logger.info(f"Log file: {log_file}")
         logger.info(f"Output folder: results/{folder_name}")
-        logger.info(f"Rounds per rule: {rounds_per_rule}")
+        logger.info(f"Rounds per rule: {num_rounds_per_rule}")
         logger.info(f"  - Rule Compiler: {rule_compiler_display_name}")
         logger.info(f"  - Player: {player_display_name}")
         logger.info("")
@@ -459,8 +440,8 @@ def main():
             'timestamp': timestamp,
             'folder_name': folder_name,
             'config': {
-                'num_rounds': num_rounds,
-                'rounds_per_rule': rounds_per_rule,
+                'num_rules': num_rules,
+                'num_rounds_per_rule': num_rounds_per_rule,
                 'rule_compiler': rule_compiler_display_name,
                 'rule_compiler_model': config['rule_compiler']['model'],
                 'rule_compiler_temperature': config['rule_compiler'].get('temperature', 0.8),
@@ -509,43 +490,47 @@ def main():
         logger.info("=" * 80)
         logger.info("")
 
-        # Determine if new rule needed
-        need_new_rule = (round_num - 1) % rounds_per_rule == 0
+        # Determine if new rule needed and batch round index
+        batch_round_index = (round_num - 1) % num_rounds_per_rule
+        need_new_rule = batch_round_index == 0
 
         if need_new_rule:
             logger.info("Generating new rule for this batch of rounds...")
             current_rule = None  # Force new rule generation
         else:
-            logger.info(f"Reusing rule from previous round (batch {(round_num-1)//rounds_per_rule + 1})")
+            batch_num = (round_num - 1) // num_rounds_per_rule + 1
+            logger.info(f"Reusing rule from previous round (batch {batch_num})")
 
         # Track if we're generating a new rule this round
         generated_new_rule = current_rule is None
 
-        # Play round with rule_factory_index
+        # Play round with rule_factory_index and batch_round_index (for unique seeding)
         result = play_round(
             config=config,
             round_number=round_num,
             rule=current_rule,
             start_rule_index=rule_factory_index if need_new_rule else None,
             rules_list=checkpoint_rules_library,
+            batch_round_index=batch_round_index,
         )
 
         # Update current rule for reuse and track consumption
         if generated_new_rule:
             current_rule = Rule(result['rule_description'], result['rule_code'])
+            rule_metadata = result.get('rule_metadata', {}) or {}
+            current_rule_name = rule_metadata.get('name')
 
             # Increment rule_factory_index for RuleFactory (used for start position on next rule)
             rule_factory_index += 1
 
-            # Add newly consumed rule to rules_consumed list (using metadata from play_round)
+            # Add newly consumed rule to rules_consumed list
             if 'rules_consumed' not in evaluation_results.get('checkpoint', {}):
                 if 'checkpoint' not in evaluation_results:
                     evaluation_results['checkpoint'] = {}
                 evaluation_results['checkpoint']['rules_consumed'] = []
 
-            rule_metadata = result.get('rule_metadata', {}) or {}
             evaluation_results['checkpoint']['rules_consumed'].append({
-                'name': rule_metadata.get('name'),
+                'name': current_rule_name,
                 'description': current_rule.description(),
                 'code': current_rule.get_code(),
                 'rounds_completed': 1,
@@ -558,6 +543,8 @@ def main():
         # Update evaluation results
         evaluation_results['rounds'].append({
             'round_number': round_num,
+            'rule_name': current_rule_name,
+            'batch_round_index': batch_round_index,
             'turn_count': result['turn_count'],
             'rule_description': result['rule_description'],
             'rule_code': result['rule_code'],
@@ -606,8 +593,8 @@ def main():
             'current_rule': {
                 'description': current_rule.description() if current_rule else None,
                 'code': current_rule.get_code() if current_rule else None,
-                'rounds_used_in_batch': (round_num - 1) % rounds_per_rule + 1,
-                'rounds_per_rule': rounds_per_rule,
+                'rounds_used_in_batch': (round_num - 1) % num_rounds_per_rule + 1,
+                'num_rounds_per_rule': num_rounds_per_rule,
             },
             'rules_consumed': evaluation_results.get('checkpoint', {}).get('rules_consumed', []),
             'rules_library': evaluation_results.get('checkpoint', {}).get('rules_library', []),  # Preserve loaded library

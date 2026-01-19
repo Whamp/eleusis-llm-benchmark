@@ -30,8 +30,8 @@ This is a single-player game.
 A hidden rule created by the game master determines which cards are accepted or rejected. 
 Your goal is to play cards and discover the rule as efficiently as possible.
 
-Uses 2 standard 52-card decks shuffled together (104 cards total):
-- Ranks: Ace = 1 (low), 2–10, Jack = 11, Queen = 12, King = 13
+The game uses 2 standard 52-card decks shuffled together (104 cards total):
+- Ranks: Ace = 1 (low), 2–10, Jack = 11, Queen = 12, King = 13. Number cards are 1-10, face cards are 11-13.
 - Suits: Hearts ♥️ (red), Diamonds ♦️ (red), Clubs ♣️ (black), Spades ♠️ (black)
 
 The playing area consists of:

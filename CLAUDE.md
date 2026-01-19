@@ -16,7 +16,7 @@ uv sync
 uv run scripts/evaluate_single.py
 
 # Run with specific model and parameters
-uv run scripts/evaluate_single.py --player "openrouter:anthropic/claude-3.5-haiku" --num-rounds 10 --tag test
+uv run scripts/evaluate_single.py --player "openrouter:anthropic/claude-3.5-haiku" --num-rules 10 --tag test
 
 # Run parallel evaluation (multiple models)
 ./scripts/run_parallel_eval.sh

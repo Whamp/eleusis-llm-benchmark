@@ -35,8 +35,8 @@ uv run scripts/evaluate_single.py
 # Override player model (using model key from models.yaml)
 uv run scripts/evaluate_single.py --player "claude-opus"
 
-# Custom rounds and tag for identification
-uv run scripts/evaluate_single.py --player "gpt-5.2" --num-rounds 20 --tag gpt
+# Test 20 rules with a specific model and custom tag
+uv run scripts/evaluate_single.py --player "gpt-5.2" --num-rules 20 --tag gpt
 
 # Start from specific rule index
 uv run scripts/evaluate_single.py --rule-index 10
@@ -51,7 +51,7 @@ uv run scripts/evaluate_single.py --resume results/solo_evaluation_20251205_1513
 |----------|-------------|
 | `--config FILE` | Config file path (default: config.yaml) |
 | `--player MODEL` | Model key from models.yaml (e.g., `claude-opus`, `gpt-5.2`) |
-| `--num-rounds N` | Number of rounds to play |
+| `--num-rules N` | Number of distinct rules to test |
 | `--rule-index N` | Starting rule index (for sequential selection) |
 | `--max-turns N` | Max turns per round |
 | `--tag TAG` | Tag for output folder identification |
@@ -153,7 +153,8 @@ deepseek-r1:
 
 ```yaml
 game:
-  num_rounds: 50
+  num_rules: 50         # Number of distinct rules to test (0 = use entire library)
+  num_rounds_per_rule: 1  # How many rounds to play with each rule
   max_turns: 40
   hand_size: 12
   wrong_guess_penalty: 2

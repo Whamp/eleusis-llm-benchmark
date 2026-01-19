@@ -9,7 +9,7 @@ Only Aces (rank 1) or Kings (rank 13) may be placed.
 Only Aces (rank 1) may be placed.
 Only ranks that are perfect squares (1, 4, 9) may be played.
 Only prime number ranks (2,3,5,7,11,13) may be played.
-Only ranks that are multiples of 4 or 5 (4, 5, 8, 10, 12) may be played.
+Only ranks that are multiples of 4 or 5 (4, 5, 8, 10-$ù 12) may be played.
 
 # Rank alternation
 Card rank must have opposite odd/even parity to the previous card's rank.

@@ -3,7 +3,8 @@
 
 # Game settings
 game:
-  num_rounds: 0  # Set to 0 to use entire rule library
+  num_rules: 0  # Number of distinct rules to test (0 = use entire rule library)
+  num_rounds_per_rule: 1  # How many rounds to play with each rule
   max_turns: 40
   hand_size: 12
   wrong_guess_penalty: 2
@@ -21,7 +22,6 @@ rules:
   library_path: "rules.json"
   selection: "sequential"
   index: 0
-  rounds_per_rule: 1
 
 
 # LLM configuration
