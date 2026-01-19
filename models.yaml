@@ -11,6 +11,17 @@ claude-opus-4.5:
   reasoning_budget: 16000  # budget_tokens for extended thinking
   # For force-answer: thinking={"type": "disabled"}
 
+claude-haiku-4.5:
+  provider: anthropic
+  model_id: claude-haiku-4-5-20251001
+  reasoning_budget: 16000  # budget_tokens for extended thinking
+  # For force-answer: thinking={"type": "disabled"}
+
+gpt-5-mini-medium:
+  provider: openai
+  model_id: gpt-5-mini-2025-08-07
+  reasoning_effort: medium  # none|minimal|low|medium|high|xhigh
+
 gpt-5.2-medium:
   provider: openai
   model_id: gpt-5.2

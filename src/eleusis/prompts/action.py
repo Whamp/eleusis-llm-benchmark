@@ -25,8 +25,8 @@ def get_action_prompt(
     # Format play history
     history_str = ""
     if play_history:
-        history_str = "\n\nYOUR LAST 10 ATTEMPTS:\n"
-        for entry in play_history[-10:]:
+        history_str = "\n\nYour last 3 turns, with the card you played, your reasoning summary and the outcome:\n"
+        for entry in play_history[-3:]:
             card = entry.get("card", "N/A")
             reasoning_summary = entry.get("reasoning_summary", "")
             accepted = entry.get("accepted")
@@ -50,7 +50,8 @@ def get_action_prompt(
 # PATTERN DISCOVERY CARD GAME
 
 You are playing a single-player card game where your goal is to discover a hidden rule that determines which cards are accepted or rejected.
-This is your turn to play. Your task is to select a card from your hand to play, and optionally guess the hidden rule.
+This is your turn to play. Your task is to select a card from your hand to play, and optionally try to guess the hidden rule.
+Your score will depend on how quickly you can correctly identify the rule.
 
 Below you will find the rules of the game, the current game state, your hand, and your play history.
 
