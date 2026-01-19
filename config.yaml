@@ -33,4 +33,4 @@ llm:
   max_tokens: 16384
   max_llm_retries: 3
   temperature: 0.7
-  seed: 42  # Seed for LLM generation (not guaranteed deterministic, but helps reproducibility)
+  seed: 42  # Seed for LLM generation. Support varies: Google/xAI/HuggingFace pass to API (best-effort); Anthropic/OpenAI APIs don't support seed.

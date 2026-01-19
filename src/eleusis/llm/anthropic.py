@@ -27,7 +27,12 @@ class AnthropicChoice:
 
 
 class AnthropicClient(BaseLLMClient):
-    """Client for Anthropic Claude API with extended thinking support."""
+    """Client for Anthropic Claude API with extended thinking support.
+
+    Note: Anthropic API does not support a seed parameter. The seed is stored
+    but not passed to the API. Even at temperature=0, outputs may vary due to
+    GPU non-determinism.
+    """
 
     def __init__(
         self,

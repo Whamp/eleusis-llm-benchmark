@@ -27,7 +27,12 @@ class OpenAIChoice:
 
 
 class OpenAIClient(BaseLLMClient):
-    """Client for OpenAI GPT API with reasoning effort support."""
+    """Client for OpenAI GPT API with reasoning effort support.
+
+    Note: This client uses the Responses API which does not support a seed
+    parameter. The seed is stored but not passed to the API. The older Chat
+    Completions API had seed support but it's being deprecated.
+    """
 
     def __init__(
         self,

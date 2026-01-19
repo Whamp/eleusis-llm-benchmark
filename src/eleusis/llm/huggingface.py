@@ -41,6 +41,7 @@ class HuggingFaceClient(BaseLLMClient):
         stream: bool = True,
         hf_provider: str | None = None,
         reasoning_format: str = "separate_field",
+        timeout: int = 300,
     ) -> None:
         """Initialize HuggingFace client using Inference Providers.
 
@@ -50,6 +51,7 @@ class HuggingFaceClient(BaseLLMClient):
             reasoning_format: How reasoning is provided by the model:
                             "think_tags" - reasoning in <think>...</think> tags in content
                             "separate_field" - reasoning in separate API field
+            timeout: Request timeout in seconds (default 300s / 5 minutes).
         """
         super().__init__(
             model_name=model_name,
@@ -64,12 +66,13 @@ class HuggingFaceClient(BaseLLMClient):
         self.stream = stream
         self.hf_provider = hf_provider
         self.reasoning_format = reasoning_format
+        self.timeout = timeout
 
         if self.api_key:
             os.environ["HF_TOKEN"] = self.api_key
 
         # Initialize client with provider if specified
-        client_kwargs = {"bill_to": "huggingface"}
+        client_kwargs = {"bill_to": "huggingface", "timeout": self.timeout}
         if self.hf_provider:
             client_kwargs["provider"] = self.hf_provider
         self.client = InferenceClient(**client_kwargs)

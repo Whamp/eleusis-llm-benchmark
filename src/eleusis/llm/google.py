@@ -100,11 +100,15 @@ class GoogleClient(BaseLLMClient):
                 # Note: Gemini 3 Pro cannot fully disable thinking
                 level = "low" if disable_thinking else self.thinking_level
 
-                config = types.GenerateContentConfig(
-                    thinking_config=types.ThinkingConfig(thinking_level=level),
-                    max_output_tokens=self.max_tokens,
-                    temperature=self.temperature,
-                )
+                config_kwargs = {
+                    "thinking_config": types.ThinkingConfig(thinking_level=level),
+                    "max_output_tokens": self.max_tokens,
+                    "temperature": self.temperature,
+                }
+                if self.seed is not None:
+                    config_kwargs["seed"] = self.seed
+
+                config = types.GenerateContentConfig(**config_kwargs)
 
                 if system_instruction:
                     config.system_instruction = system_instruction
