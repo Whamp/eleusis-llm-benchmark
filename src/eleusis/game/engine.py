@@ -200,18 +200,25 @@ class GameEngine:
             "card": str(card),
         }
 
-    def _process_guess(self, player: PlayerState, action: GuessRuleAction) -> dict:
-        """Process rule guess with simulation-based comparison."""
-        logger.info(f"{player.name} guessed: {action.guess_text}")
+    def evaluate_rule(self, rule_text: str) -> tuple[bool, str, dict]:
+        """Evaluate a rule against the secret rule without game consequences.
 
-        is_correct, reasoning, metadata = self.rule_validator.compare_rules(
+        Returns (is_correct, reasoning, metadata_dict)
+        """
+        return self.rule_validator.compare_rules(
             actual_rule=self.rule,
-            guessed_rule_desc=action.guess_text,
+            guessed_rule_desc=rule_text,
             current_mainline=self.state.mainline.get_all(),
             rule_compiler_client=self.rule_compiler_client,
             num_simulations=2,
             turns_per_simulation=10,
         )
+
+    def _process_guess(self, player: PlayerState, action: GuessRuleAction) -> dict:
+        """Process rule guess with simulation-based comparison."""
+        logger.info(f"{player.name} guessed: {action.guess_text}")
+
+        is_correct, reasoning, metadata = self.evaluate_rule(action.guess_text)
 
         # Log both rules with same format for comparison
         logger.info("-" * 60)

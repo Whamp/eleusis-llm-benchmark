@@ -283,6 +283,30 @@ def play_round(
         else:
             result = play_result
 
+            # Shadow evaluation: if player didn't guess but has high confidence, evaluate anyway
+            conf_level = (
+                scientist.last_action_response.get("confidence_level", 0)
+                if scientist.last_action_response else 0
+            )
+            MIN_CONFIDENCE_FOR_SHADOW = 5
+            if isinstance(conf_level, int) and conf_level >= MIN_CONFIDENCE_FOR_SHADOW and guess_text:
+                logger.info("")
+                logger.info(f"Shadow evaluation for tentative rule (confidence={conf_level})...")
+                is_correct, reasoning, metadata = engine.evaluate_rule(guess_text)
+                verdict = "CORRECT ✓" if is_correct else "INCORRECT ✗"
+                logger.info(f"Shadow evaluation result: {verdict}")
+
+                complexity = metadata.get("complexity_metrics") or {}
+                turn_data["guess_attempt"] = {
+                    "guess": guess_text,
+                    "correct": is_correct,
+                    "reasoning": reasoning,
+                    "guessed_code": metadata.get("guessed_code"),
+                    "node_count": complexity.get("node_count"),
+                    "cyclomatic_complexity": complexity.get("cyclomatic"),
+                    "shadow": True,
+                }
+
         turn_data_list.append(turn_data)
 
         if "guess" in result:
