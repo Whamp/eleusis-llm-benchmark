@@ -3,6 +3,7 @@
 import json
 import logging
 import random
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -111,12 +112,22 @@ class RuleValidator:
         guessed_rule_desc: str,
         current_mainline: list[Card],
         rule_compiler_client,
-        num_simulations: int = 2,
-        turns_per_simulation: int = 10,
+        num_simulations: int = 10,
+        turns_per_simulation: int = 20,
+        simulation_seed: int = 42,
+        compiler_max_retries: int = 2,
     ) -> tuple[bool, str, dict]:
         """Compare rules using simulation-based comparison."""
-        guessed_code = rule_compiler_client.convert_rule_to_code(guessed_rule_desc)
+        compile_result = rule_compiler_client.convert_rule_to_code(
+            guessed_rule_desc,
+            max_retries=compiler_max_retries,
+        )
 
+        guessed_code = compile_result["code"]
+        compilation_status = compile_result["status"]
+        compilation_attempts = compile_result["attempts"]
+
+        sim_start = time.perf_counter()
         sim_equivalent, sim_reasoning, comparisons, mismatches = (
             self.check_equivalence_by_simulation(
                 actual_rule,
@@ -125,7 +136,13 @@ class RuleValidator:
                 num_simulations,
                 turns_per_simulation,
                 guessed_code,
+                simulation_seed,
             )
+        )
+        sim_duration = time.perf_counter() - sim_start
+        logger.info(
+            f"Rule comparison: {num_simulations} sims × {turns_per_simulation} turns, "
+            f"{comparisons} comparisons in {sim_duration:.3f}s"
         )
 
         # Compute complexity metrics for guessed rule code
@@ -134,8 +151,11 @@ class RuleValidator:
         return sim_equivalent, sim_reasoning, {
             "simulation_comparisons": comparisons,
             "simulation_mismatches": mismatches,
+            "simulation_duration_seconds": round(sim_duration, 3),
             "guessed_code": guessed_code,
             "complexity_metrics": complexity_metrics,
+            "compilation_status": compilation_status,
+            "compilation_attempts": compilation_attempts,
         }
 
     def check_equivalence_by_simulation(
@@ -143,9 +163,10 @@ class RuleValidator:
         actual_rule: Rule,
         guessed_rule_text: str,
         current_mainline: list[Card],
-        num_simulations: int = 2,
-        turns_per_simulation: int = 10,
+        num_simulations: int = 10,
+        turns_per_simulation: int = 20,
         preconverted_code: str | None = None,
+        simulation_seed: int = 42,
     ) -> tuple[bool, str, int, int]:
         """Check if two rules are equivalent by simulating gameplay."""
         if not preconverted_code:
@@ -156,6 +177,9 @@ class RuleValidator:
         except Exception as e:
             logger.error(f"Failed to create Rule from guessed code: {e}")
             return False, f"Guessed rule code has syntax errors: {e}", 0, 0
+
+        # Use seeded RNG for reproducible simulations
+        rng = random.Random(simulation_seed)
 
         all_cards = [Card(rank, suit) for rank in range(1, 14) for suit in Suit]
 
@@ -209,7 +233,7 @@ class RuleValidator:
                     )
                     break
 
-                chosen_card = random.choice(accepted_cards_actual)
+                chosen_card = rng.choice(accepted_cards_actual)
                 simulated_mainline.append(chosen_card)
 
         if mismatches == 0:

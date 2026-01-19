@@ -120,6 +120,10 @@ class GameEngine:
         rule_validator=None,
         hand_size: int = 12,
         wrong_guess_penalty: int = 3,
+        num_simulations: int = 10,
+        turns_per_simulation: int = 20,
+        simulation_seed: int = 42,
+        compiler_max_retries: int = 2,
     ) -> None:
         """Initialize game engine with state and rule."""
         self.state = game_state
@@ -131,6 +135,10 @@ class GameEngine:
         self.failed_guess_count = 0
         self.hand_size = hand_size
         self.wrong_guess_penalty = wrong_guess_penalty
+        self.num_simulations = num_simulations
+        self.turns_per_simulation = turns_per_simulation
+        self.simulation_seed = simulation_seed
+        self.compiler_max_retries = compiler_max_retries
 
     def setup_game(self, round_seed: int | None = None) -> None:
         """Deal initial hand and place starter card."""
@@ -210,8 +218,10 @@ class GameEngine:
             guessed_rule_desc=rule_text,
             current_mainline=self.state.mainline.get_all(),
             rule_compiler_client=self.rule_compiler_client,
-            num_simulations=2,
-            turns_per_simulation=10,
+            num_simulations=self.num_simulations,
+            turns_per_simulation=self.turns_per_simulation,
+            simulation_seed=self.simulation_seed,
+            compiler_max_retries=self.compiler_max_retries,
         )
 
     def _process_guess(self, player: PlayerState, action: GuessRuleAction) -> dict:

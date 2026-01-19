@@ -15,6 +15,10 @@ game:
 rule_compiler:
   model: gpt-oss-120b  # References key in models.yaml
   temperature: 0.8
+  max_retries: 2              # Retries on compilation failure (default: 1 = no retry)
+  num_simulations: 10         # Number of simulation runs for rule comparison
+  turns_per_simulation: 20    # Turns per simulation run
+  simulation_seed: 42         # Seed for reproducible simulation RNG
 
 
 # Rule source configuration

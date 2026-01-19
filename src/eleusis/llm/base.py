@@ -3,6 +3,7 @@
 import json
 import logging
 import re
+import textwrap
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -203,12 +204,57 @@ class BaseLLMClient(ABC):
 
         return extracted or response_text.strip()
 
-    def convert_rule_to_code(self, rule_text: str) -> str | None:
-        """Convert natural language rule to Python code."""
+    def convert_rule_to_code(self, rule_text: str, max_retries: int = 1) -> dict:
+        """Convert natural language rule to Python code with retry.
+
+        Returns dict with:
+        - code: The generated code (may be None or invalid on failure)
+        - status: "success", "retry_success", "no_code_returned", or "syntax_error"
+        - attempts: Number of attempts made
+        """
         from eleusis.prompts import get_rule_compile_prompt
 
         prompt = get_rule_compile_prompt(rule_text)
-        return self.generate(prompt, xml_tag="CODE")
+        code = None
+
+        for attempt in range(max_retries + 1):
+            try:
+                code = self.generate(prompt, xml_tag="CODE")
+            except Exception as e:
+                logger.warning(f"Code generation attempt {attempt + 1} failed: {e}")
+                code = None
+
+            if code and self._validate_code_syntax(code):
+                return {
+                    "code": code,
+                    "status": "success" if attempt == 0 else "retry_success",
+                    "attempts": attempt + 1,
+                }
+
+            if attempt < max_retries:
+                logger.info(f"Compilation attempt {attempt + 1} failed, retrying...")
+
+        # All retries failed
+        return {
+            "code": code,  # Last attempt's code (may be None or invalid)
+            "status": "no_code_returned" if not code else "syntax_error",
+            "attempts": max_retries + 1,
+        }
+
+    def _validate_code_syntax(self, code: str) -> bool:
+        """Check if code compiles without syntax errors.
+
+        The code is a function body (not a full function definition), so we wrap
+        it in a function before compiling to allow return statements.
+        """
+        # Wrap in function definition like Rule._compile_code() does
+        full_code = f"def _validate(card, mainline):\n{textwrap.indent(code, '    ')}"
+        try:
+            compile(full_code, "<string>", "exec")
+            return True
+        except SyntaxError as e:
+            logger.warning(f"Syntax error in generated code: {e}")
+            return False
 
     def get_usage_stats(self) -> dict:
         """Get aggregated usage statistics for this client.

@@ -129,6 +129,12 @@ def play_round(
     hand_size = game_config.get('hand_size', 12)
     wrong_guess_penalty = game_config.get('wrong_guess_penalty', 3)
 
+    # Extract simulation params from rule_compiler config (with sensible defaults)
+    num_simulations = rule_compiler_cfg.get('num_simulations', 10)
+    turns_per_simulation = rule_compiler_cfg.get('turns_per_simulation', 20)
+    simulation_seed = rule_compiler_cfg.get('simulation_seed', 42)
+    compiler_max_retries = rule_compiler_cfg.get('max_retries', 2)
+
     engine = GameEngine(
         game_state,
         rule,
@@ -136,6 +142,10 @@ def play_round(
         rule_validator=validator,
         hand_size=hand_size,
         wrong_guess_penalty=wrong_guess_penalty,
+        num_simulations=num_simulations,
+        turns_per_simulation=turns_per_simulation,
+        simulation_seed=simulation_seed,
+        compiler_max_retries=compiler_max_retries,
     )
 
     # Compute round seed from rule code for reproducibility
