@@ -512,6 +512,7 @@ def main():
             start_rule_index=rule_factory_index if need_new_rule else None,
             rules_list=checkpoint_rules_library,
             batch_round_index=batch_round_index,
+            results_folder=f"results/{folder_name}",
         )
 
         # Update current rule for reuse and track consumption

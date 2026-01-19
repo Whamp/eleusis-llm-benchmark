@@ -38,6 +38,7 @@ class LLMScientist:
         self.max_turns = max_turns
         self.play_history: list[dict] = []
         self.last_action_response: dict | None = None
+        self.last_prompt: str | None = None
         # Retry tracking (reset each turn)
         self.last_retry_count: int = 0
         self.last_retry_causes: list[dict] = []
@@ -87,6 +88,7 @@ class LLMScientist:
             try:
                 # Add hint on retries (attempt >= 1)
                 prompt = base_prompt + REASONING_HINT if attempt > 0 else base_prompt
+                self.last_prompt = prompt
 
                 response = self.llm_client.generate(prompt, xml_tag="ACTION", return_dict=True)
                 self.last_action_response = response

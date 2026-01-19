@@ -3,6 +3,7 @@
 import hashlib
 import logging
 import time
+from pathlib import Path
 
 from eleusis.game import GameEngine, GameState, GuessRuleAction, Rule, RuleFactory, RuleValidator
 from eleusis.llm import LLMScientist, create_client
@@ -21,6 +22,7 @@ def play_round(
     start_rule_index: int | None = None,
     rules_list: list[dict] | None = None,
     batch_round_index: int = 0,
+    results_folder: str | None = None,
 ) -> dict:
     """Play a single round of pattern discovery.
 
@@ -220,6 +222,11 @@ def play_round(
             logger.error(f"Error getting action: {e}", exc_info=True)
             turn_count += 1
             continue
+
+        # Save last prompt to file for live inspection
+        if results_folder and scientist.last_prompt:
+            prompt_file = Path(results_folder) / "last_prompt.md"
+            prompt_file.write_text(scientist.last_prompt)
 
         if scientist.last_action_response:
             reasoning_summary = scientist.last_action_response.get("reasoning_summary", "")
