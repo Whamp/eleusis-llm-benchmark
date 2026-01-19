@@ -128,14 +128,14 @@ def play_round(
     player_name = player_display_name
     game_state = GameState(player_name)
 
-    hand_size = game_config.get('hand_size', 12)
-    wrong_guess_penalty = game_config.get('wrong_guess_penalty', 3)
+    hand_size = game_config.get('hand_size')
+    wrong_guess_penalty = game_config.get('wrong_guess_penalty')
 
-    # Extract simulation params from rule_compiler config (with sensible defaults)
-    num_simulations = rule_compiler_cfg.get('num_simulations', 10)
-    turns_per_simulation = rule_compiler_cfg.get('turns_per_simulation', 20)
-    simulation_seed = rule_compiler_cfg.get('simulation_seed', 42)
-    compiler_max_retries = rule_compiler_cfg.get('max_retries', 2)
+    # Extract simulation params from rule_compiler config
+    num_simulations = rule_compiler_cfg.get('num_simulations')
+    turns_per_simulation = rule_compiler_cfg.get('turns_per_simulation')
+    simulation_seed = rule_compiler_cfg.get('simulation_seed')
+    compiler_max_retries = rule_compiler_cfg.get('max_retries')
 
     engine = GameEngine(
         game_state,
@@ -226,6 +226,7 @@ def play_round(
         # Save last prompt to file for live inspection
         if results_folder and scientist.last_prompt:
             prompt_file = Path(results_folder) / "last_prompt.md"
+            prompt_file.parent.mkdir(parents=True, exist_ok=True)
             prompt_file.write_text(scientist.last_prompt)
 
         if scientist.last_action_response:

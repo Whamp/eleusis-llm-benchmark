@@ -1,6 +1,6 @@
 """Action selection prompt for Eleusis."""
 
-from eleusis.prompts.game_rules import _load_game_config, get_game_rules
+from eleusis.prompts.game_rules import get_game_rules
 
 __all__ = ["get_action_prompt"]
 
@@ -8,24 +8,21 @@ __all__ = ["get_action_prompt"]
 def get_action_prompt(
     compact_board: str,
     hand_cards: list[dict],
-    deck_remaining: int,
     play_history: list[dict],
-    failed_guesses: list[dict] | None = None,
-    current_turn: int = 1,
-    max_turns: int = 40,
-    failed_guess_count: int = 0,
+    failed_guesses: list[dict] | None,
+    current_turn: int,
+    max_turns: int,
+    failed_guess_count: int,
+    hand_size: int,
+    wrong_guess_penalty: int,
 ) -> str:
     """Generate prompt for LLM to select a move."""
     hand_str = ", ".join([c["symbol"] for c in hand_cards])
 
-    game_config = _load_game_config()
-    wrong_guess_penalty = game_config.get('wrong_guess_penalty', 3)
-    current_score = max_turns - current_turn - (wrong_guess_penalty * failed_guess_count)
-
     # Format play history
     history_str = ""
     if play_history:
-        history_str = "\n\nYour last 3 turns, with the card you played, your reasoning summary and the outcome:\n"
+        history_str = "Your last 3 turns (the card you played, the outcome and your reasoning summary):\n"
         for entry in play_history[-3:]:
             card = entry.get("card", "N/A")
             reasoning_summary = entry.get("reasoning_summary", "")
@@ -44,31 +41,31 @@ def get_action_prompt(
         for entry in failed_guesses:
             guess = entry.get("guess", "")
             failed_guesses_str += f"- \"{guess}\"\n"
-        failed_guesses_str += "\n**ALL OF THESE GUESSES WERE INCORRECT.**\n"
+        failed_guesses_str += "\nAll these guesses were incorrect.\n"
 
-    return f"""
-# PATTERN DISCOVERY CARD GAME
+    return f"""# PATTERN DISCOVERY CARD GAME
 
-You are playing a single-player card game where your goal is to discover a hidden rule that determines which cards are accepted or rejected.
-This is your turn to play. Your task is to select a card from your hand to play, and optionally try to guess the hidden rule.
-Your score will depend on how quickly you can correctly identify the rule.
+You are playing a single-player card game where the goal is to discover a secret rule that determines which cards are accepted or rejected.
+This is your turn to play. Your task is to select a card from your hand to play, and optionally try to guess the secret rule.
+Your score will depend on how many turns it takes you to correctly identify the rule.
+Below you will find the rules of the game, the current game state, your play history, and a description of what you are expected to do.
 
-Below you will find the rules of the game, the current game state, your hand, and your play history.
-
-{get_game_rules()}
+{get_game_rules(hand_size=hand_size, wrong_guess_penalty=wrong_guess_penalty, max_turns=max_turns)}
 
 ## YOUR TASK: CHOOSE YOUR NEXT ACTION
 
-As a player, this is your turn to play and you must:
+As a player, this is your turn to play and you must simultaneously:
 1. Select a card from your hand to play.
 2. Optionally, make a guess about the hidden rule.
 
 ### Current game state
 
 Turn: {current_turn} / {max_turns}
-Your current penalty: ({failed_guess_count} wrong guesses): {wrong_guess_penalty * failed_guess_count}
+Penalty so far for {failed_guess_count} wrong guesses: {wrong_guess_penalty * failed_guess_count}
+
 
 #### Mainline & Sidelines
+
 This is the mainline and sidelines so far. Rejected cards are shown in brackets after the mainline card they were played after :
 
 {compact_board}
@@ -77,23 +74,23 @@ This is the mainline and sidelines so far. Rejected cards are shown in brackets 
 
 {hand_str}
 
-#### Your play history
+#### Your recent play history
+
 {history_str}
 
-#### Your previous failed rule guesses (if any)
+#### All your previous failed rule guesses (if any)
 {failed_guesses_str}
-
 
 ### Task description and formatting instructions
 
-You must select a card from your hand to play. You can optionally try to guess the rule.
+You must select a card from your hand to play and optionally decide to try to guess the rule.
 
 You will be asked to provide the following in your response:
-- A one sentence summary of your reasoning, explaining your thought process about the pattern so far and why you are playing the selected card.
+- A short one sentence summary of your reasoning, explaining your thought process about the pattern so far and why you are playing the selected card.
 - The card you are playing from your hand (must be one of the cards listed in your hand).
 - Your current best guess about the hidden rule (must be clear and unequivocal).
-- Your confidence level in your tentative guess rule on a scale of 0-10 (1="10% confident / 10% probability to be correct", 3="30% confident / 30% probability to be correct", 7="70% confident / 70% probability to be correct", 10="certain to be correct").
-- Whether you want to officially guess the rule this turn (true or false). Only set to true if you are confident enough to make an official guess. If you set to false, your guess will not be evaluated this turn and will have no consequence.
+- Your confidence level in your tentative guess rule on a scale of 0-10 (for instance 7 means "70% confident : there 70% probability to be correct")
+- Whether you want to officially guess the rule this turn (true or false). Only set to true if you want to make an official guess with your tentative rule. Otherwise, your tentative rule is just for your own tracking and will not be evaluated this turn.
 
 Format your response as follows:
 <ACTION>
@@ -106,12 +103,11 @@ Format your response as follows:
 }}
 </ACTION>
 
-Always provide your current best hypothesis about the rule, even if you're uncertain. 
-If you set guess_rule to false, this guess will not be evaluated - it's just for your own tracking.
-Set "guess_rule" to true ONLY when you're confident enough to officially guess.
-   - If CORRECT: You win immediately!
-   - If INCORRECT: You lose {wrong_guess_penalty} points from your final score
-   - Consider the trade-off: guessing early but wrong is costly, guessing late reduces your score
+Always provide your current best hypothesis as a tentative rule, even if you're uncertain. 
+If you set guess_rule to false, this tentative rule will not be evaluated, it's just for your own tracking.
+Set "guess_rule" to true only when you want to officially try to guess the rule.
+   - If correct, you score and the round ends immediately.
+   - If incorrect, you will lose {wrong_guess_penalty} points from your final score, and the round continues.
 
 #### Example:
 <ACTION>

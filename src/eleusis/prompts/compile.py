@@ -1,7 +1,5 @@
 """Rule compilation prompts for Eleusis."""
 
-from eleusis.prompts.game_rules import get_game_rules
-
 __all__ = ["get_rule_compile_prompt"]
 
 

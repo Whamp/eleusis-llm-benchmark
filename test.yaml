@@ -4,7 +4,7 @@
 # Game settings
 game:
   num_rules: 1  # Number of distinct rules to test (0 = use entire rule library)
-  num_rounds_per_rule: 1  # How many rounds to play with each rule
+  num_rounds_per_rule: 5  # How many rounds to play with each rule
   max_turns: 20
   hand_size: 12
   wrong_guess_penalty: 2
@@ -20,6 +20,7 @@ rule_compiler:
   turns_per_simulation: 40    # Turns per simulation run
   simulation_seed: 42         # Seed for reproducible simulation RNG
 
+
 # Rule source configuration
 rules:
   library_path: "test_rules.json"
@@ -32,4 +33,4 @@ llm:
   max_tokens: 16384
   max_llm_retries: 3
   temperature: 0.7
-  seed: 42  # Seed for LLM generation (not guaranteed deterministic, but helps reproducibility)
+  seed: 42  # Seed for LLM generation. Support varies: Google/xAI/HuggingFace pass to API (best-effort); Anthropic/OpenAI APIs don't support seed.

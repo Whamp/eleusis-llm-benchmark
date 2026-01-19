@@ -160,14 +160,14 @@ def reconstruct_config_from_checkpoint(checkpoint: dict) -> dict:
             'seed': cfg.get('seed'),
         },
         'llm': {
-            'max_tokens': cfg.get('llm_max_tokens', 8192),
-            'temperature': cfg.get('llm_temperature', 0.7),
+            'max_tokens': cfg.get('llm_max_tokens'),
+            'temperature': cfg.get('llm_temperature'),
             'seed': cfg.get('llm_seed'),
-            'max_llm_retries': cfg.get('llm_max_retries', 3),
+            'max_llm_retries': cfg.get('llm_max_retries'),
         },
         'rule_compiler': {
             'model': cfg['rule_compiler_model'],
-            'temperature': cfg.get('rule_compiler_temperature', 0.8),
+            'temperature': cfg.get('rule_compiler_temperature'),
         },
         'rules': {
             'library_path': None,  # Not needed, rules embedded in checkpoint

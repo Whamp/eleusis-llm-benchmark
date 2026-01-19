@@ -72,15 +72,20 @@ class LLMScientist:
         current_turn = game_state.turn_number
         failed_guess_count = self.engine.failed_guess_count if self.engine else 0
 
+        # Get game config from engine
+        hand_size = self.engine.hand_size
+        wrong_guess_penalty = self.engine.wrong_guess_penalty
+
         base_prompt = get_action_prompt(
             compact_board=compact_board,
             hand_cards=hand_dicts,
-            deck_remaining=deck_remaining,
             play_history=self.play_history,
             failed_guesses=failed_guesses,
             current_turn=current_turn,
             max_turns=self.max_turns,
             failed_guess_count=failed_guess_count,
+            hand_size=hand_size,
+            wrong_guess_penalty=wrong_guess_penalty,
         )
 
         for attempt in range(self.max_retries):
