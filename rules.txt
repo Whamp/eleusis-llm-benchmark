@@ -1,65 +1,38 @@
-# Rank constraints
-Only cards with an even rank (2,4,6,8,10,12) may be played.
-Only cards with an odd rank (1,3,5,7,9,11,13) may be played.
-Only face cards (11,12,13) may be played.
-Only number cards (1-10) may be played.
-Only ranks that are multiples of three (3,6,9,12) are allowed.
-Only cards whose rank is between 5 and 9 inclusive may be played.
-Only Aces (rank 1) or Kings (rank 13) may be placed.
-Only Aces (rank 1) may be placed.
-Only ranks that are perfect squares (1, 4, 9) may be played.
-Only prime number ranks (2,3,5,7,11,13) may be played.
-Only ranks that are multiples of 4 or 5 (4, 5, 8, 10-$ù 12) may be played.
+# Set / Rank
+Only cards with an even rank (2,4,6,8,10,12).
+Only face cards (11,12,13).
+Only ranks that are prime numbers (2,3,5,7,11,13).
+Only cards whose rank is between 5 and 9 inclusive.
+Only Aces (rank 1) or Kings (rank 13).
 
-# Rank alternation
-Card rank must have opposite odd/even parity to the previous card's rank.
-Alternate face and number cards.
-If the previous rank was <7, the new card must be >7. If the previous rank was >7, the new card must be <7. 7 is forbidden.
-No two consecutive cards may have the same rank.
-Digit Count: You must alternate between single-digit ranks (A–9) and double-digit ranks.
-Rank repeats in pairs: ranks must come in doubles: (x, x), then a different rank (y, y), then different (z, z)…
-Parity repeats in pairs : two odd ranks, then two even ranks, then two odd ranks, etc.
+# Set / Suit
+Only cards of the suit spades.
+Only red cards (hearts or diamonds).
+Only spades and diamonds.
+Only hearts, clubs, and diamonds allowed. Spades are forbidden.
 
-# Increase / Decrease based
-Each card must have a rank greater than or equal to the previous card; any card may start the line. No cycle allowed.
-Each card must have a rank less than or equal to the previous card; any card may start the line. No cycle allowed.
-Each card must have a rank strictly greater than the previous card; any card may start the line. Ace may follow King.
-Each card must have a rank strictly less than the previous card; any card may start the line. King may follow Ace.
-The absolute difference between this card’s rank and the previous card’s rank must be less than or equal to 2.
-The absolute difference between this card’s rank and the previous card’s rank must be exactly 1. Ace may follow King and vice versa.
-Each pair of consecutive cards must have ranks that sum to more than 7.
+# Set / Both
+Only red cards whose rank is >=7.
+Face cards (11-13) must be red; number cards (1-10) must be black.
 
-# Suit based
-Only cards of the suit spades may be played.
-Major vs. Minor: Only cards from the "Major Suits" (Hearts and Spades) may be played.
-Only spades and diamonds may be played.
+# Rank alternation or evolution
+Alternate face and number cards. Any card may start the line.
+Card rank must have opposite odd/even parity to the previous card's rank. Any card may start the line.
+Each card must have a rank strictly greater than the previous card. Ace may follow King. Any card may start the line.
+The sum of the card's rank and the previous rank must sum to more than 7 inclusive. Any card may start the line.
 
-# Color based
-Every card must be red (hearts or diamonds).
-Every card must be black (spades or clubs).
-
-# Suit alternation
+# Suit alternation or evolution
+Cards must alternate between red and black colors.
 The card must be of a different suit than the card just before it. Any card may start the line.
 The card must be of a different suit than but same color as the card just before it. Any card may start the line.
-Suits must repeat in the order hearts → spades → clubs → diamonds → hearts …
-Suits repeat every three cards in the order hearts → clubs → spades → hearts … (diamonds never appear).
-Suits must appear in pairs: card 1 and 2 same suit, cards 3 and 4 same suit (different from 1 and 2), cards 5 and 6 same suit (different from 3 and 4), etc.
-The suit changes every three cards; the first three may be any suit, the next three must be a different suit, and so on.
-The card’s suit must differ from each of the previous two suits (if they exist).
-Hearts and spades form Group A; clubs and diamonds form Group B. Alternate between groups.
+Suits must repeat in the cyclic order hearts → spades → clubs → diamonds → hearts... Any card may start the line.
+Hearts and spades form Group A; clubs and diamonds form Group B. Alternate between groups. Any card may start the line.
 
-# Color alternation
-Cards must alternate between red and black colors.
-Colors must be the same in triplets: the first three cards must be the same color, the next three must be the opposite color, and so on.
-No more than two consecutive cards may be the same color.
-
-# Mix rank and suit/color
-If the previous rank is even, the suit must match the previous suit; if odd, the suit must differ.
-If the previous rank is even, the new card must keep the same color; if odd, the color must switch.
-Only red cards whose rank is prime numbers (2,3,5,7,11,13) may be played.
-Each card must share at least one property with the previous card: same color, or same parity.
-If the previous card was red, rank must increase; if black, rank must decrease. Ace may follow King and vice versa.
-Face cards must be red; number cards (1-10) must be black.
+# Complex alternation
+Each card must share at least one property with the previous card: same color, or same parity. Any card may start the line.
+If the previous card was red, rank must strictly increase; if black, rank must strictly decrease. Ace may follow red King. King may follow black Ace. Any card may start the line.
 Face cards imposes the suit: if a face card is played, the next card must match its suit. Otherwise, the next card must be a different suit than it.
-No attribute match rule: between consecutive cards, none of {color, parity, face-vs-number} may match.
-The High/Low Switch: If the previous card was Red, the played card must be High (8–K). If the previous card was Black, the played card must be Low (A–7).
+
+# Pairs of properties
+Suits must appear in pairs: card 1 and 2 same suit, cards 3 and 4 same suit (different from 1 and 2), cards 5 and 6 same suit (different from 3 and 4), etc.
+Rank repeats in pairs: ranks must come in doubles: (x, x), then (y, y) with y different from x, then (z, z) with z different from y, etc.

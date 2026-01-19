@@ -1,10 +1,20 @@
-Only cards with an even rank (2,4,6,8,10,12)
-Only cards of the suit spades
-The card must be of a different suit than but same color as the card just before it. Any card may start the line.
-Only face cards (11,12,13).
-Alternate face and number cards. Any card may start the line.
-No more than two consecutive cards may be the same color. Any card may start the line.
-Face cards must be red; number cards (1-10) must be black.
-Suits must repeat in the order hearts → spades → clubs → diamonds → hearts …
+# Set / Rank
+Only cards with an even rank (2,4,6,8,10,12).
+
+# Set / Suit
+Only cards of the suit spades.
+
+# Set / Both
+Face cards (11-13) must be red; number cards (1-10) must be black.
+
+# Rank alternation or evolution
+Each card must have a rank strictly greater than the previous card. Ace may follow King. Any card may start the line.
+
+# Suit alternation or evolution
+Suits must repeat in the cyclic order hearts → spades → clubs → diamonds → hearts... Any card may start the line.
+
+# Complex alternation
+Each card must share at least one property with the previous card: same color, or same parity. Any card may start the line.
+
+# Pairs of properties
 Suits must appear in pairs: card 1 and 2 same suit, cards 3 and 4 same suit (different from 1 and 2), cards 5 and 6 same suit (different from 3 and 4), etc.
-Only red cards whose rank is prime numbers (2,3,5,7,11,13) may be played.
