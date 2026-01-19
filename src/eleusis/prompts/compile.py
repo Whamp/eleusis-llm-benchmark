@@ -77,6 +77,9 @@ Common patterns that work:
 - Suit values: suit_val = {{"hearts":1, "diamonds":2, "clubs":3, "spades":4}}[card.suit.suit_name]
 - Floor division: x // 2 instead of math.floor(x/2)
 
+If the rule is about a property that every card must have (e.g., color, suit, rank), you can directly check that property.
+In that case, the first card (when mainline is empty) must also satisfy the property.
+
 ## RESPONSE FORMAT
 
 Provide your response in this exact XML format:
