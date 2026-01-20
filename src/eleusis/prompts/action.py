@@ -62,7 +62,7 @@ As a player, this is your turn to play and you must simultaneously:
 
 Turn: {current_turn} / {max_turns}
 Penalty so far for {failed_guess_count} wrong guesses: {wrong_guess_penalty * failed_guess_count}
-
+Current potential score if you guess the rule correctly this turn: {max_turns - current_turn - (wrong_guess_penalty * failed_guess_count)}
 
 #### Mainline & Sidelines
 

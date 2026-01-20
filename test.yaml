@@ -3,7 +3,7 @@
 
 # Game settings
 game:
-  num_rules: 1  # Number of distinct rules to test (0 = use entire rule library)
+  num_rules: 0  # Number of distinct rules to test (0 = use entire rule library)
   num_rounds_per_rule: 5  # How many rounds to play with each rule
   max_turns: 20
   hand_size: 12
