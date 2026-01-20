@@ -4,8 +4,8 @@
 # Game settings
 game:
   num_rules: 0  # Number of distinct rules to test (0 = use entire rule library)
-  num_rounds_per_rule: 1  # How many rounds to play with each rule
-  max_turns: 40
+  num_rounds_per_rule: 3  # How many rounds to play with each rule
+  max_turns: 30
   hand_size: 12
   wrong_guess_penalty: 2
   seed: 42  # Seed for reproducibility (same rule -> same initial hand/deck)

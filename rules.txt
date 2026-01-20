@@ -1,9 +1,10 @@
 # Set / Rank
 Only cards with an even rank (2,4,6,8,10,12).
 Only face cards (11,12,13).
+Only cards between 1 and 7 inclusive.
+Only cards between 5 and 9 inclusive.
 Only ranks that are prime numbers (2,3,5,7,11,13).
-Only cards whose rank is between 5 and 9 inclusive.
-Only Aces (rank 1) or Kings (rank 13).
+Only Aces (rank 1) .
 
 # Set / Suit
 Only cards of the suit spades.
@@ -12,17 +13,17 @@ Only spades and diamonds.
 Only hearts, clubs, and diamonds allowed. Spades are forbidden.
 
 # Set / Both
-Only red cards whose rank is >=7.
+Only black face cards.
+Only red cards whose rank is <=7.
 Face cards (11-13) must be red; number cards (1-10) must be black.
 
 # Rank alternation or evolution
 Alternate face and number cards. Any card may start the line.
 Card rank must have opposite odd/even parity to the previous card's rank. Any card may start the line.
-Each card must have a rank strictly greater than the previous card. Ace may follow King. Any card may start the line.
-The sum of the card's rank and the previous rank must sum to more than 7 inclusive. Any card may start the line.
+Each card must have a rank greater or equal to the previous card. Only Ace can start the line.
 
 # Suit alternation or evolution
-Cards must alternate between red and black colors.
+Cards must alternate between red and black colors. Any card may start the line.
 The card must be of a different suit than the card just before it. Any card may start the line.
 The card must be of a different suit than but same color as the card just before it. Any card may start the line.
 Suits must repeat in the cyclic order hearts → spades → clubs → diamonds → hearts... Any card may start the line.
@@ -30,7 +31,7 @@ Hearts and spades form Group A; clubs and diamonds form Group B. Alternate betwe
 
 # Complex alternation
 Each card must share at least one property with the previous card: same color, or same parity. Any card may start the line.
-If the previous card was red, rank must strictly increase; if black, rank must strictly decrease. Ace may follow red King. King may follow black Ace. Any card may start the line.
+If the previous card was red, rank must increase or be equal; if black, rank must decrease or be equal. Starting card must be between 5 and 9 inclusive.
 Face cards imposes the suit: if a face card is played, the next card must match its suit. Otherwise, the next card must be a different suit than it.
 
 # Pairs of properties
