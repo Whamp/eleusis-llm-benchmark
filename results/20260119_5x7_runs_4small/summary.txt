@@ -1,0 +1,76 @@
+============================================================
+ELEUSIS RESULTS ANALYSIS
+============================================================
+
+Analyzing: results/20260119_5x7_runs_4small
+
+Loading results...
+Loaded 4 evaluation runs:
+  - solo_evaluation_20260119_182506_claude_haiku_4_5
+  - solo_evaluation_20260119_182508_gpt_5_mini_medium
+  - solo_evaluation_20260119_182510_gemini_3_flash_preview_low
+  - solo_evaluation_20260119_182512_gpt_oss_20b
+
+Extracted 7 unique rules from results files
+Built DataFrames: 140 rounds, 2034 turns
+Loaded colors for 17 models
+
+============================================================
+BASIC MODEL COMPARISON
+============================================================
+
+                     model  rounds_played  total_score  avg_score  total_turns  total_output_tokens  total_wall_clock  avg_failed_guesses  success_rate  avg_output_tokens_per_turn  wall_clock_per_turn  intra_rule_variance  inter_rule_variance  variance_ratio
+         Gpt 5 Mini Medium             35          213   6.085714          471              1312508          21446.86            1.314286      0.542857                 2786.641189            45.534735             9.971429            45.118095        0.221007
+Gemini 3 Flash Preview Low             35          183   5.228571          489               571292           4597.47            1.971429      0.542857                 1168.286299             9.401779            16.057143            45.752381        0.350958
+          Claude Haiku 4.5             35          155   4.428571          463              2427758          20379.08            6.400000      0.514286                 5243.537797            44.015292            26.671429            65.459048        0.407452
+               Gpt Oss 20B             35           99   2.828571          539              3066473          25441.41            5.371429      0.457143                 5689.189239            47.201132            20.014286            48.685714        0.411092
+
+Saved: results/20260119_5x7_runs_4small/basic_metrics.csv
+Saved: results/20260119_5x7_runs_4small/basic_metrics.png
+
+============================================================
+BY-RULE ANALYSIS
+============================================================
+
+Score by rule (sorted by avg_score):
+                                                                                                                                            rule_description  count  avg_score  std_score  success_rate
+                                                                                                                              Only cards of the suit spades.     20      14.70   3.341919          1.00
+                                                                                                               Only cards with an even rank (2,4,6,8,10,12).     20      14.10   1.774082          1.00
+                                           Suits must repeat in the cyclic order hearts → spades → clubs → diamonds → hearts... Any card may start the line.     20       4.55   6.977219          0.70
+                                 Each card must share at least one property with the previous card: same color, or same parity. Any card may start the line.     20       1.70   4.589462          0.25
+                                                                                          Face cards (11-13) must be red; number cards (1-10) must be black.     20       0.00   3.509386          0.15
+                                       Each card must have a rank strictly greater than the previous card. Ace may follow King. Any card may start the line.     20      -1.20   3.693522          0.10
+Suits must appear in pairs: card 1 and 2 same suit, cards 3 and 4 same suit (different from 1 and 2), cards 5 and 6 same suit (different from 3 and 4), etc.     20      -1.35   5.029126          0.40
+
+Saved: results/20260119_5x7_runs_4small/by_rule.png
+
+============================================================
+COMPLEXITY ANALYSIS
+============================================================
+
+Optimal K for aggregated complexity: 0.02
+  Formula: complexity = cyclomatic + 0.02 * node_count
+  Correlation with relative_score: -0.772
+
+Score by complexity bin:
+complexity_bin  count  avg_score  avg_relative_score  success_rate
+            Q1     40       14.4            3.299748          1.00
+            Q2     20        1.7            0.390146          0.25
+            Q3     40        1.6            0.221555          0.55
+            Q4     20        0.0           -0.008510          0.15
+            Q5     20       -1.2           -0.424242          0.10
+
+Saved: results/20260119_5x7_runs_4small/complexity_analysis.png
+
+============================================================
+PER-MODEL REPORTS
+============================================================
+
+Saved: results/20260119_5x7_runs_4small/claude_haiku_4_5.png
+Saved: results/20260119_5x7_runs_4small/gpt_5_mini_medium.png
+Saved: results/20260119_5x7_runs_4small/gemini_3_flash_preview_low.png
+Saved: results/20260119_5x7_runs_4small/gpt_oss_20b.png
+
+============================================================
+Analysis complete! All outputs saved to: results/20260119_5x7_runs_4small
+============================================================

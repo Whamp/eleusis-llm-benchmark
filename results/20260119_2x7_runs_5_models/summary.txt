@@ -1,0 +1,79 @@
+============================================================
+ELEUSIS RESULTS ANALYSIS
+============================================================
+
+Analyzing: results/20260119_2x7_runs_5_models
+
+Loading results...
+Loaded 5 evaluation runs:
+  - solo_evaluation_20260119_104718_claude_opus_4_5
+  - solo_evaluation_20260119_104720_gpt_5_2_high
+  - solo_evaluation_20260119_104722_gemini_3_flash_preview_low
+  - solo_evaluation_20260119_104724_gpt_oss_120b
+  - solo_evaluation_20260119_104726_deepseek_r1
+
+Extracted 7 unique rules from results files
+Built DataFrames: 70 rounds, 970 turns
+Loaded colors for 17 models
+
+============================================================
+BASIC MODEL COMPARISON
+============================================================
+
+                     model  rounds_played  total_score  avg_score  total_turns  total_output_tokens  total_wall_clock  avg_failed_guesses  success_rate  avg_output_tokens_per_turn  wall_clock_per_turn  intra_rule_variance  inter_rule_variance  variance_ratio
+               Deepseek R1             14           83   5.928571          157              1146637          23698.89            2.571429      0.857143                 7303.420382           150.948344            22.642857            40.535714        0.558590
+              Gpt 5.2 High             14           79   5.642857          193               397499          11014.83            0.357143      0.928571                 2059.580311            57.071658             1.642857            34.142857        0.048117
+           Claude Opus 4.5             14           75   5.357143          165               795046          15790.29            2.500000      0.857143                 4818.460606            95.698727            16.785714            55.309524        0.303487
+              Gpt Oss 120B             14           74   5.285714          196               476317           2965.39            1.714286      0.642857                 2430.188776            15.129541            11.000000            34.988095        0.314393
+Gemini 3 Flash Preview Low             14           70   5.000000          206               212776           1682.44            0.928571      0.500000                 1032.893204             8.167184            14.000000            36.666667        0.381818
+
+Saved: results/20260119_2x7_runs_5_models/basic_metrics.csv
+Saved: results/20260119_2x7_runs_5_models/basic_metrics.png
+
+============================================================
+BY-RULE ANALYSIS
+============================================================
+
+Score by rule (sorted by avg_score):
+                                                                                                                                            rule_description  count  avg_score  std_score  success_rate
+                                                                                                                              Only cards of the suit spades.     10       13.3   2.359378           1.0
+                                                                                                               Only cards with an even rank (2,4,6,8,10,12).     10       13.0   1.632993           1.0
+                                 Each card must share at least one property with the previous card: same color, or same parity. Any card may start the line.     10        4.3   5.229192           0.9
+                                           Suits must repeat in the cyclic order hearts → spades → clubs → diamonds → hearts... Any card may start the line.     10        4.2   5.940445           0.9
+Suits must appear in pairs: card 1 and 2 same suit, cards 3 and 4 same suit (different from 1 and 2), cards 5 and 6 same suit (different from 3 and 4), etc.     10        3.1   4.840799           0.6
+                                       Each card must have a rank strictly greater than the previous card. Ace may follow King. Any card may start the line.     10        0.9   4.254409           0.6
+                                                                                          Face cards (11-13) must be red; number cards (1-10) must be black.     10       -0.7   1.567021           0.3
+
+Saved: results/20260119_2x7_runs_5_models/by_rule.png
+
+============================================================
+COMPLEXITY ANALYSIS
+============================================================
+
+Optimal K for aggregated complexity: 0.01
+  Formula: complexity = cyclomatic + 0.01 * node_count
+  Correlation with relative_score: -0.795
+
+Score by complexity bin:
+complexity_bin  count  avg_score  avg_relative_score  success_rate
+            Q1     20      13.15            2.427485          1.00
+            Q2     10       4.30            0.778375          0.90
+            Q3     20       3.65            0.660357          0.75
+            Q4     10      -0.70           -0.119780          0.30
+            Q5     10       0.90            0.165722          0.60
+
+Saved: results/20260119_2x7_runs_5_models/complexity_analysis.png
+
+============================================================
+PER-MODEL REPORTS
+============================================================
+
+Saved: results/20260119_2x7_runs_5_models/claude_opus_4_5.png
+Saved: results/20260119_2x7_runs_5_models/gpt_5_2_high.png
+Saved: results/20260119_2x7_runs_5_models/gemini_3_flash_preview_low.png
+Saved: results/20260119_2x7_runs_5_models/gpt_oss_120b.png
+Saved: results/20260119_2x7_runs_5_models/deepseek_r1.png
+
+============================================================
+Analysis complete! All outputs saved to: results/20260119_2x7_runs_5_models
+============================================================
