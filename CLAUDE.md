@@ -16,7 +16,7 @@ uv sync
 uv run scripts/evaluate_single.py
 
 # Run with specific model and parameters
-uv run scripts/evaluate_single.py --player "openrouter:anthropic/claude-3.5-haiku" --num-rules 10 --tag test
+uv run scripts/evaluate_single.py --player "claude-haiku-4.5" --num-rules 10 --tag test
 
 # Run parallel evaluation (multiple models)
 ./scripts/run_parallel_eval.sh
@@ -43,23 +43,26 @@ uv run ruff check src/ scripts/ tests/
 
 1. **Rule Loading**: `RuleFactory` loads rules from `rules.json` library, filtering by acceptance rate
 2. **Rule Compilation**: Rules are Python function bodies (no `def`) compiled into sandboxed executables with limited builtins
-3. **Game Setup**: `GameEngineSolo` deals cards, places starter card that passes the rule
-4. **Game Loop**: `LLMScientistSolo` plays cards and optionally guesses the rule each turn
+3. **Game Setup**: `GameEngine` deals cards, places starter card that passes the rule
+4. **Game Loop**: `LLMScientist` plays cards and optionally guesses the rule each turn
 5. **Rule Validation**: `RuleValidator.compare_rules()` uses simulation-based comparison to verify guesses
 
 ### Key Design Decisions
 
 - **Rule Format**: Rules are function bodies only, wrapped with `def evaluate_rule(card, mainline):`. They have access to `card.rank`, `card.color`, `card.suit.suit_name`, and `mainline` (list of previous cards).
 - **Constant Hand Size**: Player always has 12 cards (draws 1 after each play)
-- **Model Specification**: Prefix-based routing (`openrouter:model-name` or `hf:model-name`)
+- **Model Specification**: Model keys from `models.yaml` (e.g., `claude-opus-4.5`, `gpt-5.2-medium`, `deepseek-r1`)
 - **Simulation Equivalence**: Rule guesses are converted to code and compared against actual rule by running both on all 52 cards across multiple simulated turns
 - **Checkpointing**: Evaluations save after each round and can resume with `--resume`
 
 ### Provider System
 
-`create_client(model_spec)` in `src/eleusis/providers/__init__.py` routes to:
-- `OpenRouterClient` for `openrouter:` prefix
-- `HuggingFaceClient` for `hf:` prefix or no prefix
+`create_client(model_key)` in `src/eleusis/llm/__init__.py` loads config from `models.yaml` and routes to:
+- `AnthropicClient` for `provider: anthropic`
+- `OpenAIClient` for `provider: openai`
+- `GoogleClient` for `provider: google`
+- `XAIClient` for `provider: xai`
+- `HuggingFaceClient` for `provider: huggingface`
 
 ### Configuration
 

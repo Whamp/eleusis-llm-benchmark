@@ -23,8 +23,9 @@ Eleusis LLM Benchmark evaluates language models on **pattern discovery** using a
 ```
 src/eleusis/          # Main package
   game/               # Game engine (cards, state, rules)
-  llm/                # LLM providers and player logic
+  llm/                # LLM providers
   prompts/            # Prompt templates
+  analysis/           # Results analysis and visualization
   runner.py           # Round orchestration
   player.py           # LLM-based player
   utils.py            # Logging, utilities

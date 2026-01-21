@@ -93,11 +93,11 @@ deepseek-r1
 - Constant hand size (12 cards) - draw 1 after each play
 - Play a card each turn (no "no play" action)
 - Guess the rule at any time
-- Game ends on correct guess or max turns (40)
+- Game ends on correct guess or max turns (default: 30)
 
 ### Scoring
 
-- Correct guess: `score = max_turns - current_turn - (3 × failed_guesses)`
+- Correct guess: `score = max_turns - current_turn - (wrong_guess_penalty × failed_guesses)`
 - No correct guess: `score = 0`
 - Higher is better (rewards efficiency)
 
@@ -153,9 +153,9 @@ deepseek-r1:
 
 ```yaml
 game:
-  num_rules: 50         # Number of distinct rules to test (0 = use entire library)
-  num_rounds_per_rule: 1  # How many rounds to play with each rule
-  max_turns: 40
+  num_rules: 0          # Number of distinct rules to test (0 = use entire library)
+  num_rounds_per_rule: 3  # How many rounds to play with each rule
+  max_turns: 30
   hand_size: 12
   wrong_guess_penalty: 2
 
@@ -169,8 +169,6 @@ rules:
 llm:
   max_tokens: 16384
   temperature: 0.7
-
-model: deepseek-r1  # Model key from models.yaml
 ```
 
 ### Environment Variables
@@ -190,11 +188,8 @@ HF_TOKEN=your_huggingface_token
 Rules are loaded from a pre-generated JSON library:
 
 ```bash
-# Generate new rules
-uv run scripts/generate_rule_library.py --num-rules 50 --output rules.json
-
-# Evaluate rule acceptance rates
-uv run scripts/evaluate_rules.py --library rules.json
+# Compile human-written rules from rules.txt to rules.json (includes validation and evaluation)
+uv run scripts/generate_rule_library.py --input rules.txt --output rules.json
 ```
 
 Rules are filtered by acceptance rate (configurable in config.yaml) to ensure playable difficulty.
