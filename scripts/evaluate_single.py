@@ -168,6 +168,10 @@ def reconstruct_config_from_checkpoint(checkpoint: dict) -> dict:
         'rule_compiler': {
             'model': cfg['rule_compiler_model'],
             'temperature': cfg.get('rule_compiler_temperature'),
+            'max_retries': cfg.get('rule_compiler_max_retries', 2),
+            'num_simulations': cfg.get('rule_compiler_num_simulations', 100),
+            'turns_per_simulation': cfg.get('rule_compiler_turns_per_simulation', 40),
+            'simulation_seed': cfg.get('rule_compiler_simulation_seed'),
         },
         'rules': {
             'library_path': None,  # Not needed, rules embedded in checkpoint
@@ -445,6 +449,10 @@ def main():
                 'rule_compiler': rule_compiler_display_name,
                 'rule_compiler_model': config['rule_compiler']['model'],
                 'rule_compiler_temperature': config['rule_compiler'].get('temperature', 0.8),
+                'rule_compiler_max_retries': config['rule_compiler'].get('max_retries', 2),
+                'rule_compiler_num_simulations': config['rule_compiler'].get('num_simulations', 100),
+                'rule_compiler_turns_per_simulation': config['rule_compiler'].get('turns_per_simulation', 40),
+                'rule_compiler_simulation_seed': config['rule_compiler'].get('simulation_seed'),
                 'player': player_display_name,
                 'player_model': player_model,
                 'hand_size': game_config.get('hand_size', 12),
