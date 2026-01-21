@@ -1,0 +1,89 @@
+============================================================
+ELEUSIS RESULTS ANALYSIS
+============================================================
+
+Analyzing: results/260121_78_rounds
+
+Loading results...
+Loaded 2 evaluation runs:
+  - solo_evaluation_20260120_091620_gpt_5_2_high
+  - solo_evaluation_20260120_091622_gpt_oss_120b
+
+Extracted 26 unique rules from results files
+Built DataFrames: 156 rounds, 2560 turns
+Loaded colors for 17 models
+
+============================================================
+BASIC MODEL COMPARISON
+============================================================
+
+       model  rounds_played  total_score  avg_score  total_turns  total_output_tokens  total_wall_clock  avg_failed_guesses  success_rate  avg_output_tokens_per_turn  wall_clock_per_turn  intra_rule_variance  inter_rule_variance  variance_ratio
+Gpt 5.2 High             78         1102  14.128205         1200              3341037          73525.83            0.333333      0.961538                 2784.197500            61.271525            25.346154            36.062906        0.702832
+Gpt Oss 120B             78          938  12.025641         1226              3190828          24633.15            3.692308      0.756410                 2602.632953            20.092292            51.320513            80.710427        0.635860
+
+Saved: results/260121_78_rounds/basic_metrics.csv
+Saved: results/260121_78_rounds/basic_metrics.png
+
+============================================================
+BY-RULE ANALYSIS
+============================================================
+
+Score by rule (sorted by avg_score):
+                                                                                                                                            rule_description  count  avg_score  std_score  success_rate
+                                                                                                                        Only red cards (hearts or diamonds).      6  22.833333   3.125167      1.000000
+                                                                                                                              Only cards of the suit spades.      6  22.333333   2.581989      1.000000
+                                                                                                               Only cards with an even rank (2,4,6,8,10,12).      6  22.166667   2.994439      1.000000
+                                                                             Cards must alternate between red and black colors. Any card may start the line.      6  21.333333   3.011091      1.000000
+                                                             The card must be of a different suit than the card just before it. Any card may start the line.      6  21.166667   1.329160      1.000000
+                                                                                                          Only ranks that are prime numbers (2,3,5,7,11,13).      6  20.833333   2.994439      1.000000
+                                                                                             Only hearts, clubs, and diamonds allowed. Spades are forbidden.      6  19.000000   2.280351      1.000000
+                                           Suits must repeat in the cyclic order hearts → spades → clubs → diamonds → hearts... Any card may start the line.      6  18.666667   6.345602      1.000000
+                                           The card must be of a different suit than but same color as the card just before it. Any card may start the line.      6  18.500000   1.870829      1.000000
+                                                      Card rank must have opposite odd/even parity to the previous card's rank. Any card may start the line.      6  18.000000   5.329165      1.000000
+                                                                                                                                   Only spades and diamonds.      6  17.833333   4.020779      1.000000
+                                                                                                                                        Only Aces (rank 1) .      6  16.000000   8.602325      1.000000
+                                                                                                                       Only cards between 1 and 7 inclusive.      6  11.166667   8.931219      0.833333
+                                                                                                                                 Only face cards (11,12,13).      6  10.500000   9.874209      0.666667
+                                                                                                                           Only red cards whose rank is <=7.      6   9.833333   5.913262      1.000000
+                                                              Each card must have a rank greater or equal to the previous card. Only Ace can start the line.      6   9.500000   9.954898      0.666667
+                                 Each card must share at least one property with the previous card: same color, or same parity. Any card may start the line.      6   9.166667   8.863784      0.666667
+Suits must appear in pairs: card 1 and 2 same suit, cards 3 and 4 same suit (different from 1 and 2), cards 5 and 6 same suit (different from 3 and 4), etc.      6   8.833333   8.134290      1.000000
+                                                                                               Alternate face and number cards. Any card may start the line.      6   8.666667  10.462632      0.666667
+                                                                                                                       Only cards between 5 and 9 inclusive.      6   6.833333   6.306082      1.000000
+                                                                                                                                      Only black face cards.      6   6.833333   6.968979      0.833333
+                                     Hearts and spades form Group A; clubs and diamonds form Group B. Alternate between groups. Any card may start the line.      6   5.666667   7.447595      0.500000
+        Face cards imposes the suit: if a face card is played, the next card must match its suit. Otherwise, the next card must be a different suit than it.      6   5.166667   5.154286      0.666667
+    If the previous card was red, rank must increase or be equal; if black, rank must decrease or be equal. Starting card must be between 5 and 9 inclusive.      6   4.333333   9.750214      0.833333
+                                                                                          Face cards (11-13) must be red; number cards (1-10) must be black.      6   2.833333   9.086620      0.833333
+                   Rank repeats in pairs: ranks must come in doubles: (x, x), then (y, y) with y different from x, then (z, z) with z different from y, etc.      6   2.000000   4.898979      0.166667
+
+Saved: results/260121_78_rounds/by_rule.png
+
+============================================================
+COMPLEXITY ANALYSIS
+============================================================
+
+Optimal K for aggregated complexity: 0.02
+  Formula: complexity = cyclomatic + 0.02 * node_count
+  Correlation with relative_score: -0.407
+
+Score by complexity bin:
+complexity_bin  count  avg_score  avg_relative_score  success_rate
+            Q1     36  16.361111            1.262204      0.972222
+            Q2     30  16.233333            1.242229      0.933333
+            Q3     30  14.566667            1.120549      0.900000
+            Q4     30  11.166667            0.832044      0.800000
+            Q5     30   6.400000            0.490533      0.666667
+
+Saved: results/260121_78_rounds/complexity_analysis.png
+
+============================================================
+PER-MODEL REPORTS
+============================================================
+
+Saved: results/260121_78_rounds/gpt_5_2_high.png
+Saved: results/260121_78_rounds/gpt_oss_120b.png
+
+============================================================
+Analysis complete! All outputs saved to: results/260121_78_rounds
+============================================================
