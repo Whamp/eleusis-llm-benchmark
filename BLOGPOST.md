@@ -14,60 +14,85 @@ Banner image:
 
 ## 1. Introduction
 
-LLM are more and more used for scientific research.
-Typical benchmark like ARC test inductive reasoning but science is more than that.
-It requires observation, hypothesis formation, experimentation, refinement and iteration. 
-This is an iterative agentic / autonomous behavior of scientific method.
-Not tested by typical benchmarks.
-Depends not only on pure reasoning but also some psychology aspect like calibration, metacognition, cognitive biases, strategic experimentation, risk taking.
+Large language models are increasingly being deployed as tools for scientific research—analyzing data, generating hypotheses, and even designing experiments. But how well do they actually embody the scientific method?
 
-Eleusis is a card game that simulates this process. 
-We built a benchmark around Eleusis to test whether LLMs can perform inductive reasoning by playing the game.
-Rather than testing knowledge retrieval or following instructions, Eleusis tests whether models can act like scientists: observing evidence, forming hypotheses, testing predictions, and refining theories.
-It requires inductive reasoning, building a mental model of hidden rules from limited data, and strategic experimentation. It requires research taste, calculated risk taking, avoiding overfitting, and knowing when to trust one's conclusions, metacognition (how confident am I in this hypothesis?), calibration (do I know what I don't know?), and scientific humility (knowing when to withhold judgment), not falling into cognitive biases like confirmation bias.
-This is fundamental to science, debugging, and everyday problem-solving. 
+Most reasoning benchmarks test whether models can solve well-defined problems: given premises, derive a conclusion. The ARC challenge, for instance, evaluates inductive reasoning on visual patterns. These benchmarks capture important capabilities, but they miss something fundamental about how science actually works. Real scientific reasoning is not a single inference step. It's an iterative process of observation, hypothesis formation, experimentation, and refinement—often spanning many cycles before reaching a conclusion. It requires not just logical ability, but also *strategic* thinking: which experiment to run next, how much evidence is enough, when to commit to a theory versus when to keep exploring.
 
-**Image** What is Eleusis : picture with an example of a sequence with secret rule "alternating colors".
+Beyond pure reasoning, effective science depends on psychological factors that are rarely evaluated: **calibration** (does my confidence match my actual accuracy?), **metacognition** (how certain am I about my uncertainty?), and resistance to **cognitive biases** like confirmation bias (seeking only evidence that supports my current hypothesis). A scientist who is brilliant at deduction but overconfident in weak theories will waste resources pursuing dead ends. One who is well-calibrated but overly cautious may never publish.
 
-## 2. The Eleusis benchmark
+We wanted to test whether LLMs can exhibit these deeper aspects of scientific reasoning. To do this, we turned to an unlikely source: a 1950s card game called Eleusis.
 
-Original game : one player is the dealer (sometimes called God or Mother nature) who invents a secret rule for which cards can be played. Other players try to figure out the rule by playing cards and observing which are accepted or rejected.
-Players take turn in playing cards from their hand to a mainline pile. If the card follows the secret rule, it is accepted and added to the mainline; otherwise, it is rejected and placed in a sideline pile below. Players can also guess the secret rule at any time. 
-The game ends when a player correctly identifies the rule or when a maximum number of turns is reached.
+Eleusis was designed by Robert Abbott explicitly to simulate the process of scientific discovery. In the game, one player invents a secret rule governing which cards can be played, and other players must deduce the rule through experimentation—playing cards and observing whether they are accepted or rejected. It's a microcosm of the scientific method: the rule is a hidden law of nature, each card play is an experiment, and the sequence of accepted and rejected cards is the accumulating evidence.
 
-We turned this into a solo benchmark, focus on scientific method and less on game strategizing, limiting the number of free parameters.
+We built a benchmark around Eleusis to evaluate LLMs on this iterative, hypothesis-driven reasoning. Rather than testing knowledge retrieval or instruction-following, our benchmark asks: can models act like scientists? Can they observe evidence, form hypotheses, design informative experiments, and refine their theories? Can they calibrate their confidence appropriately and know when they've gathered enough evidence to commit to a conclusion?
 
-### How does this work ?
+These skills are fundamental not just to science, but to debugging code, diagnosing problems, and everyday reasoning under uncertainty.
 
-52-card deck (ranks 1-13, 4 suits)
-Secret rule: a function `(card, mainline) → accept/reject`
-Player receive a hand of 12 random cards.
-Each turn:
-- selects a card from their hand to play
-- receives feedback: accepted (added to mainline) or rejected (added to sideline)
-  - may optionally try to guess the rule : if correct, game ends, otherwise penalty applied.
-Scoring system : 30 turns to guess the rule, receive (30-turns_used) - penalty × wrong_guesses with 2 points penalty per wrong guess.
+**Figure**: Example of an Eleusis game sequence with the secret rule "alternating colors" (red, black, red, black...).
 
-The penalty means the player must carefully assess their confidence before trying to guess the rule.
-- Rewards efficiency (fewer turns = higher score)
-- Penalizes reckless guessing
+## 2. The Eleusis Benchmark
 
-We created a library of 26 hand-crafted rules of varying complexity, spanning simple set membership (e.g., "only red cards") to complex conditional patterns (e.g., "suits must appear in pairs").
+### The Original Game
 
-**Table idea**: Example rules from each category with brief description.
+In the original Eleusis card game, one player acts as the "dealer" (sometimes called "God" or "Nature") and secretly invents a rule determining which cards can be legally played. The other players don't know this rule—they must discover it through experimentation.
 
+Players take turns playing cards from their hand onto a central "mainline." If a card satisfies the secret rule, it's accepted and added to the mainline. If it violates the rule, it's rejected and placed in a "sideline" below the mainline at that position. Over time, the pattern of accepted and rejected cards provides evidence about the hidden rule. At any point, a player can attempt to guess the rule—correctly identifying it wins the game, but wrong guesses carry penalties.
 
-Each rule played 3 times with a different random seed (hand + card order) to capture variance.
+### Our Adaptation
 
-- What the LLM must do:
-  - Reason about the current state of the game, knowing their history of play, accepted/rejected cards, wrong guesses.
-  - Choose a card to play
-  - Maintain a "tentative rule" hypothesis
-  - Report confidence level (0-10)
-  - Decide whether to guess or not
+We adapted Eleusis into a single-player benchmark focused purely on the scientific reasoning process. By removing multi-player dynamics, we isolate the core challenge: hypothesis formation and testing under uncertainty.
 
-**Figure idea**: Example of a JSON showing a mainline/sideline and turn's response: reasoing summary, tentative rule, confidence level, played card
-Show two examples : a good round and a bad round (with overly confident wrong guesses and complex rule)
+**Game Setup:**
+- Standard 52-card deck (ranks 1–13 representing Ace through King, four suits)
+- The secret rule is a deterministic function: given the card being played and the current mainline, it returns accept or reject
+- The player receives a hand of 12 random cards, replenished after each play
+
+**Each Turn:**
+1. The player selects a card from their hand to play
+2. The card is evaluated against the secret rule
+3. Feedback: the card is added to the mainline (accepted) or to a sideline (rejected)
+4. The player may optionally attempt to guess the rule
+
+**Scoring:**
+The game lasts at most 30 turns. The score rewards efficiency while penalizing reckless guessing:
+
+```
+score = (30 - turns_used) - 2 × wrong_guesses
+```
+
+A player who correctly identifies the rule on turn 10 with no wrong guesses scores 20 points. One who guesses correctly on turn 10 but made 3 wrong guesses along the way scores only 14. Failing to identify the rule scores 0.
+
+This scoring system creates an interesting tension: guessing early yields more points if correct, but wrong guesses are costly. The optimal strategy requires accurately assessing one's own confidence—exactly the calibration we want to measure.
+
+### Rule Library
+
+We created a library of 26 hand-crafted rules spanning a range of complexity:
+
+| Category | Example Rules |
+|----------|---------------|
+| Simple membership | "Only red cards", "Only face cards (J, Q, K)" |
+| Rank conditions | "Card rank must be higher than previous card" |
+| Suit patterns | "Alternate between red and black suits" |
+| Positional rules | "Every third card must be a heart" |
+| Complex conditionals | "Accept if same suit as previous, OR if rank differs by exactly 2" |
+
+**[TODO: Add complete table of rules with difficulty ratings once finalized]**
+
+Each rule is played 3 times with different random seeds (affecting the initial hand and deck order) to capture variance in performance.
+
+### What the LLM Must Do
+
+On each turn, the model receives the complete game state: the mainline of accepted cards, the sidelines of rejected cards at each position, its current hand, and its history of reasoning from previous turns. It must output a structured response containing:
+
+1. **Reasoning summary**: A brief explanation of its current thinking
+2. **Card choice**: Which card to play from its hand
+3. **Tentative rule**: Its current best hypothesis about the secret rule
+4. **Confidence level**: A self-reported probability (0–10 scale, where 7 means "I estimate 70% chance my tentative rule is correct")
+5. **Guess decision**: Whether to formally guess the rule this turn
+
+This structure lets us analyze not just whether models succeed, but *how* they reason: Do they update hypotheses appropriately when evidence contradicts them? Do they explore strategically or play conservatively? Is their stated confidence calibrated to their actual accuracy?
+
+**Figure**: Example turn showing the game state (mainline with sidelines) and the model's structured response. [Include both a well-reasoned turn and an example of overconfident incorrect reasoning]
 
 ## 3. Results
 
