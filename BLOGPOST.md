@@ -36,53 +36,37 @@ These skills are fundamental not just to science, but to debugging code, diagnos
 
 In the original Eleusis card game, one player acts as the "dealer" (sometimes called "God" or "Nature") and secretly invents a rule determining which cards can be legally played. The other players don't know this rule—they must discover it through experimentation.
 
-Players take turns playing cards from their hand onto a central "mainline." If a card satisfies the secret rule, it's accepted and added to the mainline. If it violates the rule, it's rejected and placed in a "sideline" below the mainline at that position. Over time, the pattern of accepted and rejected cards provides evidence about the hidden rule. At any point, a player can attempt to guess the rule—correctly identifying it wins the game, but wrong guesses carry penalties.
+Players take turns playing cards from their hand onto a central "mainline." If a card satisfies the secret rule, it's accepted and added to the mainline. If it violates the rule, it's rejected and placed in a "sideline" below the mainline at that position. Over time, the pattern of accepted and rejected cards provides evidence about the hidden rule. At any point, a player can attempt to guess the rule; correctly identifying it ends the game. A specific scoring system rewards efficiency in discovering the rule while penalizing reckless guessing.
 
 ### Our Adaptation
 
 We adapted Eleusis into a single-player benchmark focused purely on the scientific reasoning process. By removing multi-player dynamics, we isolate the core challenge: hypothesis formation and testing under uncertainty.
 
-**Game Setup:**
-- Standard 52-card deck (ranks 1–13 representing Ace through King, four suits)
-- The secret rule is a deterministic function: given the card being played and the current mainline, it returns accept or reject
-- The player receives a hand of 12 random cards, replenished after each play
+The game uses a standard 52-card deck with ranks 1–13 (Ace through King) and four suits. A secret rule—a deterministic function that takes the card being played and the current sequence of accepted cards (the "mainline")—determines whether each card is accepted or rejected. The player maintains a hand of 12 cards, drawing a replacement after each play.
 
-**Each Turn:**
-1. The player selects a card from their hand to play
-2. The card is evaluated against the secret rule
-3. Feedback: the card is added to the mainline (accepted) or to a sideline (rejected)
-4. The player may optionally attempt to guess the rule
+On each turn, the player selects a card from their hand to play. If the card satisfies the secret rule, it joins the mainline; if rejected, it's placed in a sideline below the mainline at that position. At any point, the player may attempt to guess the rule.
 
-**Scoring:**
-The game lasts at most 30 turns. The score rewards efficiency while penalizing reckless guessing:
-
-```
-score = (30 - turns_used) - 2 × wrong_guesses
-```
-
-A player who correctly identifies the rule on turn 10 with no wrong guesses scores 20 points. One who guesses correctly on turn 10 but made 3 wrong guesses along the way scores only 14. Failing to identify the rule scores 0.
-
-This scoring system creates an interesting tension: guessing early yields more points if correct, but wrong guesses are costly. The optimal strategy requires accurately assessing one's own confidence—exactly the calibration we want to measure.
+The game lasts at most 30 turns, with scoring designed to reward efficiency while penalizing reckless guessing: `score = (30 - turns_used) - 2 × wrong_guesses`. A player who correctly identifies the rule on turn 10 with no wrong guesses scores 20 points; one who made 3 wrong guesses along the way scores only 14. Failing to identify the rule scores 0. This creates an interesting tension: guessing early yields more points if correct, but wrong guesses are costly. The optimal strategy requires accurately assessing one's own confidence—exactly the calibration we want to measure.
 
 ### Rule Library
 
-We created a library of 26 hand-crafted rules spanning a range of complexity:
+We created a library of 26 hand-crafted rules spanning a range of types and complexity. Some rules involve simply card properties (e.g., "only red cards"), while others depend on the sequence of previously accepted cards (e.g., "card rank must be higher than previous card"). The rule might involve rank, suits, color or a combination thereof, and may include positional dependencies.
 
-| Category | Example Rules |
-|----------|---------------|
-| Simple membership | "Only red cards", "Only face cards (J, Q, K)" |
-| Rank conditions | "Card rank must be higher than previous card" |
-| Suit patterns | "Alternate between red and black suits" |
-| Positional rules | "Every third card must be a heart" |
-| Complex conditionals | "Accept if same suit as previous, OR if rank differs by exactly 2" |
+Example categories:
 
-**[TODO: Add complete table of rules with difficulty ratings once finalized]**
+| Category | Examples |
+|----------|----------|
+| Static property | "Only red cards", "Only face cards (J, Q, K)" |
+| Combined properties | "Only hearts with rank ≤7", "Only red face cards" |
+| Sequential | "Rank must be higher than previous card" |
+| Cyclic patterns | "Alternate between odd and even ranks", "Suits cycle: ♥→♠→♣→♦" |
+| Complex conditionals | "Same suit as previous OR rank differs by exactly 2" |
 
-Each rule is played 3 times with different random seeds (affecting the initial hand and deck order) to capture variance in performance.
+Each rule is played 3 times with different random seeds (affecting the initial hand and deck order). This ensures every model is tested on the same deck sequences for a given seed, and captures variance in performance when the starting hand differs.
 
 ### What the LLM Must Do
 
-On each turn, the model receives the complete game state: the mainline of accepted cards, the sidelines of rejected cards at each position, its current hand, and its history of reasoning from previous turns. It must output a structured response containing:
+On each turn, the model receives the complete game state: the mainline of accepted cards, the sidelines of rejected cards at each position, its current hand, and its history of reasoning from the 3 previous turns. It must output a structured response containing:
 
 1. **Reasoning summary**: A brief explanation of its current thinking
 2. **Card choice**: Which card to play from its hand
