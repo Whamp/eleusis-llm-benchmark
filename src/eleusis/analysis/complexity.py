@@ -1,5 +1,6 @@
 """Complexity analysis for rule difficulty."""
 
+import json
 import logging
 from pathlib import Path
 
@@ -7,7 +8,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from .colors import get_color_map
 from .utils import TeeWriter, save_figure, setup_matplotlib_style
 
 logger = logging.getLogger(__name__)
@@ -57,18 +57,18 @@ def compute_complexity_metrics(df_rounds: pd.DataFrame) -> tuple[pd.DataFrame, f
         df["cyclomatic_complexity"] + optimal_k * df["node_count"]
     )
 
-    # Create complexity bins (5 quantiles)
+    # Create complexity bins (4 quartiles)
     df_valid = df.dropna(subset=["aggregated_complexity"])
     if len(df_valid) > 0:
         try:
             df.loc[df_valid.index, "complexity_bin"] = pd.qcut(
-                df_valid["aggregated_complexity"], q=5, labels=["Q1", "Q2", "Q3", "Q4", "Q5"],
+                df_valid["aggregated_complexity"], q=4, labels=["Q1", "Q2", "Q3", "Q4"],
                 duplicates="drop"
             )
         except ValueError:
-            # Not enough unique values for 5 bins
+            # Not enough unique values for 4 bins
             df["complexity_bin"] = pd.cut(
-                df["aggregated_complexity"], bins=5, labels=["Q1", "Q2", "Q3", "Q4", "Q5"]
+                df["aggregated_complexity"], bins=4, labels=["Q1", "Q2", "Q3", "Q4"]
             )
 
     return df, optimal_k, correlation
@@ -76,78 +76,112 @@ def compute_complexity_metrics(df_rounds: pd.DataFrame) -> tuple[pd.DataFrame, f
 
 def plot_complexity_analysis(
     df: pd.DataFrame,
-    model_colors: dict[str, str],
     optimal_k: float,
-    output_path: Path,
-):
-    """Generate complexity analysis charts."""
+    output_folder: Path,
+) -> tuple[Path, Path]:
+    """Generate complexity analysis heatmap.
+
+    Returns (png_path, json_path).
+    """
     setup_matplotlib_style()
-    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
 
-    df_valid = df.dropna(subset=["aggregated_complexity", "relative_score"])
-    color_map = get_color_map(df["model"].unique().tolist(), model_colors)
-
-    # Chart 1: Scatter - relative_score vs aggregated_complexity (colored by model)
-    ax = axes[0]
-    for model in df_valid["model"].unique():
-        model_df = df_valid[df_valid["model"] == model]
-        ax.scatter(
-            model_df["aggregated_complexity"], model_df["relative_score"],
-            c=color_map[model], alpha=0.6, s=50, label=model
-        )
-    ax.set_xlabel(f"Aggregated Complexity (cyclomatic + {optimal_k:.2f} * node_count)")
-    ax.set_ylabel("Relative Score (score / model_avg)")
-    ax.set_title("Relative Score vs Rule Complexity")
-    ax.legend(bbox_to_anchor=(1.02, 1), loc="upper left", fontsize=8)
-    ax.axhline(y=1.0, color="gray", linestyle="--", alpha=0.5)
-
-    # Chart 2: Scatter - avg_score vs acceptance_rate (colored by aggregated_complexity)
-    ax = axes[1]
-    rule_stats = df_valid.groupby("rule_description").agg(
-        avg_score=("score", "mean"),
-        avg_acceptance_rate=("avg_acceptance_rate", "first"),
-        aggregated_complexity=("aggregated_complexity", "first"),
-    ).reset_index().dropna()
-
-    if len(rule_stats) > 0:
-        scatter = ax.scatter(
-            rule_stats["avg_acceptance_rate"], rule_stats["avg_score"],
-            c=rule_stats["aggregated_complexity"], cmap="viridis", alpha=0.7, s=60
-        )
-        plt.colorbar(scatter, ax=ax, label="Aggregated Complexity")
-    ax.set_xlabel("Rule Acceptance Rate")
-    ax.set_ylabel("Average Score")
-    ax.set_title("Score vs Selectivity (color = complexity)")
-
-    # Chart 3: Heatmap - Model x Complexity bins showing avg relative_score
-    ax = axes[2]
     df_binned = df.dropna(subset=["complexity_bin", "relative_score"])
-    if len(df_binned) > 0:
-        heatmap = df_binned.pivot_table(
-            values="relative_score",
-            index="model",
-            columns="complexity_bin",
-            aggfunc="mean",
-            observed=True
-        )
-        if not heatmap.empty:
-            im = ax.imshow(heatmap.values, cmap="RdYlGn", aspect="auto", vmin=0.5, vmax=1.5)
-            ax.set_xticks(range(len(heatmap.columns)))
-            ax.set_xticklabels(heatmap.columns)
-            ax.set_yticks(range(len(heatmap.index)))
-            ax.set_yticklabels(heatmap.index)
-            ax.set_xlabel("Complexity Bin (Q1=lowest)")
-            ax.set_title("Model x Complexity: Relative Score")
-            plt.colorbar(im, ax=ax, label="Avg Relative Score")
 
-            # Annotate cells
-            for i in range(len(heatmap.index)):
-                for j in range(len(heatmap.columns)):
-                    val = heatmap.values[i, j]
-                    if not np.isnan(val):
-                        ax.text(j, i, f"{val:.2f}", ha="center", va="center", fontsize=9)
+    # Prepare JSON data
+    plot_data = {
+        "models": [],
+        "quartiles": ["Q1", "Q2", "Q3", "Q4"],
+        "metadata": {
+            "optimal_k": optimal_k,
+            "complexity_formula": f"cyclomatic + {optimal_k:.2f} * node_count",
+            "value": "avg_relative_score",
+            "description": "Relative score = score / model_avg_score. Values > 1 mean above-average performance.",
+        }
+    }
 
-    save_figure(fig, output_path)
+    if len(df_binned) == 0:
+        # Empty plot
+        fig, ax = plt.subplots(figsize=(8, 6))
+        ax.text(0.5, 0.5, "No data", ha="center", va="center", transform=ax.transAxes)
+        png_path = output_folder / "complexity_analysis.png"
+        json_path = output_folder / "complexity_analysis.json"
+        save_figure(fig, png_path)
+        with open(json_path, "w") as f:
+            json.dump(plot_data, f, indent=2)
+        return png_path, json_path
+
+    # Create pivot table for heatmap
+    heatmap = df_binned.pivot_table(
+        values="relative_score",
+        index="model",
+        columns="complexity_bin",
+        aggfunc="mean",
+        observed=True
+    )
+
+    # Order models by average score (best on top)
+    model_avg_scores = df_binned.groupby("model")["score"].mean().sort_values(ascending=False)
+    heatmap = heatmap.reindex(model_avg_scores.index)
+
+    if heatmap.empty:
+        fig, ax = plt.subplots(figsize=(8, 6))
+        ax.text(0.5, 0.5, "No data", ha="center", va="center", transform=ax.transAxes)
+        png_path = output_folder / "complexity_analysis.png"
+        json_path = output_folder / "complexity_analysis.json"
+        save_figure(fig, png_path)
+        with open(json_path, "w") as f:
+            json.dump(plot_data, f, indent=2)
+        return png_path, json_path
+
+    # Ensure quartile columns are in order
+    quartile_order = ["Q1", "Q2", "Q3", "Q4"]
+    heatmap = heatmap.reindex(columns=[q for q in quartile_order if q in heatmap.columns])
+
+    # Create figure
+    fig_height = max(4, len(heatmap.index) * 0.5)
+    fig, ax = plt.subplots(figsize=(8, fig_height))
+
+    im = ax.imshow(heatmap.values, cmap="RdYlGn", aspect="auto", vmin=0.5, vmax=1.5)
+    ax.set_xticks(range(len(heatmap.columns)))
+    ax.set_xticklabels(heatmap.columns, fontsize=10)
+    ax.set_yticks(range(len(heatmap.index)))
+    ax.set_yticklabels(heatmap.index, fontsize=10)
+    ax.set_xlabel("Complexity Quartile (Q1 = easiest)", fontsize=11)
+    ax.set_title("Model Performance by Rule Complexity", fontsize=12, fontweight="bold")
+    plt.colorbar(im, ax=ax, label="Avg Relative Score", shrink=0.8)
+
+    # Annotate cells with values
+    for i in range(len(heatmap.index)):
+        for j in range(len(heatmap.columns)):
+            val = heatmap.values[i, j]
+            if not np.isnan(val):
+                # Choose text color based on value
+                text_color = "white" if val < 0.7 or val > 1.3 else "black"
+                ax.text(j, i, f"{val:.2f}", ha="center", va="center",
+                        fontsize=10, fontweight="bold", color=text_color)
+
+    # Build JSON data
+    for model in heatmap.index:
+        model_data = {
+            "name": model,
+            "quartile_scores": {}
+        }
+        for q in heatmap.columns:
+            val = heatmap.loc[model, q]
+            model_data["quartile_scores"][q] = float(val) if not np.isnan(val) else None
+        plot_data["models"].append(model_data)
+
+    # Save outputs
+    png_path = output_folder / "complexity_analysis.png"
+    json_path = output_folder / "complexity_analysis.json"
+
+    save_figure(fig, png_path)
+
+    with open(json_path, "w") as f:
+        json.dump(plot_data, f, indent=2)
+    logger.info(f"Saved: {json_path}")
+
+    return png_path, json_path
 
 
 def analyze_complexity(
@@ -176,12 +210,12 @@ def analyze_complexity(
             avg_relative_score=("relative_score", "mean"),
             success_rate=("success", "mean"),
         ).reset_index()
-        tee.write("Score by complexity bin:\n")
+        tee.write("Score by complexity quartile:\n")
         tee.write(bin_stats.to_string(index=False) + "\n\n")
 
-    # Generate plots
-    plot_path = output_folder / "complexity_analysis.png"
-    plot_complexity_analysis(df, model_colors, optimal_k, plot_path)
-    tee.write(f"Saved: {plot_path}\n")
+    # Generate plot
+    png_path, json_path = plot_complexity_analysis(df, optimal_k, output_folder)
+    tee.write(f"Saved: {png_path}\n")
+    tee.write(f"Saved: {json_path}\n")
 
     return df  # Return enriched dataframe for potential reuse

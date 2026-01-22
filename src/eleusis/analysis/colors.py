@@ -10,6 +10,34 @@ logger = logging.getLogger(__name__)
 # Fallback color for unknown models
 DEFAULT_COLOR = "#888888"
 
+# Providers that indicate open-source models
+OPEN_PROVIDERS = {"huggingface"}
+
+
+def load_model_metadata() -> dict[str, dict]:
+    """Load model metadata from models.yaml.
+
+    Returns dict mapping model_key to {color, is_open, provider}.
+    """
+    models_path = Path(__file__).parent.parent.parent.parent / "models.yaml"
+    if not models_path.exists():
+        logger.warning(f"models.yaml not found at {models_path}")
+        return {}
+
+    with open(models_path) as f:
+        models = yaml.safe_load(f)
+
+    metadata = {}
+    for model_key, config in models.items():
+        if isinstance(config, dict):
+            provider = config.get("provider", "")
+            metadata[model_key] = {
+                "color": config.get("color", DEFAULT_COLOR),
+                "is_open": provider in OPEN_PROVIDERS,
+                "provider": provider,
+            }
+    return metadata
+
 
 def load_model_colors() -> dict[str, str]:
     """Load model colors from models.yaml."""

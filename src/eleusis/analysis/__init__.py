@@ -67,8 +67,8 @@ def analyze_folder(folder: Path):
     out(f"Loaded colors for {len(model_colors)} models")
 
     # Run analyses
-    analyze_basic_metrics(df_rounds, model_colors, folder, tee)
-    analyze_by_rule(df_rounds, model_colors, folder, tee)
+    analyze_basic_metrics(df_rounds, df_turns, model_colors, folder, tee)
+    analyze_by_rule(df_rounds, model_colors, rules_lib, folder, tee)
 
     # Complexity analysis returns enriched dataframe with optimal_k
     df_enriched = analyze_complexity(df_rounds, model_colors, folder, tee)

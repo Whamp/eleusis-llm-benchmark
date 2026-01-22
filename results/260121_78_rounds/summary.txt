@@ -30,7 +30,14 @@ Gemini 3 Flash Preview Low             78          955  12.243590         1299  
           Claude Haiku 4.5             78          713   9.141026         1223              6973411          57734.39            7.551282      0.705128                 5701.889616            47.207187            88.576923           152.125983        0.582260
 
 Saved: results/260121_78_rounds/basic_metrics.csv
-Saved: results/260121_78_rounds/basic_metrics.png
+Saved: results/260121_78_rounds/overall_performance.png
+Saved: results/260121_78_rounds/overall_performance.json
+Saved: results/260121_78_rounds/score_vs_failed_guesses.png
+Saved: results/260121_78_rounds/score_vs_failed_guesses.json
+Saved: results/260121_78_rounds/calibration_curves.png
+Saved: results/260121_78_rounds/calibration_curves.json
+Saved: results/260121_78_rounds/confidence_distribution.png
+Saved: results/260121_78_rounds/confidence_distribution.json
 
 ============================================================
 BY-RULE ANALYSIS
@@ -48,8 +55,8 @@ Score by rule (sorted by avg_score):
                                                                                                           Only ranks that are prime numbers (2,3,5,7,11,13).     18  18.000000   6.859943      0.944444
                                            The card must be of a different suit than but same color as the card just before it. Any card may start the line.     18  17.944444   9.295617      1.000000
                                                                                                                                    Only spades and diamonds.     18  17.500000   4.973459      1.000000
-                                           Suits must repeat in the cyclic order hearts → spades → clubs → diamonds → hearts... Any card may start the line.     18  16.388889   7.769767      1.000000
                                                                                                                                  Only face cards (11,12,13).     18  16.388889   9.356589      0.833333
+                                           Suits must repeat in the cyclic order hearts → spades → clubs → diamonds → hearts... Any card may start the line.     18  16.388889   7.769767      1.000000
                                                                                                                                         Only Aces (rank 1) .     18  16.111111   9.682543      0.944444
                                                                                                                        Only cards between 1 and 7 inclusive.     18  10.277778   8.870344      0.944444
                                                                                                                                       Only black face cards.     18   7.111111  10.093031      0.833333
@@ -60,12 +67,13 @@ Score by rule (sorted by avg_score):
                                                                                                                        Only cards between 5 and 9 inclusive.     18   4.500000   9.977917      0.888889
 Suits must appear in pairs: card 1 and 2 same suit, cards 3 and 4 same suit (different from 1 and 2), cards 5 and 6 same suit (different from 3 and 4), etc.     18   1.944444  12.511041      0.777778
         Face cards imposes the suit: if a face card is played, the next card must match its suit. Otherwise, the next card must be a different suit than it.     18   1.666667   3.880570      0.333333
-    If the previous card was red, rank must increase or be equal; if black, rank must decrease or be equal. Starting card must be between 5 and 9 inclusive.     18   1.444444   5.690262      0.277778
                    Rank repeats in pairs: ranks must come in doubles: (x, x), then (y, y) with y different from x, then (z, z) with z different from y, etc.     18   1.444444   4.217920      0.111111
+    If the previous card was red, rank must increase or be equal; if black, rank must decrease or be equal. Starting card must be between 5 and 9 inclusive.     18   1.444444   5.690262      0.277778
                                      Hearts and spades form Group A; clubs and diamonds form Group B. Alternate between groups. Any card may start the line.     18   0.833333   6.242643      0.277778
                                                                                           Face cards (11-13) must be red; number cards (1-10) must be black.     18  -0.055556   7.255604      0.444444
 
 Saved: results/260121_78_rounds/by_rule.png
+Saved: results/260121_78_rounds/by_rule.json
 
 ============================================================
 COMPLEXITY ANALYSIS
@@ -75,26 +83,26 @@ Optimal K for aggregated complexity: 0.05
   Formula: complexity = cyclomatic + 0.05 * node_count
   Correlation with relative_score: -0.429
 
-Score by complexity bin:
+Score by complexity quartile:
 complexity_bin  count  avg_score  avg_relative_score  success_rate
-            Q1    108  16.092593            1.401137      0.953704
-            Q2     90  15.966667            1.379761      0.955556
-            Q3     90  13.600000            1.169327      0.777778
-            Q4     90   8.388889            0.689184      0.633333
-            Q5     90   3.644444            0.280364      0.533333
+            Q1    144  16.909722            1.478439      0.944444
+            Q2     90  12.911111            1.105104      0.877778
+            Q3    126  12.150794            1.021103      0.761905
+            Q4    108   3.277778            0.249874      0.490741
 
 Saved: results/260121_78_rounds/complexity_analysis.png
+Saved: results/260121_78_rounds/complexity_analysis.json
 
 ============================================================
 PER-MODEL REPORTS
 ============================================================
 
-Saved: results/260121_78_rounds/gpt_5_2_high.png
-Saved: results/260121_78_rounds/gpt_oss_120b.png
-Saved: results/260121_78_rounds/claude_haiku_4_5.png
-Saved: results/260121_78_rounds/gpt_5_mini_medium.png
-Saved: results/260121_78_rounds/gemini_3_flash_preview_low.png
-Saved: results/260121_78_rounds/gpt_oss_20b.png
+Saved: results/260121_78_rounds/model_gpt_5_2_high.png
+Saved: results/260121_78_rounds/model_gpt_oss_120b.png
+Saved: results/260121_78_rounds/model_claude_haiku_4_5.png
+Saved: results/260121_78_rounds/model_gpt_5_mini_medium.png
+Saved: results/260121_78_rounds/model_gemini_3_flash_preview_low.png
+Saved: results/260121_78_rounds/model_gpt_oss_20b.png
 
 ============================================================
 Analysis complete! All outputs saved to: results/260121_78_rounds

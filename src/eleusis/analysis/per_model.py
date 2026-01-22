@@ -200,7 +200,7 @@ def generate_per_model_report(
     plot_complexity_scatter(axes[1, 1], model_turns, rules_lib, model_color, optimal_k)
 
     # Save
-    filename = sanitize_filename(model) + ".png"
+    filename = "model_" + sanitize_filename(model) + ".png"
     output_path = output_folder / filename
     save_figure(fig, output_path)
     return output_path
