@@ -5,16 +5,18 @@ ELEUSIS RESULTS ANALYSIS
 Analyzing: results/260121_78_rounds
 
 Loading results...
-Loaded 6 evaluation runs:
+Loaded 8 evaluation runs:
   - solo_evaluation_20260120_091620_gpt_5_2_high
   - solo_evaluation_20260120_091622_gpt_oss_120b
   - solo_evaluation_20260121_070517_claude_haiku_4_5
   - solo_evaluation_20260121_070518_gpt_5_mini_medium
   - solo_evaluation_20260121_070520_gemini_3_flash_preview_low
   - solo_evaluation_20260121_070522_gpt_oss_20b
+  - solo_evaluation_20260122_110723_grok_4_1_fast_reasoning
+  - solo_evaluation_20260122_180323_deepseek_r1
 
 Extracted 26 unique rules from results files
-Built DataFrames: 468 rounds, 7836 turns
+Built DataFrames: 624 rounds, 10001 turns
 Loaded colors for 17 models
 
 ============================================================
@@ -24,8 +26,10 @@ BASIC MODEL COMPARISON
                      model  rounds_played  total_score  avg_score  total_turns  total_output_tokens  total_wall_clock  avg_failed_guesses  success_rate  avg_output_tokens_per_turn  wall_clock_per_turn  intra_rule_variance  inter_rule_variance  variance_ratio
               Gpt 5.2 High             78         1102  14.128205         1200              3341037          73525.83            0.333333      0.961538                 2784.197500            61.271525            25.346154            36.062906        0.702832
          Gpt 5 Mini Medium             78         1001  12.833333         1247              3618399          58345.97            1.256410      0.756410                 2901.683240            46.789070            40.051282            79.228889        0.505514
+   Grok 4 1 Fast Reasoning             78          976  12.512821          962              8178655         120364.22            4.320513      0.884615                 8501.720374           125.118732            69.358974           182.704274        0.379624
 Gemini 3 Flash Preview Low             78          955  12.243590         1299              1581524          12702.02            1.717949      0.769231                 1217.493457             9.778306            35.910256            81.480513        0.440722
               Gpt Oss 120B             78          938  12.025641         1226              3190828          24633.15            3.692308      0.756410                 2602.632953            20.092292            51.320513            80.710427        0.635860
+               Deepseek R1             78          853  10.935897         1069              9229131         165334.16            5.064103      0.833333                 8633.424696           154.662451            69.705128           166.426838        0.418833
                Gpt Oss 20B             78          773   9.910256         1277              7009392          62397.50            6.205128      0.717949                 5488.952232            48.862569            80.782051           122.849402        0.657570
           Claude Haiku 4.5             78          713   9.141026         1223              6973411          57734.39            7.551282      0.705128                 5701.889616            47.207187            88.576923           152.125983        0.582260
 
@@ -45,32 +49,32 @@ BY-RULE ANALYSIS
 
 Score by rule (sorted by avg_score):
                                                                                                                                             rule_description  count  avg_score  std_score  success_rate
-                                                                                                                        Only red cards (hearts or diamonds).     18  23.888889   2.541164      1.000000
-                                                                             Cards must alternate between red and black colors. Any card may start the line.     18  23.500000   3.166925      1.000000
-                                                                                                                              Only cards of the suit spades.     18  23.444444   2.254987      1.000000
-                                                                                                               Only cards with an even rank (2,4,6,8,10,12).     18  22.333333   2.950573      1.000000
-                                                             The card must be of a different suit than the card just before it. Any card may start the line.     18  19.277778   7.282578      0.944444
-                                                      Card rank must have opposite odd/even parity to the previous card's rank. Any card may start the line.     18  19.000000   5.636019      1.000000
-                                                                                             Only hearts, clubs, and diamonds allowed. Spades are forbidden.     18  18.333333   5.851093      0.944444
-                                                                                                          Only ranks that are prime numbers (2,3,5,7,11,13).     18  18.000000   6.859943      0.944444
-                                           The card must be of a different suit than but same color as the card just before it. Any card may start the line.     18  17.944444   9.295617      1.000000
-                                                                                                                                   Only spades and diamonds.     18  17.500000   4.973459      1.000000
-                                                                                                                                 Only face cards (11,12,13).     18  16.388889   9.356589      0.833333
-                                           Suits must repeat in the cyclic order hearts → spades → clubs → diamonds → hearts... Any card may start the line.     18  16.388889   7.769767      1.000000
-                                                                                                                                        Only Aces (rank 1) .     18  16.111111   9.682543      0.944444
-                                                                                                                       Only cards between 1 and 7 inclusive.     18  10.277778   8.870344      0.944444
-                                                                                                                                      Only black face cards.     18   7.111111  10.093031      0.833333
-                                                              Each card must have a rank greater or equal to the previous card. Only Ace can start the line.     18   6.277778  11.113349      0.500000
-                                 Each card must share at least one property with the previous card: same color, or same parity. Any card may start the line.     18   6.055556  11.305762      0.611111
-                                                                                                                           Only red cards whose rank is <=7.     18   5.611111  10.330645      1.000000
-                                                                                               Alternate face and number cards. Any card may start the line.     18   5.333333  12.362181      0.611111
-                                                                                                                       Only cards between 5 and 9 inclusive.     18   4.500000   9.977917      0.888889
-Suits must appear in pairs: card 1 and 2 same suit, cards 3 and 4 same suit (different from 1 and 2), cards 5 and 6 same suit (different from 3 and 4), etc.     18   1.944444  12.511041      0.777778
-        Face cards imposes the suit: if a face card is played, the next card must match its suit. Otherwise, the next card must be a different suit than it.     18   1.666667   3.880570      0.333333
-                   Rank repeats in pairs: ranks must come in doubles: (x, x), then (y, y) with y different from x, then (z, z) with z different from y, etc.     18   1.444444   4.217920      0.111111
-    If the previous card was red, rank must increase or be equal; if black, rank must decrease or be equal. Starting card must be between 5 and 9 inclusive.     18   1.444444   5.690262      0.277778
-                                     Hearts and spades form Group A; clubs and diamonds form Group B. Alternate between groups. Any card may start the line.     18   0.833333   6.242643      0.277778
-                                                                                          Face cards (11-13) must be red; number cards (1-10) must be black.     18  -0.055556   7.255604      0.444444
+                                                                                                                        Only red cards (hearts or diamonds).     24  24.375000   2.373999      1.000000
+                                                                                                                              Only cards of the suit spades.     24  24.041667   2.216130      1.000000
+                                                                             Cards must alternate between red and black colors. Any card may start the line.     24  23.916667   2.903022      1.000000
+                                                                                                               Only cards with an even rank (2,4,6,8,10,12).     24  23.166667   2.958652      1.000000
+                                                             The card must be of a different suit than the card just before it. Any card may start the line.     24  20.750000   6.803132      0.958333
+                                                      Card rank must have opposite odd/even parity to the previous card's rank. Any card may start the line.     24  19.916667   5.290818      1.000000
+                                                                                             Only hearts, clubs, and diamonds allowed. Spades are forbidden.     24  19.125000   5.803391      0.958333
+                                           The card must be of a different suit than but same color as the card just before it. Any card may start the line.     24  18.791667   8.314362      1.000000
+                                                                                                          Only ranks that are prime numbers (2,3,5,7,11,13).     24  18.416667   7.318331      0.958333
+                                                                                                                                        Only Aces (rank 1) .     24  18.291667   9.205288      0.958333
+                                                                                                                                   Only spades and diamonds.     24  18.125000   4.656109      1.000000
+                                                                                                                                 Only face cards (11,12,13).     24  17.833333   8.549939      0.875000
+                                           Suits must repeat in the cyclic order hearts → spades → clubs → diamonds → hearts... Any card may start the line.     24  13.333333  13.150191      1.000000
+                                                                                                                       Only cards between 1 and 7 inclusive.     24  11.666667   8.590524      0.958333
+                                                                                                                                      Only black face cards.     24   8.583333   9.951695      0.875000
+                                                              Each card must have a rank greater or equal to the previous card. Only Ace can start the line.     24   7.125000  10.714933      0.541667
+                                                                                                                       Only cards between 5 and 9 inclusive.     24   5.500000   9.573514      0.916667
+                                 Each card must share at least one property with the previous card: same color, or same parity. Any card may start the line.     24   5.041667  12.463788      0.625000
+                                                                                               Alternate face and number cards. Any card may start the line.     24   5.000000  12.349969      0.666667
+                                                                                                                           Only red cards whose rank is <=7.     24   4.166667  11.095109      1.000000
+                   Rank repeats in pairs: ranks must come in doubles: (x, x), then (y, y) with y different from x, then (z, z) with z different from y, etc.     24   1.083333   3.682115      0.083333
+Suits must appear in pairs: card 1 and 2 same suit, cards 3 and 4 same suit (different from 1 and 2), cards 5 and 6 same suit (different from 3 and 4), etc.     24   0.541667  11.658097      0.791667
+    If the previous card was red, rank must increase or be equal; if black, rank must decrease or be equal. Starting card must be between 5 and 9 inclusive.     24  -0.916667   9.916682      0.333333
+                                     Hearts and spades form Group A; clubs and diamonds form Group B. Alternate between groups. Any card may start the line.     24  -0.958333   7.410211      0.375000
+                                                                                          Face cards (11-13) must be red; number cards (1-10) must be black.     24  -1.125000   7.314741      0.458333
+        Face cards imposes the suit: if a face card is played, the next card must match its suit. Otherwise, the next card must be a different suit than it.     24  -1.166667   7.446427      0.416667
 
 Saved: results/260121_78_rounds/by_rule.png
 Saved: results/260121_78_rounds/by_rule.json
@@ -79,16 +83,16 @@ Saved: results/260121_78_rounds/by_rule.json
 COMPLEXITY ANALYSIS
 ============================================================
 
-Optimal K for aggregated complexity: 0.05
-  Formula: complexity = cyclomatic + 0.05 * node_count
-  Correlation with relative_score: -0.429
+Optimal K for aggregated complexity: 0.10
+  Formula: complexity = cyclomatic + 0.10 * node_count
+  Correlation with relative_score: -0.472
 
 Score by complexity quartile:
 complexity_bin  count  avg_score  avg_relative_score  success_rate
-            Q1    144  16.909722            1.478439      0.944444
-            Q2     90  12.911111            1.105104      0.877778
-            Q3    126  12.150794            1.021103      0.761905
-            Q4    108   3.277778            0.249874      0.490741
+            Q1    192  18.000000            1.562740      0.958333
+            Q2    120  12.700000            1.083743      0.883333
+            Q3    168  11.315476            0.960940      0.773810
+            Q4    144   2.986111            0.225464      0.541667
 
 Saved: results/260121_78_rounds/complexity_analysis.png
 Saved: results/260121_78_rounds/complexity_analysis.json
@@ -103,6 +107,8 @@ Saved: results/260121_78_rounds/model_claude_haiku_4_5.png
 Saved: results/260121_78_rounds/model_gpt_5_mini_medium.png
 Saved: results/260121_78_rounds/model_gemini_3_flash_preview_low.png
 Saved: results/260121_78_rounds/model_gpt_oss_20b.png
+Saved: results/260121_78_rounds/model_grok_4_1_fast_reasoning.png
+Saved: results/260121_78_rounds/model_deepseek_r1.png
 
 ============================================================
 Analysis complete! All outputs saved to: results/260121_78_rounds
