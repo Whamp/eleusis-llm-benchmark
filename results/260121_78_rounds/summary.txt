@@ -80,6 +80,32 @@ Saved: results/260121_78_rounds/by_rule.png
 Saved: results/260121_78_rounds/by_rule.json
 
 ============================================================
+EXCESS CAUTION ANALYSIS
+============================================================
+
+Early Correct Turns: consecutive correct shadow guesses before winning guess
+(Only counts successful rounds where model eventually guessed correctly)
+
+                     Model  Rounds  Mean  Median  % with Early
+              Gpt 5.2 High      75  3.56     3.0          86.7
+Gemini 3 Flash Preview Low      60  1.92     2.0          68.3
+         Gpt 5 Mini Medium      59  1.32     1.0          67.8
+              Gpt Oss 120B      59  1.31     1.0          61.0
+               Gpt Oss 20B      56  1.09     1.0          51.8
+   Grok 4 1 Fast Reasoning      69  0.75     0.0          44.9
+          Claude Haiku 4.5      55  0.53     0.0          38.2
+               Deepseek R1      65  0.49     0.0          33.8
+
+Overall: 711 total early correct turns across 498 successful rounds
+Mean: 1.43, Median: 1.0
+285/498 (57.2%) rounds had at least 1 early correct turn
+
+Saved: results/260121_78_rounds/excess_caution.png
+Saved: results/260121_78_rounds/excess_caution.json
+Saved: results/260121_78_rounds/caution_vs_failed_guesses.png
+Saved: results/260121_78_rounds/caution_vs_failed_guesses.json
+
+============================================================
 COMPLEXITY ANALYSIS
 ============================================================
 
