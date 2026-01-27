@@ -1,3 +1,72 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:df42d4d88e4509bc693c1d779cef657197b56c5a0d10347381d7cef31aaead91
-size 1852
+{
+  "models": [
+    {
+      "name": "Gpt 5.2 High",
+      "avg_score": 14.128205128205128,
+      "avg_output_tokens_per_turn": 2784.1975,
+      "color": "#8C8C8C",
+      "is_open": false,
+      "provider": "openai"
+    },
+    {
+      "name": "Gpt 5 Mini Medium",
+      "avg_score": 12.833333333333334,
+      "avg_output_tokens_per_turn": 2901.683239775461,
+      "color": "#4A4A4A",
+      "is_open": false,
+      "provider": "openai"
+    },
+    {
+      "name": "Grok 4 1 Fast Reasoning",
+      "avg_score": 12.512820512820513,
+      "avg_output_tokens_per_turn": 8501.720374220375,
+      "color": "#1A1A1A",
+      "is_open": false,
+      "provider": "xai"
+    },
+    {
+      "name": "Gemini 3 Flash Preview Low",
+      "avg_score": 12.243589743589743,
+      "avg_output_tokens_per_turn": 1217.493456505004,
+      "color": "#7BAAF7",
+      "is_open": false,
+      "provider": "google"
+    },
+    {
+      "name": "Gpt Oss 120B",
+      "avg_score": 12.025641025641026,
+      "avg_output_tokens_per_turn": 2602.63295269168,
+      "color": "#5C6BC0",
+      "is_open": true,
+      "provider": "huggingface"
+    },
+    {
+      "name": "Deepseek R1",
+      "avg_score": 10.935897435897436,
+      "avg_output_tokens_per_turn": 8633.424695977548,
+      "color": "#7B1FA2",
+      "is_open": true,
+      "provider": "huggingface"
+    },
+    {
+      "name": "Gpt Oss 20B",
+      "avg_score": 9.91025641025641,
+      "avg_output_tokens_per_turn": 5488.952231793265,
+      "color": "#26A69A",
+      "is_open": true,
+      "provider": "huggingface"
+    },
+    {
+      "name": "Claude Haiku 4.5",
+      "avg_score": 9.14102564102564,
+      "avg_output_tokens_per_turn": 5701.8896156991,
+      "color": "#FF9500",
+      "is_open": false,
+      "provider": "anthropic"
+    }
+  ],
+  "metadata": {
+    "x_axis": "avg_output_tokens_per_turn",
+    "y_axis": "avg_score"
+  }
+}

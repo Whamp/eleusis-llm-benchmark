@@ -1,3 +1,321 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:2ebf113de8e616e14f465b791d6deef30758c1141fea753e19630c0ee8a8499f
-size 7387
+{
+  "models": [
+    {
+      "name": "Claude Haiku 4.5",
+      "color": "#FF9500",
+      "is_open": false,
+      "provider": "anthropic",
+      "total_guesses": 579,
+      "distribution": [
+        {
+          "confidence_level": 5,
+          "proportion": 0.024179620034542316,
+          "count": 14
+        },
+        {
+          "confidence_level": 6,
+          "proportion": 0.13471502590673576,
+          "count": 78
+        },
+        {
+          "confidence_level": 7,
+          "proportion": 0.27288428324697755,
+          "count": 158
+        },
+        {
+          "confidence_level": 8,
+          "proportion": 0.3488773747841105,
+          "count": 202
+        },
+        {
+          "confidence_level": 9,
+          "proportion": 0.2158894645941278,
+          "count": 125
+        },
+        {
+          "confidence_level": 10,
+          "proportion": 0.0034542314335060447,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "name": "Deepseek R1",
+      "color": "#7B1FA2",
+      "is_open": true,
+      "provider": "huggingface",
+      "total_guesses": 460,
+      "distribution": [
+        {
+          "confidence_level": 5,
+          "proportion": 0.006521739130434782,
+          "count": 3
+        },
+        {
+          "confidence_level": 6,
+          "proportion": 0.015217391304347827,
+          "count": 7
+        },
+        {
+          "confidence_level": 7,
+          "proportion": 0.05652173913043478,
+          "count": 26
+        },
+        {
+          "confidence_level": 8,
+          "proportion": 0.15869565217391304,
+          "count": 73
+        },
+        {
+          "confidence_level": 9,
+          "proportion": 0.6456521739130435,
+          "count": 297
+        },
+        {
+          "confidence_level": 10,
+          "proportion": 0.11739130434782609,
+          "count": 54
+        }
+      ]
+    },
+    {
+      "name": "Gemini 3 Flash Preview Low",
+      "color": "#7BAAF7",
+      "is_open": false,
+      "provider": "google",
+      "total_guesses": 193,
+      "distribution": [
+        {
+          "confidence_level": 5,
+          "proportion": 0.025906735751295335,
+          "count": 5
+        },
+        {
+          "confidence_level": 6,
+          "proportion": 0.0051813471502590676,
+          "count": 1
+        },
+        {
+          "confidence_level": 7,
+          "proportion": 0.02072538860103627,
+          "count": 4
+        },
+        {
+          "confidence_level": 8,
+          "proportion": 0.046632124352331605,
+          "count": 9
+        },
+        {
+          "confidence_level": 9,
+          "proportion": 0.7046632124352331,
+          "count": 136
+        },
+        {
+          "confidence_level": 10,
+          "proportion": 0.19689119170984457,
+          "count": 38
+        }
+      ]
+    },
+    {
+      "name": "Gpt 5 Mini Medium",
+      "color": "#4A4A4A",
+      "is_open": false,
+      "provider": "openai",
+      "total_guesses": 157,
+      "distribution": [
+        {
+          "confidence_level": 5,
+          "proportion": 0.0,
+          "count": 0
+        },
+        {
+          "confidence_level": 6,
+          "proportion": 0.006369426751592357,
+          "count": 1
+        },
+        {
+          "confidence_level": 7,
+          "proportion": 0.07006369426751592,
+          "count": 11
+        },
+        {
+          "confidence_level": 8,
+          "proportion": 0.5286624203821656,
+          "count": 83
+        },
+        {
+          "confidence_level": 9,
+          "proportion": 0.39490445859872614,
+          "count": 62
+        },
+        {
+          "confidence_level": 10,
+          "proportion": 0.0,
+          "count": 0
+        }
+      ]
+    },
+    {
+      "name": "Gpt 5.2 High",
+      "color": "#8C8C8C",
+      "is_open": false,
+      "provider": "openai",
+      "total_guesses": 101,
+      "distribution": [
+        {
+          "confidence_level": 5,
+          "proportion": 0.0,
+          "count": 0
+        },
+        {
+          "confidence_level": 6,
+          "proportion": 0.019801980198019802,
+          "count": 2
+        },
+        {
+          "confidence_level": 7,
+          "proportion": 0.039603960396039604,
+          "count": 4
+        },
+        {
+          "confidence_level": 8,
+          "proportion": 0.3069306930693069,
+          "count": 31
+        },
+        {
+          "confidence_level": 9,
+          "proportion": 0.6336633663366337,
+          "count": 64
+        },
+        {
+          "confidence_level": 10,
+          "proportion": 0.0,
+          "count": 0
+        }
+      ]
+    },
+    {
+      "name": "Gpt Oss 120B",
+      "color": "#5C6BC0",
+      "is_open": true,
+      "provider": "huggingface",
+      "total_guesses": 345,
+      "distribution": [
+        {
+          "confidence_level": 5,
+          "proportion": 0.014492753623188406,
+          "count": 5
+        },
+        {
+          "confidence_level": 6,
+          "proportion": 0.06086956521739131,
+          "count": 21
+        },
+        {
+          "confidence_level": 7,
+          "proportion": 0.1536231884057971,
+          "count": 53
+        },
+        {
+          "confidence_level": 8,
+          "proportion": 0.527536231884058,
+          "count": 182
+        },
+        {
+          "confidence_level": 9,
+          "proportion": 0.24347826086956523,
+          "count": 84
+        },
+        {
+          "confidence_level": 10,
+          "proportion": 0.0,
+          "count": 0
+        }
+      ]
+    },
+    {
+      "name": "Gpt Oss 20B",
+      "color": "#26A69A",
+      "is_open": true,
+      "provider": "huggingface",
+      "total_guesses": 539,
+      "distribution": [
+        {
+          "confidence_level": 5,
+          "proportion": 0.0018552875695732839,
+          "count": 1
+        },
+        {
+          "confidence_level": 6,
+          "proportion": 0.04081632653061224,
+          "count": 22
+        },
+        {
+          "confidence_level": 7,
+          "proportion": 0.11873840445269017,
+          "count": 64
+        },
+        {
+          "confidence_level": 8,
+          "proportion": 0.39517625231910947,
+          "count": 213
+        },
+        {
+          "confidence_level": 9,
+          "proportion": 0.4137291280148423,
+          "count": 223
+        },
+        {
+          "confidence_level": 10,
+          "proportion": 0.029684601113172542,
+          "count": 16
+        }
+      ]
+    },
+    {
+      "name": "Grok 4 1 Fast Reasoning",
+      "color": "#1A1A1A",
+      "is_open": false,
+      "provider": "xai",
+      "total_guesses": 406,
+      "distribution": [
+        {
+          "confidence_level": 5,
+          "proportion": 0.0,
+          "count": 0
+        },
+        {
+          "confidence_level": 6,
+          "proportion": 0.0024630541871921183,
+          "count": 1
+        },
+        {
+          "confidence_level": 7,
+          "proportion": 0.0049261083743842365,
+          "count": 2
+        },
+        {
+          "confidence_level": 8,
+          "proportion": 0.019704433497536946,
+          "count": 8
+        },
+        {
+          "confidence_level": 9,
+          "proportion": 0.7660098522167488,
+          "count": 311
+        },
+        {
+          "confidence_level": 10,
+          "proportion": 0.20689655172413793,
+          "count": 84
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "x_axis": "confidence_level",
+    "y_axis": "proportion",
+    "description": "Distribution of confidence levels when models choose to guess"
+  }
+}

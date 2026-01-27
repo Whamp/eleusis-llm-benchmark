@@ -1,3 +1,298 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:ef0081af58279ee29cb242c7d22d4592661438c24cea95d3d3659fc9b2369e3e
-size 7645
+{
+  "models": [
+    {
+      "name": "Claude Haiku 4.5",
+      "color": "#FF9500",
+      "is_open": false,
+      "provider": "anthropic",
+      "calibration_points": [
+        {
+          "confidence_level": 5,
+          "actual_success_rate": 0.0410958904109589,
+          "sample_count": 73
+        },
+        {
+          "confidence_level": 6,
+          "actual_success_rate": 0.04741379310344827,
+          "sample_count": 232
+        },
+        {
+          "confidence_level": 7,
+          "actual_success_rate": 0.07317073170731707,
+          "sample_count": 287
+        },
+        {
+          "confidence_level": 8,
+          "actual_success_rate": 0.13414634146341464,
+          "sample_count": 246
+        },
+        {
+          "confidence_level": 9,
+          "actual_success_rate": 0.13846153846153847,
+          "sample_count": 130
+        },
+        {
+          "confidence_level": 10,
+          "actual_success_rate": 0.0,
+          "sample_count": 4
+        }
+      ]
+    },
+    {
+      "name": "Deepseek R1",
+      "color": "#7B1FA2",
+      "is_open": true,
+      "provider": "huggingface",
+      "calibration_points": [
+        {
+          "confidence_level": 5,
+          "actual_success_rate": 0.06060606060606061,
+          "sample_count": 165
+        },
+        {
+          "confidence_level": 6,
+          "actual_success_rate": 0.0784313725490196,
+          "sample_count": 102
+        },
+        {
+          "confidence_level": 7,
+          "actual_success_rate": 0.10596026490066225,
+          "sample_count": 151
+        },
+        {
+          "confidence_level": 8,
+          "actual_success_rate": 0.07194244604316546,
+          "sample_count": 139
+        },
+        {
+          "confidence_level": 9,
+          "actual_success_rate": 0.15432098765432098,
+          "sample_count": 324
+        },
+        {
+          "confidence_level": 10,
+          "actual_success_rate": 0.3333333333333333,
+          "sample_count": 54
+        }
+      ]
+    },
+    {
+      "name": "Gemini 3 Flash Preview Low",
+      "color": "#7BAAF7",
+      "is_open": false,
+      "provider": "google",
+      "calibration_points": [
+        {
+          "confidence_level": 5,
+          "actual_success_rate": 0.05194805194805195,
+          "sample_count": 154
+        },
+        {
+          "confidence_level": 6,
+          "actual_success_rate": 0.10625,
+          "sample_count": 160
+        },
+        {
+          "confidence_level": 7,
+          "actual_success_rate": 0.11764705882352941,
+          "sample_count": 187
+        },
+        {
+          "confidence_level": 8,
+          "actual_success_rate": 0.1796875,
+          "sample_count": 128
+        },
+        {
+          "confidence_level": 9,
+          "actual_success_rate": 0.30945558739255014,
+          "sample_count": 349
+        },
+        {
+          "confidence_level": 10,
+          "actual_success_rate": 0.5263157894736842,
+          "sample_count": 38
+        }
+      ]
+    },
+    {
+      "name": "Gpt 5 Mini Medium",
+      "color": "#4A4A4A",
+      "is_open": false,
+      "provider": "openai",
+      "calibration_points": [
+        {
+          "confidence_level": 5,
+          "actual_success_rate": 0.10975609756097561,
+          "sample_count": 82
+        },
+        {
+          "confidence_level": 6,
+          "actual_success_rate": 0.1346704871060172,
+          "sample_count": 349
+        },
+        {
+          "confidence_level": 7,
+          "actual_success_rate": 0.21933085501858737,
+          "sample_count": 269
+        },
+        {
+          "confidence_level": 8,
+          "actual_success_rate": 0.29069767441860467,
+          "sample_count": 172
+        },
+        {
+          "confidence_level": 9,
+          "actual_success_rate": 0.47761194029850745,
+          "sample_count": 67
+        }
+      ]
+    },
+    {
+      "name": "Gpt 5.2 High",
+      "color": "#8C8C8C",
+      "is_open": false,
+      "provider": "openai",
+      "calibration_points": [
+        {
+          "confidence_level": 5,
+          "actual_success_rate": 0.29133858267716534,
+          "sample_count": 127
+        },
+        {
+          "confidence_level": 6,
+          "actual_success_rate": 0.34441087613293053,
+          "sample_count": 331
+        },
+        {
+          "confidence_level": 7,
+          "actual_success_rate": 0.5307017543859649,
+          "sample_count": 228
+        },
+        {
+          "confidence_level": 8,
+          "actual_success_rate": 0.6698113207547169,
+          "sample_count": 106
+        },
+        {
+          "confidence_level": 9,
+          "actual_success_rate": 0.8181818181818182,
+          "sample_count": 66
+        }
+      ]
+    },
+    {
+      "name": "Gpt Oss 120B",
+      "color": "#5C6BC0",
+      "is_open": true,
+      "provider": "huggingface",
+      "calibration_points": [
+        {
+          "confidence_level": 5,
+          "actual_success_rate": 0.056074766355140186,
+          "sample_count": 107
+        },
+        {
+          "confidence_level": 6,
+          "actual_success_rate": 0.08223684210526316,
+          "sample_count": 304
+        },
+        {
+          "confidence_level": 7,
+          "actual_success_rate": 0.11918604651162791,
+          "sample_count": 344
+        },
+        {
+          "confidence_level": 8,
+          "actual_success_rate": 0.18823529411764706,
+          "sample_count": 340
+        },
+        {
+          "confidence_level": 9,
+          "actual_success_rate": 0.28735632183908044,
+          "sample_count": 87
+        }
+      ]
+    },
+    {
+      "name": "Gpt Oss 20B",
+      "color": "#26A69A",
+      "is_open": true,
+      "provider": "huggingface",
+      "calibration_points": [
+        {
+          "confidence_level": 5,
+          "actual_success_rate": 0.13333333333333333,
+          "sample_count": 90
+        },
+        {
+          "confidence_level": 6,
+          "actual_success_rate": 0.07425742574257425,
+          "sample_count": 202
+        },
+        {
+          "confidence_level": 7,
+          "actual_success_rate": 0.09689922480620156,
+          "sample_count": 258
+        },
+        {
+          "confidence_level": 8,
+          "actual_success_rate": 0.11959287531806616,
+          "sample_count": 393
+        },
+        {
+          "confidence_level": 9,
+          "actual_success_rate": 0.15384615384615385,
+          "sample_count": 260
+        },
+        {
+          "confidence_level": 10,
+          "actual_success_rate": 0.125,
+          "sample_count": 16
+        }
+      ]
+    },
+    {
+      "name": "Grok 4 1 Fast Reasoning",
+      "color": "#1A1A1A",
+      "is_open": false,
+      "provider": "xai",
+      "calibration_points": [
+        {
+          "confidence_level": 5,
+          "actual_success_rate": 0.02666666666666667,
+          "sample_count": 75
+        },
+        {
+          "confidence_level": 6,
+          "actual_success_rate": 0.1,
+          "sample_count": 130
+        },
+        {
+          "confidence_level": 7,
+          "actual_success_rate": 0.09558823529411764,
+          "sample_count": 136
+        },
+        {
+          "confidence_level": 8,
+          "actual_success_rate": 0.12598425196850394,
+          "sample_count": 127
+        },
+        {
+          "confidence_level": 9,
+          "actual_success_rate": 0.14507772020725387,
+          "sample_count": 386
+        },
+        {
+          "confidence_level": 10,
+          "actual_success_rate": 0.30952380952380953,
+          "sample_count": 84
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "x_axis": "confidence_level",
+    "y_axis": "actual_success_rate",
+    "description": "Calibration curve showing confidence vs actual success rate for rule guesses"
+  }
+}
