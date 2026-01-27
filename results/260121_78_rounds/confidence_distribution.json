@@ -40,6 +40,45 @@
       ]
     },
     {
+      "name": "Claude Opus 4.5",
+      "color": "#FF6B00",
+      "is_open": false,
+      "provider": "anthropic",
+      "total_guesses": 286,
+      "distribution": [
+        {
+          "confidence_level": 5,
+          "proportion": 0.013986013986013986,
+          "count": 4
+        },
+        {
+          "confidence_level": 6,
+          "proportion": 0.06993006993006994,
+          "count": 20
+        },
+        {
+          "confidence_level": 7,
+          "proportion": 0.16433566433566432,
+          "count": 46
+        },
+        {
+          "confidence_level": 8,
+          "proportion": 0.3706293706293706,
+          "count": 106
+        },
+        {
+          "confidence_level": 9,
+          "proportion": 0.3811188811188811,
+          "count": 108
+        },
+        {
+          "confidence_level": 10,
+          "proportion": 0.0,
+          "count": 0
+        }
+      ]
+    },
+    {
       "name": "Deepseek R1",
       "color": "#7B1FA2",
       "is_open": true,
@@ -309,6 +348,45 @@
           "confidence_level": 10,
           "proportion": 0.20689655172413793,
           "count": 84
+        }
+      ]
+    },
+    {
+      "name": "Kimi K2",
+      "color": "#00897B",
+      "is_open": true,
+      "provider": "huggingface",
+      "total_guesses": 381,
+      "distribution": [
+        {
+          "confidence_level": 5,
+          "proportion": 0.005249343832020997,
+          "count": 2
+        },
+        {
+          "confidence_level": 6,
+          "proportion": 0.007874015748031496,
+          "count": 3
+        },
+        {
+          "confidence_level": 7,
+          "proportion": 0.06561679790026247,
+          "count": 25
+        },
+        {
+          "confidence_level": 8,
+          "proportion": 0.23622047244094488,
+          "count": 90
+        },
+        {
+          "confidence_level": 9,
+          "proportion": 0.6482939632545932,
+          "count": 247
+        },
+        {
+          "confidence_level": 10,
+          "proportion": 0.03674540682414698,
+          "count": 14
         }
       ]
     }

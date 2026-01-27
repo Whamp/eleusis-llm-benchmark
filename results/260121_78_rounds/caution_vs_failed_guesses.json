@@ -9,6 +9,14 @@
       "provider": "anthropic"
     },
     {
+      "name": "Claude Opus 4.5",
+      "avg_early_correct_turns": 0.9444444444444444,
+      "avg_failed_guesses": 2.769230769230769,
+      "color": "#FF6B00",
+      "is_open": false,
+      "provider": "anthropic"
+    },
+    {
       "name": "Deepseek R1",
       "avg_early_correct_turns": 0.49230769230769234,
       "avg_failed_guesses": 5.064102564102564,
@@ -63,6 +71,14 @@
       "color": "#1A1A1A",
       "is_open": false,
       "provider": "xai"
+    },
+    {
+      "name": "Kimi K2",
+      "avg_early_correct_turns": 1.2835820895522387,
+      "avg_failed_guesses": 4.0256410256410255,
+      "color": "#00897B",
+      "is_open": true,
+      "provider": "huggingface"
     }
   ],
   "metadata": {

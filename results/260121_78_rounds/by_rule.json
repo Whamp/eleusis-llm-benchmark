@@ -4,157 +4,157 @@
       "name": "only_red_cards",
       "description": "Only red cards (hearts or diamonds).",
       "complexity": 1.9,
-      "avg_score": 24.375
+      "avg_score": 24.666666666666668
     },
     {
       "name": "spades_only",
       "description": "Only cards of the suit spades.",
       "complexity": 2.1,
-      "avg_score": 24.041666666666668
+      "avg_score": 24.233333333333334
     },
     {
       "name": "alternating_colors",
       "description": "Cards must alternate between red and black colors. Any card may start the line.",
       "complexity": 4.4,
-      "avg_score": 23.916666666666668
+      "avg_score": 24.2
     },
     {
       "name": "even_ranks_only",
       "description": "Only cards with an even rank (2,4,6,8,10,12).",
       "complexity": 2.2,
-      "avg_score": 23.166666666666668
+      "avg_score": 23.466666666666665
     },
     {
       "name": "different_suit",
       "description": "The card must be of a different suit than the card just before it. Any card may start the line.",
       "complexity": 4.800000000000001,
-      "avg_score": 20.75
+      "avg_score": 21.5
     },
     {
       "name": "opposite_parity",
       "description": "Card rank must have opposite odd/even parity to the previous card's rank. Any card may start the line.",
       "complexity": 5.0,
-      "avg_score": 19.916666666666668
+      "avg_score": 20.066666666666666
     },
     {
       "name": "no_spades",
       "description": "Only hearts, clubs, and diamonds allowed. Spades are forbidden.",
       "complexity": 2.1,
-      "avg_score": 19.125
-    },
-    {
-      "name": "different_suit_same_color",
-      "description": "The card must be of a different suit than but same color as the card just before it. Any card may start the line.",
-      "complexity": 7.5,
-      "avg_score": 18.791666666666668
-    },
-    {
-      "name": "prime_ranks_only",
-      "description": "Only ranks that are prime numbers (2,3,5,7,11,13).",
-      "complexity": 3.0,
-      "avg_score": 18.416666666666668
+      "avg_score": 19.933333333333334
     },
     {
       "name": "only_aces",
       "description": "Only Aces (rank 1) .",
       "complexity": 1.9,
-      "avg_score": 18.291666666666668
+      "avg_score": 19.5
     },
     {
-      "name": "spades_and_diamonds_only",
-      "description": "Only spades and diamonds.",
-      "complexity": 2.4000000000000004,
-      "avg_score": 18.125
+      "name": "prime_ranks_only",
+      "description": "Only ranks that are prime numbers (2,3,5,7,11,13).",
+      "complexity": 3.0,
+      "avg_score": 19.266666666666666
+    },
+    {
+      "name": "different_suit_same_color",
+      "description": "The card must be of a different suit than but same color as the card just before it. Any card may start the line.",
+      "complexity": 7.5,
+      "avg_score": 19.166666666666668
     },
     {
       "name": "face_cards_only",
       "description": "Only face cards (11,12,13).",
       "complexity": 2.2,
-      "avg_score": 17.833333333333332
+      "avg_score": 19.0
+    },
+    {
+      "name": "spades_and_diamonds_only",
+      "description": "Only spades and diamonds.",
+      "complexity": 2.4000000000000004,
+      "avg_score": 18.4
     },
     {
       "name": "cyclic_suit_order",
       "description": "Suits must repeat in the cyclic order hearts \u2192 spades \u2192 clubs \u2192 diamonds \u2192 hearts... Any card may start the line.",
       "complexity": 8.7,
-      "avg_score": 13.333333333333334
+      "avg_score": 14.7
     },
     {
       "name": "ranks_one_to_seven",
       "description": "Only cards between 1 and 7 inclusive.",
       "complexity": 2.1,
-      "avg_score": 11.666666666666666
+      "avg_score": 13.4
     },
     {
       "name": "black_face_cards",
       "description": "Only black face cards.",
       "complexity": 8.0,
-      "avg_score": 8.583333333333334
-    },
-    {
-      "name": "rank_non_decreasing_start_ace",
-      "description": "Each card must have a rank greater or equal to the previous card. Only Ace can start the line.",
-      "complexity": 5.0,
-      "avg_score": 7.125
-    },
-    {
-      "name": "ranks_five_to_nine",
-      "description": "Only cards between 5 and 9 inclusive.",
-      "complexity": 2.1,
-      "avg_score": 5.5
-    },
-    {
-      "name": "share_color_or_parity",
-      "description": "Each card must share at least one property with the previous card: same color, or same parity. Any card may start the line.",
-      "complexity": 8.7,
-      "avg_score": 5.041666666666667
+      "avg_score": 10.333333333333334
     },
     {
       "name": "alternating_face_number",
       "description": "Alternate face and number cards. Any card may start the line.",
       "complexity": 7.2,
-      "avg_score": 5.0
+      "avg_score": 7.1
+    },
+    {
+      "name": "rank_non_decreasing_start_ace",
+      "description": "Each card must have a rank greater or equal to the previous card. Only Ace can start the line.",
+      "complexity": 5.0,
+      "avg_score": 6.966666666666667
+    },
+    {
+      "name": "ranks_five_to_nine",
+      "description": "Only cards between 5 and 9 inclusive.",
+      "complexity": 2.1,
+      "avg_score": 6.6
+    },
+    {
+      "name": "share_color_or_parity",
+      "description": "Each card must share at least one property with the previous card: same color, or same parity. Any card may start the line.",
+      "complexity": 8.7,
+      "avg_score": 6.433333333333334
     },
     {
       "name": "red_rank_up_to_seven",
       "description": "Only red cards whose rank is <=7.",
       "complexity": 3.8,
-      "avg_score": 4.166666666666667
-    },
-    {
-      "name": "paired_ranks_distinct",
-      "description": "Rank repeats in pairs: ranks must come in doubles: (x, x), then (y, y) with y different from x, then (z, z) with z different from y, etc.",
-      "complexity": 8.7,
-      "avg_score": 1.0833333333333333
+      "avg_score": 4.366666666666666
     },
     {
       "name": "paired_suits_alternating",
       "description": "Suits must appear in pairs: card 1 and 2 same suit, cards 3 and 4 same suit (different from 1 and 2), cards 5 and 6 same suit (different from 3 and 4), etc.",
       "complexity": 9.5,
-      "avg_score": 0.5416666666666666
+      "avg_score": 1.7
     },
     {
-      "name": "red_up_black_down",
-      "description": "If the previous card was red, rank must increase or be equal; if black, rank must decrease or be equal. Starting card must be between 5 and 9 inclusive.",
-      "complexity": 8.600000000000001,
-      "avg_score": -0.9166666666666666
-    },
-    {
-      "name": "alternating_groups",
-      "description": "Hearts and spades form Group A; clubs and diamonds form Group B. Alternate between groups. Any card may start the line.",
-      "complexity": 8.2,
-      "avg_score": -0.9583333333333334
+      "name": "paired_ranks_distinct",
+      "description": "Rank repeats in pairs: ranks must come in doubles: (x, x), then (y, y) with y different from x, then (z, z) with z different from y, etc.",
+      "complexity": 8.7,
+      "avg_score": 0.7666666666666667
     },
     {
       "name": "face_cards_red_number_cards_black",
       "description": "Face cards (11-13) must be red; number cards (1-10) must be black.",
       "complexity": 4.5,
-      "avg_score": -1.125
+      "avg_score": 0.5333333333333333
+    },
+    {
+      "name": "alternating_groups",
+      "description": "Hearts and spades form Group A; clubs and diamonds form Group B. Alternate between groups. Any card may start the line.",
+      "complexity": 8.2,
+      "avg_score": 0.4666666666666667
+    },
+    {
+      "name": "red_up_black_down",
+      "description": "If the previous card was red, rank must increase or be equal; if black, rank must decrease or be equal. Starting card must be between 5 and 9 inclusive.",
+      "complexity": 8.600000000000001,
+      "avg_score": -1.7666666666666666
     },
     {
       "name": "face_card_imposes_suit",
       "description": "Face cards imposes the suit: if a face card is played, the next card must match its suit. Otherwise, the next card must be a different suit than it.",
       "complexity": 9.0,
-      "avg_score": -1.1666666666666667
+      "avg_score": -2.2333333333333334
     }
   ],
   "models": [
@@ -165,7 +165,9 @@
     "Gemini 3 Flash Preview Low",
     "Gpt Oss 20B",
     "Grok 4 1 Fast Reasoning",
-    "Deepseek R1"
+    "Deepseek R1",
+    "Claude Opus 4.5",
+    "Kimi K2"
   ],
   "metadata": {
     "optimal_k": 0.1,
