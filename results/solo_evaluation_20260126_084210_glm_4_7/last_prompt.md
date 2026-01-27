@@ -84,26 +84,26 @@ As a player, this is your turn to play and you must simultaneously:
 
 ### Current game state
 
-Turn: 15 / 30
-Penalty so far for 4 wrong guesses: 8
-Current potential score if you guess the rule correctly this turn: 7
+Turn: 16 / 30
+Penalty so far for 5 wrong guesses: 10
+Current potential score if you guess the rule correctly this turn: 4
 
 #### Mainline & Sidelines
 
 This is the mainline and sidelines so far. Rejected cards are shown in brackets after the mainline card they were played after :
 
-Q♠ [Q♥] 6♠ [4♣] [2♠] [5♠] K♠ 9♠ [9♦] J♣ A♣ [4♠] [6♣] [3♥] [5♦]
+Q♠ [Q♥] 6♠ [4♣] [2♠] [5♠] K♠ 9♠ [9♦] J♣ A♣ [4♠] [6♣] [3♥] [5♦] [5♦]
 
 #### Your hand
 
-8♦, 10♥, K♦, 5♦, Q♦, 8♥, K♥, 10♦, 2♥, 10♦, J♦, J♥
+8♦, 10♥, K♦, Q♦, 8♥, K♥, 10♦, 2♥, 10♦, J♦, J♥, 8♦
 
 #### Your recent play history
 
 Your last 3 turns (the card you played, the outcome and your reasoning summary):
-- 6♣: ✗ REJECTED
-  Your reasoning: Testing my hypothesis that black cards with rank 1 or >= 6 are accepted. 6♣ is black with rank 6, so it should be accepted if my hypothesis is correct.
 - 3♥: ✗ REJECTED
+  Your reasoning: Based on my analysis, all accepted spades have rank >= 6 (Q♠, 6♠, K♠, 9♠) and all accepted clubs have odd rank (J♣, A♣). Rejected cards are either hearts/diamonds, spades with rank < 6, or clubs with even rank. I'm playing 3♥ to test this hypothesis (it should be rejected as a heart).
+- 5♦: ✗ REJECTED
   Your reasoning: Based on my analysis, all accepted spades have rank >= 6 (Q♠, 6♠, K♠, 9♠) and all accepted clubs have odd rank (J♣, A♣). Rejected cards are either hearts/diamonds, spades with rank < 6, or clubs with even rank. I'm playing 3♥ to test this hypothesis (it should be rejected as a heart).
 - 5♦: ✗ REJECTED
   Your reasoning: Based on my analysis, all accepted spades have rank >= 6 (Q♠, 6♠, K♠, 9♠) and all accepted clubs have odd rank (J♣, A♣). Rejected cards are either hearts/diamonds, spades with rank < 6, or clubs with even rank. I'm playing 3♥ to test this hypothesis (it should be rejected as a heart).
@@ -113,6 +113,7 @@ Your last 3 turns (the card you played, the outcome and your reasoning summary):
 
 - "The card must be a Spade with rank 6 or higher"
 - "The card must be black with rank 6 or higher"
+- "The card must be a spade with rank 6 or higher, or a club with an odd rank."
 - "The card must be a spade with rank 6 or higher, or a club with an odd rank."
 - "The card must be a spade with rank 6 or higher, or a club with an odd rank."
 
