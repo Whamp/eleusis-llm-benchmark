@@ -152,22 +152,19 @@ Gemini 3 Flash Preview Low            134                 41           30.6
 
 Wrong Guess Streak Statistics:
                      Model  Streaks  Mean Length  Max Length  Total Wrong
-                   Kimi K2       47         6.68          22          314
-          Claude Haiku 4.5       60         9.82          22          589
-   Grok 4 1 Fast Reasoning       45         7.49          19          337
-               Gpt Oss 20B       56         8.64          20          484
-               Deepseek R1       52         7.60          18          395
-           Claude Opus 4.5       48         4.50          15          216
-              Gpt Oss 120B       55         5.24          14          288
-Gemini 3 Flash Preview Low       36         3.72           8          134
-         Gpt 5 Mini Medium       47         2.09           4           98
-              Gpt 5.2 High       18         1.44           4           26
+                   Kimi K2      120         2.62          14          314
+          Claude Haiku 4.5      244         2.41          16          589
+   Grok 4 1 Fast Reasoning      149         2.26          12          337
+               Gpt Oss 20B      207         2.34          13          484
+               Deepseek R1      180         2.19           9          395
+           Claude Opus 4.5      139         1.55           5          216
+              Gpt Oss 120B      184         1.57           8          288
+Gemini 3 Flash Preview Low       97         1.38           4          134
+         Gpt 5 Mini Medium       91         1.08           3           98
+              Gpt 5.2 High       25         1.04           2           26
 
-Longest streak: 22 consecutive wrong guesses
-  - Claude Haiku 4.5 in round 39
+Longest streak: 16 consecutive wrong guesses
   - Claude Haiku 4.5 in round 77
-  - Kimi K2 in round 63
-  - Kimi K2 in round 75
 
 Saved: results/260121_78_rounds/reckless_guessing.png
 Saved: results/260121_78_rounds/reckless_guessing.json
