@@ -357,6 +357,22 @@ def play_round(
     score = engine.calculate_score(max_turns_limit, turn_count)
     success = engine.rule_guessed
 
+    # Find first turn where a guess (formal or shadow) was correct
+    first_correct_turn = None
+    for turn in turn_data_list:
+        guess_attempt = turn.get("guess_attempt")
+        if guess_attempt and guess_attempt.get("correct"):
+            first_correct_turn = turn["turn_number"]
+            break
+
+    # no_stakes_score: hypothetical score if all guesses were penalty-free
+    # Formula: max_turns - first_correct_turn + 1 (finding on turn N gives 31-N points)
+    no_stakes_score = (
+        max_turns_limit - first_correct_turn + 1
+        if first_correct_turn is not None
+        else 0
+    )
+
     llm_usage = {
         "rule_compiler": rule_compiler_client.get_usage_stats(),
         "player": scientist_client.get_usage_stats(),
@@ -364,12 +380,15 @@ def play_round(
 
     return {
         'round_number': round_number,
-        'turn_count': turn_count,
+        'turn_count': turn_count + 1,  # 1-indexed: turn N means N turns were played
         'rule_description': rule.description(),
         'rule_code': rule.get_code(),
         'rule_metadata': rule_metadata,
         'success': success,
         'score': score,
+        'floored_score': max(0, score),
+        'no_stakes_score': no_stakes_score,
+        'first_correct_turn': first_correct_turn,
         'failed_guesses': engine.failed_guess_count,
         'game_over_reason': game_over_reason,
         'llm_usage': llm_usage,

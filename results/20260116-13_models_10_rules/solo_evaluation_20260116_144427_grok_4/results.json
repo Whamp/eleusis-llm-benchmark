@@ -21,7 +21,7 @@
   "rounds": [
     {
       "round_number": 1,
-      "turn_count": 5,
+      "turn_count": 6,
       "rule_description": "Only cards with an even rank (2,4,6,8,10,12)",
       "rule_code": "return card.rank % 2 == 0",
       "success": true,
@@ -305,11 +305,14 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 806.22
+      "wall_clock_seconds": 806.22,
+      "floored_score": 15,
+      "first_correct_turn": 6,
+      "no_stakes_score": 15
     },
     {
       "round_number": 2,
-      "turn_count": 7,
+      "turn_count": 8,
       "rule_description": "Only cards of the suit spades",
       "rule_code": "return card.suit.suit_name == \"spades\"",
       "success": true,
@@ -673,11 +676,14 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 1119.23
+      "wall_clock_seconds": 1119.23,
+      "floored_score": 13,
+      "first_correct_turn": 8,
+      "no_stakes_score": 13
     },
     {
       "round_number": 3,
-      "turn_count": 6,
+      "turn_count": 7,
       "rule_description": "The card must be of a different suit than but same color as the card just before it. Any card may start the line.",
       "rule_code": "if not mainline:\n    return True\nprev = mainline[-1]\nreturn card.color == prev.color and card.suit.suit_name != prev.suit.suit_name",
       "success": true,
@@ -1001,7 +1007,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 619.89
+      "wall_clock_seconds": 619.89,
+      "floored_score": 14,
+      "first_correct_turn": 7,
+      "no_stakes_score": 14
     },
     {
       "round_number": 4,
@@ -1009,7 +1018,7 @@
       "rule_description": "Only face cards (11,12,13).",
       "rule_code": "return card.rank >= 11",
       "success": false,
-      "score": 0,
+      "score": -28,
       "failed_guesses": 14,
       "game_over_reason": "max_turns",
       "llm_usage": {
@@ -2031,7 +2040,10 @@
           ]
         }
       ],
-      "wall_clock_seconds": 10035.05
+      "wall_clock_seconds": 10035.05,
+      "floored_score": 0,
+      "first_correct_turn": null,
+      "no_stakes_score": 0
     },
     {
       "round_number": 5,
@@ -3012,7 +3024,10 @@
           ]
         }
       ],
-      "wall_clock_seconds": 442.22
+      "wall_clock_seconds": 442.22,
+      "floored_score": 0,
+      "first_correct_turn": null,
+      "no_stakes_score": 0
     },
     {
       "round_number": 6,
@@ -3993,7 +4008,10 @@
           ]
         }
       ],
-      "wall_clock_seconds": 439.54
+      "wall_clock_seconds": 439.54,
+      "floored_score": 0,
+      "first_correct_turn": null,
+      "no_stakes_score": 0
     },
     {
       "round_number": 7,
@@ -4974,7 +4992,10 @@
           ]
         }
       ],
-      "wall_clock_seconds": 440.99
+      "wall_clock_seconds": 440.99,
+      "floored_score": 0,
+      "first_correct_turn": null,
+      "no_stakes_score": 0
     },
     {
       "round_number": 8,
@@ -5955,7 +5976,10 @@
           ]
         }
       ],
-      "wall_clock_seconds": 445.9
+      "wall_clock_seconds": 445.9,
+      "floored_score": 0,
+      "first_correct_turn": null,
+      "no_stakes_score": 0
     },
     {
       "round_number": 9,
@@ -6936,7 +6960,10 @@
           ]
         }
       ],
-      "wall_clock_seconds": 437.62
+      "wall_clock_seconds": 437.62,
+      "floored_score": 0,
+      "first_correct_turn": null,
+      "no_stakes_score": 0
     },
     {
       "round_number": 10,
@@ -7917,11 +7944,14 @@
           ]
         }
       ],
-      "wall_clock_seconds": 437.21
+      "wall_clock_seconds": 437.21,
+      "floored_score": 0,
+      "first_correct_turn": null,
+      "no_stakes_score": 0
     }
   ],
   "statistics": {
-    "total_score": 42,
+    "total_score": 14,
     "successful_rounds": 3,
     "failed_rounds": 7,
     "total_turns": 158,
@@ -7935,7 +7965,7 @@
       "other_error": 381
     },
     "success_rate": 30.0,
-    "average_score": 4.2,
+    "average_score": 1.4,
     "average_turns": 15.8,
     "average_turns_when_successful": 6.0,
     "average_failed_guesses": 1.4

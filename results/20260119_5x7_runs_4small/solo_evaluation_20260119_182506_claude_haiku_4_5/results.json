@@ -27,7 +27,7 @@
       "rule_description": "Only cards with an even rank (2,4,6,8,10,12).",
       "rule_code": "return card.rank % 2 == 0",
       "success": true,
-      "score": 13,
+      "score": 14,
       "failed_guesses": 1,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -346,13 +346,16 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 157.88
+      "wall_clock_seconds": 157.88,
+      "floored_score": 14,
+      "first_correct_turn": 5,
+      "no_stakes_score": 16
     },
     {
       "round_number": 2,
       "rule_name": "even_ranks_only",
       "batch_round_index": 1,
-      "turn_count": 3,
+      "turn_count": 4,
       "rule_description": "Only cards with an even rank (2,4,6,8,10,12).",
       "rule_code": "return card.rank % 2 == 0",
       "success": true,
@@ -572,13 +575,16 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 105.06
+      "wall_clock_seconds": 105.06,
+      "floored_score": 17,
+      "first_correct_turn": 4,
+      "no_stakes_score": 17
     },
     {
       "round_number": 3,
       "rule_name": "even_ranks_only",
       "batch_round_index": 2,
-      "turn_count": 4,
+      "turn_count": 5,
       "rule_description": "Only cards with an even rank (2,4,6,8,10,12).",
       "rule_code": "return card.rank % 2 == 0",
       "success": true,
@@ -845,13 +851,16 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 136.84
+      "wall_clock_seconds": 136.84,
+      "floored_score": 14,
+      "first_correct_turn": 5,
+      "no_stakes_score": 16
     },
     {
       "round_number": 4,
       "rule_name": "even_ranks_only",
       "batch_round_index": 3,
-      "turn_count": 3,
+      "turn_count": 4,
       "rule_description": "Only cards with an even rank (2,4,6,8,10,12).",
       "rule_code": "return card.rank % 2 == 0",
       "success": true,
@@ -1071,7 +1080,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 107.58
+      "wall_clock_seconds": 107.58,
+      "floored_score": 17,
+      "first_correct_turn": 4,
+      "no_stakes_score": 17
     },
     {
       "round_number": 5,
@@ -1081,7 +1093,7 @@
       "rule_description": "Only cards with an even rank (2,4,6,8,10,12).",
       "rule_code": "return card.rank % 2 == 0",
       "success": true,
-      "score": 16,
+      "score": 17,
       "failed_guesses": 0,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -1353,7 +1365,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 139.72
+      "wall_clock_seconds": 139.72,
+      "floored_score": 17,
+      "first_correct_turn": 3,
+      "no_stakes_score": 18
     },
     {
       "round_number": 6,
@@ -1363,7 +1378,7 @@
       "rule_description": "Only cards of the suit spades.",
       "rule_code": "return card.suit.suit_name == \"spades\"",
       "success": true,
-      "score": 17,
+      "score": 18,
       "failed_guesses": 0,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -1579,13 +1594,16 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 104.96
+      "wall_clock_seconds": 104.96,
+      "floored_score": 18,
+      "first_correct_turn": 3,
+      "no_stakes_score": 18
     },
     {
       "round_number": 7,
       "rule_name": "spades_only",
       "batch_round_index": 1,
-      "turn_count": 2,
+      "turn_count": 3,
       "rule_description": "Only cards of the suit spades.",
       "rule_code": "return card.suit.suit_name == \"spades\"",
       "success": true,
@@ -1765,7 +1783,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 89.48
+      "wall_clock_seconds": 89.48,
+      "floored_score": 18,
+      "first_correct_turn": 3,
+      "no_stakes_score": 18
     },
     {
       "round_number": 8,
@@ -1775,7 +1796,7 @@
       "rule_description": "Only cards of the suit spades.",
       "rule_code": "return card.suit.suit_name == \"spades\"",
       "success": true,
-      "score": 16,
+      "score": 17,
       "failed_guesses": 0,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -2047,7 +2068,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 112.69
+      "wall_clock_seconds": 112.69,
+      "floored_score": 17,
+      "first_correct_turn": 3,
+      "no_stakes_score": 18
     },
     {
       "round_number": 9,
@@ -2057,7 +2081,7 @@
       "rule_description": "Only cards of the suit spades.",
       "rule_code": "return card.suit.suit_name == \"spades\"",
       "success": true,
-      "score": 16,
+      "score": 17,
       "failed_guesses": 0,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -2321,7 +2345,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 170.91
+      "wall_clock_seconds": 170.91,
+      "floored_score": 17,
+      "first_correct_turn": 3,
+      "no_stakes_score": 18
     },
     {
       "round_number": 10,
@@ -2331,7 +2358,7 @@
       "rule_description": "Only cards of the suit spades.",
       "rule_code": "return card.suit.suit_name == \"spades\"",
       "success": true,
-      "score": 16,
+      "score": 17,
       "failed_guesses": 0,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -2595,7 +2622,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 159.35
+      "wall_clock_seconds": 159.35,
+      "floored_score": 17,
+      "first_correct_turn": 4,
+      "no_stakes_score": 17
     },
     {
       "round_number": 11,
@@ -2605,7 +2635,7 @@
       "rule_description": "Face cards (11-13) must be red; number cards (1-10) must be black.",
       "rule_code": "return (card.rank >= 11 and card.color == \"red\") or (card.rank <= 10 and card.color == \"black\")",
       "success": false,
-      "score": 0,
+      "score": -18,
       "failed_guesses": 9,
       "game_over_reason": "max_turns",
       "llm_usage": {
@@ -3573,7 +3603,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 819.1
+      "wall_clock_seconds": 819.1,
+      "floored_score": 0,
+      "first_correct_turn": null,
+      "no_stakes_score": 0
     },
     {
       "round_number": 12,
@@ -3583,7 +3616,7 @@
       "rule_description": "Face cards (11-13) must be red; number cards (1-10) must be black.",
       "rule_code": "return (card.rank >= 11 and card.color == \"red\") or (card.rank <= 10 and card.color == \"black\")",
       "success": false,
-      "score": 0,
+      "score": -26,
       "failed_guesses": 13,
       "game_over_reason": "max_turns",
       "llm_usage": {
@@ -4547,13 +4580,16 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 839.0
+      "wall_clock_seconds": 839.0,
+      "floored_score": 0,
+      "first_correct_turn": null,
+      "no_stakes_score": 0
     },
     {
       "round_number": 13,
       "rule_name": "face_red_number_black",
       "batch_round_index": 2,
-      "turn_count": 18,
+      "turn_count": 19,
       "rule_description": "Face cards (11-13) must be red; number cards (1-10) must be black.",
       "rule_code": "return (card.rank >= 11 and card.color == \"red\") or (card.rank <= 10 and card.color == \"black\")",
       "success": true,
@@ -5454,7 +5490,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 1007.88
+      "wall_clock_seconds": 1007.88,
+      "floored_score": 0,
+      "first_correct_turn": 19,
+      "no_stakes_score": 2
     },
     {
       "round_number": 14,
@@ -5464,7 +5503,7 @@
       "rule_description": "Face cards (11-13) must be red; number cards (1-10) must be black.",
       "rule_code": "return (card.rank >= 11 and card.color == \"red\") or (card.rank <= 10 and card.color == \"black\")",
       "success": false,
-      "score": 0,
+      "score": -20,
       "failed_guesses": 10,
       "game_over_reason": "max_turns",
       "llm_usage": {
@@ -6423,7 +6462,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 845.95
+      "wall_clock_seconds": 845.95,
+      "floored_score": 0,
+      "first_correct_turn": null,
+      "no_stakes_score": 0
     },
     {
       "round_number": 15,
@@ -6433,7 +6475,7 @@
       "rule_description": "Face cards (11-13) must be red; number cards (1-10) must be black.",
       "rule_code": "return (card.rank >= 11 and card.color == \"red\") or (card.rank <= 10 and card.color == \"black\")",
       "success": false,
-      "score": 0,
+      "score": -14,
       "failed_guesses": 7,
       "game_over_reason": "max_turns",
       "llm_usage": {
@@ -7363,7 +7405,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 894.68
+      "wall_clock_seconds": 894.68,
+      "floored_score": 0,
+      "first_correct_turn": null,
+      "no_stakes_score": 0
     },
     {
       "round_number": 16,
@@ -7373,7 +7418,7 @@
       "rule_description": "Each card must have a rank strictly greater than the previous card. Ace may follow King. Any card may start the line.",
       "rule_code": "if not mainline:\n    return True\nprev = mainline[-1].rank\nif prev == 13 and card.rank == 1:\n    return True\nreturn card.rank > prev",
       "success": false,
-      "score": 0,
+      "score": -16,
       "failed_guesses": 8,
       "game_over_reason": "max_turns",
       "llm_usage": {
@@ -8342,7 +8387,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 1034.12
+      "wall_clock_seconds": 1034.12,
+      "floored_score": 0,
+      "first_correct_turn": null,
+      "no_stakes_score": 0
     },
     {
       "round_number": 17,
@@ -8352,7 +8400,7 @@
       "rule_description": "Each card must have a rank strictly greater than the previous card. Ace may follow King. Any card may start the line.",
       "rule_code": "if not mainline:\n    return True\nprev = mainline[-1].rank\nif prev == 13 and card.rank == 1:\n    return True\nreturn card.rank > prev",
       "success": false,
-      "score": 0,
+      "score": -28,
       "failed_guesses": 14,
       "game_over_reason": "max_turns",
       "llm_usage": {
@@ -9315,7 +9363,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 951.08
+      "wall_clock_seconds": 951.08,
+      "floored_score": 0,
+      "first_correct_turn": null,
+      "no_stakes_score": 0
     },
     {
       "round_number": 18,
@@ -9325,7 +9376,7 @@
       "rule_description": "Each card must have a rank strictly greater than the previous card. Ace may follow King. Any card may start the line.",
       "rule_code": "if not mainline:\n    return True\nprev = mainline[-1].rank\nif prev == 13 and card.rank == 1:\n    return True\nreturn card.rank > prev",
       "success": false,
-      "score": 0,
+      "score": -26,
       "failed_guesses": 13,
       "game_over_reason": "max_turns",
       "llm_usage": {
@@ -10273,7 +10324,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 1009.01
+      "wall_clock_seconds": 1009.01,
+      "floored_score": 0,
+      "first_correct_turn": null,
+      "no_stakes_score": 0
     },
     {
       "round_number": 19,
@@ -10283,7 +10337,7 @@
       "rule_description": "Each card must have a rank strictly greater than the previous card. Ace may follow King. Any card may start the line.",
       "rule_code": "if not mainline:\n    return True\nprev = mainline[-1].rank\nif prev == 13 and card.rank == 1:\n    return True\nreturn card.rank > prev",
       "success": false,
-      "score": 0,
+      "score": -26,
       "failed_guesses": 13,
       "game_over_reason": "max_turns",
       "llm_usage": {
@@ -11255,7 +11309,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 981.88
+      "wall_clock_seconds": 981.88,
+      "floored_score": 0,
+      "first_correct_turn": null,
+      "no_stakes_score": 0
     },
     {
       "round_number": 20,
@@ -11265,7 +11322,7 @@
       "rule_description": "Each card must have a rank strictly greater than the previous card. Ace may follow King. Any card may start the line.",
       "rule_code": "if not mainline:\n    return True\nprev = mainline[-1].rank\nif prev == 13 and card.rank == 1:\n    return True\nreturn card.rank > prev",
       "success": false,
-      "score": 0,
+      "score": -22,
       "failed_guesses": 11,
       "game_over_reason": "max_turns",
       "llm_usage": {
@@ -12207,13 +12264,16 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 890.88
+      "wall_clock_seconds": 890.88,
+      "floored_score": 0,
+      "first_correct_turn": null,
+      "no_stakes_score": 0
     },
     {
       "round_number": 21,
       "rule_name": "cyclic_suit_order",
       "batch_round_index": 0,
-      "turn_count": 9,
+      "turn_count": 10,
       "rule_description": "Suits must repeat in the cyclic order hearts \u2192 spades \u2192 clubs \u2192 diamonds \u2192 hearts... Any card may start the line.",
       "rule_code": "if not mainline:\n    return True\ncycle = [\"hearts\", \"spades\", \"clubs\", \"diamonds\"]\nprev = mainline[-1].suit.suit_name\nif prev not in cycle:\n    return False\nexpected = cycle[(cycle.index(prev) + 1) % 4]\nreturn card.suit.suit_name == expected",
       "success": true,
@@ -12716,13 +12776,16 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 330.02
+      "wall_clock_seconds": 330.02,
+      "floored_score": 1,
+      "first_correct_turn": 10,
+      "no_stakes_score": 11
     },
     {
       "round_number": 22,
       "rule_name": "cyclic_suit_order",
       "batch_round_index": 1,
-      "turn_count": 4,
+      "turn_count": 5,
       "rule_description": "Suits must repeat in the cyclic order hearts \u2192 spades \u2192 clubs \u2192 diamonds \u2192 hearts... Any card may start the line.",
       "rule_code": "if not mainline:\n    return True\ncycle = [\"hearts\", \"spades\", \"clubs\", \"diamonds\"]\nprev = mainline[-1].suit.suit_name\nif prev not in cycle:\n    return False\nexpected = cycle[(cycle.index(prev) + 1) % 4]\nreturn card.suit.suit_name == expected",
       "success": true,
@@ -12997,13 +13060,16 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 122.55
+      "wall_clock_seconds": 122.55,
+      "floored_score": 14,
+      "first_correct_turn": 5,
+      "no_stakes_score": 16
     },
     {
       "round_number": 23,
       "rule_name": "cyclic_suit_order",
       "batch_round_index": 2,
-      "turn_count": 5,
+      "turn_count": 6,
       "rule_description": "Suits must repeat in the cyclic order hearts \u2192 spades \u2192 clubs \u2192 diamonds \u2192 hearts... Any card may start the line.",
       "rule_code": "if not mainline:\n    return True\ncycle = [\"hearts\", \"spades\", \"clubs\", \"diamonds\"]\nprev = mainline[-1].suit.suit_name\nif prev not in cycle:\n    return False\nexpected = cycle[(cycle.index(prev) + 1) % 4]\nreturn card.suit.suit_name == expected",
       "success": true,
@@ -13318,13 +13384,16 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 202.09
+      "wall_clock_seconds": 202.09,
+      "floored_score": 13,
+      "first_correct_turn": 6,
+      "no_stakes_score": 15
     },
     {
       "round_number": 24,
       "rule_name": "cyclic_suit_order",
       "batch_round_index": 3,
-      "turn_count": 17,
+      "turn_count": 18,
       "rule_description": "Suits must repeat in the cyclic order hearts \u2192 spades \u2192 clubs \u2192 diamonds \u2192 hearts... Any card may start the line.",
       "rule_code": "if not mainline:\n    return True\ncycle = [\"hearts\", \"spades\", \"clubs\", \"diamonds\"]\nprev = mainline[-1].suit.suit_name\nif prev not in cycle:\n    return False\nexpected = cycle[(cycle.index(prev) + 1) % 4]\nreturn card.suit.suit_name == expected",
       "success": true,
@@ -14176,7 +14245,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 879.52
+      "wall_clock_seconds": 879.52,
+      "floored_score": 0,
+      "first_correct_turn": 18,
+      "no_stakes_score": 3
     },
     {
       "round_number": 25,
@@ -14186,7 +14258,7 @@
       "rule_description": "Suits must repeat in the cyclic order hearts \u2192 spades \u2192 clubs \u2192 diamonds \u2192 hearts... Any card may start the line.",
       "rule_code": "if not mainline:\n    return True\ncycle = [\"hearts\", \"spades\", \"clubs\", \"diamonds\"]\nprev = mainline[-1].suit.suit_name\nif prev not in cycle:\n    return False\nexpected = cycle[(cycle.index(prev) + 1) % 4]\nreturn card.suit.suit_name == expected",
       "success": false,
-      "score": 0,
+      "score": -22,
       "failed_guesses": 11,
       "game_over_reason": "max_turns",
       "llm_usage": {
@@ -15128,7 +15200,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 906.09
+      "wall_clock_seconds": 906.09,
+      "floored_score": 0,
+      "first_correct_turn": null,
+      "no_stakes_score": 0
     },
     {
       "round_number": 26,
@@ -15138,7 +15213,7 @@
       "rule_description": "Each card must share at least one property with the previous card: same color, or same parity. Any card may start the line.",
       "rule_code": "if not mainline:\n    return True\nprev = mainline[-1]\nsame_color = card.color == prev.color\nsame_parity = (card.rank % 2) == (prev.rank % 2)\nreturn same_color or same_parity",
       "success": false,
-      "score": 0,
+      "score": -24,
       "failed_guesses": 12,
       "game_over_reason": "max_turns",
       "llm_usage": {
@@ -16087,7 +16162,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 902.49
+      "wall_clock_seconds": 902.49,
+      "floored_score": 0,
+      "first_correct_turn": null,
+      "no_stakes_score": 0
     },
     {
       "round_number": 27,
@@ -16097,7 +16175,7 @@
       "rule_description": "Each card must share at least one property with the previous card: same color, or same parity. Any card may start the line.",
       "rule_code": "if not mainline:\n    return True\nprev = mainline[-1]\nsame_color = card.color == prev.color\nsame_parity = (card.rank % 2) == (prev.rank % 2)\nreturn same_color or same_parity",
       "success": false,
-      "score": 0,
+      "score": -26,
       "failed_guesses": 13,
       "game_over_reason": "max_turns",
       "llm_usage": {
@@ -17061,7 +17139,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 931.84
+      "wall_clock_seconds": 931.84,
+      "floored_score": 0,
+      "first_correct_turn": null,
+      "no_stakes_score": 0
     },
     {
       "round_number": 28,
@@ -17071,7 +17152,7 @@
       "rule_description": "Each card must share at least one property with the previous card: same color, or same parity. Any card may start the line.",
       "rule_code": "if not mainline:\n    return True\nprev = mainline[-1]\nsame_color = card.color == prev.color\nsame_parity = (card.rank % 2) == (prev.rank % 2)\nreturn same_color or same_parity",
       "success": false,
-      "score": 0,
+      "score": -20,
       "failed_guesses": 10,
       "game_over_reason": "max_turns",
       "llm_usage": {
@@ -18038,7 +18119,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 798.8
+      "wall_clock_seconds": 798.8,
+      "floored_score": 0,
+      "first_correct_turn": null,
+      "no_stakes_score": 0
     },
     {
       "round_number": 29,
@@ -18048,7 +18132,7 @@
       "rule_description": "Each card must share at least one property with the previous card: same color, or same parity. Any card may start the line.",
       "rule_code": "if not mainline:\n    return True\nprev = mainline[-1]\nsame_color = card.color == prev.color\nsame_parity = (card.rank % 2) == (prev.rank % 2)\nreturn same_color or same_parity",
       "success": false,
-      "score": 0,
+      "score": -24,
       "failed_guesses": 12,
       "game_over_reason": "max_turns",
       "llm_usage": {
@@ -19013,7 +19097,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 760.04
+      "wall_clock_seconds": 760.04,
+      "floored_score": 0,
+      "first_correct_turn": null,
+      "no_stakes_score": 0
     },
     {
       "round_number": 30,
@@ -19023,7 +19110,7 @@
       "rule_description": "Each card must share at least one property with the previous card: same color, or same parity. Any card may start the line.",
       "rule_code": "if not mainline:\n    return True\nprev = mainline[-1]\nsame_color = card.color == prev.color\nsame_parity = (card.rank % 2) == (prev.rank % 2)\nreturn same_color or same_parity",
       "success": false,
-      "score": 0,
+      "score": -22,
       "failed_guesses": 11,
       "game_over_reason": "max_turns",
       "llm_usage": {
@@ -20005,7 +20092,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 802.28
+      "wall_clock_seconds": 802.28,
+      "floored_score": 0,
+      "first_correct_turn": null,
+      "no_stakes_score": 0
     },
     {
       "round_number": 31,
@@ -20015,7 +20105,7 @@
       "rule_description": "Suits must appear in pairs: card 1 and 2 same suit, cards 3 and 4 same suit (different from 1 and 2), cards 5 and 6 same suit (different from 3 and 4), etc.",
       "rule_code": "if not mainline:\n    return True\ns = card.suit.suit_name\nif len(mainline) % 2 == 1:\n    # completing a pair: must match the previous card's suit\n    return s == mainline[-1].suit.suit_name\nelse:\n    # starting a new pair: must differ from the previous pair's suit\n    return s != mainline[-1].suit.suit_name",
       "success": false,
-      "score": 0,
+      "score": -18,
       "failed_guesses": 9,
       "game_over_reason": "max_turns",
       "llm_usage": {
@@ -20983,13 +21073,16 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 834.43
+      "wall_clock_seconds": 834.43,
+      "floored_score": 0,
+      "first_correct_turn": null,
+      "no_stakes_score": 0
     },
     {
       "round_number": 32,
       "rule_name": "alternating_suit_pairs",
       "batch_round_index": 1,
-      "turn_count": 15,
+      "turn_count": 16,
       "rule_description": "Suits must appear in pairs: card 1 and 2 same suit, cards 3 and 4 same suit (different from 1 and 2), cards 5 and 6 same suit (different from 3 and 4), etc.",
       "rule_code": "if not mainline:\n    return True\ns = card.suit.suit_name\nif len(mainline) % 2 == 1:\n    # completing a pair: must match the previous card's suit\n    return s == mainline[-1].suit.suit_name\nelse:\n    # starting a new pair: must differ from the previous pair's suit\n    return s != mainline[-1].suit.suit_name",
       "success": true,
@@ -21761,13 +21854,16 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 694.81
+      "wall_clock_seconds": 694.81,
+      "floored_score": 0,
+      "first_correct_turn": 16,
+      "no_stakes_score": 5
     },
     {
       "round_number": 33,
       "rule_name": "alternating_suit_pairs",
       "batch_round_index": 2,
-      "turn_count": 9,
+      "turn_count": 10,
       "rule_description": "Suits must appear in pairs: card 1 and 2 same suit, cards 3 and 4 same suit (different from 1 and 2), cards 5 and 6 same suit (different from 3 and 4), etc.",
       "rule_code": "if not mainline:\n    return True\ns = card.suit.suit_name\nif len(mainline) % 2 == 1:\n    # completing a pair: must match the previous card's suit\n    return s == mainline[-1].suit.suit_name\nelse:\n    # starting a new pair: must differ from the previous pair's suit\n    return s != mainline[-1].suit.suit_name",
       "success": true,
@@ -22269,7 +22365,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 338.02
+      "wall_clock_seconds": 338.02,
+      "floored_score": 0,
+      "first_correct_turn": 10,
+      "no_stakes_score": 11
     },
     {
       "round_number": 34,
@@ -22279,7 +22378,7 @@
       "rule_description": "Suits must appear in pairs: card 1 and 2 same suit, cards 3 and 4 same suit (different from 1 and 2), cards 5 and 6 same suit (different from 3 and 4), etc.",
       "rule_code": "if not mainline:\n    return True\ns = card.suit.suit_name\nif len(mainline) % 2 == 1:\n    # completing a pair: must match the previous card's suit\n    return s == mainline[-1].suit.suit_name\nelse:\n    # starting a new pair: must differ from the previous pair's suit\n    return s != mainline[-1].suit.suit_name",
       "success": false,
-      "score": 0,
+      "score": -14,
       "failed_guesses": 7,
       "game_over_reason": "max_turns",
       "llm_usage": {
@@ -23241,13 +23340,16 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 828.83
+      "wall_clock_seconds": 828.83,
+      "floored_score": 0,
+      "first_correct_turn": null,
+      "no_stakes_score": 0
     },
     {
       "round_number": 35,
       "rule_name": "alternating_suit_pairs",
       "batch_round_index": 4,
-      "turn_count": 10,
+      "turn_count": 11,
       "rule_description": "Suits must appear in pairs: card 1 and 2 same suit, cards 3 and 4 same suit (different from 1 and 2), cards 5 and 6 same suit (different from 3 and 4), etc.",
       "rule_code": "if not mainline:\n    return True\ns = card.suit.suit_name\nif len(mainline) % 2 == 1:\n    # completing a pair: must match the previous card's suit\n    return s == mainline[-1].suit.suit_name\nelse:\n    # starting a new pair: must differ from the previous pair's suit\n    return s != mainline[-1].suit.suit_name",
       "success": true,
@@ -23800,11 +23902,14 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 489.22
+      "wall_clock_seconds": 489.22,
+      "floored_score": 4,
+      "first_correct_turn": 11,
+      "no_stakes_score": 10
     }
   ],
   "statistics": {
-    "total_score": 155,
+    "total_score": -205,
     "successful_rounds": 18,
     "failed_rounds": 17,
     "total_turns": 463,
@@ -23816,7 +23921,7 @@
     "total_retries": 0,
     "retry_by_cause": {},
     "success_rate": 51.42857142857142,
-    "average_score": 4.428571428571429,
+    "average_score": -5.857142857142857,
     "average_turns": 13.228571428571428,
     "average_turns_when_successful": 6.833333333333333,
     "average_failed_guesses": 6.4

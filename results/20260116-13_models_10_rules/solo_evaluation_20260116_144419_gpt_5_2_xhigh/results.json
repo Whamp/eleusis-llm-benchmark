@@ -21,7 +21,7 @@
   "rounds": [
     {
       "round_number": 1,
-      "turn_count": 10,
+      "turn_count": 11,
       "rule_description": "Only cards with an even rank (2,4,6,8,10,12)",
       "rule_code": "return card.rank % 2 == 0",
       "success": true,
@@ -505,11 +505,14 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 1878.4
+      "wall_clock_seconds": 1878.4,
+      "floored_score": 10,
+      "first_correct_turn": 11,
+      "no_stakes_score": 10
     },
     {
       "round_number": 2,
-      "turn_count": 10,
+      "turn_count": 11,
       "rule_description": "Only cards of the suit spades",
       "rule_code": "return card.suit.suit_name == \"spades\"",
       "success": true,
@@ -993,11 +996,14 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 2304.75
+      "wall_clock_seconds": 2304.75,
+      "floored_score": 10,
+      "first_correct_turn": 11,
+      "no_stakes_score": 10
     },
     {
       "round_number": 3,
-      "turn_count": 15,
+      "turn_count": 16,
       "rule_description": "The card must be of a different suit than but same color as the card just before it. Any card may start the line.",
       "rule_code": "if not mainline:\n    return True\nprev = mainline[-1]\nreturn card.color == prev.color and card.suit.suit_name != prev.suit.suit_name",
       "success": true,
@@ -1681,7 +1687,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 5023.13
+      "wall_clock_seconds": 5023.13,
+      "floored_score": 5,
+      "first_correct_turn": 16,
+      "no_stakes_score": 5
     },
     {
       "round_number": 4,
@@ -1689,7 +1698,7 @@
       "rule_description": "Only face cards (11,12,13).",
       "rule_code": "return card.rank >= 11",
       "success": false,
-      "score": 0,
+      "score": -2,
       "failed_guesses": 1,
       "game_over_reason": "max_turns",
       "llm_usage": {
@@ -2529,11 +2538,14 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 7295.6
+      "wall_clock_seconds": 7295.6,
+      "floored_score": 0,
+      "first_correct_turn": null,
+      "no_stakes_score": 0
     },
     {
       "round_number": 5,
-      "turn_count": 14,
+      "turn_count": 15,
       "rule_description": "Alternate face and number cards. Any card may start the line.",
       "rule_code": "if not mainline:\n    return True\nprev_is_face = mainline[-1].rank >= 11\ncurr_is_face = card.rank >= 11\nreturn prev_is_face != curr_is_face",
       "success": true,
@@ -3177,11 +3189,14 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 4747.9
+      "wall_clock_seconds": 4747.9,
+      "floored_score": 6,
+      "first_correct_turn": 15,
+      "no_stakes_score": 6
     },
     {
       "round_number": 6,
-      "turn_count": 14,
+      "turn_count": 15,
       "rule_description": "No more than two consecutive cards may be the same color. Any card may start the line.",
       "rule_code": "if not mainline:\n    return True\nif len(mainline) < 2:\n    return True\nif mainline[-1].color == mainline[-2].color == card.color:\n    return False\nreturn True",
       "success": true,
@@ -3825,11 +3840,14 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 9747.19
+      "wall_clock_seconds": 9747.19,
+      "floored_score": 6,
+      "first_correct_turn": 15,
+      "no_stakes_score": 6
     }
   ],
   "statistics": {
-    "total_score": 37,
+    "total_score": 35,
     "successful_rounds": 5,
     "failed_rounds": 1,
     "total_turns": 83,
@@ -3839,7 +3857,8 @@
     "total_answer_tokens": 11898,
     "total_wall_clock_seconds": 30996.97,
     "total_retries": 0,
-    "retry_by_cause": {}
+    "retry_by_cause": {},
+    "average_score": 5.833333333333333
   },
   "checkpoint": {
     "completed_rounds": 6,

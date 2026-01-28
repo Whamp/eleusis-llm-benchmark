@@ -286,7 +286,7 @@ class GameEngine:
         """Calculate final score.
 
         Score = max_turns - current_turn - (penalty * failed_guesses) if correct guess
-        Score = 0 if no correct guess
+        Score = -(penalty * failed_guesses) if no correct guess
         """
         if self.rule_guessed:
             score = max_turns - current_turn - (self.wrong_guess_penalty * self.failed_guess_count)
@@ -296,8 +296,11 @@ class GameEngine:
                 f"failed_guesses={self.failed_guess_count}, penalty={self.wrong_guess_penalty})"
             )
         else:
-            score = 0
-            logger.info("Score: 0 (no correct guess)")
+            score = -(self.wrong_guess_penalty * self.failed_guess_count)
+            logger.info(
+                f"Score: {score} (no correct guess, "
+                f"failed_guesses={self.failed_guess_count}, penalty={self.wrong_guess_penalty})"
+            )
 
         return score
 

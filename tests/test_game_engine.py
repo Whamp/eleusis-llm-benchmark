@@ -119,7 +119,22 @@ class TestGameEngine:
 
         score = engine.calculate_score(max_turns=40, current_turn=40)
 
-        # No correct guess = score of 0
+        # No correct guess = -(penalty * failed_guesses) = -(3 * 3) = -9
+        assert score == -9
+
+    def test_calculate_score_no_correct_guess_no_failed_guesses(self) -> None:
+        """Test score calculation when rule not guessed and no failed guesses."""
+        state = GameState("Player")
+        rule = AlwaysAcceptRule()
+        engine = GameEngine(state, rule, rule_compiler_client=None, hand_size=12, wrong_guess_penalty=3)
+
+        # No correct guess and no failed guesses
+        engine.rule_guessed = False
+        engine.failed_guess_count = 0
+
+        score = engine.calculate_score(max_turns=40, current_turn=40)
+
+        # No correct guess, no failed guesses = -(3 * 0) = 0
         assert score == 0
 
     def test_is_game_over_after_correct_guess(self) -> None:
@@ -260,5 +275,5 @@ class TestGameEngine:
 
         # Check score with penalty
         score = engine.calculate_score(max_turns=40, current_turn=10)
-        # If not guessed correctly, score is 0
-        assert score == 0
+        # If not guessed correctly, score = -(penalty * failed_guesses) = -(3 * 3) = -9
+        assert score == -9

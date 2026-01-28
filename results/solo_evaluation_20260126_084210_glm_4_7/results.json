@@ -27,7 +27,7 @@
       "round_number": 1,
       "rule_name": "even_ranks_only",
       "batch_round_index": 0,
-      "turn_count": 5,
+      "turn_count": 6,
       "rule_description": "Only cards with an even rank (2,4,6,8,10,12).",
       "rule_code": "return card.rank % 2 == 0",
       "success": true,
@@ -319,7 +319,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 457.39
+      "wall_clock_seconds": 457.39,
+      "floored_score": 25,
+      "first_correct_turn": 6,
+      "no_stakes_score": 25
     },
     {
       "round_number": 2,
@@ -329,7 +332,7 @@
       "rule_description": "Only cards with an even rank (2,4,6,8,10,12).",
       "rule_code": "return card.rank % 2 == 0",
       "success": true,
-      "score": 25,
+      "score": 26,
       "failed_guesses": 0,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -625,7 +628,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 470.32
+      "wall_clock_seconds": 470.32,
+      "floored_score": 26,
+      "first_correct_turn": 5,
+      "no_stakes_score": 26
     },
     {
       "round_number": 3,
@@ -635,7 +641,7 @@
       "rule_description": "Only cards with an even rank (2,4,6,8,10,12).",
       "rule_code": "return card.rank % 2 == 0",
       "success": true,
-      "score": 24,
+      "score": 25,
       "failed_guesses": 0,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -976,7 +982,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 1178.69
+      "wall_clock_seconds": 1178.69,
+      "floored_score": 25,
+      "first_correct_turn": 5,
+      "no_stakes_score": 26
     },
     {
       "round_number": 4,
@@ -986,7 +995,7 @@
       "rule_description": "Only face cards (11,12,13).",
       "rule_code": "return card.rank in {11, 12, 13}",
       "success": true,
-      "score": 26,
+      "score": 27,
       "failed_guesses": 0,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -1247,7 +1256,10 @@
           ]
         }
       ],
-      "wall_clock_seconds": 383.91
+      "wall_clock_seconds": 383.91,
+      "floored_score": 27,
+      "first_correct_turn": 3,
+      "no_stakes_score": 28
     },
     {
       "round_number": 5,
@@ -1257,7 +1269,7 @@
       "rule_description": "Only face cards (11,12,13).",
       "rule_code": "return card.rank in {11, 12, 13}",
       "success": true,
-      "score": 25,
+      "score": 26,
       "failed_guesses": 0,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -1566,7 +1578,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 231.32
+      "wall_clock_seconds": 231.32,
+      "floored_score": 26,
+      "first_correct_turn": 3,
+      "no_stakes_score": 28
     },
     {
       "round_number": 6,
@@ -1576,7 +1591,7 @@
       "rule_description": "Only face cards (11,12,13).",
       "rule_code": "return card.rank in {11, 12, 13}",
       "success": true,
-      "score": 27,
+      "score": 28,
       "failed_guesses": 0,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -1789,7 +1804,10 @@
           ]
         }
       ],
-      "wall_clock_seconds": 340.31
+      "wall_clock_seconds": 340.31,
+      "floored_score": 28,
+      "first_correct_turn": 3,
+      "no_stakes_score": 28
     },
     {
       "round_number": 7,
@@ -1799,7 +1817,7 @@
       "rule_description": "Only cards between 1 and 7 inclusive.",
       "rule_code": "return 1 <= card.rank <= 7",
       "success": true,
-      "score": 20,
+      "score": 21,
       "failed_guesses": 0,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -2348,7 +2366,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 1704.92
+      "wall_clock_seconds": 1704.92,
+      "floored_score": 21,
+      "first_correct_turn": 10,
+      "no_stakes_score": 21
     },
     {
       "round_number": 8,
@@ -2358,7 +2379,7 @@
       "rule_description": "Only cards between 1 and 7 inclusive.",
       "rule_code": "return 1 <= card.rank <= 7",
       "success": true,
-      "score": 24,
+      "score": 25,
       "failed_guesses": 0,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -2707,7 +2728,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 1610.77
+      "wall_clock_seconds": 1610.77,
+      "floored_score": 25,
+      "first_correct_turn": 5,
+      "no_stakes_score": 26
     },
     {
       "round_number": 9,
@@ -2717,7 +2741,7 @@
       "rule_description": "Only cards between 1 and 7 inclusive.",
       "rule_code": "return 1 <= card.rank <= 7",
       "success": true,
-      "score": 4,
+      "score": 5,
       "failed_guesses": 4,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -3691,7 +3715,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 4629.58
+      "wall_clock_seconds": 4629.58,
+      "floored_score": 5,
+      "first_correct_turn": 17,
+      "no_stakes_score": 14
     },
     {
       "round_number": 10,
@@ -3701,7 +3728,7 @@
       "rule_description": "Only cards between 5 and 9 inclusive.",
       "rule_code": "return 5 <= card.rank <= 9",
       "success": true,
-      "score": 2,
+      "score": 3,
       "failed_guesses": 5,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -4669,13 +4696,16 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 6554.97
+      "wall_clock_seconds": 6554.97,
+      "floored_score": 3,
+      "first_correct_turn": 18,
+      "no_stakes_score": 13
     },
     {
       "round_number": 11,
       "rule_name": "ranks_five_to_nine",
       "batch_round_index": 1,
-      "turn_count": 6,
+      "turn_count": 7,
       "rule_description": "Only cards between 5 and 9 inclusive.",
       "rule_code": "return 5 <= card.rank <= 9",
       "success": true,
@@ -5023,7 +5053,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 487.4
+      "wall_clock_seconds": 487.4,
+      "floored_score": 24,
+      "first_correct_turn": 7,
+      "no_stakes_score": 24
     },
     {
       "round_number": 12,
@@ -5033,7 +5066,7 @@
       "rule_description": "Only cards between 5 and 9 inclusive.",
       "rule_code": "return 5 <= card.rank <= 9",
       "success": true,
-      "score": 6,
+      "score": 7,
       "failed_guesses": 4,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -5909,7 +5942,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 7639.29
+      "wall_clock_seconds": 7639.29,
+      "floored_score": 7,
+      "first_correct_turn": 14,
+      "no_stakes_score": 17
     },
     {
       "round_number": 13,
@@ -5919,7 +5955,7 @@
       "rule_description": "Only ranks that are prime numbers (2,3,5,7,11,13).",
       "rule_code": "primes = {2, 3, 5, 7, 11, 13}\nreturn card.rank in primes",
       "success": true,
-      "score": 22,
+      "score": 23,
       "failed_guesses": 0,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -6386,7 +6422,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 1712.28
+      "wall_clock_seconds": 1712.28,
+      "floored_score": 23,
+      "first_correct_turn": 7,
+      "no_stakes_score": 24
     },
     {
       "round_number": 14,
@@ -6396,7 +6435,7 @@
       "rule_description": "Only ranks that are prime numbers (2,3,5,7,11,13).",
       "rule_code": "primes = {2, 3, 5, 7, 11, 13}\nreturn card.rank in primes",
       "success": true,
-      "score": 12,
+      "score": 13,
       "failed_guesses": 3,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -7061,7 +7100,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 3805.95
+      "wall_clock_seconds": 3805.95,
+      "floored_score": 13,
+      "first_correct_turn": 12,
+      "no_stakes_score": 19
     },
     {
       "round_number": 15,
@@ -7071,7 +7113,7 @@
       "rule_description": "Only ranks that are prime numbers (2,3,5,7,11,13).",
       "rule_code": "primes = {2, 3, 5, 7, 11, 13}\nreturn card.rank in primes",
       "success": true,
-      "score": 25,
+      "score": 26,
       "failed_guesses": 0,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -7380,7 +7422,10 @@
           ]
         }
       ],
-      "wall_clock_seconds": 570.15
+      "wall_clock_seconds": 570.15,
+      "floored_score": 26,
+      "first_correct_turn": 5,
+      "no_stakes_score": 26
     },
     {
       "round_number": 16,
@@ -7390,7 +7435,7 @@
       "rule_description": "Only Aces (rank 1) .",
       "rule_code": "return card.rank == 1",
       "success": true,
-      "score": 25,
+      "score": 26,
       "failed_guesses": 0,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -7707,7 +7752,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 747.53
+      "wall_clock_seconds": 747.53,
+      "floored_score": 26,
+      "first_correct_turn": 4,
+      "no_stakes_score": 27
     },
     {
       "round_number": 17,
@@ -7717,7 +7765,7 @@
       "rule_description": "Only Aces (rank 1) .",
       "rule_code": "return card.rank == 1",
       "success": true,
-      "score": 26,
+      "score": 27,
       "failed_guesses": 0,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -7973,7 +8021,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 479.71
+      "wall_clock_seconds": 479.71,
+      "floored_score": 27,
+      "first_correct_turn": 4,
+      "no_stakes_score": 27
     },
     {
       "round_number": 18,
@@ -7983,7 +8034,7 @@
       "rule_description": "Only Aces (rank 1) .",
       "rule_code": "return card.rank == 1",
       "success": true,
-      "score": 24,
+      "score": 25,
       "failed_guesses": 0,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -8340,7 +8391,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 544.29
+      "wall_clock_seconds": 544.29,
+      "floored_score": 25,
+      "first_correct_turn": 4,
+      "no_stakes_score": 27
     },
     {
       "round_number": 19,
@@ -8350,7 +8404,7 @@
       "rule_description": "Only cards of the suit spades.",
       "rule_code": "return card.suit.suit_name == \"spades\"",
       "success": true,
-      "score": 26,
+      "score": 27,
       "failed_guesses": 0,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -8598,7 +8652,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 342.92
+      "wall_clock_seconds": 342.92,
+      "floored_score": 27,
+      "first_correct_turn": 4,
+      "no_stakes_score": 27
     },
     {
       "round_number": 20,
@@ -8608,7 +8665,7 @@
       "rule_description": "Only cards of the suit spades.",
       "rule_code": "return card.suit.suit_name == \"spades\"",
       "success": true,
-      "score": 26,
+      "score": 27,
       "failed_guesses": 0,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -8869,7 +8926,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 524.85
+      "wall_clock_seconds": 524.85,
+      "floored_score": 27,
+      "first_correct_turn": 3,
+      "no_stakes_score": 28
     },
     {
       "round_number": 21,
@@ -8879,7 +8939,7 @@
       "rule_description": "Only cards of the suit spades.",
       "rule_code": "return card.suit.suit_name == \"spades\"",
       "success": true,
-      "score": 27,
+      "score": 28,
       "failed_guesses": 0,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -9097,7 +9157,10 @@
           ]
         }
       ],
-      "wall_clock_seconds": 715.04
+      "wall_clock_seconds": 715.04,
+      "floored_score": 28,
+      "first_correct_turn": 3,
+      "no_stakes_score": 28
     },
     {
       "round_number": 22,
@@ -9107,7 +9170,7 @@
       "rule_description": "Only red cards (hearts or diamonds).",
       "rule_code": "return card.color == \"red\"",
       "success": true,
-      "score": 26,
+      "score": 27,
       "failed_guesses": 0,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -9370,13 +9433,16 @@
           ]
         }
       ],
-      "wall_clock_seconds": 782.5
+      "wall_clock_seconds": 782.5,
+      "floored_score": 27,
+      "first_correct_turn": 4,
+      "no_stakes_score": 27
     },
     {
       "round_number": 23,
       "rule_name": "only_red_cards",
       "batch_round_index": 1,
-      "turn_count": 3,
+      "turn_count": 4,
       "rule_description": "Only red cards (hearts or diamonds).",
       "rule_code": "return card.color == \"red\"",
       "success": true,
@@ -9580,7 +9646,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 178.67
+      "wall_clock_seconds": 178.67,
+      "floored_score": 27,
+      "first_correct_turn": 4,
+      "no_stakes_score": 27
     },
     {
       "round_number": 24,
@@ -9590,7 +9659,7 @@
       "rule_description": "Only red cards (hearts or diamonds).",
       "rule_code": "return card.color == \"red\"",
       "success": true,
-      "score": 23,
+      "score": 24,
       "failed_guesses": 0,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -9974,13 +10043,16 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 515.6
+      "wall_clock_seconds": 515.6,
+      "floored_score": 24,
+      "first_correct_turn": 4,
+      "no_stakes_score": 27
     },
     {
       "round_number": 25,
       "rule_name": "spades_and_diamonds_only",
       "batch_round_index": 0,
-      "turn_count": 7,
+      "turn_count": 8,
       "rule_description": "Only spades and diamonds.",
       "rule_code": "return card.suit.suit_name in (\"spades\", \"diamonds\")",
       "success": true,
@@ -10385,7 +10457,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 1184.08
+      "wall_clock_seconds": 1184.08,
+      "floored_score": 23,
+      "first_correct_turn": 8,
+      "no_stakes_score": 23
     },
     {
       "round_number": 26,
@@ -10395,7 +10470,7 @@
       "rule_description": "Only spades and diamonds.",
       "rule_code": "return card.suit.suit_name in (\"spades\", \"diamonds\")",
       "success": true,
-      "score": 24,
+      "score": 25,
       "failed_guesses": 0,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -10752,13 +10827,16 @@
           ]
         }
       ],
-      "wall_clock_seconds": 584.43
+      "wall_clock_seconds": 584.43,
+      "floored_score": 25,
+      "first_correct_turn": 6,
+      "no_stakes_score": 25
     },
     {
       "round_number": 27,
       "rule_name": "spades_and_diamonds_only",
       "batch_round_index": 2,
-      "turn_count": 9,
+      "turn_count": 10,
       "rule_description": "Only spades and diamonds.",
       "rule_code": "return card.suit.suit_name in (\"spades\", \"diamonds\")",
       "success": true,
@@ -11272,7 +11350,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 1551.07
+      "wall_clock_seconds": 1551.07,
+      "floored_score": 19,
+      "first_correct_turn": 10,
+      "no_stakes_score": 21
     },
     {
       "round_number": 28,
@@ -11282,7 +11363,7 @@
       "rule_description": "Only hearts, clubs, and diamonds allowed. Spades are forbidden.",
       "rule_code": "return card.suit.suit_name != \"spades\"",
       "success": true,
-      "score": 24,
+      "score": 25,
       "failed_guesses": 0,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -11626,7 +11707,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 328.64
+      "wall_clock_seconds": 328.64,
+      "floored_score": 25,
+      "first_correct_turn": 6,
+      "no_stakes_score": 25
     },
     {
       "round_number": 29,
@@ -11636,7 +11720,7 @@
       "rule_description": "Only hearts, clubs, and diamonds allowed. Spades are forbidden.",
       "rule_code": "return card.suit.suit_name != \"spades\"",
       "success": true,
-      "score": 25,
+      "score": 26,
       "failed_guesses": 0,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -11945,13 +12029,16 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 750.46
+      "wall_clock_seconds": 750.46,
+      "floored_score": 26,
+      "first_correct_turn": 4,
+      "no_stakes_score": 27
     },
     {
       "round_number": 30,
       "rule_name": "no_spades",
       "batch_round_index": 2,
-      "turn_count": 7,
+      "turn_count": 8,
       "rule_description": "Only hearts, clubs, and diamonds allowed. Spades are forbidden.",
       "rule_code": "return card.suit.suit_name != \"spades\"",
       "success": true,
@@ -12356,13 +12443,16 @@
           ]
         }
       ],
-      "wall_clock_seconds": 965.84
+      "wall_clock_seconds": 965.84,
+      "floored_score": 21,
+      "first_correct_turn": 8,
+      "no_stakes_score": 23
     },
     {
       "round_number": 31,
       "rule_name": "black_face_cards",
       "batch_round_index": 0,
-      "turn_count": 12,
+      "turn_count": 13,
       "rule_description": "Only black face cards.",
       "rule_code": "if not mainline:\n    return card.color == \"black\" and card.rank >= 11\nreturn card.color == \"black\" and card.rank >= 11",
       "success": true,
@@ -13013,7 +13103,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 1974.67
+      "wall_clock_seconds": 1974.67,
+      "floored_score": 12,
+      "first_correct_turn": 13,
+      "no_stakes_score": 18
     },
     {
       "round_number": 32,
@@ -13023,7 +13116,7 @@
       "rule_description": "Only black face cards.",
       "rule_code": "if not mainline:\n    return card.color == \"black\" and card.rank >= 11\nreturn card.color == \"black\" and card.rank >= 11",
       "success": true,
-      "score": 22,
+      "score": 23,
       "failed_guesses": 0,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -13481,7 +13574,10 @@
           ]
         }
       ],
-      "wall_clock_seconds": 1110.29
+      "wall_clock_seconds": 1110.29,
+      "floored_score": 23,
+      "first_correct_turn": 7,
+      "no_stakes_score": 24
     },
     {
       "round_number": 33,
@@ -13491,7 +13587,7 @@
       "rule_description": "Only black face cards.",
       "rule_code": "if not mainline:\n    return card.color == \"black\" and card.rank >= 11\nreturn card.color == \"black\" and card.rank >= 11",
       "success": true,
-      "score": 23,
+      "score": 24,
       "failed_guesses": 0,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -13883,7 +13979,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 739.29
+      "wall_clock_seconds": 739.29,
+      "floored_score": 24,
+      "first_correct_turn": 6,
+      "no_stakes_score": 25
     },
     {
       "round_number": 34,
@@ -13893,7 +13992,7 @@
       "rule_description": "Only red cards whose rank is <=7.",
       "rule_code": "return card.color == \"red\" and card.rank <= 7",
       "success": true,
-      "score": 20,
+      "score": 21,
       "failed_guesses": 0,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -14454,13 +14553,16 @@
           ]
         }
       ],
-      "wall_clock_seconds": 1786.35
+      "wall_clock_seconds": 1786.35,
+      "floored_score": 21,
+      "first_correct_turn": 8,
+      "no_stakes_score": 23
     },
     {
       "round_number": 35,
       "rule_name": "red_rank_up_to_seven",
       "batch_round_index": 1,
-      "turn_count": 13,
+      "turn_count": 14,
       "rule_description": "Only red cards whose rank is <=7.",
       "rule_code": "return card.color == \"red\" and card.rank <= 7",
       "success": true,
@@ -15179,7 +15281,10 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 3081.31
+      "wall_clock_seconds": 3081.31,
+      "floored_score": 13,
+      "first_correct_turn": 14,
+      "no_stakes_score": 17
     },
     {
       "round_number": 36,
@@ -15189,7 +15294,7 @@
       "rule_description": "Only red cards whose rank is <=7.",
       "rule_code": "return card.color == \"red\" and card.rank <= 7",
       "success": true,
-      "score": -3,
+      "score": -2,
       "failed_guesses": 4,
       "game_over_reason": "correct_guess",
       "llm_usage": {
@@ -16611,13 +16716,16 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 13952.74
+      "wall_clock_seconds": 13952.74,
+      "floored_score": 0,
+      "first_correct_turn": 15,
+      "no_stakes_score": 16
     },
     {
       "round_number": 37,
       "rule_name": "face_cards_red_number_cards_black",
       "batch_round_index": 0,
-      "turn_count": 11,
+      "turn_count": 12,
       "rule_description": "Face cards (11-13) must be red; number cards (1-10) must be black.",
       "rule_code": "if card.rank >= 11:\n    return card.color == \"red\"\nelse:\n    return card.color == \"black\"",
       "success": true,
@@ -17232,7 +17340,10 @@
           ]
         }
       ],
-      "wall_clock_seconds": 4588.98
+      "wall_clock_seconds": 4588.98,
+      "floored_score": 17,
+      "first_correct_turn": 12,
+      "no_stakes_score": 19
     },
     {
       "round_number": 38,
@@ -17242,7 +17353,7 @@
       "rule_description": "Face cards (11-13) must be red; number cards (1-10) must be black.",
       "rule_code": "if card.rank >= 11:\n    return card.color == \"red\"\nelse:\n    return card.color == \"black\"",
       "success": false,
-      "score": 0,
+      "score": -14,
       "failed_guesses": 7,
       "game_over_reason": "max_turns",
       "llm_usage": {
@@ -18870,13 +18981,16 @@
           ]
         }
       ],
-      "wall_clock_seconds": 25882.05
+      "wall_clock_seconds": 25882.05,
+      "floored_score": 0,
+      "first_correct_turn": null,
+      "no_stakes_score": 0
     },
     {
       "round_number": 39,
       "rule_name": "face_cards_red_number_cards_black",
       "batch_round_index": 2,
-      "turn_count": 12,
+      "turn_count": 13,
       "rule_description": "Face cards (11-13) must be red; number cards (1-10) must be black.",
       "rule_code": "if card.rank >= 11:\n    return card.color == \"red\"\nelse:\n    return card.color == \"black\"",
       "success": true,
@@ -19533,11 +19647,14 @@
           "retry_causes": []
         }
       ],
-      "wall_clock_seconds": 4077.84
+      "wall_clock_seconds": 4077.84,
+      "floored_score": 12,
+      "first_correct_turn": 13,
+      "no_stakes_score": 18
     }
   ],
   "statistics": {
-    "total_score": 773,
+    "total_score": 787,
     "successful_rounds": 38,
     "failed_rounds": 1,
     "total_turns": 335,
@@ -19550,7 +19667,8 @@
     "retry_by_cause": {
       "max_token_reached": 162,
       "other_error": 12
-    }
+    },
+    "average_score": 20.17948717948718
   },
   "checkpoint": {
     "completed_rounds": 39,
