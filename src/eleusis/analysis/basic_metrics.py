@@ -14,19 +14,43 @@ from .utils import TeeWriter, save_figure, setup_matplotlib_style
 logger = logging.getLogger(__name__)
 
 
-def compute_basic_metrics(df_rounds: pd.DataFrame) -> pd.DataFrame:
+def compute_basic_metrics(df_rounds: pd.DataFrame, df_turns: pd.DataFrame = None) -> pd.DataFrame:
     """Compute basic comparison metrics per model."""
+    # Add floored_score column (score capped at minimum 0)
+    df_rounds = df_rounds.copy()
+    df_rounds["floored_score"] = df_rounds["score"].clip(lower=0)
+
     # Basic aggregations
     metrics = df_rounds.groupby("model").agg(
         rounds_played=("success", "count"),
         total_score=("score", "sum"),
         avg_score=("score", "mean"),
+        total_floored_score=("floored_score", "sum"),
+        avg_floored_score=("floored_score", "mean"),
         total_turns=("turn_count", "sum"),
         total_output_tokens=("output_tokens", "sum"),
         total_wall_clock=("wall_clock_seconds", "sum"),
         avg_failed_guesses=("failed_guesses", "mean"),
         success_rate=("success", "mean"),
     ).reset_index()
+
+    # Compute no_stakes_score if turns data is available
+    if df_turns is not None:
+        from .no_stakes import compute_first_correct_turn, compute_no_stakes_scores
+        df_first_correct = compute_first_correct_turn(df_turns)
+        if not df_first_correct.empty:
+            df_no_stakes = compute_no_stakes_scores(df_rounds, df_first_correct)
+            no_stakes_stats = df_no_stakes.groupby("model").agg(
+                total_no_stakes_score=("no_stakes_score", "sum"),
+                avg_no_stakes_score=("no_stakes_score", "mean"),
+            ).reset_index()
+            metrics = metrics.merge(no_stakes_stats, on="model", how="left")
+        else:
+            metrics["total_no_stakes_score"] = 0
+            metrics["avg_no_stakes_score"] = 0.0
+    else:
+        metrics["total_no_stakes_score"] = 0
+        metrics["avg_no_stakes_score"] = 0.0
 
     # Derived metrics
     metrics["avg_output_tokens_per_turn"] = metrics["total_output_tokens"] / metrics["total_turns"]
@@ -460,6 +484,120 @@ def plot_confidence_distribution(
     return png_path, json_path
 
 
+def plot_score_stack(
+    metrics: pd.DataFrame, model_colors: dict[str, str], output_folder: Path
+) -> tuple[Path, Path]:
+    """Stacked bar chart showing raw score, floored delta, and no-stakes delta.
+
+    Returns (png_path, json_path).
+    """
+    setup_matplotlib_style()
+    fig, ax = plt.subplots(figsize=(12, 7))
+
+    # Load metadata for open/closed distinction
+    model_metadata = load_model_metadata()
+
+    # Sort by no_stakes_score descending
+    metrics_sorted = metrics.sort_values("avg_no_stakes_score", ascending=False)
+    models = metrics_sorted["model"].tolist()
+    x = range(len(models))
+
+    # Compute the three components
+    raw_scores = metrics_sorted["avg_score"].tolist()
+    floored_scores = metrics_sorted["avg_floored_score"].tolist()
+    no_stakes_scores = metrics_sorted["avg_no_stakes_score"].tolist()
+
+    # Deltas for stacking
+    floored_delta = [f - r for f, r in zip(floored_scores, raw_scores)]
+    no_stakes_delta = [n - f for n, f in zip(no_stakes_scores, floored_scores)]
+
+    # Prepare data for JSON export
+    plot_data = {
+        "models": [],
+        "metadata": {
+            "description": "Stacked score breakdown: raw score + flooring gain + no-stakes gain",
+            "y_axis": "average_score",
+            "components": ["raw_score", "floored_delta", "no_stakes_delta"],
+        },
+    }
+
+    # Collect colors and open/closed status
+    colors = []
+    is_open_list = []
+    for model_name in models:
+        color = get_model_color(model_name, model_colors)
+        colors.append(color)
+
+        is_open = False
+        provider = "unknown"
+        normalized_name = normalize_model_name(model_name)
+        for key, meta in model_metadata.items():
+            norm_key = normalize_model_name(key)
+            if norm_key == normalized_name or norm_key in normalized_name or normalized_name in norm_key:
+                is_open = meta["is_open"]
+                provider = meta["provider"]
+                break
+        is_open_list.append(is_open)
+
+        # Store data for JSON
+        idx = models.index(model_name)
+        plot_data["models"].append({
+            "name": model_name,
+            "color": color,
+            "is_open": is_open,
+            "provider": provider,
+            "avg_score": float(raw_scores[idx]),
+            "avg_floored_score": float(floored_scores[idx]),
+            "avg_no_stakes_score": float(no_stakes_scores[idx]),
+            "floored_delta": float(floored_delta[idx]),
+            "no_stakes_delta": float(no_stakes_delta[idx]),
+        })
+
+    # Draw stacked bars
+    bar_width = 0.6
+
+    # Bottom layer: raw score (can be negative)
+    bars_raw = ax.bar(x, raw_scores, bar_width, label="Raw Score", color="steelblue", alpha=0.9)
+
+    # Middle layer: floored delta (gain from flooring negatives)
+    bars_floored = ax.bar(
+        x, floored_delta, bar_width, bottom=raw_scores,
+        label="Flooring Gain", color="coral", alpha=0.9
+    )
+
+    # Top layer: no-stakes delta (gain from no-penalty guessing)
+    bars_no_stakes = ax.bar(
+        x, no_stakes_delta, bar_width, bottom=floored_scores,
+        label="No-Stakes Gain", color="mediumseagreen", alpha=0.9
+    )
+
+    ax.set_ylabel("Average Score", fontsize=11)
+    ax.set_xlabel("Model", fontsize=11)
+    ax.set_title(
+        "Score Breakdown: Raw → Floored → No-Stakes",
+        fontsize=13,
+        fontweight="bold",
+    )
+    ax.set_xticks(x)
+    ax.set_xticklabels(models, rotation=45, ha="right", fontsize=9)
+    ax.axhline(y=0, color="black", linewidth=0.5, linestyle="-")
+    ax.legend(loc="upper right", fontsize=10)
+
+    plt.tight_layout()
+
+    # Save outputs
+    png_path = output_folder / "score_stack.png"
+    json_path = output_folder / "score_stack.json"
+
+    save_figure(fig, png_path)
+
+    with open(json_path, "w") as f:
+        json.dump(plot_data, f, indent=2)
+    logger.info(f"Saved: {json_path}")
+
+    return png_path, json_path
+
+
 def analyze_basic_metrics(
     df_rounds: pd.DataFrame,
     df_turns: pd.DataFrame,
@@ -472,7 +610,7 @@ def analyze_basic_metrics(
     tee.write("BASIC MODEL COMPARISON\n")
     tee.write("=" * 60 + "\n\n")
 
-    metrics = compute_basic_metrics(df_rounds)
+    metrics = compute_basic_metrics(df_rounds, df_turns)
 
     # Write to summary
     tee.write(metrics.to_string(index=False) + "\n\n")
@@ -499,5 +637,10 @@ def analyze_basic_metrics(
 
     # Generate confidence distribution plot
     png_path, json_path = plot_confidence_distribution(df_turns, model_colors, output_folder)
+    tee.write(f"Saved: {png_path}\n")
+    tee.write(f"Saved: {json_path}\n")
+
+    # Generate score stack plot (raw -> floored -> no-stakes)
+    png_path, json_path = plot_score_stack(metrics, model_colors, output_folder)
     tee.write(f"Saved: {png_path}\n")
     tee.write(f"Saved: {json_path}\n")

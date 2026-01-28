@@ -1,0 +1,123 @@
+{
+  "models": [
+    {
+      "name": "Claude Opus 4.5",
+      "color": "#FF6B00",
+      "is_open": false,
+      "provider": "anthropic",
+      "avg_score": 14.461538461538462,
+      "avg_floored_score": 16.974358974358974,
+      "avg_no_stakes_score": 20.487179487179485,
+      "floored_delta": 2.5128205128205128,
+      "no_stakes_delta": 3.512820512820511
+    },
+    {
+      "name": "Gpt 5.2 High",
+      "color": "#8C8C8C",
+      "is_open": false,
+      "provider": "openai",
+      "avg_score": 14.846153846153847,
+      "avg_floored_score": 15.051282051282051,
+      "avg_no_stakes_score": 19.294871794871796,
+      "floored_delta": 0.2051282051282044,
+      "no_stakes_delta": 4.2435897435897445
+    },
+    {
+      "name": "Kimi K2",
+      "color": "#00897B",
+      "is_open": true,
+      "provider": "huggingface",
+      "avg_score": 10.307692307692308,
+      "avg_floored_score": 16.17948717948718,
+      "avg_no_stakes_score": 18.987179487179485,
+      "floored_delta": 5.8717948717948705,
+      "no_stakes_delta": 2.8076923076923066
+    },
+    {
+      "name": "Grok 4 1 Fast Reasoning",
+      "color": "#1A1A1A",
+      "is_open": false,
+      "provider": "xai",
+      "avg_score": 9.448717948717949,
+      "avg_floored_score": 15.153846153846153,
+      "avg_no_stakes_score": 18.474358974358974,
+      "floored_delta": 5.705128205128204,
+      "no_stakes_delta": 3.320512820512821
+    },
+    {
+      "name": "Deepseek R1",
+      "color": "#7B1FA2",
+      "is_open": true,
+      "provider": "huggingface",
+      "avg_score": 6.551282051282051,
+      "avg_floored_score": 13.282051282051283,
+      "avg_no_stakes_score": 17.064102564102566,
+      "floored_delta": 6.730769230769232,
+      "no_stakes_delta": 3.782051282051283
+    },
+    {
+      "name": "Gpt 5 Mini Medium",
+      "color": "#4A4A4A",
+      "is_open": false,
+      "provider": "openai",
+      "avg_score": 12.076923076923077,
+      "avg_floored_score": 13.487179487179487,
+      "avg_no_stakes_score": 16.987179487179485,
+      "floored_delta": 1.4102564102564106,
+      "no_stakes_delta": 3.4999999999999982
+    },
+    {
+      "name": "Gpt Oss 120B",
+      "color": "#5C6BC0",
+      "is_open": true,
+      "provider": "huggingface",
+      "avg_score": 7.435897435897436,
+      "avg_floored_score": 12.871794871794872,
+      "avg_no_stakes_score": 16.397435897435898,
+      "floored_delta": 5.435897435897436,
+      "no_stakes_delta": 3.5256410256410255
+    },
+    {
+      "name": "Gemini 3 Flash Preview Low",
+      "color": "#7BAAF7",
+      "is_open": false,
+      "provider": "google",
+      "avg_score": 10.474358974358974,
+      "avg_floored_score": 13.128205128205128,
+      "avg_no_stakes_score": 15.717948717948717,
+      "floored_delta": 2.6538461538461533,
+      "no_stakes_delta": 2.5897435897435894
+    },
+    {
+      "name": "Gpt Oss 20B",
+      "color": "#26A69A",
+      "is_open": true,
+      "provider": "huggingface",
+      "avg_score": 1.6794871794871795,
+      "avg_floored_score": 11.884615384615385,
+      "avg_no_stakes_score": 15.461538461538462,
+      "floored_delta": 10.205128205128206,
+      "no_stakes_delta": 3.5769230769230766
+    },
+    {
+      "name": "Claude Haiku 4.5",
+      "color": "#FF9500",
+      "is_open": false,
+      "provider": "anthropic",
+      "avg_score": -0.47435897435897434,
+      "avg_floored_score": 11.461538461538462,
+      "avg_no_stakes_score": 15.35897435897436,
+      "floored_delta": 11.935897435897436,
+      "no_stakes_delta": 3.897435897435898
+    }
+  ],
+  "metadata": {
+    "description": "Stacked score breakdown: raw score + flooring gain + no-stakes gain",
+    "y_axis": "average_score",
+    "components": [
+      "raw_score",
+      "floored_delta",
+      "no_stakes_delta"
+    ]
+  }
+}
