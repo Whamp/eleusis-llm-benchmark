@@ -53,7 +53,11 @@ def compute_double_down_rate(df_turns: pd.DataFrame) -> pd.DataFrame:
 def compute_wrong_guess_streaks(df_turns: pd.DataFrame) -> pd.DataFrame:
     """Compute streaks of consecutive wrong guesses per round.
 
-    A streak ends when: correct guess, round ends, or model stops guessing.
+    A streak requires consecutive turns with guesses. Streak ends when:
+    - Correct guess
+    - Turn without a guess (model steps back)
+    - Round ends
+
     Returns DataFrame with columns: model, round_number, streak_length
     """
     rows = []
@@ -64,7 +68,9 @@ def compute_wrong_guess_streaks(df_turns: pd.DataFrame) -> pd.DataFrame:
         current_streak = 0
         for turn in turns.itertuples():
             # Only count non-shadow guesses
-            if turn.guess_rule and not turn.is_shadow:
+            made_guess = turn.guess_rule and not turn.is_shadow
+
+            if made_guess:
                 if turn.guess_correct == False:
                     current_streak += 1
                 else:
@@ -77,8 +83,18 @@ def compute_wrong_guess_streaks(df_turns: pd.DataFrame) -> pd.DataFrame:
                             "ended_by": "correct_guess",
                         })
                     current_streak = 0
+            else:
+                # No guess this turn - streak is broken (model stepped back)
+                if current_streak > 0:
+                    rows.append({
+                        "model": model,
+                        "round_number": round_num,
+                        "streak_length": current_streak,
+                        "ended_by": "stepped_back",
+                    })
+                current_streak = 0
 
-        # If round ended with ongoing streak (no correct guess)
+        # If round ended with ongoing streak
         if current_streak > 0:
             rows.append({
                 "model": model,
