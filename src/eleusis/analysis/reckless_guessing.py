@@ -112,15 +112,12 @@ def plot_reckless_guessing(
     model_colors: dict[str, str],
     output_folder: Path,
 ) -> tuple[Path, Path]:
-    """Generate two-panel plot of reckless guessing behavior.
-
-    Left: Double-down rate bar chart
-    Right: Streak length box plot
+    """Generate bar chart of double-down rate.
 
     Returns (png_path, json_path).
     """
     setup_matplotlib_style()
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 7))
+    fig, ax1 = plt.subplots(figsize=(10, 7))
 
     model_metadata = load_model_metadata()
 
@@ -190,6 +187,14 @@ def plot_reckless_guessing(
     ax1.set_title("After Wrong Guess: % Guessing Again Next Turn", fontsize=11, fontweight="bold")
     ax1.invert_yaxis()  # Most reckless at top
 
+    # Add legend
+    from matplotlib.patches import Patch
+    legend_elements = [
+        Patch(facecolor="gray", alpha=0.7, edgecolor="gray", label="Closed model"),
+        Patch(facecolor="white", edgecolor="gray", linewidth=2, label="Open model"),
+    ]
+    ax1.legend(handles=legend_elements, loc="lower right", fontsize=9)
+
     # Add note
     ax1.text(
         0.02, -0.08,
@@ -197,44 +202,6 @@ def plot_reckless_guessing(
         transform=ax1.transAxes, fontsize=8, ha="left",
         style="italic", color="gray"
     )
-
-    # Right panel: Mean streak length bar chart
-    mean_streaks = []
-    for model_name in models:
-        model_streaks = df_streaks[df_streaks["model"] == model_name]["streak_length"]
-        mean_streaks.append(model_streaks.mean() if len(model_streaks) > 0 else 0)
-
-    # Draw bars with open/closed distinction
-    for i, (model, mean_streak, color, is_open) in enumerate(zip(models, mean_streaks, colors, is_open_list)):
-        if is_open:
-            ax2.barh(i, mean_streak, color="white", edgecolor=color, linewidth=2, height=0.7)
-        else:
-            ax2.barh(i, mean_streak, color=color, alpha=0.7, edgecolor=color, height=0.7)
-
-        # Add value label
-        ax2.text(mean_streak + 0.2, i, f"{mean_streak:.1f}", va="center", fontsize=9)
-
-    ax2.set_yticks(y_pos)
-    ax2.set_yticklabels(models, fontsize=9)
-    ax2.set_xlabel("Mean Consecutive Wrong Guesses", fontsize=11)
-    ax2.set_title("Average Wrong Guess Streak Length", fontsize=11, fontweight="bold")
-    ax2.invert_yaxis()  # Match left panel order
-
-    # Add note
-    ax2.text(
-        0.02, -0.08,
-        "Longer = more persistent reckless guessing",
-        transform=ax2.transAxes, fontsize=8, ha="left",
-        style="italic", color="gray"
-    )
-
-    # Add legend
-    from matplotlib.patches import Patch
-    legend_elements = [
-        Patch(facecolor="gray", alpha=0.7, edgecolor="gray", label="Closed model"),
-        Patch(facecolor="white", edgecolor="gray", linewidth=2, label="Open model"),
-    ]
-    ax2.legend(handles=legend_elements, loc="lower right", fontsize=9)
 
     plt.tight_layout()
 
