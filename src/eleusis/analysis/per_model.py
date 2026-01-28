@@ -20,9 +20,9 @@ def sanitize_filename(name: str) -> str:
 
 def plot_play_history(ax: plt.Axes, model_rounds: pd.DataFrame, model_color: str):
     """Plot score by rule index showing variance across seeds."""
-    # Group by rule_description to get rule index
+    # Group by rule_description to get rule index (1-indexed)
     rules = model_rounds["rule_description"].unique()
-    rule_to_idx = {r: i for i, r in enumerate(rules)}
+    rule_to_idx = {r: i + 1 for i, r in enumerate(rules)}
     model_rounds = model_rounds.copy()
     model_rounds["rule_idx"] = model_rounds["rule_description"].map(rule_to_idx)
 
@@ -33,14 +33,10 @@ def plot_play_history(ax: plt.Axes, model_rounds: pd.DataFrame, model_color: str
         c=model_color, alpha=0.6, s=40
     )
 
-    # Add mean line
-    means = model_rounds.groupby("rule_idx")["score"].mean()
-    ax.plot(means.index, means.values, "k-", linewidth=2, alpha=0.8)
-
     ax.set_xlabel("Rule Index")
     ax.set_ylabel("Score")
-    ax.set_title("Score by Rule (dots = individual runs, line = mean)")
-    ax.set_xticks(range(len(rules)))
+    ax.set_title("Score by Rule")
+    ax.set_xticks(range(1, len(rules) + 1))
 
 
 def plot_confidence_distribution(ax: plt.Axes, model_turns: pd.DataFrame, model_color: str):
@@ -55,12 +51,12 @@ def plot_confidence_distribution(ax: plt.Axes, model_turns: pd.DataFrame, model_
 
     bins = range(0, 12)
     ax.hist(
-        real_conf, bins=bins, alpha=0.6, color=model_color,
-        label=f"Real guesses (n={len(real_conf)})", density=True
+        real_conf, bins=bins, histtype="step", linewidth=2, linestyle="-",
+        color=model_color, label=f"Real guesses (n={len(real_conf)})", density=True
     )
     ax.hist(
-        shadow_conf, bins=bins, alpha=0.4, color="gray",
-        label=f"Shadow guesses (n={len(shadow_conf)})", density=True
+        shadow_conf, bins=bins, histtype="step", linewidth=2, linestyle="--",
+        color="gray", label=f"Shadow guesses (n={len(shadow_conf)})", density=True
     )
 
     ax.set_xlabel("Confidence Level")
@@ -80,6 +76,14 @@ def plot_calibration_curve(ax: plt.Axes, model_turns: pd.DataFrame, model_color:
         ax.text(0.5, 0.5, "No guess data", ha="center", va="center", transform=ax.transAxes)
         return
 
+    # Round confidence to integer and filter out values < 5
+    guesses["confidence_level"] = guesses["confidence_level"].round().astype(int)
+    guesses = guesses[guesses["confidence_level"] >= 5]
+
+    if len(guesses) == 0:
+        ax.text(0.5, 0.5, "No guess data >= 5", ha="center", va="center", transform=ax.transAxes)
+        return
+
     # Bin by confidence level
     cal = guesses.groupby("confidence_level").agg(
         accuracy=("guess_correct", "mean"),
@@ -90,13 +94,13 @@ def plot_calibration_curve(ax: plt.Axes, model_turns: pd.DataFrame, model_color:
     ax.bar(cal["confidence_level"], cal["accuracy"], alpha=0.7, color=model_color)
 
     # Perfect calibration line: confidence/10 = expected accuracy
-    x = np.linspace(0, 10, 100)
+    x = np.linspace(5, 10, 100)
     ax.plot(x, x / 10, "k--", alpha=0.5, label="Perfect calibration")
 
     ax.set_xlabel("Confidence Level")
     ax.set_ylabel("Actual Success Rate")
     ax.set_title("Calibration: Confidence vs Success")
-    ax.set_xlim(-0.5, 10.5)
+    ax.set_xlim(4.5, 10.5)
     ax.set_ylim(0, 1.1)
     ax.legend(fontsize=8)
 
@@ -148,27 +152,20 @@ def plot_complexity_scatter(
         ax.text(0.5, 0.5, "No matching rules", ha="center", va="center", transform=ax.transAxes)
         return
 
-    # Color by correctness
-    correct = df[df["guess_correct"].eq(True)]
-    wrong = df[df["guess_correct"].eq(False)]
-
+    # Single color scatter plot (no correctness distinction)
     ax.scatter(
-        correct["actual_complexity"], correct["tentative_complexity"],
-        c="green", alpha=0.5, s=30, label=f"Correct (n={len(correct)})"
-    )
-    ax.scatter(
-        wrong["actual_complexity"], wrong["tentative_complexity"],
-        c="red", alpha=0.5, s=30, label=f"Wrong (n={len(wrong)})"
+        df["actual_complexity"], df["tentative_complexity"],
+        c=model_color, alpha=0.3, s=20
     )
 
     # Perfect match line
-    max_val = max(df["actual_complexity"].max(), df["tentative_complexity"].max())
-    ax.plot([0, max_val], [0, max_val], "k--", alpha=0.5)
+    ax.plot([0, 60], [0, 60], "k--", alpha=0.5)
 
     ax.set_xlabel("Actual Rule Complexity")
     ax.set_ylabel("Tentative Rule Complexity")
-    ax.set_title("Tentative vs Actual Complexity")
-    ax.legend(fontsize=8)
+    ax.set_title(f"Tentative vs Actual Complexity (k={optimal_k:.2f})")
+    ax.set_xlim(0, 60)
+    ax.set_ylim(0, 60)
 
 
 def generate_per_model_report(

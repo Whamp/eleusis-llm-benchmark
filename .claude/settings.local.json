@@ -21,7 +21,8 @@
       "WebFetch(domain:wandb.ai)",
       "Bash(done)",
       "Bash([ -n \"$HF_TOKEN\" ])",
-      "Bash(bash -n:*)"
+      "Bash(bash -n:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

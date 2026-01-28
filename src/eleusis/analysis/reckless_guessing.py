@@ -182,66 +182,32 @@ def plot_reckless_guessing(
         style="italic", color="gray"
     )
 
-    # Right panel: Streak length box plot
-    box_data = []
-    box_colors = []
-    box_is_open = []
-
+    # Right panel: Mean streak length bar chart
+    mean_streaks = []
     for model_name in models:
         model_streaks = df_streaks[df_streaks["model"] == model_name]["streak_length"]
-        if len(model_streaks) > 0:
-            box_data.append(model_streaks.values)
-        else:
-            box_data.append([0])  # Empty placeholder
-        box_colors.append(get_model_color(model_name, model_colors))
+        mean_streaks.append(model_streaks.mean() if len(model_streaks) > 0 else 0)
 
-        normalized_name = normalize_model_name(model_name)
-        is_open = False
-        for key, meta in model_metadata.items():
-            norm_key = normalize_model_name(key)
-            if norm_key == normalized_name or norm_key in normalized_name or normalized_name in norm_key:
-                is_open = meta["is_open"]
-                break
-        box_is_open.append(is_open)
-
-    bp = ax2.boxplot(
-        box_data,
-        vert=False,
-        labels=models,
-        patch_artist=True,
-        widths=0.6,
-    )
-
-    # Style boxes
-    for patch, color, is_open in zip(bp["boxes"], box_colors, box_is_open):
+    # Draw bars with open/closed distinction
+    for i, (model, mean_streak, color, is_open) in enumerate(zip(models, mean_streaks, colors, is_open_list)):
         if is_open:
-            patch.set_facecolor("white")
-            patch.set_edgecolor(color)
-            patch.set_linewidth(2)
+            ax2.barh(i, mean_streak, color="white", edgecolor=color, linewidth=2, height=0.7)
         else:
-            patch.set_facecolor(color)
-            patch.set_alpha(0.7)
-            patch.set_edgecolor(color)
+            ax2.barh(i, mean_streak, color=color, alpha=0.7, edgecolor=color, height=0.7)
 
-    for median in bp["medians"]:
-        median.set_color("black")
-        median.set_linewidth(2)
+        # Add value label
+        ax2.text(mean_streak + 0.2, i, f"{mean_streak:.1f}", va="center", fontsize=9)
 
-    for whisker in bp["whiskers"]:
-        whisker.set_color("gray")
-        whisker.set_linewidth(1.5)
-    for cap in bp["caps"]:
-        cap.set_color("gray")
-        cap.set_linewidth(1.5)
-
-    ax2.set_xlabel("Consecutive Wrong Guesses", fontsize=11)
-    ax2.set_title("Wrong Guess Streak Lengths", fontsize=11, fontweight="bold")
+    ax2.set_yticks(y_pos)
+    ax2.set_yticklabels(models, fontsize=9)
+    ax2.set_xlabel("Mean Consecutive Wrong Guesses", fontsize=11)
+    ax2.set_title("Average Wrong Guess Streak Length", fontsize=11, fontweight="bold")
     ax2.invert_yaxis()  # Match left panel order
 
     # Add note
     ax2.text(
         0.02, -0.08,
-        "Longer streaks = more persistent reckless guessing",
+        "Longer = more persistent reckless guessing",
         transform=ax2.transAxes, fontsize=8, ha="left",
         style="italic", color="gray"
     )

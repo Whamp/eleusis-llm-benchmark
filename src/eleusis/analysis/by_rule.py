@@ -65,7 +65,10 @@ def plot_by_rule(
     # Compute average score per rule
     rule_avg_scores = df_rounds.groupby("rule_description")["score"].mean()
 
-    # Build list of (description, name, complexity, avg_score) for rules in data
+    # Compute success rate per rule
+    rule_success_rates = df_rounds.groupby("rule_description")["success"].mean()
+
+    # Build list of (description, name, complexity, avg_score, success_rate) for rules in data
     rule_data = []
     for desc in rules_in_data:
         info = rule_info.get(desc, {"name": desc[:30], "complexity": None, "cyclomatic_complexity": None, "node_count": None})
@@ -76,6 +79,7 @@ def plot_by_rule(
             "cyclomatic_complexity": info.get("cyclomatic_complexity"),
             "node_count": info.get("node_count"),
             "avg_score": rule_avg_scores.get(desc, 0),
+            "success_rate": rule_success_rates.get(desc, 0),
         })
 
     # Sort by average score (highest first)
@@ -178,6 +182,7 @@ def plot_by_rule(
             "node_count": r["node_count"],
             "aggregated_complexity": r["complexity"],
             "avg_score": r["avg_score"],
+            "success_rate": r["success_rate"],
             "scores_by_model": scores_by_model,
         })
 

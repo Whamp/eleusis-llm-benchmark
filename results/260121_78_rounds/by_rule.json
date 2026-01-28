@@ -5,8 +5,9 @@
       "description": "Only red cards (hearts or diamonds).",
       "cyclomatic_complexity": 1,
       "node_count": 9,
-      "aggregated_complexity": 1.9,
+      "aggregated_complexity": 4.779999999999999,
       "avg_score": 25.633333333333333,
+      "success_rate": 1.0,
       "scores_by_model": {
         "Gpt 5.2 High": [
           24,
@@ -65,8 +66,9 @@
       "description": "Only cards of the suit spades.",
       "cyclomatic_complexity": 1,
       "node_count": 11,
-      "aggregated_complexity": 2.1,
+      "aggregated_complexity": 5.62,
       "avg_score": 25.2,
+      "success_rate": 1.0,
       "scores_by_model": {
         "Gpt 5.2 High": [
           20,
@@ -125,8 +127,9 @@
       "description": "Cards must alternate between red and black colors. Any card may start the line.",
       "cyclomatic_complexity": 2,
       "node_count": 24,
-      "aggregated_complexity": 4.4,
+      "aggregated_complexity": 12.08,
       "avg_score": 25.166666666666668,
+      "success_rate": 1.0,
       "scores_by_model": {
         "Gpt 5.2 High": [
           19,
@@ -185,8 +188,9 @@
       "description": "Only cards with an even rank (2,4,6,8,10,12).",
       "cyclomatic_complexity": 1,
       "node_count": 12,
-      "aggregated_complexity": 2.2,
+      "aggregated_complexity": 6.04,
       "avg_score": 24.3,
+      "success_rate": 1.0,
       "scores_by_model": {
         "Gpt 5.2 High": [
           24,
@@ -245,8 +249,9 @@
       "description": "The card must be of a different suit than the card just before it. Any card may start the line.",
       "cyclomatic_complexity": 2,
       "node_count": 28,
-      "aggregated_complexity": 4.800000000000001,
+      "aggregated_complexity": 13.76,
       "avg_score": 21.666666666666668,
+      "success_rate": 0.9666666666666667,
       "scores_by_model": {
         "Gpt 5.2 High": [
           22,
@@ -305,8 +310,9 @@
       "description": "Card rank must have opposite odd/even parity to the previous card's rank. Any card may start the line.",
       "cyclomatic_complexity": 2,
       "node_count": 30,
-      "aggregated_complexity": 5.0,
+      "aggregated_complexity": 14.6,
       "avg_score": 20.666666666666668,
+      "success_rate": 1.0,
       "scores_by_model": {
         "Gpt 5.2 High": [
           18,
@@ -365,8 +371,9 @@
       "description": "Only Aces (rank 1) .",
       "cyclomatic_complexity": 1,
       "node_count": 9,
-      "aggregated_complexity": 1.9,
+      "aggregated_complexity": 4.779999999999999,
       "avg_score": 20.233333333333334,
+      "success_rate": 0.9666666666666667,
       "scores_by_model": {
         "Gpt 5.2 High": [
           3,
@@ -425,8 +432,9 @@
       "description": "The card must be of a different suit than but same color as the card just before it. Any card may start the line.",
       "cyclomatic_complexity": 3,
       "node_count": 45,
-      "aggregated_complexity": 7.5,
+      "aggregated_complexity": 21.9,
       "avg_score": 19.866666666666667,
+      "success_rate": 1.0,
       "scores_by_model": {
         "Gpt 5.2 High": [
           17,
@@ -485,8 +493,9 @@
       "description": "Only hearts, clubs, and diamonds allowed. Spades are forbidden.",
       "cyclomatic_complexity": 1,
       "node_count": 11,
-      "aggregated_complexity": 2.1,
+      "aggregated_complexity": 5.62,
       "avg_score": 19.533333333333335,
+      "success_rate": 0.9666666666666667,
       "scores_by_model": {
         "Gpt 5.2 High": [
           18,
@@ -545,8 +554,9 @@
       "description": "Only spades and diamonds.",
       "cyclomatic_complexity": 1,
       "node_count": 14,
-      "aggregated_complexity": 2.4000000000000004,
+      "aggregated_complexity": 6.88,
       "avg_score": 19.066666666666666,
+      "success_rate": 1.0,
       "scores_by_model": {
         "Gpt 5.2 High": [
           19,
@@ -605,8 +615,9 @@
       "description": "Only ranks that are prime numbers (2,3,5,7,11,13).",
       "cyclomatic_complexity": 1,
       "node_count": 20,
-      "aggregated_complexity": 3.0,
+      "aggregated_complexity": 9.4,
       "avg_score": 18.633333333333333,
+      "success_rate": 0.9666666666666667,
       "scores_by_model": {
         "Gpt 5.2 High": [
           21,
@@ -665,8 +676,9 @@
       "description": "Only face cards (11,12,13).",
       "cyclomatic_complexity": 1,
       "node_count": 12,
-      "aggregated_complexity": 2.2,
+      "aggregated_complexity": 6.04,
       "avg_score": 17.033333333333335,
+      "success_rate": 0.9,
       "scores_by_model": {
         "Gpt 5.2 High": [
           21,
@@ -725,8 +737,9 @@
       "description": "Suits must repeat in the cyclic order hearts \u2192 spades \u2192 clubs \u2192 diamonds \u2192 hearts... Any card may start the line.",
       "cyclomatic_complexity": 2,
       "node_count": 67,
-      "aggregated_complexity": 8.7,
+      "aggregated_complexity": 30.14,
       "avg_score": 15.1,
+      "success_rate": 1.0,
       "scores_by_model": {
         "Gpt 5.2 High": [
           18,
@@ -785,8 +798,9 @@
       "description": "Only cards between 1 and 7 inclusive.",
       "cyclomatic_complexity": 1,
       "node_count": 11,
-      "aggregated_complexity": 2.1,
+      "aggregated_complexity": 5.62,
       "avg_score": 13.366666666666667,
+      "success_rate": 0.9666666666666667,
       "scores_by_model": {
         "Gpt 5.2 High": [
           14,
@@ -845,8 +859,9 @@
       "description": "Only black face cards.",
       "cyclomatic_complexity": 4,
       "node_count": 40,
-      "aggregated_complexity": 8.0,
+      "aggregated_complexity": 20.8,
       "avg_score": 7.7,
+      "success_rate": 0.9,
       "scores_by_model": {
         "Gpt 5.2 High": [
           6,
@@ -905,8 +920,9 @@
       "description": "Only red cards whose rank is <=7.",
       "cyclomatic_complexity": 2,
       "node_count": 18,
-      "aggregated_complexity": 3.8,
+      "aggregated_complexity": 9.559999999999999,
       "avg_score": 4.866666666666666,
+      "success_rate": 1.0,
       "scores_by_model": {
         "Gpt 5.2 High": [
           18,
@@ -965,8 +981,9 @@
       "description": "Only cards between 5 and 9 inclusive.",
       "cyclomatic_complexity": 1,
       "node_count": 11,
-      "aggregated_complexity": 2.1,
+      "aggregated_complexity": 5.62,
       "avg_score": 4.666666666666667,
+      "success_rate": 0.9333333333333333,
       "scores_by_model": {
         "Gpt 5.2 High": [
           3,
@@ -1025,8 +1042,9 @@
       "description": "Alternate face and number cards. Any card may start the line.",
       "cyclomatic_complexity": 3,
       "node_count": 42,
-      "aggregated_complexity": 7.2,
+      "aggregated_complexity": 20.64,
       "avg_score": 0.36666666666666664,
+      "success_rate": 0.7333333333333333,
       "scores_by_model": {
         "Gpt 5.2 High": [
           19,
@@ -1085,8 +1103,9 @@
       "description": "Each card must share at least one property with the previous card: same color, or same parity. Any card may start the line.",
       "cyclomatic_complexity": 3,
       "node_count": 57,
-      "aggregated_complexity": 8.7,
+      "aggregated_complexity": 26.939999999999998,
       "avg_score": -1.0666666666666667,
+      "success_rate": 0.6666666666666666,
       "scores_by_model": {
         "Gpt 5.2 High": [
           17,
@@ -1145,8 +1164,9 @@
       "description": "Each card must have a rank greater or equal to the previous card. Only Ace can start the line.",
       "cyclomatic_complexity": 2,
       "node_count": 30,
-      "aggregated_complexity": 5.0,
+      "aggregated_complexity": 14.6,
       "avg_score": -3.433333333333333,
+      "success_rate": 0.6,
       "scores_by_model": {
         "Gpt 5.2 High": [
           19,
@@ -1205,8 +1225,9 @@
       "description": "Suits must appear in pairs: card 1 and 2 same suit, cards 3 and 4 same suit (different from 1 and 2), cards 5 and 6 same suit (different from 3 and 4), etc.",
       "cyclomatic_complexity": 3,
       "node_count": 65,
-      "aggregated_complexity": 9.5,
+      "aggregated_complexity": 30.3,
       "avg_score": -5.2,
+      "success_rate": 0.7666666666666667,
       "scores_by_model": {
         "Gpt 5.2 High": [
           3,
@@ -1265,8 +1286,9 @@
       "description": "Face cards imposes the suit: if a face card is played, the next card must match its suit. Otherwise, the next card must be a different suit than it.",
       "cyclomatic_complexity": 3,
       "node_count": 60,
-      "aggregated_complexity": 9.0,
+      "aggregated_complexity": 28.2,
       "avg_score": -10.466666666666667,
+      "success_rate": 0.5333333333333333,
       "scores_by_model": {
         "Gpt 5.2 High": [
           13,
@@ -1325,8 +1347,9 @@
       "description": "Face cards (11-13) must be red; number cards (1-10) must be black.",
       "cyclomatic_complexity": 2,
       "node_count": 25,
-      "aggregated_complexity": 4.5,
+      "aggregated_complexity": 12.5,
       "avg_score": -11.5,
+      "success_rate": 0.5,
       "scores_by_model": {
         "Gpt 5.2 High": [
           7,
@@ -1385,8 +1408,9 @@
       "description": "Hearts and spades form Group A; clubs and diamonds form Group B. Alternate between groups. Any card may start the line.",
       "cyclomatic_complexity": 2,
       "node_count": 62,
-      "aggregated_complexity": 8.2,
+      "aggregated_complexity": 28.04,
       "avg_score": -12.066666666666666,
+      "success_rate": 0.4,
       "scores_by_model": {
         "Gpt 5.2 High": [
           19,
@@ -1445,8 +1469,9 @@
       "description": "If the previous card was red, rank must increase or be equal; if black, rank must decrease or be equal. Starting card must be between 5 and 9 inclusive.",
       "cyclomatic_complexity": 3,
       "node_count": 56,
-      "aggregated_complexity": 8.600000000000001,
+      "aggregated_complexity": 26.52,
       "avg_score": -15.633333333333333,
+      "success_rate": 0.3333333333333333,
       "scores_by_model": {
         "Gpt 5.2 High": [
           13,
@@ -1505,8 +1530,9 @@
       "description": "Rank repeats in pairs: ranks must come in doubles: (x, x), then (y, y) with y different from x, then (z, z) with z different from y, etc.",
       "cyclomatic_complexity": 3,
       "node_count": 57,
-      "aggregated_complexity": 8.7,
+      "aggregated_complexity": 26.939999999999998,
       "avg_score": -18.0,
+      "success_rate": 0.13333333333333333,
       "scores_by_model": {
         "Gpt 5.2 High": [
           -6,
@@ -1574,8 +1600,8 @@
     "Kimi K2"
   ],
   "metadata": {
-    "optimal_k": 0.1,
-    "complexity_formula": "cyclomatic + 0.10 * node_count",
+    "optimal_k": 0.42,
+    "complexity_formula": "cyclomatic + 0.42 * node_count",
     "ordering": "descending_avg_score"
   }
 }
