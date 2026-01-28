@@ -6,6 +6,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from .utils import compute_counting_cutoff
+
 logger = logging.getLogger(__name__)
 
 
@@ -58,6 +60,42 @@ def build_rounds_dataframe(results: list[dict], rules_lib: dict) -> pd.DataFrame
             reasoning_tokens = player_usage.get("reasoning_tokens", 0) or 0
             answer_tokens = player_usage.get("answer_tokens", output_tokens - reasoning_tokens)
 
+            max_turns = (
+                result["config"]["game"]["max_turns"]
+                if "game" in result["config"]
+                else result["config"].get("max_turns", 30)
+            )
+
+            # Compute counting cutoff (turn where score becomes guaranteed <= 0)
+            turns = round_data.get("turns", [])
+            cutoff_turn = compute_counting_cutoff(turns, max_turns)
+
+            # Compute counting metrics (before cutoff)
+            counting_failed_guesses = 0
+            success_turn = None  # Turn where correct guess was made (non-shadow)
+            for turn in turns:
+                guess_attempt = turn.get("guess_attempt")
+                if guess_attempt and not guess_attempt.get("shadow", False):
+                    if guess_attempt.get("correct") is True:
+                        success_turn = turn["turn_number"]
+                        break  # Found success, stop counting
+                    elif guess_attempt.get("correct") is False:
+                        # Only count failed guesses before cutoff
+                        if cutoff_turn is None or turn["turn_number"] < cutoff_turn:
+                            counting_failed_guesses += 1
+
+            # Counting success: success that happened before cutoff
+            counting_success = (
+                round_data["success"] and
+                (cutoff_turn is None or (success_turn is not None and success_turn < cutoff_turn))
+            )
+
+            # Effective turn count (min of actual and cutoff)
+            actual_turn_count = round_data["turn_count"]
+            counting_turn_count = (
+                min(actual_turn_count, cutoff_turn) if cutoff_turn else actual_turn_count
+            )
+
             rows.append({
                 "model": model,
                 "model_spec": model_spec,
@@ -68,11 +106,7 @@ def build_rounds_dataframe(results: list[dict], rules_lib: dict) -> pd.DataFrame
                 "failed_guesses": round_data["failed_guesses"],
                 "game_over_reason": round_data["game_over_reason"],
                 "rule_description": rule_desc,
-                "max_turns": (
-                    result["config"]["game"]["max_turns"]
-                    if "game" in result["config"]
-                    else result["config"].get("max_turns", 30)
-                ),
+                "max_turns": max_turns,
                 # Token metrics
                 "output_tokens": output_tokens,
                 "reasoning_tokens": reasoning_tokens,
@@ -82,6 +116,11 @@ def build_rounds_dataframe(results: list[dict], rules_lib: dict) -> pd.DataFrame
                 "cyclomatic_complexity": rule_info.get("cyclomatic_complexity"),
                 "node_count": rule_info.get("node_count"),
                 "avg_acceptance_rate": rule_info.get("avg_acceptance_rate"),
+                # Counting cutoff metrics
+                "counting_cutoff_turn": cutoff_turn,
+                "counting_failed_guesses": counting_failed_guesses,
+                "counting_turn_count": counting_turn_count,
+                "counting_success": counting_success,
             })
     return pd.DataFrame(rows)
 
@@ -93,7 +132,15 @@ def build_turns_dataframe(results: list[dict]) -> pd.DataFrame:
         model = result["config"]["player"]
         for round_data in result["rounds"]:
             rule_desc = round_data["rule_description"]
-            for turn in round_data["turns"]:
+            max_turns = (
+                result["config"]["game"]["max_turns"]
+                if "game" in result["config"]
+                else result["config"].get("max_turns", 30)
+            )
+            turns = round_data.get("turns", [])
+            cutoff_turn = compute_counting_cutoff(turns, max_turns)
+
+            for turn in turns:
                 llm_resp = turn.get("llm_response", {})
                 guess_attempt = turn.get("guess_attempt")
 
@@ -109,10 +156,14 @@ def build_turns_dataframe(results: list[dict]) -> pd.DataFrame:
                     tentative_node_count = guess_attempt.get("node_count")
                     tentative_cyclomatic = guess_attempt.get("cyclomatic_complexity")
 
+                # Determine if this turn counts for analysis (before cutoff)
+                turn_num = turn["turn_number"]
+                counts_for_analysis = cutoff_turn is None or turn_num < cutoff_turn
+
                 rows.append({
                     "model": model,
                     "round_number": round_data["round_number"],
-                    "turn_number": turn["turn_number"],
+                    "turn_number": turn_num,
                     "confidence_level": llm_resp.get("confidence_level"),
                     "guess_rule": llm_resp.get("guess_rule", False),
                     "guess_correct": guess_correct,
@@ -124,5 +175,7 @@ def build_turns_dataframe(results: list[dict]) -> pd.DataFrame:
                     # Tentative rule complexity (from guess_attempt)
                     "tentative_node_count": tentative_node_count,
                     "tentative_cyclomatic": tentative_cyclomatic,
+                    # Counting cutoff
+                    "counts_for_analysis": counts_for_analysis,
                 })
     return pd.DataFrame(rows)

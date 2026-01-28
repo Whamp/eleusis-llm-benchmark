@@ -21,6 +21,7 @@ def compute_basic_metrics(df_rounds: pd.DataFrame, df_turns: pd.DataFrame = None
     df_rounds["floored_score"] = df_rounds["score"].clip(lower=0)
 
     # Basic aggregations
+    # Use counting_ columns (only count metrics before score was guaranteed <= 0)
     metrics = df_rounds.groupby("model").agg(
         rounds_played=("success", "count"),
         total_score=("score", "sum"),
@@ -30,8 +31,8 @@ def compute_basic_metrics(df_rounds: pd.DataFrame, df_turns: pd.DataFrame = None
         total_turns=("turn_count", "sum"),
         total_output_tokens=("output_tokens", "sum"),
         total_wall_clock=("wall_clock_seconds", "sum"),
-        avg_failed_guesses=("failed_guesses", "mean"),
-        success_rate=("success", "mean"),
+        avg_failed_guesses=("counting_failed_guesses", "mean"),
+        success_rate=("counting_success", "mean"),
     ).reset_index()
 
     # Compute no_stakes_score if turns data is available
@@ -56,9 +57,9 @@ def compute_basic_metrics(df_rounds: pd.DataFrame, df_turns: pd.DataFrame = None
     metrics["avg_output_tokens_per_turn"] = metrics["total_output_tokens"] / metrics["total_turns"]
     metrics["wall_clock_per_turn"] = metrics["total_wall_clock"] / metrics["total_turns"]
 
-    # Variance analysis: intra-rule vs inter-rule
+    # Variance analysis: intra-rule vs inter-rule (using floored_score)
     # Intra-rule variance: average of variance within same rule
-    intra_var = df_rounds.groupby(["model", "rule_description"])["score"].var()
+    intra_var = df_rounds.groupby(["model", "rule_description"])["floored_score"].var()
     intra_var_by_model = intra_var.groupby("model").mean()
     metrics = metrics.merge(
         intra_var_by_model.rename("intra_rule_variance").reset_index(),
@@ -66,7 +67,7 @@ def compute_basic_metrics(df_rounds: pd.DataFrame, df_turns: pd.DataFrame = None
     )
 
     # Inter-rule variance: variance of per-rule mean scores
-    rule_means = df_rounds.groupby(["model", "rule_description"])["score"].mean()
+    rule_means = df_rounds.groupby(["model", "rule_description"])["floored_score"].mean()
     inter_var_by_model = rule_means.groupby("model").var()
     metrics = metrics.merge(
         inter_var_by_model.rename("inter_rule_variance").reset_index(),
@@ -76,7 +77,7 @@ def compute_basic_metrics(df_rounds: pd.DataFrame, df_turns: pd.DataFrame = None
     # Variance ratio (higher = more rule-dependent, lower = more random/model-dependent)
     metrics["variance_ratio"] = metrics["intra_rule_variance"] / metrics["inter_rule_variance"]
 
-    return metrics.sort_values("avg_score", ascending=False)
+    return metrics.sort_values("avg_floored_score", ascending=False)
 
 
 def plot_overall_performance(
@@ -93,12 +94,12 @@ def plot_overall_performance(
     model_metadata = load_model_metadata()
 
     # Prepare data for JSON export
-    plot_data = {"models": [], "metadata": {"x_axis": "avg_output_tokens_per_turn", "y_axis": "avg_score"}}
+    plot_data = {"models": [], "metadata": {"x_axis": "avg_output_tokens_per_turn", "y_axis": "avg_floored_score"}}
 
     for _, row in metrics.iterrows():
         model_name = row["model"]
         x = row["avg_output_tokens_per_turn"]
-        y = row["avg_score"]
+        y = row["avg_floored_score"]
         color = get_model_color(model_name, model_colors)
 
         # Determine if open model (using normalized matching)
@@ -128,7 +129,7 @@ def plot_overall_performance(
         # Store data for JSON
         plot_data["models"].append({
             "name": model_name,
-            "avg_score": float(y),
+            "avg_floored_score": float(y),
             "avg_output_tokens_per_turn": float(x),
             "color": color,
             "is_open": is_open,
@@ -136,8 +137,8 @@ def plot_overall_performance(
         })
 
     ax.set_xlabel("Average Output Tokens per Turn", fontsize=11)
-    ax.set_ylabel("Average Score", fontsize=11)
-    ax.set_title("Overall Performance: Score vs Token Usage", fontsize=13, fontweight="bold")
+    ax.set_ylabel("Average Floored Score", fontsize=11)
+    ax.set_title("Overall Performance: Floored Score vs Token Usage", fontsize=13, fontweight="bold")
 
     # Add legend for open/closed distinction
     from matplotlib.lines import Line2D
@@ -164,7 +165,7 @@ def plot_overall_performance(
 def plot_score_vs_failed_guesses(
     metrics: pd.DataFrame, model_colors: dict[str, str], output_folder: Path
 ) -> tuple[Path, Path]:
-    """Generate scatter plot of avg_score vs avg_failed_guesses with open/closed distinction.
+    """Generate scatter plot of avg_floored_score vs avg_failed_guesses with open/closed distinction.
 
     Returns (png_path, json_path).
     """
@@ -175,12 +176,12 @@ def plot_score_vs_failed_guesses(
     model_metadata = load_model_metadata()
 
     # Prepare data for JSON export
-    plot_data = {"models": [], "metadata": {"x_axis": "avg_failed_guesses", "y_axis": "avg_score"}}
+    plot_data = {"models": [], "metadata": {"x_axis": "avg_failed_guesses", "y_axis": "avg_floored_score"}}
 
     for _, row in metrics.iterrows():
         model_name = row["model"]
         x = row["avg_failed_guesses"]
-        y = row["avg_score"]
+        y = row["avg_floored_score"]
         color = get_model_color(model_name, model_colors)
 
         # Determine if open model (using normalized matching)
@@ -210,7 +211,7 @@ def plot_score_vs_failed_guesses(
         # Store data for JSON
         plot_data["models"].append({
             "name": model_name,
-            "avg_score": float(y),
+            "avg_floored_score": float(y),
             "avg_failed_guesses": float(x),
             "color": color,
             "is_open": is_open,
@@ -218,8 +219,8 @@ def plot_score_vs_failed_guesses(
         })
 
     ax.set_xlabel("Average Failed Guesses per Round", fontsize=11)
-    ax.set_ylabel("Average Score", fontsize=11)
-    ax.set_title("Score vs Failed Guesses", fontsize=13, fontweight="bold")
+    ax.set_ylabel("Average Floored Score", fontsize=11)
+    ax.set_title("Floored Score vs Failed Guesses", fontsize=13, fontweight="bold")
 
     # Add legend for open/closed distinction
     from matplotlib.lines import Line2D
@@ -248,6 +249,8 @@ def plot_calibration_curves(
 ) -> tuple[Path, Path]:
     """Generate calibration curves for all models as line chart.
 
+    Only includes turns before the counting cutoff (where score could still be positive).
+
     Returns (png_path, json_path).
     """
     setup_matplotlib_style()
@@ -256,20 +259,23 @@ def plot_calibration_curves(
     # Load metadata for open/closed distinction
     model_metadata = load_model_metadata()
 
+    # Filter to turns that count for analysis (before cutoff)
+    df_counting = df_turns[df_turns["counts_for_analysis"] == True]  # noqa: E712
+
     # Prepare data for JSON export
     plot_data = {
         "models": [],
         "metadata": {
             "x_axis": "confidence_level",
             "y_axis": "actual_success_rate",
-            "description": "Calibration curve showing confidence vs actual success rate for rule guesses"
+            "description": "Calibration curve showing confidence vs actual success rate for rule guesses (counting turns only)"
         }
     }
 
-    models = df_turns["model"].unique()
+    models = df_counting["model"].unique()
 
     for model_name in sorted(models):
-        model_turns = df_turns[df_turns["model"] == model_name]
+        model_turns = df_counting[df_counting["model"] == model_name]
 
         # Get guesses with correctness result and confidence
         guesses = model_turns[model_turns["guess_correct"].notna()].copy()
@@ -368,7 +374,9 @@ def plot_calibration_curves(
 def plot_confidence_distribution(
     df_turns: pd.DataFrame, model_colors: dict[str, str], output_folder: Path
 ) -> tuple[Path, Path]:
-    """Generate confidence level distribution when models choose to guess.
+    """Generate guess rate by confidence level (proportion of times model guessed at each level).
+
+    Only includes turns before the counting cutoff (where score could still be positive).
 
     Returns (png_path, json_path).
     """
@@ -378,41 +386,42 @@ def plot_confidence_distribution(
     # Load metadata for open/closed distinction
     model_metadata = load_model_metadata()
 
+    # Filter to turns that count for analysis (before cutoff)
+    df_counting = df_turns[df_turns["counts_for_analysis"] == True]  # noqa: E712
+
     # Prepare data for JSON export
     plot_data = {
         "models": [],
         "metadata": {
             "x_axis": "confidence_level",
-            "y_axis": "proportion",
-            "description": "Distribution of confidence levels when models choose to guess"
+            "y_axis": "guess_rate",
+            "description": "Guess rate by confidence level (counting turns only)"
         }
     }
 
-    models = df_turns["model"].unique()
+    models = df_counting["model"].unique()
     confidence_levels = list(range(5, 11))  # 5-10
 
     for model_name in sorted(models):
-        model_turns = df_turns[df_turns["model"] == model_name]
+        model_turns = df_counting[df_counting["model"] == model_name]
 
-        # Filter to actual guesses (when model chose to guess)
-        guesses = model_turns[model_turns["guess_rule"].eq(True)].copy()
-        guesses = guesses.dropna(subset=["confidence_level"])
+        # Get all turns with valid confidence levels in range 5-10
+        turns_with_conf = model_turns.dropna(subset=["confidence_level"]).copy()
+        turns_with_conf["confidence_level"] = turns_with_conf["confidence_level"].astype(int)
+        turns_with_conf = turns_with_conf[turns_with_conf["confidence_level"].between(5, 10)]
 
-        if len(guesses) == 0:
+        if len(turns_with_conf) == 0:
             continue
 
-        # Cast to int and filter to valid range
-        guesses["confidence_level"] = guesses["confidence_level"].astype(int)
-        guesses = guesses[guesses["confidence_level"].between(5, 10)]
+        # Compute guess rate at each confidence level
+        # Use fill_value=1.0 for missing levels (no data means we assume they would guess)
+        guess_rate = turns_with_conf.groupby("confidence_level")["guess_rule"].mean()
+        guess_rate = guess_rate.reindex(confidence_levels, fill_value=1.0)
 
-        if len(guesses) == 0:
-            continue
-
-        # Compute distribution (proportion at each confidence level)
-        dist = guesses["confidence_level"].value_counts(normalize=True).sort_index()
-
-        # Ensure all confidence levels are present (fill missing with 0)
-        dist = dist.reindex(confidence_levels, fill_value=0.0)
+        # Also compute counts for JSON export
+        total_turns_per_level = turns_with_conf.groupby("confidence_level").size()
+        guesses_only = turns_with_conf[turns_with_conf["guess_rule"] == True]  # noqa: E712
+        guess_count_per_level = guesses_only.groupby("confidence_level").size()
 
         color = get_model_color(model_name, model_colors)
 
@@ -430,36 +439,35 @@ def plot_confidence_distribution(
         # Line style: dashed for open models, solid for closed
         linestyle = "--" if is_open else "-"
 
-        # Plot line
+        # Plot line with markers
         ax.plot(
-            dist.index, dist.values,
+            guess_rate.index, guess_rate.values,
             color=color, linestyle=linestyle, linewidth=2,
             marker="o", markersize=6, label=model_name, alpha=0.8
         )
 
         # Store data for JSON
-        total_guesses = len(guesses)
         plot_data["models"].append({
             "name": model_name,
             "color": color,
             "is_open": is_open,
             "provider": provider,
-            "total_guesses": total_guesses,
             "distribution": [
                 {
                     "confidence_level": int(level),
-                    "proportion": float(dist[level]),
-                    "count": int(dist[level] * total_guesses)
+                    "guess_rate": float(guess_rate[level]),
+                    "total_turns": int(total_turns_per_level.get(level, 0)),
+                    "guess_count": int(guess_count_per_level.get(level, 0))
                 }
                 for level in confidence_levels
             ]
         })
 
     ax.set_xlabel("Confidence Level", fontsize=11)
-    ax.set_ylabel("Proportion of Guesses", fontsize=11)
-    ax.set_title("Confidence Distribution When Guessing", fontsize=13, fontweight="bold")
+    ax.set_ylabel("Guess Rate", fontsize=11)
+    ax.set_title("Guess Rate by Confidence Level", fontsize=13, fontweight="bold")
     ax.set_xlim(4.5, 10.5)
-    ax.set_ylim(0, None)
+    ax.set_ylim(0, 1.05)
 
     # Legend
     ax.legend(loc="upper left", fontsize=9, framealpha=0.9)
@@ -472,8 +480,8 @@ def plot_confidence_distribution(
     )
 
     # Save outputs
-    png_path = output_folder / "confidence_distribution.png"
-    json_path = output_folder / "confidence_distribution.json"
+    png_path = output_folder / "guess_rate.png"
+    json_path = output_folder / "guess_rate.json"
 
     save_figure(fig, png_path)
 
@@ -487,7 +495,7 @@ def plot_confidence_distribution(
 def plot_score_stack(
     metrics: pd.DataFrame, model_colors: dict[str, str], output_folder: Path
 ) -> tuple[Path, Path]:
-    """Stacked bar chart showing raw score, floored delta, and no-stakes delta.
+    """Stacked bar chart showing floored score and no-stakes delta.
 
     Returns (png_path, json_path).
     """
@@ -502,22 +510,20 @@ def plot_score_stack(
     models = metrics_sorted["model"].tolist()
     x = range(len(models))
 
-    # Compute the three components
-    raw_scores = metrics_sorted["avg_score"].tolist()
+    # Compute the two components
     floored_scores = metrics_sorted["avg_floored_score"].tolist()
     no_stakes_scores = metrics_sorted["avg_no_stakes_score"].tolist()
 
-    # Deltas for stacking
-    floored_delta = [f - r for f, r in zip(floored_scores, raw_scores)]
+    # Delta for stacking
     no_stakes_delta = [n - f for n, f in zip(no_stakes_scores, floored_scores)]
 
     # Prepare data for JSON export
     plot_data = {
         "models": [],
         "metadata": {
-            "description": "Stacked score breakdown: raw score + flooring gain + no-stakes gain",
+            "description": "Stacked score breakdown: floored score + no-stakes gain",
             "y_axis": "average_score",
-            "components": ["raw_score", "floored_delta", "no_stakes_delta"],
+            "components": ["floored_score", "no_stakes_delta"],
         },
     }
 
@@ -546,27 +552,19 @@ def plot_score_stack(
             "color": color,
             "is_open": is_open,
             "provider": provider,
-            "avg_score": float(raw_scores[idx]),
             "avg_floored_score": float(floored_scores[idx]),
             "avg_no_stakes_score": float(no_stakes_scores[idx]),
-            "floored_delta": float(floored_delta[idx]),
             "no_stakes_delta": float(no_stakes_delta[idx]),
         })
 
     # Draw stacked bars
     bar_width = 0.6
 
-    # Bottom layer: raw score (can be negative)
-    bars_raw = ax.bar(x, raw_scores, bar_width, label="Raw Score", color="steelblue", alpha=0.9)
-
-    # Middle layer: floored delta (gain from flooring negatives)
-    bars_floored = ax.bar(
-        x, floored_delta, bar_width, bottom=raw_scores,
-        label="Flooring Gain", color="coral", alpha=0.9
-    )
+    # Bottom layer: floored score (always >= 0)
+    ax.bar(x, floored_scores, bar_width, label="Floored Score", color="steelblue", alpha=0.9)
 
     # Top layer: no-stakes delta (gain from no-penalty guessing)
-    bars_no_stakes = ax.bar(
+    ax.bar(
         x, no_stakes_delta, bar_width, bottom=floored_scores,
         label="No-Stakes Gain", color="mediumseagreen", alpha=0.9
     )
@@ -574,13 +572,12 @@ def plot_score_stack(
     ax.set_ylabel("Average Score", fontsize=11)
     ax.set_xlabel("Model", fontsize=11)
     ax.set_title(
-        "Score Breakdown: Raw → Floored → No-Stakes",
+        "Score Breakdown: Floored Score + No-Stakes Gain",
         fontsize=13,
         fontweight="bold",
     )
     ax.set_xticks(x)
     ax.set_xticklabels(models, rotation=45, ha="right", fontsize=9)
-    ax.axhline(y=0, color="black", linewidth=0.5, linestyle="-")
     ax.legend(loc="upper right", fontsize=10)
 
     plt.tight_layout()

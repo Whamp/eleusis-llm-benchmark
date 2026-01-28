@@ -6,9 +6,9 @@
       "cyclomatic_complexity": 1,
       "node_count": 9,
       "aggregated_complexity": 4.779999999999999,
-      "avg_score": 25.633333333333333,
+      "avg_floored_score": 25.633333333333333,
       "success_rate": 1.0,
-      "scores_by_model": {
+      "floored_scores_by_model": {
         "Gpt 5.2 High": [
           24,
           20,
@@ -67,9 +67,9 @@
       "cyclomatic_complexity": 1,
       "node_count": 11,
       "aggregated_complexity": 5.62,
-      "avg_score": 25.2,
+      "avg_floored_score": 25.2,
       "success_rate": 1.0,
-      "scores_by_model": {
+      "floored_scores_by_model": {
         "Gpt 5.2 High": [
           20,
           21,
@@ -128,9 +128,9 @@
       "cyclomatic_complexity": 2,
       "node_count": 24,
       "aggregated_complexity": 12.08,
-      "avg_score": 25.166666666666668,
+      "avg_floored_score": 25.166666666666668,
       "success_rate": 1.0,
-      "scores_by_model": {
+      "floored_scores_by_model": {
         "Gpt 5.2 High": [
           19,
           21,
@@ -189,9 +189,9 @@
       "cyclomatic_complexity": 1,
       "node_count": 12,
       "aggregated_complexity": 6.04,
-      "avg_score": 24.3,
+      "avg_floored_score": 24.3,
       "success_rate": 1.0,
-      "scores_by_model": {
+      "floored_scores_by_model": {
         "Gpt 5.2 High": [
           24,
           22,
@@ -250,9 +250,9 @@
       "cyclomatic_complexity": 2,
       "node_count": 28,
       "aggregated_complexity": 13.76,
-      "avg_score": 21.666666666666668,
+      "avg_floored_score": 22.2,
       "success_rate": 0.9666666666666667,
-      "scores_by_model": {
+      "floored_scores_by_model": {
         "Gpt 5.2 High": [
           22,
           22,
@@ -275,7 +275,7 @@
         ],
         "Gemini 3 Flash Preview Low": [
           8,
-          -16,
+          0,
           22
         ],
         "Gpt Oss 20B": [
@@ -306,14 +306,75 @@
       }
     },
     {
+      "name": "no_spades",
+      "description": "Only hearts, clubs, and diamonds allowed. Spades are forbidden.",
+      "cyclomatic_complexity": 1,
+      "node_count": 11,
+      "aggregated_complexity": 5.62,
+      "avg_floored_score": 20.666666666666668,
+      "success_rate": 0.9666666666666667,
+      "floored_scores_by_model": {
+        "Gpt 5.2 High": [
+          18,
+          18,
+          21
+        ],
+        "Gpt Oss 120B": [
+          19,
+          23,
+          19
+        ],
+        "Claude Haiku 4.5": [
+          13,
+          0,
+          23
+        ],
+        "Gpt 5 Mini Medium": [
+          23,
+          23,
+          25
+        ],
+        "Gemini 3 Flash Preview Low": [
+          22,
+          23,
+          22
+        ],
+        "Gpt Oss 20B": [
+          11,
+          22,
+          20
+        ],
+        "Grok 4 1 Fast Reasoning": [
+          21,
+          23,
+          26
+        ],
+        "Deepseek R1": [
+          25,
+          23,
+          12
+        ],
+        "Claude Opus 4.5": [
+          26,
+          26,
+          26
+        ],
+        "Kimi K2": [
+          24,
+          22,
+          21
+        ]
+      }
+    },
+    {
       "name": "opposite_parity",
       "description": "Card rank must have opposite odd/even parity to the previous card's rank. Any card may start the line.",
       "cyclomatic_complexity": 2,
       "node_count": 30,
       "aggregated_complexity": 14.6,
-      "avg_score": 20.666666666666668,
+      "avg_floored_score": 20.666666666666668,
       "success_rate": 1.0,
-      "scores_by_model": {
+      "floored_scores_by_model": {
         "Gpt 5.2 High": [
           18,
           16,
@@ -372,9 +433,9 @@
       "cyclomatic_complexity": 1,
       "node_count": 9,
       "aggregated_complexity": 4.779999999999999,
-      "avg_score": 20.233333333333334,
-      "success_rate": 0.9666666666666667,
-      "scores_by_model": {
+      "avg_floored_score": 20.366666666666667,
+      "success_rate": 0.9333333333333333,
+      "floored_scores_by_model": {
         "Gpt 5.2 High": [
           3,
           10,
@@ -391,7 +452,7 @@
           24
         ],
         "Gpt 5 Mini Medium": [
-          -4,
+          0,
           7,
           24
         ],
@@ -433,9 +494,9 @@
       "cyclomatic_complexity": 3,
       "node_count": 45,
       "aggregated_complexity": 21.9,
-      "avg_score": 19.866666666666667,
-      "success_rate": 1.0,
-      "scores_by_model": {
+      "avg_floored_score": 20.333333333333332,
+      "success_rate": 0.9666666666666667,
+      "floored_scores_by_model": {
         "Gpt 5.2 High": [
           17,
           20,
@@ -462,7 +523,7 @@
           22
         ],
         "Gpt Oss 20B": [
-          -14,
+          0,
           19,
           5
         ],
@@ -489,63 +550,124 @@
       }
     },
     {
-      "name": "no_spades",
-      "description": "Only hearts, clubs, and diamonds allowed. Spades are forbidden.",
+      "name": "prime_ranks_only",
+      "description": "Only ranks that are prime numbers (2,3,5,7,11,13).",
       "cyclomatic_complexity": 1,
-      "node_count": 11,
-      "aggregated_complexity": 5.62,
-      "avg_score": 19.533333333333335,
-      "success_rate": 0.9666666666666667,
-      "scores_by_model": {
+      "node_count": 20,
+      "aggregated_complexity": 9.4,
+      "avg_floored_score": 19.966666666666665,
+      "success_rate": 0.9333333333333333,
+      "floored_scores_by_model": {
         "Gpt 5.2 High": [
-          18,
-          18,
-          21
+          21,
+          22,
+          19
         ],
         "Gpt Oss 120B": [
-          19,
-          23,
+          22,
+          27,
           19
         ],
         "Claude Haiku 4.5": [
-          13,
-          -34,
-          23
+          12,
+          16,
+          12
         ],
         "Gpt 5 Mini Medium": [
           23,
-          23,
+          26,
           25
         ],
         "Gemini 3 Flash Preview Low": [
+          18,
           22,
-          23,
           22
         ],
         "Gpt Oss 20B": [
-          11,
-          22,
-          20
+          23,
+          7,
+          0
         ],
         "Grok 4 1 Fast Reasoning": [
-          21,
-          23,
-          26
+          25,
+          25,
+          24
         ],
         "Deepseek R1": [
-          25,
           23,
-          12
+          1,
+          24
+        ],
+        "Claude Opus 4.5": [
+          22,
+          27,
+          22
+        ],
+        "Kimi K2": [
+          24,
+          23,
+          23
+        ]
+      }
+    },
+    {
+      "name": "face_cards_only",
+      "description": "Only face cards (11,12,13).",
+      "cyclomatic_complexity": 1,
+      "node_count": 12,
+      "aggregated_complexity": 6.04,
+      "avg_floored_score": 19.833333333333332,
+      "success_rate": 0.9,
+      "floored_scores_by_model": {
+        "Gpt 5.2 High": [
+          21,
+          6,
+          21
+        ],
+        "Gpt Oss 120B": [
+          18,
+          0,
+          0
+        ],
+        "Claude Haiku 4.5": [
+          27,
+          0,
+          28
+        ],
+        "Gpt 5 Mini Medium": [
+          24,
+          17,
+          10
+        ],
+        "Gemini 3 Flash Preview Low": [
+          20,
+          21,
+          26
+        ],
+        "Gpt Oss 20B": [
+          22,
+          27,
+          21
+        ],
+        "Grok 4 1 Fast Reasoning": [
+          23,
+          22,
+          19
+        ],
+        "Deepseek R1": [
+          24,
+          27,
+          23
         ],
         "Claude Opus 4.5": [
           26,
-          26,
+          19,
           26
         ],
         "Kimi K2": [
           24,
-          22,
-          21
+          27,
+          26
         ]
       }
     },
@@ -555,9 +677,9 @@
       "cyclomatic_complexity": 1,
       "node_count": 14,
       "aggregated_complexity": 6.88,
-      "avg_score": 19.066666666666666,
+      "avg_floored_score": 19.066666666666666,
       "success_rate": 1.0,
-      "scores_by_model": {
+      "floored_scores_by_model": {
         "Gpt 5.2 High": [
           19,
           21,
@@ -611,136 +733,14 @@
       }
     },
     {
-      "name": "prime_ranks_only",
-      "description": "Only ranks that are prime numbers (2,3,5,7,11,13).",
-      "cyclomatic_complexity": 1,
-      "node_count": 20,
-      "aggregated_complexity": 9.4,
-      "avg_score": 18.633333333333333,
-      "success_rate": 0.9666666666666667,
-      "scores_by_model": {
-        "Gpt 5.2 High": [
-          21,
-          22,
-          19
-        ],
-        "Gpt Oss 120B": [
-          22,
-          27,
-          19
-        ],
-        "Claude Haiku 4.5": [
-          12,
-          16,
-          12
-        ],
-        "Gpt 5 Mini Medium": [
-          23,
-          26,
-          25
-        ],
-        "Gemini 3 Flash Preview Low": [
-          18,
-          22,
-          22
-        ],
-        "Gpt Oss 20B": [
-          23,
-          7,
-          -40
-        ],
-        "Grok 4 1 Fast Reasoning": [
-          25,
-          25,
-          24
-        ],
-        "Deepseek R1": [
-          23,
-          1,
-          24
-        ],
-        "Claude Opus 4.5": [
-          22,
-          27,
-          22
-        ],
-        "Kimi K2": [
-          24,
-          23,
-          23
-        ]
-      }
-    },
-    {
-      "name": "face_cards_only",
-      "description": "Only face cards (11,12,13).",
-      "cyclomatic_complexity": 1,
-      "node_count": 12,
-      "aggregated_complexity": 6.04,
-      "avg_score": 17.033333333333335,
-      "success_rate": 0.9,
-      "scores_by_model": {
-        "Gpt 5.2 High": [
-          21,
-          6,
-          21
-        ],
-        "Gpt Oss 120B": [
-          18,
-          -26,
-          -26
-        ],
-        "Claude Haiku 4.5": [
-          27,
-          -32,
-          28
-        ],
-        "Gpt 5 Mini Medium": [
-          24,
-          17,
-          10
-        ],
-        "Gemini 3 Flash Preview Low": [
-          20,
-          21,
-          26
-        ],
-        "Gpt Oss 20B": [
-          22,
-          27,
-          21
-        ],
-        "Grok 4 1 Fast Reasoning": [
-          23,
-          22,
-          19
-        ],
-        "Deepseek R1": [
-          24,
-          27,
-          23
-        ],
-        "Claude Opus 4.5": [
-          26,
-          19,
-          26
-        ],
-        "Kimi K2": [
-          24,
-          27,
-          26
-        ]
-      }
-    },
-    {
       "name": "cyclic_suit_order",
       "description": "Suits must repeat in the cyclic order hearts \u2192 spades \u2192 clubs \u2192 diamonds \u2192 hearts... Any card may start the line.",
       "cyclomatic_complexity": 2,
       "node_count": 67,
       "aggregated_complexity": 30.14,
-      "avg_score": 15.1,
-      "success_rate": 1.0,
-      "scores_by_model": {
+      "avg_floored_score": 16.766666666666666,
+      "success_rate": 0.9,
+      "floored_scores_by_model": {
         "Gpt 5.2 High": [
           18,
           21,
@@ -753,7 +753,7 @@
         ],
         "Claude Haiku 4.5": [
           13,
-          -8,
+          0,
           15
         ],
         "Gpt 5 Mini Medium": [
@@ -777,8 +777,8 @@
           24
         ],
         "Deepseek R1": [
-          -14,
-          -28,
+          0,
+          0,
           17
         ],
         "Claude Opus 4.5": [
@@ -799,9 +799,9 @@
       "cyclomatic_complexity": 1,
       "node_count": 11,
       "aggregated_complexity": 5.62,
-      "avg_score": 13.366666666666667,
-      "success_rate": 0.9666666666666667,
-      "scores_by_model": {
+      "avg_floored_score": 14.466666666666667,
+      "success_rate": 0.9,
+      "floored_scores_by_model": {
         "Gpt 5.2 High": [
           14,
           19,
@@ -809,13 +809,13 @@
         ],
         "Gpt Oss 120B": [
           1,
-          -18,
+          0,
           23
         ],
         "Claude Haiku 4.5": [
           15,
           11,
-          -15
+          0
         ],
         "Gpt 5 Mini Medium": [
           5,
@@ -860,9 +860,9 @@
       "cyclomatic_complexity": 4,
       "node_count": 40,
       "aggregated_complexity": 20.8,
-      "avg_score": 7.7,
-      "success_rate": 0.9,
-      "scores_by_model": {
+      "avg_floored_score": 11.466666666666667,
+      "success_rate": 0.7,
+      "floored_scores_by_model": {
         "Gpt 5.2 High": [
           6,
           9,
@@ -870,27 +870,27 @@
         ],
         "Gpt Oss 120B": [
           0,
-          -28,
+          0,
           13
         ],
         "Claude Haiku 4.5": [
           23,
           8,
-          -36
+          0
         ],
         "Gpt 5 Mini Medium": [
           2,
-          -4,
+          0,
           19
         ],
         "Gemini 3 Flash Preview Low": [
-          -6,
+          0,
           16,
           17
         ],
         "Gpt Oss 20B": [
-          -32,
-          -7,
+          0,
+          0,
           25
         ],
         "Grok 4 1 Fast Reasoning": [
@@ -916,136 +916,14 @@
       }
     },
     {
-      "name": "red_rank_up_to_seven",
-      "description": "Only red cards whose rank is <=7.",
-      "cyclomatic_complexity": 2,
-      "node_count": 18,
-      "aggregated_complexity": 9.559999999999999,
-      "avg_score": 4.866666666666666,
-      "success_rate": 1.0,
-      "scores_by_model": {
-        "Gpt 5.2 High": [
-          18,
-          10,
-          6
-        ],
-        "Gpt Oss 120B": [
-          17,
-          11,
-          3
-        ],
-        "Claude Haiku 4.5": [
-          16,
-          -10,
-          11
-        ],
-        "Gpt 5 Mini Medium": [
-          18,
-          16,
-          5
-        ],
-        "Gemini 3 Flash Preview Low": [
-          -5,
-          16,
-          4
-        ],
-        "Gpt Oss 20B": [
-          1,
-          -7,
-          -16
-        ],
-        "Grok 4 1 Fast Reasoning": [
-          15,
-          7,
-          -2
-        ],
-        "Deepseek R1": [
-          8,
-          -6,
-          -22
-        ],
-        "Claude Opus 4.5": [
-          8,
-          12,
-          9
-        ],
-        "Kimi K2": [
-          19,
-          1,
-          -17
-        ]
-      }
-    },
-    {
-      "name": "ranks_five_to_nine",
-      "description": "Only cards between 5 and 9 inclusive.",
-      "cyclomatic_complexity": 1,
-      "node_count": 11,
-      "aggregated_complexity": 5.62,
-      "avg_score": 4.666666666666667,
-      "success_rate": 0.9333333333333333,
-      "scores_by_model": {
-        "Gpt 5.2 High": [
-          3,
-          13,
-          18
-        ],
-        "Gpt Oss 120B": [
-          1,
-          4,
-          6
-        ],
-        "Claude Haiku 4.5": [
-          -40,
-          -23,
-          2
-        ],
-        "Gpt 5 Mini Medium": [
-          -2,
-          17,
-          1
-        ],
-        "Gemini 3 Flash Preview Low": [
-          11,
-          -5,
-          10
-        ],
-        "Gpt Oss 20B": [
-          15,
-          -32,
-          18
-        ],
-        "Grok 4 1 Fast Reasoning": [
-          16,
-          19,
-          12
-        ],
-        "Deepseek R1": [
-          -2,
-          7,
-          1
-        ],
-        "Claude Opus 4.5": [
-          11,
-          -1,
-          10
-        ],
-        "Kimi K2": [
-          16,
-          17,
-          17
-        ]
-      }
-    },
-    {
       "name": "alternating_face_number",
       "description": "Alternate face and number cards. Any card may start the line.",
       "cyclomatic_complexity": 3,
       "node_count": 42,
       "aggregated_complexity": 20.64,
-      "avg_score": 0.36666666666666664,
-      "success_rate": 0.7333333333333333,
-      "scores_by_model": {
+      "avg_floored_score": 9.066666666666666,
+      "success_rate": 0.6,
+      "floored_scores_by_model": {
         "Gpt 5.2 High": [
           19,
           13,
@@ -1053,37 +931,37 @@
         ],
         "Gpt Oss 120B": [
           0,
-          -24,
-          -22
+          0,
+          0
         ],
         "Claude Haiku 4.5": [
-          -32,
+          0,
           23,
-          -30
+          0
         ],
         "Gpt 5 Mini Medium": [
           15,
           21,
-          -6
+          0
         ],
         "Gemini 3 Flash Preview Low": [
           4,
-          -6,
+          0,
           15
         ],
         "Gpt Oss 20B": [
-          -26,
-          -26,
-          -36
+          0,
+          0,
+          0
         ],
         "Grok 4 1 Fast Reasoning": [
-          -19,
+          0,
           20,
           4
         ],
         "Deepseek R1": [
           14,
-          -34,
+          0,
           5
         ],
         "Claude Opus 4.5": [
@@ -1104,48 +982,48 @@
       "cyclomatic_complexity": 3,
       "node_count": 57,
       "aggregated_complexity": 26.939999999999998,
-      "avg_score": -1.0666666666666667,
-      "success_rate": 0.6666666666666666,
-      "scores_by_model": {
+      "avg_floored_score": 8.6,
+      "success_rate": 0.5333333333333333,
+      "floored_scores_by_model": {
         "Gpt 5.2 High": [
           17,
           6,
           12
         ],
         "Gpt Oss 120B": [
-          -28,
-          -28,
+          0,
+          0,
           23
         ],
         "Claude Haiku 4.5": [
-          -19,
-          -10,
-          -36
+          0,
+          0,
+          0
         ],
         "Gpt 5 Mini Medium": [
-          -2,
-          -8,
+          0,
+          0,
           20
         ],
         "Gemini 3 Flash Preview Low": [
           20,
-          -10,
+          0,
           17
         ],
         "Gpt Oss 20B": [
           9,
           21,
-          -28
+          0
         ],
         "Grok 4 1 Fast Reasoning": [
           21,
-          -20,
+          0,
           19
         ],
         "Deepseek R1": [
-          -24,
-          -32,
-          -3
+          0,
+          0,
+          0
         ],
         "Claude Opus 4.5": [
           19,
@@ -1154,7 +1032,7 @@
         ],
         "Kimi K2": [
           7,
-          -42,
+          0,
           16
         ]
       }
@@ -1165,9 +1043,9 @@
       "cyclomatic_complexity": 2,
       "node_count": 30,
       "aggregated_complexity": 14.6,
-      "avg_score": -3.433333333333333,
-      "success_rate": 0.6,
-      "scores_by_model": {
+      "avg_floored_score": 8.333333333333334,
+      "success_rate": 0.5333333333333333,
+      "floored_scores_by_model": {
         "Gpt 5.2 High": [
           19,
           5,
@@ -1175,48 +1053,170 @@
         ],
         "Gpt Oss 120B": [
           25,
-          -28,
-          -28
+          0,
+          0
         ],
         "Claude Haiku 4.5": [
-          -19,
-          -40,
-          -36
+          0,
+          0,
+          0
         ],
         "Gpt 5 Mini Medium": [
           20,
-          -6,
+          0,
           20
         ],
         "Gemini 3 Flash Preview Low": [
           18,
-          -12,
-          -8
+          0,
+          0
         ],
         "Gpt Oss 20B": [
           21,
-          -20,
-          -38
+          0,
+          0
         ],
         "Grok 4 1 Fast Reasoning": [
           11,
-          -38,
+          0,
           5
         ],
         "Deepseek R1": [
           21,
-          -30,
+          0,
           22
         ],
         "Claude Opus 4.5": [
           11,
           17,
-          -10
+          0
         ],
         "Kimi K2": [
           21,
-          -40,
+          0,
           2
+        ]
+      }
+    },
+    {
+      "name": "ranks_five_to_nine",
+      "description": "Only cards between 5 and 9 inclusive.",
+      "cyclomatic_complexity": 1,
+      "node_count": 11,
+      "aggregated_complexity": 5.62,
+      "avg_floored_score": 8.166666666666666,
+      "success_rate": 0.6666666666666666,
+      "floored_scores_by_model": {
+        "Gpt 5.2 High": [
+          3,
+          13,
+          18
+        ],
+        "Gpt Oss 120B": [
+          1,
+          4,
+          6
+        ],
+        "Claude Haiku 4.5": [
+          0,
+          0,
+          2
+        ],
+        "Gpt 5 Mini Medium": [
+          0,
+          17,
+          1
+        ],
+        "Gemini 3 Flash Preview Low": [
+          11,
+          0,
+          10
+        ],
+        "Gpt Oss 20B": [
+          15,
+          0,
+          18
+        ],
+        "Grok 4 1 Fast Reasoning": [
+          16,
+          19,
+          12
+        ],
+        "Deepseek R1": [
+          0,
+          7,
+          1
+        ],
+        "Claude Opus 4.5": [
+          11,
+          0,
+          10
+        ],
+        "Kimi K2": [
+          16,
+          17,
+          17
+        ]
+      }
+    },
+    {
+      "name": "red_rank_up_to_seven",
+      "description": "Only red cards whose rank is <=7.",
+      "cyclomatic_complexity": 2,
+      "node_count": 18,
+      "aggregated_complexity": 9.559999999999999,
+      "avg_floored_score": 7.7,
+      "success_rate": 0.6666666666666666,
+      "floored_scores_by_model": {
+        "Gpt 5.2 High": [
+          18,
+          10,
+          6
+        ],
+        "Gpt Oss 120B": [
+          17,
+          11,
+          3
+        ],
+        "Claude Haiku 4.5": [
+          16,
+          0,
+          11
+        ],
+        "Gpt 5 Mini Medium": [
+          18,
+          16,
+          5
+        ],
+        "Gemini 3 Flash Preview Low": [
+          0,
+          16,
+          4
+        ],
+        "Gpt Oss 20B": [
+          1,
+          0,
+          0
+        ],
+        "Grok 4 1 Fast Reasoning": [
+          15,
+          7,
+          0
+        ],
+        "Deepseek R1": [
+          8,
+          0,
+          0
+        ],
+        "Claude Opus 4.5": [
+          8,
+          12,
+          9
+        ],
+        "Kimi K2": [
+          19,
+          1,
+          0
         ]
       }
     },
@@ -1226,13 +1226,13 @@
       "cyclomatic_complexity": 3,
       "node_count": 65,
       "aggregated_complexity": 30.3,
-      "avg_score": -5.2,
-      "success_rate": 0.7666666666666667,
-      "scores_by_model": {
+      "avg_floored_score": 4.966666666666667,
+      "success_rate": 0.5,
+      "floored_scores_by_model": {
         "Gpt 5.2 High": [
           3,
           17,
-          -2
+          0
         ],
         "Gpt Oss 120B": [
           17,
@@ -1240,14 +1240,14 @@
           15
         ],
         "Claude Haiku 4.5": [
-          -28,
-          -31,
-          -6
+          0,
+          0,
+          0
         ],
         "Gpt 5 Mini Medium": [
           12,
           12,
-          -6
+          0
         ],
         "Gemini 3 Flash Preview Low": [
           8,
@@ -1255,90 +1255,29 @@
           6
         ],
         "Gpt Oss 20B": [
-          -22,
-          -38,
-          -38
+          0,
+          0,
+          0
         ],
         "Grok 4 1 Fast Reasoning": [
-          -13,
-          -4,
-          -13
+          0,
+          0,
+          0
         ],
         "Deepseek R1": [
           5,
           4,
-          -32
+          0
         ],
         "Claude Opus 4.5": [
-          -28,
+          0,
           0,
           20
         ],
         "Kimi K2": [
           12,
           7,
-          -44
-        ]
-      }
-    },
-    {
-      "name": "face_card_imposes_suit",
-      "description": "Face cards imposes the suit: if a face card is played, the next card must match its suit. Otherwise, the next card must be a different suit than it.",
-      "cyclomatic_complexity": 3,
-      "node_count": 60,
-      "aggregated_complexity": 28.2,
-      "avg_score": -10.466666666666667,
-      "success_rate": 0.5333333333333333,
-      "scores_by_model": {
-        "Gpt 5.2 High": [
-          13,
-          3,
-          10
-        ],
-        "Gpt Oss 120B": [
-          8,
-          -2,
-          -14
-        ],
-        "Claude Haiku 4.5": [
-          -3,
-          -16,
-          -28
-        ],
-        "Gpt 5 Mini Medium": [
-          2,
-          -8,
-          -6
-        ],
-        "Gemini 3 Flash Preview Low": [
-          -10,
-          -10,
-          -10
-        ],
-        "Gpt Oss 20B": [
-          -26,
-          -34,
-          -26
-        ],
-        "Grok 4 1 Fast Reasoning": [
-          -24,
-          -24,
-          -16
-        ],
-        "Deepseek R1": [
-          -7,
-          -11,
-          -36
-        ],
-        "Claude Opus 4.5": [
-          -2,
-          -6,
-          -12
-        ],
-        "Kimi K2": [
-          10,
-          -23,
-          -6
+          0
         ]
       }
     },
@@ -1348,9 +1287,9 @@
       "cyclomatic_complexity": 2,
       "node_count": 25,
       "aggregated_complexity": 12.5,
-      "avg_score": -11.5,
-      "success_rate": 0.5,
-      "scores_by_model": {
+      "avg_floored_score": 2.966666666666667,
+      "success_rate": 0.26666666666666666,
+      "floored_scores_by_model": {
         "Gpt 5.2 High": [
           7,
           5,
@@ -1358,48 +1297,48 @@
         ],
         "Gpt Oss 120B": [
           17,
-          -12,
-          -28
+          0,
+          0
         ],
         "Claude Haiku 4.5": [
-          -34,
-          -40,
-          -44
+          0,
+          0,
+          0
         ],
         "Gpt 5 Mini Medium": [
-          -6,
+          0,
           6,
-          -8
+          0
         ],
         "Gemini 3 Flash Preview Low": [
-          -10,
-          -3,
-          -10
+          0,
+          0,
+          0
         ],
         "Gpt Oss 20B": [
-          -32,
-          -20,
-          -22
+          0,
+          0,
+          0
         ],
         "Grok 4 1 Fast Reasoning": [
-          -24,
-          -13,
-          -26
+          0,
+          0,
+          0
         ],
         "Deepseek R1": [
           1,
-          -14,
-          -20
+          0,
+          0
         ],
         "Claude Opus 4.5": [
           19,
           12,
-          -30
+          0
         ],
         "Kimi K2": [
           18,
-          -4,
-          -34
+          0,
+          0
         ]
       }
     },
@@ -1409,48 +1348,48 @@
       "cyclomatic_complexity": 2,
       "node_count": 62,
       "aggregated_complexity": 28.04,
-      "avg_score": -12.066666666666666,
-      "success_rate": 0.4,
-      "scores_by_model": {
+      "avg_floored_score": 2.466666666666667,
+      "success_rate": 0.2,
+      "floored_scores_by_model": {
         "Gpt 5.2 High": [
           19,
           6,
           12
         ],
         "Gpt Oss 120B": [
-          -18,
-          -18,
-          -18
+          0,
+          0,
+          0
         ],
         "Claude Haiku 4.5": [
-          -40,
-          -40,
-          -13
+          0,
+          0,
+          0
         ],
         "Gpt 5 Mini Medium": [
-          -4,
-          -6,
-          -4
+          0,
+          0,
+          0
         ],
         "Gemini 3 Flash Preview Low": [
-          -14,
-          -8,
-          -12
+          0,
+          0,
+          0
         ],
         "Gpt Oss 20B": [
-          -24,
-          -28,
-          -6
+          0,
+          0,
+          0
         ],
         "Grok 4 1 Fast Reasoning": [
           0,
-          -10,
-          -22
+          0,
+          0
         ],
         "Deepseek R1": [
-          -5,
-          -20,
-          -24
+          0,
+          0,
+          0
         ],
         "Claude Opus 4.5": [
           19,
@@ -1458,9 +1397,9 @@
           13
         ],
         "Kimi K2": [
-          -26,
-          -32,
-          -44
+          0,
+          0,
+          0
         ]
       }
     },
@@ -1470,58 +1409,119 @@
       "cyclomatic_complexity": 3,
       "node_count": 56,
       "aggregated_complexity": 26.52,
-      "avg_score": -15.633333333333333,
-      "success_rate": 0.3333333333333333,
-      "scores_by_model": {
+      "avg_floored_score": 1.6,
+      "success_rate": 0.16666666666666666,
+      "floored_scores_by_model": {
         "Gpt 5.2 High": [
           13,
           16,
           6
         ],
         "Gpt Oss 120B": [
-          -8,
-          -12,
+          0,
+          0,
           6
         ],
         "Claude Haiku 4.5": [
-          -30,
-          -26,
-          -30
+          0,
+          0,
+          0
         ],
         "Gpt 5 Mini Medium": [
-          -2,
-          -4,
-          -6
+          0,
+          0,
+          0
         ],
         "Gemini 3 Flash Preview Low": [
-          -12,
-          -10,
-          -12
+          0,
+          0,
+          0
         ],
         "Gpt Oss 20B": [
-          -32,
-          -28,
-          -36
+          0,
+          0,
+          0
         ],
         "Grok 4 1 Fast Reasoning": [
-          -34,
+          0,
           7,
-          -37
+          0
         ],
         "Deepseek R1": [
-          -17,
-          -30,
-          -20
+          0,
+          0,
+          0
         ],
         "Claude Opus 4.5": [
-          -24,
-          -28,
-          -9
+          0,
+          0,
+          0
         ],
         "Kimi K2": [
-          -14,
-          -34,
-          -22
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "name": "face_card_imposes_suit",
+      "description": "Face cards imposes the suit: if a face card is played, the next card must match its suit. Otherwise, the next card must be a different suit than it.",
+      "cyclomatic_complexity": 3,
+      "node_count": 60,
+      "aggregated_complexity": 28.2,
+      "avg_floored_score": 1.5333333333333334,
+      "success_rate": 0.2,
+      "floored_scores_by_model": {
+        "Gpt 5.2 High": [
+          13,
+          3,
+          10
+        ],
+        "Gpt Oss 120B": [
+          8,
+          0,
+          0
+        ],
+        "Claude Haiku 4.5": [
+          0,
+          0,
+          0
+        ],
+        "Gpt 5 Mini Medium": [
+          2,
+          0,
+          0
+        ],
+        "Gemini 3 Flash Preview Low": [
+          0,
+          0,
+          0
+        ],
+        "Gpt Oss 20B": [
+          0,
+          0,
+          0
+        ],
+        "Grok 4 1 Fast Reasoning": [
+          0,
+          0,
+          0
+        ],
+        "Deepseek R1": [
+          0,
+          0,
+          0
+        ],
+        "Claude Opus 4.5": [
+          0,
+          0,
+          0
+        ],
+        "Kimi K2": [
+          10,
+          0,
+          0
         ]
       }
     },
@@ -1531,58 +1531,58 @@
       "cyclomatic_complexity": 3,
       "node_count": 57,
       "aggregated_complexity": 26.939999999999998,
-      "avg_score": -18.0,
-      "success_rate": 0.13333333333333333,
-      "scores_by_model": {
+      "avg_floored_score": 1.1333333333333333,
+      "success_rate": 0.1,
+      "floored_scores_by_model": {
         "Gpt 5.2 High": [
-          -6,
-          -8,
+          0,
+          0,
           0
         ],
         "Gpt Oss 120B": [
-          -20,
-          -18,
+          0,
+          0,
           12
         ],
         "Claude Haiku 4.5": [
-          -26,
-          -44,
-          -32
+          0,
+          0,
+          0
         ],
         "Gpt 5 Mini Medium": [
-          -6,
-          -4,
-          -8
+          0,
+          0,
+          0
         ],
         "Gemini 3 Flash Preview Low": [
-          -4,
-          -4,
-          -10
+          0,
+          0,
+          0
         ],
         "Gpt Oss 20B": [
-          -34,
-          -28,
+          0,
+          0,
           14
         ],
         "Grok 4 1 Fast Reasoning": [
-          -34,
-          -34,
-          -38
+          0,
+          0,
+          0
         ],
         "Deepseek R1": [
-          -24,
-          -36,
-          -34
+          0,
+          0,
+          0
         ],
         "Claude Opus 4.5": [
-          -26,
+          0,
           8,
-          -20
+          0
         ],
         "Kimi K2": [
-          -38,
-          -10,
-          -28
+          0,
+          0,
+          0
         ]
       }
     }

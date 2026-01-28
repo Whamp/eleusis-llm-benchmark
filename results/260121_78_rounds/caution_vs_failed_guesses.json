@@ -3,7 +3,7 @@
     {
       "name": "Claude Haiku 4.5",
       "avg_early_correct_turns": 0.5272727272727272,
-      "avg_failed_guesses": 7.551282051282051,
+      "avg_failed_guesses": 3.948717948717949,
       "color": "#FF9500",
       "is_open": false,
       "provider": "anthropic"
@@ -11,7 +11,7 @@
     {
       "name": "Claude Opus 4.5",
       "avg_early_correct_turns": 0.9444444444444444,
-      "avg_failed_guesses": 2.769230769230769,
+      "avg_failed_guesses": 2.0,
       "color": "#FF6B00",
       "is_open": false,
       "provider": "anthropic"
@@ -19,7 +19,7 @@
     {
       "name": "Deepseek R1",
       "avg_early_correct_turns": 0.49230769230769234,
-      "avg_failed_guesses": 5.064102564102564,
+      "avg_failed_guesses": 3.1923076923076925,
       "color": "#7B1FA2",
       "is_open": true,
       "provider": "huggingface"
@@ -27,7 +27,7 @@
     {
       "name": "Gemini 3 Flash Preview Low",
       "avg_early_correct_turns": 1.9166666666666667,
-      "avg_failed_guesses": 1.7179487179487178,
+      "avg_failed_guesses": 0.9615384615384616,
       "color": "#7BAAF7",
       "is_open": false,
       "provider": "google"
@@ -35,7 +35,7 @@
     {
       "name": "Gpt 5 Mini Medium",
       "avg_early_correct_turns": 1.3220338983050848,
-      "avg_failed_guesses": 1.2564102564102564,
+      "avg_failed_guesses": 1.1666666666666667,
       "color": "#4A4A4A",
       "is_open": false,
       "provider": "openai"
@@ -43,7 +43,7 @@
     {
       "name": "Gpt 5.2 High",
       "avg_early_correct_turns": 3.56,
-      "avg_failed_guesses": 0.3333333333333333,
+      "avg_failed_guesses": 0.28205128205128205,
       "color": "#8C8C8C",
       "is_open": false,
       "provider": "openai"
@@ -51,7 +51,7 @@
     {
       "name": "Gpt Oss 120B",
       "avg_early_correct_turns": 1.305084745762712,
-      "avg_failed_guesses": 3.6923076923076925,
+      "avg_failed_guesses": 2.1538461538461537,
       "color": "#5C6BC0",
       "is_open": true,
       "provider": "huggingface"
@@ -59,7 +59,7 @@
     {
       "name": "Gpt Oss 20B",
       "avg_early_correct_turns": 1.0892857142857142,
-      "avg_failed_guesses": 6.205128205128205,
+      "avg_failed_guesses": 2.9743589743589745,
       "color": "#26A69A",
       "is_open": true,
       "provider": "huggingface"
@@ -67,7 +67,7 @@
     {
       "name": "Grok 4 1 Fast Reasoning",
       "avg_early_correct_turns": 0.7536231884057971,
-      "avg_failed_guesses": 4.32051282051282,
+      "avg_failed_guesses": 2.5641025641025643,
       "color": "#1A1A1A",
       "is_open": false,
       "provider": "xai"
@@ -75,7 +75,7 @@
     {
       "name": "Kimi K2",
       "avg_early_correct_turns": 1.2835820895522387,
-      "avg_failed_guesses": 4.0256410256410255,
+      "avg_failed_guesses": 2.0384615384615383,
       "color": "#00897B",
       "is_open": true,
       "provider": "huggingface"

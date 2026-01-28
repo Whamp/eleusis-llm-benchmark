@@ -62,13 +62,17 @@ def plot_by_rule(
     # Get unique rules present in data
     rules_in_data = df_rounds["rule_description"].unique()
 
-    # Compute average score per rule
-    rule_avg_scores = df_rounds.groupby("rule_description")["score"].mean()
+    # Add floored_score column
+    df_rounds = df_rounds.copy()
+    df_rounds["floored_score"] = df_rounds["score"].clip(lower=0)
 
-    # Compute success rate per rule
-    rule_success_rates = df_rounds.groupby("rule_description")["success"].mean()
+    # Compute average floored score per rule
+    rule_avg_scores = df_rounds.groupby("rule_description")["floored_score"].mean()
 
-    # Build list of (description, name, complexity, avg_score, success_rate) for rules in data
+    # Compute success rate per rule (using counting_success)
+    rule_success_rates = df_rounds.groupby("rule_description")["counting_success"].mean()
+
+    # Build list of (description, name, complexity, avg_floored_score, success_rate) for rules in data
     rule_data = []
     for desc in rules_in_data:
         info = rule_info.get(desc, {"name": desc[:30], "complexity": None, "cyclomatic_complexity": None, "node_count": None})
@@ -78,12 +82,12 @@ def plot_by_rule(
             "complexity": info["complexity"],
             "cyclomatic_complexity": info.get("cyclomatic_complexity"),
             "node_count": info.get("node_count"),
-            "avg_score": rule_avg_scores.get(desc, 0),
+            "avg_floored_score": rule_avg_scores.get(desc, 0),
             "success_rate": rule_success_rates.get(desc, 0),
         })
 
-    # Sort by average score (highest first)
-    rule_data.sort(key=lambda x: x["avg_score"], reverse=True)
+    # Sort by average floored score (highest first)
+    rule_data.sort(key=lambda x: x["avg_floored_score"], reverse=True)
 
     # Create mapping from description to y-position
     rule_order = {r["description"]: i for i, r in enumerate(rule_data)}
@@ -141,7 +145,7 @@ def plot_by_rule(
         jitter = np.random.uniform(-0.15, 0.15, len(model_data))
 
         ax_scatter.scatter(
-            model_data["score"],
+            model_data["floored_score"],
             y_positions + jitter,
             c=color_map[model],
             s=60,
@@ -151,11 +155,8 @@ def plot_by_rule(
             linewidths=0.5,
         )
 
-    ax_scatter.set_xlabel("Score", fontsize=11)
-    ax_scatter.set_title("Score by Rule (ordered by avg score, best at top)", fontsize=12)
-
-    # Add vertical line at score=0
-    ax_scatter.axvline(x=0, color="gray", linestyle="--", alpha=0.5)
+    ax_scatter.set_xlabel("Floored Score", fontsize=11)
+    ax_scatter.set_title("Floored Score by Rule (ordered by avg, best at top)", fontsize=12)
 
     # Legend outside plot
     ax_scatter.legend(
@@ -173,7 +174,7 @@ def plot_by_rule(
         rule_df = df_rounds[df_rounds["rule_description"] == desc]
         scores_by_model = {}
         for model in models:
-            model_scores = rule_df[rule_df["model"] == model]["score"].tolist()
+            model_scores = rule_df[rule_df["model"] == model]["floored_score"].tolist()
             scores_by_model[model] = model_scores
         rules_json.append({
             "name": r["name"],
@@ -181,9 +182,9 @@ def plot_by_rule(
             "cyclomatic_complexity": r["cyclomatic_complexity"],
             "node_count": r["node_count"],
             "aggregated_complexity": r["complexity"],
-            "avg_score": r["avg_score"],
+            "avg_floored_score": r["avg_floored_score"],
             "success_rate": r["success_rate"],
-            "scores_by_model": scores_by_model,
+            "floored_scores_by_model": scores_by_model,
         })
 
     plot_data = {
@@ -224,15 +225,17 @@ def analyze_by_rule(
     tee.write("BY-RULE ANALYSIS\n")
     tee.write("=" * 60 + "\n\n")
 
-    # Summary stats per rule
+    # Summary stats per rule (using floored_score and counting_success)
+    df_rounds = df_rounds.copy()
+    df_rounds["floored_score"] = df_rounds["score"].clip(lower=0)
     rule_stats = df_rounds.groupby("rule_description").agg(
-        count=("score", "count"),
-        avg_score=("score", "mean"),
-        std_score=("score", "std"),
-        success_rate=("success", "mean"),
-    ).sort_values("avg_score", ascending=False).reset_index()
+        count=("floored_score", "count"),
+        avg_floored_score=("floored_score", "mean"),
+        std_floored_score=("floored_score", "std"),
+        success_rate=("counting_success", "mean"),
+    ).sort_values("avg_floored_score", ascending=False).reset_index()
 
-    tee.write("Score by rule (sorted by avg_score):\n")
+    tee.write("Score by rule (sorted by avg_floored_score):\n")
     tee.write(rule_stats.to_string(index=False) + "\n\n")
 
     # Generate plot

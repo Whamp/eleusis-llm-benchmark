@@ -229,8 +229,9 @@ def plot_caution_vs_failed_guesses(
     model_metadata = load_model_metadata()
 
     # Compute per-model metrics
+    # Use counting_failed_guesses (only guesses before score was guaranteed <= 0)
     caution_by_model = df_early.groupby("model")["early_correct_turns"].mean()
-    failed_by_model = df_rounds.groupby("model")["failed_guesses"].mean()
+    failed_by_model = df_rounds.groupby("model")["counting_failed_guesses"].mean()
 
     # Prepare data for JSON export
     plot_data = {

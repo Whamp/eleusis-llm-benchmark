@@ -19,23 +19,24 @@ def sanitize_filename(name: str) -> str:
 
 
 def plot_play_history(ax: plt.Axes, model_rounds: pd.DataFrame, model_color: str):
-    """Plot score by rule index showing variance across seeds."""
+    """Plot floored score by rule index showing variance across seeds."""
     # Group by rule_description to get rule index (1-indexed)
     rules = model_rounds["rule_description"].unique()
     rule_to_idx = {r: i + 1 for i, r in enumerate(rules)}
     model_rounds = model_rounds.copy()
     model_rounds["rule_idx"] = model_rounds["rule_description"].map(rule_to_idx)
+    model_rounds["floored_score"] = model_rounds["score"].clip(lower=0)
 
     # Scatter plot with jitter
     jitter = np.random.uniform(-0.2, 0.2, len(model_rounds))
     ax.scatter(
-        model_rounds["rule_idx"] + jitter, model_rounds["score"],
+        model_rounds["rule_idx"] + jitter, model_rounds["floored_score"],
         c=model_color, alpha=0.6, s=40
     )
 
     ax.set_xlabel("Rule Index")
-    ax.set_ylabel("Score")
-    ax.set_title("Score by Rule")
+    ax.set_ylabel("Floored Score")
+    ax.set_title("Floored Score by Rule")
     ax.set_xticks(range(1, len(rules) + 1))
 
 

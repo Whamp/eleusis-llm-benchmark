@@ -49,9 +49,10 @@ def compute_complexity_metrics(df_rounds: pd.DataFrame) -> tuple[pd.DataFrame, f
     df = df_rounds.copy()
 
     # Compute per-rule success rate (times found / times played, across all models)
+    # Use counting_success (only successes before score was guaranteed <= 0)
     rule_stats = df.groupby("rule_description").agg(
-        times_played=("success", "count"),
-        times_found=("success", "sum"),
+        times_played=("counting_success", "count"),
+        times_found=("counting_success", "sum"),
         cyclomatic_complexity=("cyclomatic_complexity", "first"),
         node_count=("node_count", "first"),
     ).reset_index()
@@ -138,16 +139,18 @@ def plot_complexity_analysis(
         return png_path, json_path
 
     # Create pivot table for heatmap: per-model success rate by complexity bin
+    # Use counting_success (only successes before score was guaranteed <= 0)
     heatmap = df_binned.pivot_table(
-        values="success",
+        values="counting_success",
         index="model",
         columns="complexity_bin",
         aggfunc="mean",
         observed=True
     )
 
-    # Order models by average score (best on top)
-    model_avg_scores = df_binned.groupby("model")["score"].mean().sort_values(ascending=False)
+    # Order models by average floored score (best on top)
+    df_binned["floored_score"] = df_binned["score"].clip(lower=0)
+    model_avg_scores = df_binned.groupby("model")["floored_score"].mean().sort_values(ascending=False)
     heatmap = heatmap.reindex(model_avg_scores.index)
 
     if heatmap.empty:
@@ -231,10 +234,11 @@ def analyze_complexity(
     # Summary stats by complexity bin
     df_binned = df.dropna(subset=["complexity_bin"])
     if len(df_binned) > 0:
+        df_binned["floored_score"] = df_binned["score"].clip(lower=0)
         bin_stats = df_binned.groupby("complexity_bin", observed=True).agg(
-            count=("score", "count"),
-            avg_score=("score", "mean"),
-            success_rate=("success", "mean"),
+            count=("floored_score", "count"),
+            avg_floored_score=("floored_score", "mean"),
+            success_rate=("counting_success", "mean"),
         ).reset_index()
         tee.write("Stats by complexity quartile:\n")
         tee.write(bin_stats.to_string(index=False) + "\n\n")

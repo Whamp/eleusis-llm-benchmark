@@ -16,11 +16,16 @@ logger = logging.getLogger(__name__)
 def compute_double_down_rate(df_turns: pd.DataFrame) -> pd.DataFrame:
     """Compute rate of guessing again after a wrong guess.
 
+    Only counts turns before the counting cutoff (where score could still be positive).
+
     Returns DataFrame with columns: model, wrong_guesses, next_turn_guesses, double_down_rate
     """
+    # Filter to turns that count for analysis (before cutoff)
+    df_counting = df_turns[df_turns["counts_for_analysis"] == True]  # noqa: E712
+
     rows = []
 
-    for model, model_turns in df_turns.groupby("model"):
+    for model, model_turns in df_counting.groupby("model"):
         wrong_guesses = 0
         next_turn_guesses = 0
 
@@ -33,7 +38,7 @@ def compute_double_down_rate(df_turns: pd.DataFrame) -> pd.DataFrame:
                 if turn.guess_rule and turn.guess_correct == False and not turn.is_shadow:
                     wrong_guesses += 1
 
-                    # Check if next turn exists and has a guess
+                    # Check if next turn exists and has a guess (and still counts)
                     if i + 1 < len(turn_list):
                         next_turn = turn_list[i + 1]
                         if next_turn.guess_rule and not next_turn.is_shadow:
@@ -53,16 +58,21 @@ def compute_double_down_rate(df_turns: pd.DataFrame) -> pd.DataFrame:
 def compute_wrong_guess_streaks(df_turns: pd.DataFrame) -> pd.DataFrame:
     """Compute streaks of consecutive wrong guesses per round.
 
+    Only counts turns before the counting cutoff (where score could still be positive).
+
     A streak requires consecutive turns with guesses. Streak ends when:
     - Correct guess
     - Turn without a guess (model steps back)
-    - Round ends
+    - Round ends or cutoff reached
 
     Returns DataFrame with columns: model, round_number, streak_length
     """
+    # Filter to turns that count for analysis (before cutoff)
+    df_counting = df_turns[df_turns["counts_for_analysis"] == True]  # noqa: E712
+
     rows = []
 
-    for (model, round_num), round_turns in df_turns.groupby(["model", "round_number"]):
+    for (model, round_num), round_turns in df_counting.groupby(["model", "round_number"]):
         turns = round_turns.sort_values("turn_number")
 
         current_streak = 0
@@ -94,13 +104,13 @@ def compute_wrong_guess_streaks(df_turns: pd.DataFrame) -> pd.DataFrame:
                     })
                 current_streak = 0
 
-        # If round ended with ongoing streak
+        # If counting period ended with ongoing streak
         if current_streak > 0:
             rows.append({
                 "model": model,
                 "round_number": round_num,
                 "streak_length": current_streak,
-                "ended_by": "round_end",
+                "ended_by": "cutoff_or_round_end",
             })
 
     return pd.DataFrame(rows)
