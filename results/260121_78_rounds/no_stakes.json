@@ -1,0 +1,118 @@
+{
+  "models": [
+    {
+      "name": "Claude Opus 4.5",
+      "color": "#FF6B00",
+      "is_open": false,
+      "provider": "anthropic",
+      "avg_score": 15.884615384615385,
+      "avg_no_stakes_score": 20.487179487179485,
+      "avg_improvement": 4.602564102564102,
+      "rounds": 78,
+      "total_failed_guesses": 216
+    },
+    {
+      "name": "Gpt 5.2 High",
+      "color": "#8C8C8C",
+      "is_open": false,
+      "provider": "openai",
+      "avg_score": 14.128205128205128,
+      "avg_no_stakes_score": 19.294871794871796,
+      "avg_improvement": 5.166666666666667,
+      "rounds": 78,
+      "total_failed_guesses": 26
+    },
+    {
+      "name": "Kimi K2",
+      "color": "#00897B",
+      "is_open": true,
+      "provider": "huggingface",
+      "avg_score": 14.525641025641026,
+      "avg_no_stakes_score": 18.987179487179485,
+      "avg_improvement": 4.461538461538462,
+      "rounds": 78,
+      "total_failed_guesses": 314
+    },
+    {
+      "name": "Grok 4 1 Fast Reasoning",
+      "color": "#1A1A1A",
+      "is_open": false,
+      "provider": "xai",
+      "avg_score": 12.512820512820513,
+      "avg_no_stakes_score": 18.474358974358974,
+      "avg_improvement": 5.961538461538462,
+      "rounds": 78,
+      "total_failed_guesses": 337
+    },
+    {
+      "name": "Deepseek R1",
+      "color": "#7B1FA2",
+      "is_open": true,
+      "provider": "huggingface",
+      "avg_score": 10.935897435897436,
+      "avg_no_stakes_score": 17.064102564102566,
+      "avg_improvement": 6.128205128205129,
+      "rounds": 78,
+      "total_failed_guesses": 395
+    },
+    {
+      "name": "Gpt 5 Mini Medium",
+      "color": "#4A4A4A",
+      "is_open": false,
+      "provider": "openai",
+      "avg_score": 12.833333333333334,
+      "avg_no_stakes_score": 16.987179487179485,
+      "avg_improvement": 4.153846153846154,
+      "rounds": 78,
+      "total_failed_guesses": 98
+    },
+    {
+      "name": "Gpt Oss 120B",
+      "color": "#5C6BC0",
+      "is_open": true,
+      "provider": "huggingface",
+      "avg_score": 12.025641025641026,
+      "avg_no_stakes_score": 16.397435897435898,
+      "avg_improvement": 4.371794871794871,
+      "rounds": 78,
+      "total_failed_guesses": 288
+    },
+    {
+      "name": "Gemini 3 Flash Preview Low",
+      "color": "#7BAAF7",
+      "is_open": false,
+      "provider": "google",
+      "avg_score": 12.243589743589743,
+      "avg_no_stakes_score": 15.717948717948717,
+      "avg_improvement": 3.4743589743589745,
+      "rounds": 78,
+      "total_failed_guesses": 134
+    },
+    {
+      "name": "Gpt Oss 20B",
+      "color": "#26A69A",
+      "is_open": true,
+      "provider": "huggingface",
+      "avg_score": 9.91025641025641,
+      "avg_no_stakes_score": 15.461538461538462,
+      "avg_improvement": 5.551282051282051,
+      "rounds": 78,
+      "total_failed_guesses": 484
+    },
+    {
+      "name": "Claude Haiku 4.5",
+      "color": "#FF9500",
+      "is_open": false,
+      "provider": "anthropic",
+      "avg_score": 9.14102564102564,
+      "avg_no_stakes_score": 15.35897435897436,
+      "avg_improvement": 6.217948717948718,
+      "rounds": 78,
+      "total_failed_guesses": 589
+    }
+  ],
+  "metadata": {
+    "description": "No-stakes analysis: scores if guessing was systematic and wrong guesses had no penalty",
+    "y_axis": "average_score"
+  }
+}

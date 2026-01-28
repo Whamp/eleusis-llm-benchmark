@@ -9,6 +9,7 @@ from .colors import load_model_colors
 from .complexity import analyze_complexity
 from .excess_caution import analyze_excess_caution
 from .loader import build_rounds_dataframe, build_rules_lookup, build_turns_dataframe, load_results
+from .no_stakes import analyze_no_stakes
 from .per_model import generate_per_model_reports
 from .utils import TeeWriter
 
@@ -71,6 +72,7 @@ def analyze_folder(folder: Path):
     analyze_basic_metrics(df_rounds, df_turns, model_colors, folder, tee)
     analyze_by_rule(df_rounds, model_colors, rules_lib, folder, tee)
     analyze_excess_caution(df_turns, df_rounds, model_colors, folder, tee)
+    analyze_no_stakes(df_rounds, df_turns, model_colors, folder, tee)
 
     # Complexity analysis returns enriched dataframe with optimal_k
     df_enriched = analyze_complexity(df_rounds, model_colors, folder, tee)

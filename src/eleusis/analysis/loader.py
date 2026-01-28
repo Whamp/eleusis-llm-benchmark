@@ -68,6 +68,11 @@ def build_rounds_dataframe(results: list[dict], rules_lib: dict) -> pd.DataFrame
                 "failed_guesses": round_data["failed_guesses"],
                 "game_over_reason": round_data["game_over_reason"],
                 "rule_description": rule_desc,
+                "max_turns": (
+                    result["config"]["game"]["max_turns"]
+                    if "game" in result["config"]
+                    else result["config"].get("max_turns", 30)
+                ),
                 # Token metrics
                 "output_tokens": output_tokens,
                 "reasoning_tokens": reasoning_tokens,

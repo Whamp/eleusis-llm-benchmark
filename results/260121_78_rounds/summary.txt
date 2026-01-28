@@ -112,6 +112,34 @@ Saved: results/260121_78_rounds/caution_vs_failed_guesses.png
 Saved: results/260121_78_rounds/caution_vs_failed_guesses.json
 
 ============================================================
+NO STAKES ANALYSIS
+============================================================
+
+No-stakes scoring: what if guessing was systematic and wrong guesses had no penalty?
+  For successful rounds: no_stakes = score + 2*failed_guesses + early_correct
+  For unsuccessful rounds with correct shadow: score at first correct turn
+  Rounds with no correct answer get score 0
+
+                     Model  Rounds  Actual  No-Stakes  Improvement
+           Claude Opus 4.5      78   15.88      20.49         4.60
+              Gpt 5.2 High      78   14.13      19.29         5.17
+                   Kimi K2      78   14.53      18.99         4.46
+   Grok 4 1 Fast Reasoning      78   12.51      18.47         5.96
+               Deepseek R1      78   10.94      17.06         6.13
+         Gpt 5 Mini Medium      78   12.83      16.99         4.15
+              Gpt Oss 120B      78   12.03      16.40         4.37
+Gemini 3 Flash Preview Low      78   12.24      15.72         3.47
+               Gpt Oss 20B      78    9.91      15.46         5.55
+          Claude Haiku 4.5      78    9.14      15.36         6.22
+
+Overall: Actual avg 12.41, No-stakes avg 17.42
+Average improvement: +5.01 points per round
+599/780 (76.8%) rounds would have higher score
+
+Saved: results/260121_78_rounds/no_stakes.png
+Saved: results/260121_78_rounds/no_stakes.json
+
+============================================================
 COMPLEXITY ANALYSIS
 ============================================================
 

@@ -68,11 +68,13 @@ def plot_by_rule(
     # Build list of (description, name, complexity, avg_score) for rules in data
     rule_data = []
     for desc in rules_in_data:
-        info = rule_info.get(desc, {"name": desc[:30], "complexity": None})
+        info = rule_info.get(desc, {"name": desc[:30], "complexity": None, "cyclomatic_complexity": None, "node_count": None})
         rule_data.append({
             "description": desc,
             "name": info["name"],
             "complexity": info["complexity"],
+            "cyclomatic_complexity": info.get("cyclomatic_complexity"),
+            "node_count": info.get("node_count"),
             "avg_score": rule_avg_scores.get(desc, 0),
         })
 
@@ -160,16 +162,27 @@ def plot_by_rule(
     )
 
     # --- Prepare JSON data ---
+    # Build scores_by_model for each rule
+    rules_json = []
+    for r in rule_data:
+        desc = r["description"]
+        rule_df = df_rounds[df_rounds["rule_description"] == desc]
+        scores_by_model = {}
+        for model in models:
+            model_scores = rule_df[rule_df["model"] == model]["score"].tolist()
+            scores_by_model[model] = model_scores
+        rules_json.append({
+            "name": r["name"],
+            "description": r["description"],
+            "cyclomatic_complexity": r["cyclomatic_complexity"],
+            "node_count": r["node_count"],
+            "aggregated_complexity": r["complexity"],
+            "avg_score": r["avg_score"],
+            "scores_by_model": scores_by_model,
+        })
+
     plot_data = {
-        "rules": [
-            {
-                "name": r["name"],
-                "description": r["description"],
-                "complexity": r["complexity"],
-                "avg_score": r["avg_score"],
-            }
-            for r in rule_data
-        ],
+        "rules": rules_json,
         "models": list(models),
         "metadata": {
             "optimal_k": optimal_k,
