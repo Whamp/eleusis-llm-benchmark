@@ -50,6 +50,24 @@ Saved: results/260121_78_rounds/score_stack.png
 Saved: results/260121_78_rounds/score_stack.json
 
 ============================================================
+COMPLEXITY ANALYSIS
+============================================================
+
+Optimal K for aggregated complexity: 0.42
+  Formula: complexity = cyclomatic + 0.42 * node_count
+  Correlation with success_rate: -0.612
+
+Stats by complexity quartile:
+complexity_bin  count  avg_score  success_rate
+            Q1    240  18.745833      0.966667
+            Q2    150  11.246667      0.893333
+            Q3    180  11.138889      0.866667
+            Q4    210  -6.761905      0.547619
+
+Saved: results/260121_78_rounds/complexity_analysis.png
+Saved: results/260121_78_rounds/complexity_analysis.json
+
+============================================================
 BY-RULE ANALYSIS
 ============================================================
 
@@ -114,22 +132,45 @@ Saved: results/260121_78_rounds/caution_vs_failed_guesses.png
 Saved: results/260121_78_rounds/caution_vs_failed_guesses.json
 
 ============================================================
-COMPLEXITY ANALYSIS
+RECKLESS GUESSING ANALYSIS
 ============================================================
 
-Optimal K for aggregated complexity: 1.00
-  Formula: complexity = cyclomatic + 1.00 * node_count
-  Correlation with relative_score: 0.064
+Double-Down Rate: After a wrong guess, % of next turns with another guess
+(Only counts official guesses, not shadow/tentative guesses)
 
-Score by complexity quartile:
-complexity_bin  count  avg_score  avg_relative_score  success_rate
-            Q1    240  18.745833            0.094784      0.966667
-            Q2    150  11.246667           -0.098513      0.893333
-            Q3    210   7.314286            1.099639      0.790476
-            Q4    180  -5.283333            3.006137      0.583333
+                     Model  Wrong Guesses  Next Turn Guesses  Double-Down %
+                   Kimi K2            314                207           65.9
+          Claude Haiku 4.5            589                362           61.5
+   Grok 4 1 Fast Reasoning            337                203           60.2
+               Gpt Oss 20B            484                290           59.9
+               Deepseek R1            395                229           58.0
+           Claude Opus 4.5            216                 91           42.1
+              Gpt Oss 120B            288                108           37.5
+Gemini 3 Flash Preview Low            134                 41           30.6
+         Gpt 5 Mini Medium             98                  9            9.2
+              Gpt 5.2 High             26                  1            3.8
 
-Saved: results/260121_78_rounds/complexity_analysis.png
-Saved: results/260121_78_rounds/complexity_analysis.json
+Wrong Guess Streak Statistics:
+                     Model  Streaks  Mean Length  Max Length  Total Wrong
+                   Kimi K2       47         6.68          22          314
+          Claude Haiku 4.5       60         9.82          22          589
+   Grok 4 1 Fast Reasoning       45         7.49          19          337
+               Gpt Oss 20B       56         8.64          20          484
+               Deepseek R1       52         7.60          18          395
+           Claude Opus 4.5       48         4.50          15          216
+              Gpt Oss 120B       55         5.24          14          288
+Gemini 3 Flash Preview Low       36         3.72           8          134
+         Gpt 5 Mini Medium       47         2.09           4           98
+              Gpt 5.2 High       18         1.44           4           26
+
+Longest streak: 22 consecutive wrong guesses
+  - Claude Haiku 4.5 in round 39
+  - Claude Haiku 4.5 in round 77
+  - Kimi K2 in round 63
+  - Kimi K2 in round 75
+
+Saved: results/260121_78_rounds/reckless_guessing.png
+Saved: results/260121_78_rounds/reckless_guessing.json
 
 ============================================================
 PER-MODEL REPORTS

@@ -10,6 +10,7 @@ from .complexity import analyze_complexity
 from .excess_caution import analyze_excess_caution
 from .loader import build_rounds_dataframe, build_rules_lookup, build_turns_dataframe, load_results
 from .per_model import generate_per_model_reports
+from .reckless_guessing import analyze_reckless_guessing
 from .utils import TeeWriter
 
 logger = logging.getLogger(__name__)
@@ -69,22 +70,26 @@ def analyze_folder(folder: Path):
 
     # Run analyses
     analyze_basic_metrics(df_rounds, df_turns, model_colors, folder, tee)
-    analyze_by_rule(df_rounds, model_colors, rules_lib, folder, tee)
-    analyze_excess_caution(df_turns, df_rounds, model_colors, folder, tee)
 
-    # Complexity analysis returns enriched dataframe with optimal_k
+    # Complexity analysis first to compute optimal_k
     df_enriched = analyze_complexity(df_rounds, model_colors, folder, tee)
 
-    # Extract optimal_k for per-model reports (from complexity analysis)
-    # We need to re-compute since analyze_complexity doesn't return it
+    # Extract optimal_k (need to re-compute since analyze_complexity doesn't return it)
     from .complexity import find_optimal_k
 
-    df_temp = df_enriched.copy()
-    if "model_avg_score" not in df_temp.columns:
-        model_avg = df_temp.groupby("model")["score"].mean()
-        df_temp["model_avg_score"] = df_temp["model"].map(model_avg)
-        df_temp["relative_score"] = df_temp["score"] / df_temp["model_avg_score"]
-    optimal_k, _ = find_optimal_k(df_temp)
+    rule_stats = df_enriched.groupby("rule_description").agg(
+        times_played=("success", "count"),
+        times_found=("success", "sum"),
+        cyclomatic_complexity=("cyclomatic_complexity", "first"),
+        node_count=("node_count", "first"),
+    ).reset_index()
+    rule_stats["success_rate"] = rule_stats["times_found"] / rule_stats["times_played"]
+    optimal_k, _ = find_optimal_k(rule_stats)
+
+    # By-rule analysis uses optimal_k
+    analyze_by_rule(df_rounds, model_colors, rules_lib, folder, tee, optimal_k)
+    analyze_excess_caution(df_turns, df_rounds, model_colors, folder, tee)
+    analyze_reckless_guessing(df_turns, model_colors, folder, tee)
 
     # Per-model reports
     out("\n" + "=" * 60)
