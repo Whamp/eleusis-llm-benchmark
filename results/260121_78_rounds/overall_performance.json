@@ -3,7 +3,7 @@
     {
       "name": "Claude Opus 4.5",
       "avg_floored_score": 16.974358974358974,
-      "avg_output_tokens_per_turn": 5086.521126760564,
+      "avg_output_tokens_per_turn": 4537.744708994709,
       "color": "#FF6B00",
       "is_open": false,
       "provider": "anthropic"
@@ -11,7 +11,7 @@
     {
       "name": "Kimi K2",
       "avg_floored_score": 16.17948717948718,
-      "avg_output_tokens_per_turn": 12596.451282051283,
+      "avg_output_tokens_per_turn": 7389.503121098627,
       "color": "#00897B",
       "is_open": true,
       "provider": "huggingface"
@@ -19,7 +19,7 @@
     {
       "name": "Grok 4 1 Fast Reasoning",
       "avg_floored_score": 15.153846153846153,
-      "avg_output_tokens_per_turn": 8195.045090180362,
+      "avg_output_tokens_per_turn": 5735.637735849056,
       "color": "#1A1A1A",
       "is_open": false,
       "provider": "xai"
@@ -27,7 +27,7 @@
     {
       "name": "Gpt 5.2 High",
       "avg_floored_score": 15.051282051282051,
-      "avg_output_tokens_per_turn": 2772.6448132780083,
+      "avg_output_tokens_per_turn": 2704.8150627615064,
       "color": "#8C8C8C",
       "is_open": false,
       "provider": "openai"
@@ -35,7 +35,7 @@
     {
       "name": "Gpt 5 Mini Medium",
       "avg_floored_score": 13.487179487179487,
-      "avg_output_tokens_per_turn": 2869.467882632831,
+      "avg_output_tokens_per_turn": 2578.206362854686,
       "color": "#4A4A4A",
       "is_open": false,
       "provider": "openai"
@@ -43,7 +43,7 @@
     {
       "name": "Deepseek R1",
       "avg_floored_score": 13.282051282051283,
-      "avg_output_tokens_per_turn": 8359.720108695652,
+      "avg_output_tokens_per_turn": 6985.257344300822,
       "color": "#7B1FA2",
       "is_open": true,
       "provider": "huggingface"
@@ -51,7 +51,7 @@
     {
       "name": "Gemini 3 Flash Preview Low",
       "avg_floored_score": 13.128205128205128,
-      "avg_output_tokens_per_turn": 1202.6798479087452,
+      "avg_output_tokens_per_turn": 1151.4913007456503,
       "color": "#7BAAF7",
       "is_open": false,
       "provider": "google"
@@ -59,7 +59,7 @@
     {
       "name": "Gpt Oss 120B",
       "avg_floored_score": 12.871794871794872,
-      "avg_output_tokens_per_turn": 2567.0378117457763,
+      "avg_output_tokens_per_turn": 2161.9807877041308,
       "color": "#5C6BC0",
       "is_open": true,
       "provider": "huggingface"
@@ -67,7 +67,7 @@
     {
       "name": "Gpt Oss 20B",
       "avg_floored_score": 11.884615384615385,
-      "avg_output_tokens_per_turn": 5404.311488049345,
+      "avg_output_tokens_per_turn": 3327.894032921811,
       "color": "#26A69A",
       "is_open": true,
       "provider": "huggingface"
@@ -75,7 +75,7 @@
     {
       "name": "Claude Haiku 4.5",
       "avg_floored_score": 11.461538461538462,
-      "avg_output_tokens_per_turn": 5560.933811802232,
+      "avg_output_tokens_per_turn": 4779.7169811320755,
       "color": "#FF9500",
       "is_open": false,
       "provider": "anthropic"

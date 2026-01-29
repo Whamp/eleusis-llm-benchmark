@@ -12,6 +12,7 @@ from .excess_caution import analyze_excess_caution
 from .loader import build_rounds_dataframe, build_rules_lookup, build_turns_dataframe, load_results
 from .per_model import generate_per_model_reports
 from .reckless_guessing import analyze_reckless_guessing
+from .tokens_by_turn import analyze_tokens_by_turn
 from .utils import TeeWriter
 
 logger = logging.getLogger(__name__)
@@ -92,6 +93,7 @@ def analyze_folder(folder: Path):
     analyze_excess_caution(df_turns, df_rounds, model_colors, folder, tee)
     analyze_reckless_guessing(df_turns, model_colors, folder, tee)
     analyze_complexity_ratio(df_turns, rules_lib, model_colors, folder, tee, optimal_k)
+    analyze_tokens_by_turn(df_turns, model_colors, folder, tee)
 
     # Per-model reports
     out("\n" + "=" * 60)

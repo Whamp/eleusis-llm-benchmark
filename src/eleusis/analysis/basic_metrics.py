@@ -28,12 +28,23 @@ def compute_basic_metrics(df_rounds: pd.DataFrame, df_turns: pd.DataFrame = None
         avg_score=("score", "mean"),
         total_floored_score=("floored_score", "sum"),
         avg_floored_score=("floored_score", "mean"),
-        total_turns=("turn_count", "sum"),
+        total_turns=("counting_turn_count", "sum"),
         total_output_tokens=("output_tokens", "sum"),
         total_wall_clock=("wall_clock_seconds", "sum"),
         avg_failed_guesses=("counting_failed_guesses", "mean"),
         success_rate=("counting_success", "mean"),
     ).reset_index()
+
+    # Compute counting output tokens from turns data (only turns before cutoff)
+    if df_turns is not None and "output_tokens" in df_turns.columns:
+        counting_turns = df_turns[df_turns["counts_for_analysis"] == True]  # noqa: E712
+        counting_tokens = counting_turns.groupby("model")["output_tokens"].sum().reset_index()
+        counting_tokens.columns = ["model", "counting_output_tokens"]
+        metrics = metrics.merge(counting_tokens, on="model", how="left")
+        metrics["counting_output_tokens"] = metrics["counting_output_tokens"].fillna(0)
+    else:
+        # Fallback to total if turns data not available
+        metrics["counting_output_tokens"] = metrics["total_output_tokens"]
 
     # Compute no_stakes_score if turns data is available
     if df_turns is not None:
@@ -53,8 +64,10 @@ def compute_basic_metrics(df_rounds: pd.DataFrame, df_turns: pd.DataFrame = None
         metrics["total_no_stakes_score"] = 0
         metrics["avg_no_stakes_score"] = 0.0
 
-    # Derived metrics
-    metrics["avg_output_tokens_per_turn"] = metrics["total_output_tokens"] / metrics["total_turns"]
+    # Derived metrics (using counting turns/tokens for fair comparison)
+    metrics["avg_output_tokens_per_turn"] = (
+        metrics["counting_output_tokens"] / metrics["total_turns"]
+    )
     metrics["wall_clock_per_turn"] = metrics["total_wall_clock"] / metrics["total_turns"]
 
     # Variance analysis: intra-rule vs inter-rule (using floored_score)

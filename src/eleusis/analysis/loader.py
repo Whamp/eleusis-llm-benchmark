@@ -160,6 +160,10 @@ def build_turns_dataframe(results: list[dict]) -> pd.DataFrame:
                 turn_num = turn["turn_number"]
                 counts_for_analysis = cutoff_turn is None or turn_num < cutoff_turn
 
+                # Per-turn token usage
+                turn_tokens = turn.get("tokens", {})
+                output_tokens = turn_tokens.get("output_tokens", 0)
+
                 rows.append({
                     "model": model,
                     "round_number": round_data["round_number"],
@@ -177,5 +181,7 @@ def build_turns_dataframe(results: list[dict]) -> pd.DataFrame:
                     "tentative_cyclomatic": tentative_cyclomatic,
                     # Counting cutoff
                     "counts_for_analysis": counts_for_analysis,
+                    # Token usage
+                    "output_tokens": output_tokens,
                 })
     return pd.DataFrame(rows)
