@@ -1,0 +1,99 @@
+{
+  "metadata": {
+    "description": "Complexity ratio: tentative rule complexity / actual rule complexity",
+    "confidence_threshold": 5,
+    "interpretation": "Ratio > 1 means model overcomplicates, < 1 means oversimplifies"
+  },
+  "models": [
+    {
+      "name": "Gpt Oss 120B",
+      "color": "#5C6BC0",
+      "is_open": true,
+      "median_ratio": 1.3215665052140353,
+      "q25": 0.8733031674208145,
+      "q75": 2.3554661087866107,
+      "count": 1182
+    },
+    {
+      "name": "Gpt Oss 20B",
+      "color": "#26A69A",
+      "is_open": true,
+      "median_ratio": 1.154600301659125,
+      "q25": 0.7818597059146275,
+      "q75": 2.065274208144796,
+      "count": 1219
+    },
+    {
+      "name": "Claude Haiku 4.5",
+      "color": "#FF9500",
+      "is_open": false,
+      "median_ratio": 1.0535444947209653,
+      "q25": 0.7360912981455064,
+      "q75": 2.0,
+      "count": 1001
+    },
+    {
+      "name": "Deepseek R1",
+      "color": "#7B1FA2",
+      "is_open": true,
+      "median_ratio": 1.0,
+      "q25": 0.7624434389140271,
+      "q75": 1.755813953488372,
+      "count": 933
+    },
+    {
+      "name": "Gemini 3 Flash Preview Low",
+      "color": "#7BAAF7",
+      "is_open": false,
+      "median_ratio": 1.0,
+      "q25": 0.7810271041369472,
+      "q75": 1.5193426956507314,
+      "count": 1016
+    },
+    {
+      "name": "Gpt 5 Mini Medium",
+      "color": "#4A4A4A",
+      "is_open": false,
+      "median_ratio": 1.0,
+      "q25": 0.7647999999999999,
+      "q75": 1.6640000000000001,
+      "count": 939
+    },
+    {
+      "name": "Gpt 5.2 High",
+      "color": "#8C8C8C",
+      "is_open": false,
+      "median_ratio": 1.0,
+      "q25": 0.7913907284768211,
+      "q75": 1.1870824053452116,
+      "count": 857
+    },
+    {
+      "name": "Grok 4 1 Fast Reasoning",
+      "color": "#1A1A1A",
+      "is_open": false,
+      "median_ratio": 1.0,
+      "q25": 0.776595744680851,
+      "q75": 1.6570468619246863,
+      "count": 938
+    },
+    {
+      "name": "Claude Opus 4.5",
+      "color": "#FF6B00",
+      "is_open": false,
+      "median_ratio": 0.9844097995545658,
+      "q25": 0.7073643410852712,
+      "q75": 1.1694298440979956,
+      "count": 664
+    },
+    {
+      "name": "Kimi K2",
+      "color": "#00897B",
+      "is_open": true,
+      "median_ratio": 0.975886524822695,
+      "q25": 0.6219858156028368,
+      "q75": 1.2746844840386042,
+      "count": 885
+    }
+  ]
+}

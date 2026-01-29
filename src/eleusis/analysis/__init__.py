@@ -7,6 +7,7 @@ from .basic_metrics import analyze_basic_metrics
 from .by_rule import analyze_by_rule
 from .colors import load_model_colors
 from .complexity import analyze_complexity
+from .complexity_ratio import analyze_complexity_ratio
 from .excess_caution import analyze_excess_caution
 from .loader import build_rounds_dataframe, build_rules_lookup, build_turns_dataframe, load_results
 from .per_model import generate_per_model_reports
@@ -90,6 +91,7 @@ def analyze_folder(folder: Path):
     analyze_by_rule(df_rounds, model_colors, rules_lib, folder, tee, optimal_k)
     analyze_excess_caution(df_turns, df_rounds, model_colors, folder, tee)
     analyze_reckless_guessing(df_turns, model_colors, folder, tee)
+    analyze_complexity_ratio(df_turns, rules_lib, model_colors, folder, tee, optimal_k)
 
     # Per-model reports
     out("\n" + "=" * 60)

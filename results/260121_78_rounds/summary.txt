@@ -170,6 +170,39 @@ Saved: results/260121_78_rounds/reckless_guessing.png
 Saved: results/260121_78_rounds/reckless_guessing.json
 
 ============================================================
+COMPLEXITY RATIO ANALYSIS
+============================================================
+
+Analyzed 9634 tentative rules with confidence >= 5
+Using optimal k = 0.420 for aggregated complexity
+
+Complexity Ratio by Model:
+(Ratio = Tentative Complexity / Actual Complexity)
+
+                     Model  Median   Q25   Q75  Count
+              Gpt Oss 120B   1.322 0.873 2.355   1182
+               Gpt Oss 20B   1.155 0.782 2.065   1219
+          Claude Haiku 4.5   1.054 0.736 2.000   1001
+               Deepseek R1   1.000 0.762 1.756    933
+Gemini 3 Flash Preview Low   1.000 0.781 1.519   1016
+         Gpt 5 Mini Medium   1.000 0.765 1.664    939
+              Gpt 5.2 High   1.000 0.791 1.187    857
+   Grok 4 1 Fast Reasoning   1.000 0.777 1.657    938
+           Claude Opus 4.5   0.984 0.707 1.169    664
+                   Kimi K2   0.976 0.622 1.275    885
+
+Interpretation:
+  - Ratio > 1: Model tends to overcomplicate rules
+  - Ratio < 1: Model tends to oversimplify rules
+  - Ratio ≈ 1: Model matches actual rule complexity
+
+Highest median: Gpt Oss 120B (1.322)
+Lowest median: Kimi K2 (0.976)
+
+Saved: results/260121_78_rounds/complexity_ratio.png
+Saved: results/260121_78_rounds/complexity_ratio.json
+
+============================================================
 PER-MODEL REPORTS
 ============================================================
 

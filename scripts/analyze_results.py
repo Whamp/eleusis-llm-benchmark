@@ -22,6 +22,7 @@ Outputs (saved in the input folder):
   - basic_metrics.csv     Per-model metrics table
   - basic_metrics.png     Basic comparison charts
   - complexity_analysis.png  Complexity vs performance charts
+  - complexity_ratio.png  Complexity ratio (tentative/actual) by model
   - <model_name>.png      Per-model detailed report
 """,
     )
