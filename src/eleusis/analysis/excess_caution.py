@@ -325,6 +325,125 @@ def plot_caution_vs_failed_guesses(
     return png_path, json_path
 
 
+def plot_score_vs_recklessness(
+    df_early: pd.DataFrame,
+    df_rounds: pd.DataFrame,
+    model_colors: dict[str, str],
+    output_folder: Path,
+) -> tuple[Path, Path]:
+    """Generate scatter plot of avg score vs recklessness index (2*failed_guesses - caution).
+
+    Returns (png_path, json_path).
+    """
+    setup_matplotlib_style()
+    fig, ax = plt.subplots(figsize=(10, 8))
+
+    # Load metadata for open/closed distinction
+    model_metadata = load_model_metadata()
+
+    # Compute per-model metrics
+    caution_by_model = df_early.groupby("model")["early_correct_turns"].mean()
+    failed_by_model = df_rounds.groupby("model")["counting_failed_guesses"].mean()
+
+    # Compute floored score per model
+    df_rounds_copy = df_rounds.copy()
+    df_rounds_copy["floored_score"] = df_rounds_copy["score"].clip(lower=0)
+    score_by_model = df_rounds_copy.groupby("model")["floored_score"].mean()
+
+    # Prepare data for JSON export
+    plot_data = {
+        "models": [],
+        "metadata": {
+            "x_axis": "recklessness_index",
+            "y_axis": "avg_floored_score",
+            "description": "Recklessness index = 2 * avg_failed_guesses - avg_caution"
+        }
+    }
+
+    for model_name in caution_by_model.index:
+        if model_name not in failed_by_model.index or model_name not in score_by_model.index:
+            continue
+
+        caution = caution_by_model[model_name]
+        failed = failed_by_model[model_name]
+        recklessness = 2 * failed - caution
+        y = score_by_model[model_name]
+        color = get_model_color(model_name, model_colors)
+
+        # Determine if open model
+        is_open = False
+        provider = "unknown"
+        normalized_name = normalize_model_name(model_name)
+        for key, meta in model_metadata.items():
+            norm_key = normalize_model_name(key)
+            if norm_key == normalized_name or norm_key in normalized_name or normalized_name in norm_key:
+                is_open = meta["is_open"]
+                provider = meta["provider"]
+                break
+
+        # Plot point: open circle for open models, filled for closed
+        if is_open:
+            ax.scatter(recklessness, y, c="none", edgecolors=color, s=150, linewidths=2.5, zorder=3)
+        else:
+            ax.scatter(recklessness, y, c=color, s=150, alpha=0.9, zorder=3)
+
+        # Add label
+        ax.annotate(
+            model_name, (recklessness, y),
+            xytext=(8, 4), textcoords="offset points", fontsize=9,
+            ha="left", va="bottom"
+        )
+
+        # Store data for JSON
+        plot_data["models"].append({
+            "name": model_name,
+            "avg_floored_score": float(y),
+            "recklessness_index": float(recklessness),
+            "avg_failed_guesses": float(failed),
+            "avg_caution": float(caution),
+            "color": color,
+            "is_open": is_open,
+            "provider": provider,
+        })
+
+    ax.set_xlabel("Recklessness Index (2 × Failed Guesses − Caution)", fontsize=11)
+    ax.set_ylabel("Average Floored Score", fontsize=11)
+    ax.set_title("Score vs Recklessness Index", fontsize=13, fontweight="bold")
+
+    # Add quadrant labels
+    ax.text(
+        0.02, 0.02, "Conservative\n(cautious, few failed guesses)",
+        transform=ax.transAxes, fontsize=8, ha="left", va="bottom",
+        style="italic", color="gray"
+    )
+    ax.text(
+        0.98, 0.02, "Reckless\n(many failed guesses, low caution)",
+        transform=ax.transAxes, fontsize=8, ha="right", va="bottom",
+        style="italic", color="gray"
+    )
+
+    # Add legend for open/closed distinction
+    from matplotlib.lines import Line2D
+    legend_elements = [
+        Line2D([0], [0], marker="o", color="w", markerfacecolor="gray", markersize=10, label="Closed model"),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor="none", markeredgecolor="gray",
+               markeredgewidth=2, markersize=10, label="Open model"),
+    ]
+    ax.legend(handles=legend_elements, loc="upper right", fontsize=10)
+
+    # Save outputs
+    png_path = output_folder / "score_vs_recklessness.png"
+    json_path = output_folder / "score_vs_recklessness.json"
+
+    save_figure(fig, png_path)
+
+    with open(json_path, "w") as f:
+        json.dump(plot_data, f, indent=2)
+    logger.info(f"Saved: {json_path}")
+
+    return png_path, json_path
+
+
 def analyze_excess_caution(
     df_turns: pd.DataFrame,
     df_rounds: pd.DataFrame,
@@ -381,6 +500,13 @@ def analyze_excess_caution(
 
     # Generate caution vs failed guesses scatter plot
     png_path, json_path = plot_caution_vs_failed_guesses(
+        df_early, df_rounds, model_colors, output_folder
+    )
+    tee.write(f"Saved: {png_path}\n")
+    tee.write(f"Saved: {json_path}\n")
+
+    # Generate score vs recklessness index scatter plot
+    png_path, json_path = plot_score_vs_recklessness(
         df_early, df_rounds, model_colors, output_folder
     )
     tee.write(f"Saved: {png_path}\n")

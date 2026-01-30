@@ -24,6 +24,7 @@ Outputs (saved in the input folder):
   - complexity_analysis.png  Complexity vs performance charts
   - complexity_ratio.png  Complexity ratio (tentative/actual) by model
   - tokens_by_turn.png    Average output tokens by turn index
+  - score_vs_recklessness.png  Score vs recklessness index scatter plot
   - <model_name>.png      Per-model detailed report
 """,
     )

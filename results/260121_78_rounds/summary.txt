@@ -130,6 +130,8 @@ Saved: results/260121_78_rounds/excess_caution.png
 Saved: results/260121_78_rounds/excess_caution.json
 Saved: results/260121_78_rounds/caution_vs_failed_guesses.png
 Saved: results/260121_78_rounds/caution_vs_failed_guesses.json
+Saved: results/260121_78_rounds/score_vs_recklessness.png
+Saved: results/260121_78_rounds/score_vs_recklessness.json
 
 ============================================================
 RECKLESS GUESSING ANALYSIS
