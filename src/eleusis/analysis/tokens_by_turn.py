@@ -18,15 +18,10 @@ def plot_tokens_by_turn(
 ) -> tuple[Path, Path]:
     """Plot average output tokens as a function of turn index for each model.
 
-    Only includes counting turns (before score became guaranteed <= 0).
-
     Returns (png_path, json_path).
     """
     setup_matplotlib_style()
     fig, ax = plt.subplots(figsize=(12, 7))
-
-    # Filter to counting turns only
-    df_counting = df_turns[df_turns["counts_for_analysis"] == True]  # noqa: E712
 
     # Load metadata for open/closed distinction
     model_metadata = load_model_metadata()
@@ -37,14 +32,14 @@ def plot_tokens_by_turn(
         "metadata": {
             "x_axis": "turn_number",
             "y_axis": "avg_output_tokens",
-            "description": "Average output tokens by turn index (counting turns only)",
+            "description": "Average output tokens by turn index",
         },
     }
 
-    models = sorted(df_counting["model"].unique())
+    models = sorted(df_turns["model"].unique())
 
     for model_name in models:
-        model_turns = df_counting[df_counting["model"] == model_name]
+        model_turns = df_turns[df_turns["model"] == model_name]
 
         # Group by turn number and compute mean output tokens
         tokens_by_turn = model_turns.groupby("turn_number")["output_tokens"].agg(
@@ -145,13 +140,12 @@ def analyze_tokens_by_turn(
     tee.write(f"Saved: {png_path}\n")
     tee.write(f"Saved: {json_path}\n")
 
-    # Print summary statistics (using counting turns only)
-    df_counting = df_turns[df_turns["counts_for_analysis"] == True]  # noqa: E712
-    models = sorted(df_counting["model"].unique())
-    tee.write("\nTokens trend summary (early vs late counting turns):\n")
+    # Print summary statistics
+    models = sorted(df_turns["model"].unique())
+    tee.write("\nTokens trend summary (early vs late turns):\n")
 
     for model_name in models:
-        model_turns = df_counting[df_counting["model"] == model_name]
+        model_turns = df_turns[df_turns["model"] == model_name]
         max_turn = model_turns["turn_number"].max()
 
         # Compare early turns (1-5) vs late turns (last 5)

@@ -209,17 +209,17 @@ OUTPUT TOKENS BY TURN
 Saved: results/260121_78_rounds/tokens_by_turn.png
 Saved: results/260121_78_rounds/tokens_by_turn.json
 
-Tokens trend summary (early vs late counting turns):
-  Claude Haiku 4.5: early=3191, late=6851 (+114.7%)
-  Claude Opus 4.5: early=2649, late=7864 (+196.9%)
-  Deepseek R1: early=5083, late=10250 (+101.6%)
-  Gemini 3 Flash Preview Low: early=1046, late=1354 (+29.5%)
-  Gpt 5 Mini Medium: early=1241, late=4705 (+279.2%)
-  Gpt 5.2 High: early=963, late=4566 (+374.4%)
-  Gpt Oss 120B: early=1050, late=5657 (+438.9%)
-  Gpt Oss 20B: early=1744, late=5407 (+210.0%)
-  Grok 4 1 Fast Reasoning: early=2810, late=11674 (+315.5%)
-  Kimi K2: early=5545, late=11118 (+100.5%)
+Tokens trend summary (early vs late turns):
+  Claude Haiku 4.5: early=3191, late=5889 (+84.5%)
+  Claude Opus 4.5: early=2649, late=8447 (+218.9%)
+  Deepseek R1: early=5083, late=10946 (+115.3%)
+  Gemini 3 Flash Preview Low: early=1046, late=1351 (+29.1%)
+  Gpt 5 Mini Medium: early=1241, late=4862 (+291.9%)
+  Gpt 5.2 High: early=963, late=5910 (+514.0%)
+  Gpt Oss 120B: early=1050, late=4475 (+326.2%)
+  Gpt Oss 20B: early=1744, late=7789 (+346.6%)
+  Grok 4 1 Fast Reasoning: early=2810, late=17827 (+534.4%)
+  Kimi K2: early=5545, late=10653 (+92.1%)
 
 ============================================================
 PER-MODEL REPORTS
