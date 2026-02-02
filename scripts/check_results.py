@@ -93,7 +93,7 @@ def check_round(round_data: dict, config: dict) -> dict:
     }
 
 
-def check_results_file(filepath: Path, verbose: bool = False) -> dict:
+def check_results_file(filepath: Path) -> dict:
     """Check all rounds in a results.json file."""
     with open(filepath) as f:
         data = json.load(f)
@@ -111,19 +111,18 @@ def check_results_file(filepath: Path, verbose: bool = False) -> dict:
     for round_data in rounds:
         check = check_round(round_data, config)
 
-        if verbose or check["issues"]:
-            rn = check["round_number"]
-            print(f"\nRound {rn}:")
-            print(f"  success: {check['success']}")
-            print(f"  turn_count: {check['turn_count']}")
-            print(f"  failed_guesses: {check['failed_guesses']}")
-            print(f"  first_correct_turn: {check['first_correct_turn']}")
-            print(f"  Stored:   score={check['stored']['score']}, "
-                  f"floored={check['stored']['floored_score']}, "
-                  f"no_stakes={check['stored']['no_stakes_score']}")
-            print(f"  Computed: score={check['computed']['score']}, "
-                  f"floored={check['computed']['floored_score']}, "
-                  f"no_stakes={check['computed']['no_stakes_score']}")
+        rn = check["round_number"]
+        print(f"\nRound {rn}:")
+        print(f"  success: {check['success']}")
+        print(f"  turn_count: {check['turn_count']}")
+        print(f"  failed_guesses: {check['failed_guesses']}")
+        print(f"  first_correct_turn: {check['first_correct_turn']}")
+        print(f"  Stored:   score={check['stored']['score']}, "
+              f"floored={check['stored']['floored_score']}, "
+              f"no_stakes={check['stored']['no_stakes_score']}")
+        print(f"  Computed: score={check['computed']['score']}, "
+              f"floored={check['computed']['floored_score']}, "
+              f"no_stakes={check['computed']['no_stakes_score']}")
 
         if check["issues"]:
             results["rounds_with_issues"] += 1
@@ -144,11 +143,6 @@ def main():
         type=Path,
         help="Path to results.json file",
     )
-    parser.add_argument(
-        "-v", "--verbose",
-        action="store_true",
-        help="Show all rounds, not just those with issues",
-    )
     args = parser.parse_args()
 
     path = args.path
@@ -162,7 +156,7 @@ def main():
         return 1
 
     print(f"Checking: {path}")
-    results = check_results_file(path, verbose=args.verbose)
+    results = check_results_file(path)
 
     print(f"\n{'=' * 60}")
     print(f"Summary: {results['total_rounds']} rounds checked, "
