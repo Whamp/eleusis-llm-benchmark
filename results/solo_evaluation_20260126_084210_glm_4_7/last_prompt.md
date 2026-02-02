@@ -84,38 +84,45 @@ As a player, this is your turn to play and you must simultaneously:
 
 ### Current game state
 
-Turn: 16 / 30
-Penalty so far for 5 wrong guesses: 10
-Current potential score if you guess the rule correctly this turn: 4
+Turn: 28 / 30
+Penalty so far for 12 wrong guesses: 24
+Current potential score if you guess the rule correctly this turn: -22
 
 #### Mainline & Sidelines
 
 This is the mainline and sidelines so far. Rejected cards are shown in brackets after the mainline card they were played after :
 
-Q♠ [Q♥] 6♠ [4♣] [2♠] [5♠] K♠ 9♠ [9♦] J♣ A♣ [4♠] [6♣] [3♥] [5♦] [5♦]
+K♠ [8♦] K♣ 7♠ [J♥] [4♠] [A♠] [J♠] 7♣ 6♠ [K♠] [A♣] [10♣] [7♠] [5♦] [4♣] [A♣] [9♠] [5♥] [3♣] [A♥] [2♠] 6♦ 9♥ [3♥] [4♦] 9♦ 3♦
 
 #### Your hand
 
-8♦, 10♥, K♦, Q♦, 8♥, K♥, 10♦, 2♥, 10♦, J♦, J♥, 8♦
+4♥, 10♦, 8♦, 6♦, 9♥, 3♠, Q♦, 3♦, Q♠, 3♥, 7♥, J♦
 
 #### Your recent play history
 
 Your last 3 turns (the card you played, the outcome and your reasoning summary):
-- 3♥: ✗ REJECTED
-  Your reasoning: Based on my analysis, all accepted spades have rank >= 6 (Q♠, 6♠, K♠, 9♠) and all accepted clubs have odd rank (J♣, A♣). Rejected cards are either hearts/diamonds, spades with rank < 6, or clubs with even rank. I'm playing 3♥ to test this hypothesis (it should be rejected as a heart).
-- 5♦: ✗ REJECTED
-  Your reasoning: Based on my analysis, all accepted spades have rank >= 6 (Q♠, 6♠, K♠, 9♠) and all accepted clubs have odd rank (J♣, A♣). Rejected cards are either hearts/diamonds, spades with rank < 6, or clubs with even rank. I'm playing 3♥ to test this hypothesis (it should be rejected as a heart).
-- 5♦: ✗ REJECTED
-  Your reasoning: Based on my analysis, all accepted spades have rank >= 6 (Q♠, 6♠, K♠, 9♠) and all accepted clubs have odd rank (J♣, A♣). Rejected cards are either hearts/diamonds, spades with rank < 6, or clubs with even rank. I'm playing 3♥ to test this hypothesis (it should be rejected as a heart).
+- 4♦: ✗ REJECTED
+  Your reasoning: I've analyzed all the accepted and rejected cards. All accepted cards are black, alternate suits, and have ranks 6, 7, or 13 (K). I'm testing this hypothesis by playing 9♠, which should be rejected because it doesn't meet the rank requirement (9 is not in {6, 7, 13}).
+- 9♦: ✓ ACCEPTED
+  Your reasoning: I've analyzed all the accepted and rejected cards. All accepted cards are black, alternate suits, and have ranks 6, 7, or 13 (K). I'm testing this hypothesis by playing 9♠, which should be rejected because it doesn't meet the rank requirement (9 is not in {6, 7, 13}).
+- 3♦: ✓ ACCEPTED
+  Your reasoning: I've analyzed all the accepted and rejected cards. All accepted cards are black, alternate suits, and have ranks 6, 7, or 13 (K). I'm testing this hypothesis by playing 9♠, which should be rejected because it doesn't meet the rank requirement (9 is not in {6, 7, 13}).
 
 
 #### All your previous failed rule guesses (if any)
 
-- "The card must be a Spade with rank 6 or higher"
-- "The card must be black with rank 6 or higher"
-- "The card must be a spade with rank 6 or higher, or a club with an odd rank."
-- "The card must be a spade with rank 6 or higher, or a club with an odd rank."
-- "The card must be a spade with rank 6 or higher, or a club with an odd rank."
+- "The card must be black and have a different suit than the previous mainline card."
+- "The card must be black, must alternate suits from the previous mainline card, and its rank must be either 6, 7, or King."
+- "The card must be black, must alternate suits from the previous mainline card, and its rank must be either 6, 7, or King."
+- "The card must be black, must alternate suits from the previous mainline card, and its rank must be either 6, 7, or King."
+- "The card must be black, must alternate suits from the previous mainline card, and its rank must be either 6, 7, or King."
+- "The card must be black, must alternate suits from the previous mainline card, and its rank must be either 6, 7, or King."
+- "The card must be black, must alternate suits from the previous mainline card, and its rank must be either 6, 7, or King."
+- "The card must be black, must alternate suits from the previous mainline card, and its rank must be either 6, 7, or King."
+- "The card must be black, must alternate suits from the previous mainline card, and its rank must be either 6, 7, or King."
+- "The card must be black, must alternate suits from the previous mainline card, and its rank must be either 6, 7, or King."
+- "The card must be black, must alternate suits from the previous mainline card, and its rank must be either 6, 7, or King."
+- "The card must be black, must alternate suits from the previous mainline card, and its rank must be either 6, 7, or King."
 
 All these guesses were incorrect.
 
@@ -158,6 +165,3 @@ Set "guess_rule" to true only when you want to officially try to guess the rule.
     "guess_rule": false
 }
 </ACTION>
-
-
-IMPORTANT: DO NOT REASON TOO LONG ABOUT THIS.
