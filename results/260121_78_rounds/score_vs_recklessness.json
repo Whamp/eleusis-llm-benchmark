@@ -41,6 +41,16 @@
       "provider": "google"
     },
     {
+      "name": "Glm 4.7",
+      "avg_floored_score": 15.64102564102564,
+      "recklessness_index": 2.931496364332185,
+      "avg_failed_guesses": 1.935897435897436,
+      "avg_caution": 0.9402985074626866,
+      "color": "#00ACC1",
+      "is_open": true,
+      "provider": "huggingface"
+    },
+    {
       "name": "Gpt 5 Mini Medium",
       "avg_floored_score": 13.487179487179487,
       "recklessness_index": 1.0112994350282487,

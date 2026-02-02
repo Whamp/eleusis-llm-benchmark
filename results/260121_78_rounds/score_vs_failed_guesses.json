@@ -17,6 +17,14 @@
       "provider": "huggingface"
     },
     {
+      "name": "Glm 4.7",
+      "avg_floored_score": 15.64102564102564,
+      "avg_failed_guesses": 1.935897435897436,
+      "color": "#00ACC1",
+      "is_open": true,
+      "provider": "huggingface"
+    },
+    {
       "name": "Grok 4 1 Fast Reasoning",
       "avg_floored_score": 15.153846153846153,
       "avg_failed_guesses": 2.5641025641025643,

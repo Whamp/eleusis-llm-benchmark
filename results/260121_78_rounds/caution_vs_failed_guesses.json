@@ -33,6 +33,14 @@
       "provider": "google"
     },
     {
+      "name": "Glm 4.7",
+      "avg_early_correct_turns": 0.9402985074626866,
+      "avg_failed_guesses": 1.935897435897436,
+      "color": "#00ACC1",
+      "is_open": true,
+      "provider": "huggingface"
+    },
+    {
       "name": "Gpt 5 Mini Medium",
       "avg_early_correct_turns": 1.3220338983050848,
       "avg_failed_guesses": 1.1666666666666667,

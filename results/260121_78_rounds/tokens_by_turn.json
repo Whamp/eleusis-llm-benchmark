@@ -633,6 +633,164 @@
       ]
     },
     {
+      "name": "Glm 4.7",
+      "color": "#00ACC1",
+      "is_open": true,
+      "provider": "huggingface",
+      "tokens_by_turn": [
+        {
+          "turn_number": 1,
+          "avg_output_tokens": 1248.7564102564102,
+          "sample_count": 78
+        },
+        {
+          "turn_number": 2,
+          "avg_output_tokens": 2576.7179487179487,
+          "sample_count": 78
+        },
+        {
+          "turn_number": 3,
+          "avg_output_tokens": 4609.576923076923,
+          "sample_count": 78
+        },
+        {
+          "turn_number": 4,
+          "avg_output_tokens": 4983.397435897436,
+          "sample_count": 78
+        },
+        {
+          "turn_number": 5,
+          "avg_output_tokens": 6093.44,
+          "sample_count": 75
+        },
+        {
+          "turn_number": 6,
+          "avg_output_tokens": 6861.590909090909,
+          "sample_count": 66
+        },
+        {
+          "turn_number": 7,
+          "avg_output_tokens": 7233.913793103448,
+          "sample_count": 58
+        },
+        {
+          "turn_number": 8,
+          "avg_output_tokens": 7647.897959183673,
+          "sample_count": 49
+        },
+        {
+          "turn_number": 9,
+          "avg_output_tokens": 7599.6511627906975,
+          "sample_count": 43
+        },
+        {
+          "turn_number": 10,
+          "avg_output_tokens": 8049.1463414634145,
+          "sample_count": 41
+        },
+        {
+          "turn_number": 11,
+          "avg_output_tokens": 7465.6,
+          "sample_count": 40
+        },
+        {
+          "turn_number": 12,
+          "avg_output_tokens": 7698.277777777777,
+          "sample_count": 36
+        },
+        {
+          "turn_number": 13,
+          "avg_output_tokens": 7761.705882352941,
+          "sample_count": 34
+        },
+        {
+          "turn_number": 14,
+          "avg_output_tokens": 8598.833333333334,
+          "sample_count": 30
+        },
+        {
+          "turn_number": 15,
+          "avg_output_tokens": 9068.67857142857,
+          "sample_count": 28
+        },
+        {
+          "turn_number": 16,
+          "avg_output_tokens": 6118.0,
+          "sample_count": 27
+        },
+        {
+          "turn_number": 17,
+          "avg_output_tokens": 5908.7307692307695,
+          "sample_count": 26
+        },
+        {
+          "turn_number": 18,
+          "avg_output_tokens": 6284.95652173913,
+          "sample_count": 23
+        },
+        {
+          "turn_number": 19,
+          "avg_output_tokens": 6079.608695652174,
+          "sample_count": 23
+        },
+        {
+          "turn_number": 20,
+          "avg_output_tokens": 5003.0,
+          "sample_count": 21
+        },
+        {
+          "turn_number": 21,
+          "avg_output_tokens": 5791.789473684211,
+          "sample_count": 19
+        },
+        {
+          "turn_number": 22,
+          "avg_output_tokens": 6473.526315789473,
+          "sample_count": 19
+        },
+        {
+          "turn_number": 23,
+          "avg_output_tokens": 4706.125,
+          "sample_count": 16
+        },
+        {
+          "turn_number": 24,
+          "avg_output_tokens": 5557.6875,
+          "sample_count": 16
+        },
+        {
+          "turn_number": 25,
+          "avg_output_tokens": 5923.266666666666,
+          "sample_count": 15
+        },
+        {
+          "turn_number": 26,
+          "avg_output_tokens": 4618.357142857143,
+          "sample_count": 14
+        },
+        {
+          "turn_number": 27,
+          "avg_output_tokens": 5319.384615384615,
+          "sample_count": 13
+        },
+        {
+          "turn_number": 28,
+          "avg_output_tokens": 5176.666666666667,
+          "sample_count": 12
+        },
+        {
+          "turn_number": 29,
+          "avg_output_tokens": 4909.272727272727,
+          "sample_count": 11
+        },
+        {
+          "turn_number": 30,
+          "avg_output_tokens": 1996.3636363636363,
+          "sample_count": 11
+        }
+      ]
+    },
+    {
       "name": "Gpt 5 Mini Medium",
       "color": "#4A4A4A",
       "is_open": false,

@@ -148,6 +148,44 @@
       ]
     },
     {
+      "name": "Glm 4.7",
+      "color": "#00ACC1",
+      "is_open": true,
+      "provider": "huggingface",
+      "calibration_points": [
+        {
+          "confidence_level": 5,
+          "actual_success_rate": 0.13043478260869565,
+          "sample_count": 69
+        },
+        {
+          "confidence_level": 6,
+          "actual_success_rate": 0.16101694915254236,
+          "sample_count": 118
+        },
+        {
+          "confidence_level": 7,
+          "actual_success_rate": 0.1411764705882353,
+          "sample_count": 170
+        },
+        {
+          "confidence_level": 8,
+          "actual_success_rate": 0.14583333333333334,
+          "sample_count": 192
+        },
+        {
+          "confidence_level": 9,
+          "actual_success_rate": 0.2986111111111111,
+          "sample_count": 144
+        },
+        {
+          "confidence_level": 10,
+          "actual_success_rate": 1.0,
+          "sample_count": 2
+        }
+      ]
+    },
+    {
       "name": "Gpt 5 Mini Medium",
       "color": "#4A4A4A",
       "is_open": false,

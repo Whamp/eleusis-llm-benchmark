@@ -19,6 +19,15 @@
       }
     },
     {
+      "name": "Glm 4.7",
+      "quartile_scores": {
+        "Q1": 1.0,
+        "Q2": 0.8666666666666667,
+        "Q3": 0.7777777777777778,
+        "Q4": 0.3333333333333333
+      }
+    },
+    {
       "name": "Grok 4 1 Fast Reasoning",
       "quartile_scores": {
         "Q1": 1.0,
@@ -98,8 +107,8 @@
     "Q4"
   ],
   "metadata": {
-    "optimal_k": 0.14,
-    "complexity_formula": "cyclomatic + 0.14 * node_count",
+    "optimal_k": 0.17,
+    "complexity_formula": "cyclomatic + 0.17 * node_count",
     "value": "success_rate",
     "description": "Success rate = per-model success rate for rules in each quartile."
   }

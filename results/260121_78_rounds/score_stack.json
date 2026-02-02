@@ -28,6 +28,15 @@
       "no_stakes_delta": 2.8076923076923066
     },
     {
+      "name": "Glm 4.7",
+      "color": "#00ACC1",
+      "is_open": true,
+      "provider": "huggingface",
+      "avg_floored_score": 15.64102564102564,
+      "avg_no_stakes_score": 18.5,
+      "no_stakes_delta": 2.8589743589743595
+    },
+    {
       "name": "Grok 4 1 Fast Reasoning",
       "color": "#1A1A1A",
       "is_open": false,

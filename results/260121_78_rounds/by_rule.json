@@ -5,8 +5,8 @@
       "description": "Only red cards (hearts or diamonds).",
       "cyclomatic_complexity": 1,
       "node_count": 9,
-      "aggregated_complexity": 4.779999999999999,
-      "avg_floored_score": 25.633333333333333,
+      "aggregated_complexity": 5.59,
+      "avg_floored_score": 25.666666666666668,
       "success_rate": 1.0,
       "floored_scores_by_model": {
         "Gpt 5.2 High": [
@@ -58,6 +58,11 @@
           27,
           28,
           26
+        ],
+        "Glm 4.7": [
+          27,
+          27,
+          24
         ]
       }
     },
@@ -66,8 +71,8 @@
       "description": "Only cards of the suit spades.",
       "cyclomatic_complexity": 1,
       "node_count": 11,
-      "aggregated_complexity": 5.62,
-      "avg_floored_score": 25.2,
+      "aggregated_complexity": 6.61,
+      "avg_floored_score": 25.393939393939394,
       "success_rate": 1.0,
       "floored_scores_by_model": {
         "Gpt 5.2 High": [
@@ -119,6 +124,11 @@
           25,
           25,
           27
+        ],
+        "Glm 4.7": [
+          27,
+          27,
+          28
         ]
       }
     },
@@ -127,8 +137,8 @@
       "description": "Cards must alternate between red and black colors. Any card may start the line.",
       "cyclomatic_complexity": 2,
       "node_count": 24,
-      "aggregated_complexity": 12.08,
-      "avg_floored_score": 25.166666666666668,
+      "aggregated_complexity": 14.24,
+      "avg_floored_score": 25.303030303030305,
       "success_rate": 1.0,
       "floored_scores_by_model": {
         "Gpt 5.2 High": [
@@ -180,6 +190,11 @@
           26,
           25,
           27
+        ],
+        "Glm 4.7": [
+          26,
+          27,
+          27
         ]
       }
     },
@@ -188,8 +203,8 @@
       "description": "Only cards with an even rank (2,4,6,8,10,12).",
       "cyclomatic_complexity": 1,
       "node_count": 12,
-      "aggregated_complexity": 6.04,
-      "avg_floored_score": 24.3,
+      "aggregated_complexity": 7.12,
+      "avg_floored_score": 24.393939393939394,
       "success_rate": 1.0,
       "floored_scores_by_model": {
         "Gpt 5.2 High": [
@@ -241,6 +256,11 @@
           22,
           27,
           26
+        ],
+        "Glm 4.7": [
+          25,
+          26,
+          25
         ]
       }
     },
@@ -249,9 +269,9 @@
       "description": "The card must be of a different suit than the card just before it. Any card may start the line.",
       "cyclomatic_complexity": 2,
       "node_count": 28,
-      "aggregated_complexity": 13.76,
-      "avg_floored_score": 22.2,
-      "success_rate": 0.9666666666666667,
+      "aggregated_complexity": 16.28,
+      "avg_floored_score": 22.272727272727273,
+      "success_rate": 0.9696969696969697,
       "floored_scores_by_model": {
         "Gpt 5.2 High": [
           22,
@@ -302,67 +322,11 @@
           26,
           26,
           20
-        ]
-      }
-    },
-    {
-      "name": "no_spades",
-      "description": "Only hearts, clubs, and diamonds allowed. Spades are forbidden.",
-      "cyclomatic_complexity": 1,
-      "node_count": 11,
-      "aggregated_complexity": 5.62,
-      "avg_floored_score": 20.666666666666668,
-      "success_rate": 0.9666666666666667,
-      "floored_scores_by_model": {
-        "Gpt 5.2 High": [
-          18,
-          18,
-          21
         ],
-        "Gpt Oss 120B": [
-          19,
+        "Glm 4.7": [
+          27,
           23,
           19
-        ],
-        "Claude Haiku 4.5": [
-          13,
-          0,
-          23
-        ],
-        "Gpt 5 Mini Medium": [
-          23,
-          23,
-          25
-        ],
-        "Gemini 3 Flash Preview Low": [
-          22,
-          23,
-          22
-        ],
-        "Gpt Oss 20B": [
-          11,
-          22,
-          20
-        ],
-        "Grok 4 1 Fast Reasoning": [
-          21,
-          23,
-          26
-        ],
-        "Deepseek R1": [
-          25,
-          23,
-          12
-        ],
-        "Claude Opus 4.5": [
-          26,
-          26,
-          26
-        ],
-        "Kimi K2": [
-          24,
-          22,
-          21
         ]
       }
     },
@@ -371,8 +335,8 @@
       "description": "Card rank must have opposite odd/even parity to the previous card's rank. Any card may start the line.",
       "cyclomatic_complexity": 2,
       "node_count": 30,
-      "aggregated_complexity": 14.6,
-      "avg_floored_score": 20.666666666666668,
+      "aggregated_complexity": 17.3,
+      "avg_floored_score": 21.060606060606062,
       "success_rate": 1.0,
       "floored_scores_by_model": {
         "Gpt 5.2 High": [
@@ -424,6 +388,77 @@
           17,
           15,
           24
+        ],
+        "Glm 4.7": [
+          25,
+          23,
+          27
+        ]
+      }
+    },
+    {
+      "name": "no_spades",
+      "description": "Only hearts, clubs, and diamonds allowed. Spades are forbidden.",
+      "cyclomatic_complexity": 1,
+      "node_count": 11,
+      "aggregated_complexity": 6.61,
+      "avg_floored_score": 20.96969696969697,
+      "success_rate": 0.9696969696969697,
+      "floored_scores_by_model": {
+        "Gpt 5.2 High": [
+          18,
+          18,
+          21
+        ],
+        "Gpt Oss 120B": [
+          19,
+          23,
+          19
+        ],
+        "Claude Haiku 4.5": [
+          13,
+          0,
+          23
+        ],
+        "Gpt 5 Mini Medium": [
+          23,
+          23,
+          25
+        ],
+        "Gemini 3 Flash Preview Low": [
+          22,
+          23,
+          22
+        ],
+        "Gpt Oss 20B": [
+          11,
+          22,
+          20
+        ],
+        "Grok 4 1 Fast Reasoning": [
+          21,
+          23,
+          26
+        ],
+        "Deepseek R1": [
+          25,
+          23,
+          12
+        ],
+        "Claude Opus 4.5": [
+          26,
+          26,
+          26
+        ],
+        "Kimi K2": [
+          24,
+          22,
+          21
+        ],
+        "Glm 4.7": [
+          25,
+          26,
+          21
         ]
       }
     },
@@ -432,9 +467,9 @@
       "description": "Only Aces (rank 1) .",
       "cyclomatic_complexity": 1,
       "node_count": 9,
-      "aggregated_complexity": 4.779999999999999,
-      "avg_floored_score": 20.366666666666667,
-      "success_rate": 0.9333333333333333,
+      "aggregated_complexity": 5.59,
+      "avg_floored_score": 20.87878787878788,
+      "success_rate": 0.9393939393939394,
       "floored_scores_by_model": {
         "Gpt 5.2 High": [
           3,
@@ -485,6 +520,77 @@
           25,
           25,
           24
+        ],
+        "Glm 4.7": [
+          26,
+          27,
+          25
+        ]
+      }
+    },
+    {
+      "name": "face_cards_only",
+      "description": "Only face cards (11,12,13).",
+      "cyclomatic_complexity": 1,
+      "node_count": 12,
+      "aggregated_complexity": 7.12,
+      "avg_floored_score": 20.484848484848484,
+      "success_rate": 0.9090909090909091,
+      "floored_scores_by_model": {
+        "Gpt 5.2 High": [
+          21,
+          6,
+          21
+        ],
+        "Gpt Oss 120B": [
+          18,
+          0,
+          0
+        ],
+        "Claude Haiku 4.5": [
+          27,
+          0,
+          28
+        ],
+        "Gpt 5 Mini Medium": [
+          24,
+          17,
+          10
+        ],
+        "Gemini 3 Flash Preview Low": [
+          20,
+          21,
+          26
+        ],
+        "Gpt Oss 20B": [
+          22,
+          27,
+          21
+        ],
+        "Grok 4 1 Fast Reasoning": [
+          23,
+          22,
+          19
+        ],
+        "Deepseek R1": [
+          24,
+          27,
+          23
+        ],
+        "Claude Opus 4.5": [
+          26,
+          19,
+          26
+        ],
+        "Kimi K2": [
+          24,
+          27,
+          26
+        ],
+        "Glm 4.7": [
+          27,
+          26,
+          28
         ]
       }
     },
@@ -493,9 +599,9 @@
       "description": "The card must be of a different suit than but same color as the card just before it. Any card may start the line.",
       "cyclomatic_complexity": 3,
       "node_count": 45,
-      "aggregated_complexity": 21.9,
-      "avg_floored_score": 20.333333333333332,
-      "success_rate": 0.9666666666666667,
+      "aggregated_complexity": 25.95,
+      "avg_floored_score": 20.21212121212121,
+      "success_rate": 0.9696969696969697,
       "floored_scores_by_model": {
         "Gpt 5.2 High": [
           17,
@@ -546,6 +652,11 @@
           23,
           19,
           21
+        ],
+        "Glm 4.7": [
+          24,
+          11,
+          22
         ]
       }
     },
@@ -554,9 +665,9 @@
       "description": "Only ranks that are prime numbers (2,3,5,7,11,13).",
       "cyclomatic_complexity": 1,
       "node_count": 20,
-      "aggregated_complexity": 9.4,
-      "avg_floored_score": 19.966666666666665,
-      "success_rate": 0.9333333333333333,
+      "aggregated_complexity": 11.2,
+      "avg_floored_score": 20.03030303030303,
+      "success_rate": 0.9393939393939394,
       "floored_scores_by_model": {
         "Gpt 5.2 High": [
           21,
@@ -607,66 +718,10 @@
           24,
           23,
           23
-        ]
-      }
-    },
-    {
-      "name": "face_cards_only",
-      "description": "Only face cards (11,12,13).",
-      "cyclomatic_complexity": 1,
-      "node_count": 12,
-      "aggregated_complexity": 6.04,
-      "avg_floored_score": 19.833333333333332,
-      "success_rate": 0.9,
-      "floored_scores_by_model": {
-        "Gpt 5.2 High": [
-          21,
-          6,
-          21
         ],
-        "Gpt Oss 120B": [
-          18,
-          0,
-          0
-        ],
-        "Claude Haiku 4.5": [
-          27,
-          0,
-          28
-        ],
-        "Gpt 5 Mini Medium": [
-          24,
-          17,
-          10
-        ],
-        "Gemini 3 Flash Preview Low": [
-          20,
-          21,
-          26
-        ],
-        "Gpt Oss 20B": [
-          22,
-          27,
-          21
-        ],
-        "Grok 4 1 Fast Reasoning": [
+        "Glm 4.7": [
           23,
-          22,
-          19
-        ],
-        "Deepseek R1": [
-          24,
-          27,
-          23
-        ],
-        "Claude Opus 4.5": [
-          26,
-          19,
-          26
-        ],
-        "Kimi K2": [
-          24,
-          27,
+          13,
           26
         ]
       }
@@ -676,8 +731,8 @@
       "description": "Only spades and diamonds.",
       "cyclomatic_complexity": 1,
       "node_count": 14,
-      "aggregated_complexity": 6.88,
-      "avg_floored_score": 19.066666666666666,
+      "aggregated_complexity": 8.14,
+      "avg_floored_score": 19.363636363636363,
       "success_rate": 1.0,
       "floored_scores_by_model": {
         "Gpt 5.2 High": [
@@ -729,6 +784,11 @@
           25,
           24,
           14
+        ],
+        "Glm 4.7": [
+          23,
+          25,
+          19
         ]
       }
     },
@@ -737,9 +797,9 @@
       "description": "Suits must repeat in the cyclic order hearts \u2192 spades \u2192 clubs \u2192 diamonds \u2192 hearts... Any card may start the line.",
       "cyclomatic_complexity": 2,
       "node_count": 67,
-      "aggregated_complexity": 30.14,
-      "avg_floored_score": 16.766666666666666,
-      "success_rate": 0.9,
+      "aggregated_complexity": 36.17,
+      "avg_floored_score": 16.666666666666668,
+      "success_rate": 0.8787878787878788,
       "floored_scores_by_model": {
         "Gpt 5.2 High": [
           18,
@@ -790,6 +850,11 @@
           19,
           22,
           21
+        ],
+        "Glm 4.7": [
+          0,
+          26,
+          21
         ]
       }
     },
@@ -798,9 +863,9 @@
       "description": "Only cards between 1 and 7 inclusive.",
       "cyclomatic_complexity": 1,
       "node_count": 11,
-      "aggregated_complexity": 5.62,
-      "avg_floored_score": 14.466666666666667,
-      "success_rate": 0.9,
+      "aggregated_complexity": 6.61,
+      "avg_floored_score": 14.696969696969697,
+      "success_rate": 0.9090909090909091,
       "floored_scores_by_model": {
         "Gpt 5.2 High": [
           14,
@@ -851,6 +916,11 @@
           21,
           22,
           19
+        ],
+        "Glm 4.7": [
+          21,
+          25,
+          5
         ]
       }
     },
@@ -859,9 +929,9 @@
       "description": "Only black face cards.",
       "cyclomatic_complexity": 4,
       "node_count": 40,
-      "aggregated_complexity": 20.8,
-      "avg_floored_score": 11.466666666666667,
-      "success_rate": 0.7,
+      "aggregated_complexity": 24.4,
+      "avg_floored_score": 12.212121212121213,
+      "success_rate": 0.7272727272727273,
       "floored_scores_by_model": {
         "Gpt 5.2 High": [
           6,
@@ -912,6 +982,11 @@
           22,
           10,
           25
+        ],
+        "Glm 4.7": [
+          12,
+          23,
+          24
         ]
       }
     },
@@ -920,9 +995,9 @@
       "description": "Alternate face and number cards. Any card may start the line.",
       "cyclomatic_complexity": 3,
       "node_count": 42,
-      "aggregated_complexity": 20.64,
-      "avg_floored_score": 9.066666666666666,
-      "success_rate": 0.6,
+      "aggregated_complexity": 24.42,
+      "avg_floored_score": 8.636363636363637,
+      "success_rate": 0.5757575757575758,
       "floored_scores_by_model": {
         "Gpt 5.2 High": [
           19,
@@ -973,128 +1048,11 @@
           26,
           20,
           19
-        ]
-      }
-    },
-    {
-      "name": "share_color_or_parity",
-      "description": "Each card must share at least one property with the previous card: same color, or same parity. Any card may start the line.",
-      "cyclomatic_complexity": 3,
-      "node_count": 57,
-      "aggregated_complexity": 26.939999999999998,
-      "avg_floored_score": 8.6,
-      "success_rate": 0.5333333333333333,
-      "floored_scores_by_model": {
-        "Gpt 5.2 High": [
-          17,
-          6,
-          12
         ],
-        "Gpt Oss 120B": [
+        "Glm 4.7": [
           0,
           0,
-          23
-        ],
-        "Claude Haiku 4.5": [
-          0,
-          0,
-          0
-        ],
-        "Gpt 5 Mini Medium": [
-          0,
-          0,
-          20
-        ],
-        "Gemini 3 Flash Preview Low": [
-          20,
-          0,
-          17
-        ],
-        "Gpt Oss 20B": [
-          9,
-          21,
-          0
-        ],
-        "Grok 4 1 Fast Reasoning": [
-          21,
-          0,
-          19
-        ],
-        "Deepseek R1": [
-          0,
-          0,
-          0
-        ],
-        "Claude Opus 4.5": [
-          19,
-          8,
-          23
-        ],
-        "Kimi K2": [
-          7,
-          0,
-          16
-        ]
-      }
-    },
-    {
-      "name": "rank_non_decreasing_start_ace",
-      "description": "Each card must have a rank greater or equal to the previous card. Only Ace can start the line.",
-      "cyclomatic_complexity": 2,
-      "node_count": 30,
-      "aggregated_complexity": 14.6,
-      "avg_floored_score": 8.333333333333334,
-      "success_rate": 0.5333333333333333,
-      "floored_scores_by_model": {
-        "Gpt 5.2 High": [
-          19,
-          5,
-          12
-        ],
-        "Gpt Oss 120B": [
-          25,
-          0,
-          0
-        ],
-        "Claude Haiku 4.5": [
-          0,
-          0,
-          0
-        ],
-        "Gpt 5 Mini Medium": [
-          20,
-          0,
-          20
-        ],
-        "Gemini 3 Flash Preview Low": [
-          18,
-          0,
-          0
-        ],
-        "Gpt Oss 20B": [
-          21,
-          0,
-          0
-        ],
-        "Grok 4 1 Fast Reasoning": [
-          11,
-          0,
-          5
-        ],
-        "Deepseek R1": [
-          21,
-          0,
-          22
-        ],
-        "Claude Opus 4.5": [
-          11,
-          17,
-          0
-        ],
-        "Kimi K2": [
-          21,
-          0,
-          2
+          13
         ]
       }
     },
@@ -1103,9 +1061,9 @@
       "description": "Only cards between 5 and 9 inclusive.",
       "cyclomatic_complexity": 1,
       "node_count": 11,
-      "aggregated_complexity": 5.62,
-      "avg_floored_score": 8.166666666666666,
-      "success_rate": 0.6666666666666666,
+      "aggregated_complexity": 6.61,
+      "avg_floored_score": 8.454545454545455,
+      "success_rate": 0.696969696969697,
       "floored_scores_by_model": {
         "Gpt 5.2 High": [
           3,
@@ -1156,6 +1114,77 @@
           16,
           17,
           17
+        ],
+        "Glm 4.7": [
+          3,
+          24,
+          7
+        ]
+      }
+    },
+    {
+      "name": "share_color_or_parity",
+      "description": "Each card must share at least one property with the previous card: same color, or same parity. Any card may start the line.",
+      "cyclomatic_complexity": 3,
+      "node_count": 57,
+      "aggregated_complexity": 32.07,
+      "avg_floored_score": 8.363636363636363,
+      "success_rate": 0.5454545454545454,
+      "floored_scores_by_model": {
+        "Gpt 5.2 High": [
+          17,
+          6,
+          12
+        ],
+        "Gpt Oss 120B": [
+          0,
+          0,
+          23
+        ],
+        "Claude Haiku 4.5": [
+          0,
+          0,
+          0
+        ],
+        "Gpt 5 Mini Medium": [
+          0,
+          0,
+          20
+        ],
+        "Gemini 3 Flash Preview Low": [
+          20,
+          0,
+          17
+        ],
+        "Gpt Oss 20B": [
+          9,
+          21,
+          0
+        ],
+        "Grok 4 1 Fast Reasoning": [
+          21,
+          0,
+          19
+        ],
+        "Deepseek R1": [
+          0,
+          0,
+          0
+        ],
+        "Claude Opus 4.5": [
+          19,
+          8,
+          23
+        ],
+        "Kimi K2": [
+          7,
+          0,
+          16
+        ],
+        "Glm 4.7": [
+          12,
+          6,
+          0
         ]
       }
     },
@@ -1164,8 +1193,8 @@
       "description": "Only red cards whose rank is <=7.",
       "cyclomatic_complexity": 2,
       "node_count": 18,
-      "aggregated_complexity": 9.559999999999999,
-      "avg_floored_score": 7.7,
+      "aggregated_complexity": 11.18,
+      "avg_floored_score": 8.030303030303031,
       "success_rate": 0.6666666666666666,
       "floored_scores_by_model": {
         "Gpt 5.2 High": [
@@ -1217,6 +1246,77 @@
           19,
           1,
           0
+        ],
+        "Glm 4.7": [
+          21,
+          13,
+          0
+        ]
+      }
+    },
+    {
+      "name": "rank_non_decreasing_start_ace",
+      "description": "Each card must have a rank greater or equal to the previous card. Only Ace can start the line.",
+      "cyclomatic_complexity": 2,
+      "node_count": 30,
+      "aggregated_complexity": 17.3,
+      "avg_floored_score": 7.878787878787879,
+      "success_rate": 0.5151515151515151,
+      "floored_scores_by_model": {
+        "Gpt 5.2 High": [
+          19,
+          5,
+          12
+        ],
+        "Gpt Oss 120B": [
+          25,
+          0,
+          0
+        ],
+        "Claude Haiku 4.5": [
+          0,
+          0,
+          0
+        ],
+        "Gpt 5 Mini Medium": [
+          20,
+          0,
+          20
+        ],
+        "Gemini 3 Flash Preview Low": [
+          18,
+          0,
+          0
+        ],
+        "Gpt Oss 20B": [
+          21,
+          0,
+          0
+        ],
+        "Grok 4 1 Fast Reasoning": [
+          11,
+          0,
+          5
+        ],
+        "Deepseek R1": [
+          21,
+          0,
+          22
+        ],
+        "Claude Opus 4.5": [
+          11,
+          17,
+          0
+        ],
+        "Kimi K2": [
+          21,
+          0,
+          2
+        ],
+        "Glm 4.7": [
+          0,
+          10,
+          0
         ]
       }
     },
@@ -1225,9 +1325,9 @@
       "description": "Suits must appear in pairs: card 1 and 2 same suit, cards 3 and 4 same suit (different from 1 and 2), cards 5 and 6 same suit (different from 3 and 4), etc.",
       "cyclomatic_complexity": 3,
       "node_count": 65,
-      "aggregated_complexity": 30.3,
-      "avg_floored_score": 4.966666666666667,
-      "success_rate": 0.5,
+      "aggregated_complexity": 36.15,
+      "avg_floored_score": 5.515151515151516,
+      "success_rate": 0.5151515151515151,
       "floored_scores_by_model": {
         "Gpt 5.2 High": [
           3,
@@ -1278,6 +1378,11 @@
           12,
           7,
           0
+        ],
+        "Glm 4.7": [
+          11,
+          20,
+          2
         ]
       }
     },
@@ -1286,9 +1391,9 @@
       "description": "Face cards (11-13) must be red; number cards (1-10) must be black.",
       "cyclomatic_complexity": 2,
       "node_count": 25,
-      "aggregated_complexity": 12.5,
-      "avg_floored_score": 2.966666666666667,
-      "success_rate": 0.26666666666666666,
+      "aggregated_complexity": 14.75,
+      "avg_floored_score": 3.5757575757575757,
+      "success_rate": 0.30303030303030304,
       "floored_scores_by_model": {
         "Gpt 5.2 High": [
           7,
@@ -1339,6 +1444,11 @@
           18,
           0,
           0
+        ],
+        "Glm 4.7": [
+          17,
+          0,
+          12
         ]
       }
     },
@@ -1347,9 +1457,9 @@
       "description": "Hearts and spades form Group A; clubs and diamonds form Group B. Alternate between groups. Any card may start the line.",
       "cyclomatic_complexity": 2,
       "node_count": 62,
-      "aggregated_complexity": 28.04,
-      "avg_floored_score": 2.466666666666667,
-      "success_rate": 0.2,
+      "aggregated_complexity": 33.620000000000005,
+      "avg_floored_score": 2.242424242424242,
+      "success_rate": 0.18181818181818182,
       "floored_scores_by_model": {
         "Gpt 5.2 High": [
           19,
@@ -1400,64 +1510,8 @@
           0,
           0,
           0
-        ]
-      }
-    },
-    {
-      "name": "red_up_black_down",
-      "description": "If the previous card was red, rank must increase or be equal; if black, rank must decrease or be equal. Starting card must be between 5 and 9 inclusive.",
-      "cyclomatic_complexity": 3,
-      "node_count": 56,
-      "aggregated_complexity": 26.52,
-      "avg_floored_score": 1.6,
-      "success_rate": 0.16666666666666666,
-      "floored_scores_by_model": {
-        "Gpt 5.2 High": [
-          13,
-          16,
-          6
         ],
-        "Gpt Oss 120B": [
-          0,
-          0,
-          6
-        ],
-        "Claude Haiku 4.5": [
-          0,
-          0,
-          0
-        ],
-        "Gpt 5 Mini Medium": [
-          0,
-          0,
-          0
-        ],
-        "Gemini 3 Flash Preview Low": [
-          0,
-          0,
-          0
-        ],
-        "Gpt Oss 20B": [
-          0,
-          0,
-          0
-        ],
-        "Grok 4 1 Fast Reasoning": [
-          0,
-          7,
-          0
-        ],
-        "Deepseek R1": [
-          0,
-          0,
-          0
-        ],
-        "Claude Opus 4.5": [
-          0,
-          0,
-          0
-        ],
-        "Kimi K2": [
+        "Glm 4.7": [
           0,
           0,
           0
@@ -1469,9 +1523,9 @@
       "description": "Face cards imposes the suit: if a face card is played, the next card must match its suit. Otherwise, the next card must be a different suit than it.",
       "cyclomatic_complexity": 3,
       "node_count": 60,
-      "aggregated_complexity": 28.2,
-      "avg_floored_score": 1.5333333333333334,
-      "success_rate": 0.2,
+      "aggregated_complexity": 33.6,
+      "avg_floored_score": 1.8484848484848484,
+      "success_rate": 0.21212121212121213,
       "floored_scores_by_model": {
         "Gpt 5.2 High": [
           13,
@@ -1522,6 +1576,77 @@
           10,
           0,
           0
+        ],
+        "Glm 4.7": [
+          15,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "name": "red_up_black_down",
+      "description": "If the previous card was red, rank must increase or be equal; if black, rank must decrease or be equal. Starting card must be between 5 and 9 inclusive.",
+      "cyclomatic_complexity": 3,
+      "node_count": 56,
+      "aggregated_complexity": 31.560000000000002,
+      "avg_floored_score": 1.4545454545454546,
+      "success_rate": 0.15151515151515152,
+      "floored_scores_by_model": {
+        "Gpt 5.2 High": [
+          13,
+          16,
+          6
+        ],
+        "Gpt Oss 120B": [
+          0,
+          0,
+          6
+        ],
+        "Claude Haiku 4.5": [
+          0,
+          0,
+          0
+        ],
+        "Gpt 5 Mini Medium": [
+          0,
+          0,
+          0
+        ],
+        "Gemini 3 Flash Preview Low": [
+          0,
+          0,
+          0
+        ],
+        "Gpt Oss 20B": [
+          0,
+          0,
+          0
+        ],
+        "Grok 4 1 Fast Reasoning": [
+          0,
+          7,
+          0
+        ],
+        "Deepseek R1": [
+          0,
+          0,
+          0
+        ],
+        "Claude Opus 4.5": [
+          0,
+          0,
+          0
+        ],
+        "Kimi K2": [
+          0,
+          0,
+          0
+        ],
+        "Glm 4.7": [
+          0,
+          0,
+          0
         ]
       }
     },
@@ -1530,9 +1655,9 @@
       "description": "Rank repeats in pairs: ranks must come in doubles: (x, x), then (y, y) with y different from x, then (z, z) with z different from y, etc.",
       "cyclomatic_complexity": 3,
       "node_count": 57,
-      "aggregated_complexity": 26.939999999999998,
-      "avg_floored_score": 1.1333333333333333,
-      "success_rate": 0.1,
+      "aggregated_complexity": 32.07,
+      "avg_floored_score": 1.0303030303030303,
+      "success_rate": 0.09090909090909091,
       "floored_scores_by_model": {
         "Gpt 5.2 High": [
           0,
@@ -1583,6 +1708,11 @@
           0,
           0,
           0
+        ],
+        "Glm 4.7": [
+          0,
+          0,
+          0
         ]
       }
     }
@@ -1597,11 +1727,12 @@
     "Grok 4 1 Fast Reasoning",
     "Deepseek R1",
     "Claude Opus 4.5",
-    "Kimi K2"
+    "Kimi K2",
+    "Glm 4.7"
   ],
   "metadata": {
-    "optimal_k": 0.42,
-    "complexity_formula": "cyclomatic + 0.42 * node_count",
+    "optimal_k": 0.51,
+    "complexity_formula": "cyclomatic + 0.51 * node_count",
     "ordering": "descending_avg_score"
   }
 }

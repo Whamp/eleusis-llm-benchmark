@@ -177,6 +177,50 @@
       ]
     },
     {
+      "name": "Glm 4.7",
+      "color": "#00ACC1",
+      "is_open": true,
+      "provider": "huggingface",
+      "distribution": [
+        {
+          "confidence_level": 5,
+          "guess_rate": 0.028985507246376812,
+          "total_turns": 69,
+          "guess_count": 2
+        },
+        {
+          "confidence_level": 6,
+          "guess_rate": 0.00847457627118644,
+          "total_turns": 118,
+          "guess_count": 1
+        },
+        {
+          "confidence_level": 7,
+          "guess_rate": 0.06470588235294118,
+          "total_turns": 170,
+          "guess_count": 11
+        },
+        {
+          "confidence_level": 8,
+          "guess_rate": 0.4375,
+          "total_turns": 192,
+          "guess_count": 84
+        },
+        {
+          "confidence_level": 9,
+          "guess_rate": 0.7569444444444444,
+          "total_turns": 144,
+          "guess_count": 109
+        },
+        {
+          "confidence_level": 10,
+          "guess_rate": 1.0,
+          "total_turns": 2,
+          "guess_count": 2
+        }
+      ]
+    },
+    {
       "name": "Gpt 5 Mini Medium",
       "color": "#4A4A4A",
       "is_open": false,
