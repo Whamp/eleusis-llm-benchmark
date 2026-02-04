@@ -33,6 +33,7 @@ __all__ = [
     "TruncationError",
     "LLMScientist",
     "create_client",
+    "create_client_from_config",
     "load_model_config",
 ]
 
@@ -136,3 +137,48 @@ def create_client(
 
     else:
         raise ValueError(f"Unknown provider: {provider}")
+
+
+def create_client_from_config(
+    config: dict,
+    temperature: float = 0.7,
+    max_tokens: int = 4096,
+    role: str = "unknown",
+    seed: int | None = None,
+) -> BaseLLMClient:
+    """Create an LLM client from inline config dict.
+
+    Args:
+        config: Dict with provider, model_id, and provider-specific options
+        temperature: Sampling temperature (can be overridden by config)
+        max_tokens: Maximum tokens to generate
+        role: Role identifier for metrics
+        seed: Random seed for reproducibility
+
+    Returns:
+        Configured LLM client instance
+    """
+    provider = config["provider"]
+    model_id = config["model_id"]
+    temperature = config.get("temperature", temperature)
+
+    common_kwargs = {
+        "model_name": model_id,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "role": role,
+        "seed": seed,
+    }
+
+    if provider == "huggingface":
+        hf_provider = config.get("hf_provider")  # None if not specified
+        reasoning_format = config.get("reasoning_format", "separate_field")
+        return HuggingFaceClient(
+            api_key=os.getenv("HF_TOKEN"),
+            hf_provider=hf_provider,
+            reasoning_format=reasoning_format,
+            **common_kwargs,
+        )
+
+    # Could extend to other providers if needed
+    raise ValueError(f"create_client_from_config only supports huggingface, got: {provider}")

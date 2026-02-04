@@ -13,9 +13,13 @@ game:
 
 # Rule compiler model configuration (converts natural language rules to code)
 rule_compiler:
-  model: gpt-oss-120b  # References key in models.yaml
+  # Model config (inline, not referencing models.yaml)
+  provider: huggingface
+  model_id: openai/gpt-oss-120b
+  reasoning_format: separate_field
+  # No hf_provider - allows HuggingFace to use backup providers automatically
   temperature: 0.7
-  max_retries: 2              # Retries on compilation failure (default: 1 = no retry)
+  max_retries: 10             # Retries on compilation failure
   num_simulations: 100        # Number of simulation runs for rule comparison
   turns_per_simulation: 40    # Turns per simulation run
   simulation_seed: 42         # Seed for reproducible simulation RNG

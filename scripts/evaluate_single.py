@@ -166,9 +166,12 @@ def reconstruct_config_from_checkpoint(checkpoint: dict) -> dict:
             'max_llm_retries': cfg.get('llm_max_retries'),
         },
         'rule_compiler': {
-            'model': cfg['rule_compiler_model'],
+            'provider': cfg['rule_compiler_provider'],
+            'model_id': cfg['rule_compiler_model_id'],
+            'reasoning_format': cfg.get('rule_compiler_reasoning_format', 'separate_field'),
+            # hf_provider intentionally omitted - allows backup providers
             'temperature': cfg.get('rule_compiler_temperature'),
-            'max_retries': cfg.get('rule_compiler_max_retries', 2),
+            'max_retries': cfg.get('rule_compiler_max_retries', 10),
             'num_simulations': cfg.get('rule_compiler_num_simulations', 100),
             'turns_per_simulation': cfg.get('rule_compiler_turns_per_simulation', 40),
             'simulation_seed': cfg.get('rule_compiler_simulation_seed'),
@@ -295,7 +298,7 @@ def main():
         config["model"] = args.model  # Model comes from CLI, not config
         player_model = args.model
         player_display_name = model_spec_to_display_name(player_model)
-        rule_compiler_display_name = model_spec_to_display_name(config["rule_compiler"]["model"])
+        rule_compiler_display_name = model_spec_to_display_name(config["rule_compiler"]["model_id"])
         num_rounds_per_rule = config["game"].get("num_rounds_per_rule", 1)
 
     # Load config sections
@@ -447,9 +450,12 @@ def main():
                 'num_rules': num_rules,
                 'num_rounds_per_rule': num_rounds_per_rule,
                 'rule_compiler': rule_compiler_display_name,
-                'rule_compiler_model': config['rule_compiler']['model'],
-                'rule_compiler_temperature': config['rule_compiler'].get('temperature', 0.8),
-                'rule_compiler_max_retries': config['rule_compiler'].get('max_retries', 2),
+                'rule_compiler_provider': config['rule_compiler']['provider'],
+                'rule_compiler_model_id': config['rule_compiler']['model_id'],
+                'rule_compiler_reasoning_format': config['rule_compiler'].get(
+                    'reasoning_format', 'separate_field'),
+                'rule_compiler_temperature': config['rule_compiler'].get('temperature', 0.7),
+                'rule_compiler_max_retries': config['rule_compiler'].get('max_retries', 10),
                 'rule_compiler_num_simulations': config['rule_compiler'].get('num_simulations', 100),
                 'rule_compiler_turns_per_simulation': config['rule_compiler'].get('turns_per_simulation', 40),
                 'rule_compiler_simulation_seed': config['rule_compiler'].get('simulation_seed'),

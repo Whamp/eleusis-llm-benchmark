@@ -205,41 +205,55 @@ class BaseLLMClient(ABC):
         return extracted or response_text.strip()
 
     def convert_rule_to_code(self, rule_text: str, max_retries: int = 1) -> dict:
-        """Convert natural language rule to Python code with retry.
+        """Convert natural language rule to Python code with retry and sleep.
+
+        If all retries fail, sleeps 30 minutes and tries again indefinitely
+        until success.
 
         Returns dict with:
         - code: The generated code (may be None or invalid on failure)
         - status: "success", "retry_success", "no_code_returned", or "syntax_error"
         - attempts: Number of attempts made
+        - sleep_cycles: Number of 30-minute sleep cycles before success
         """
         from eleusis.prompts import get_rule_compile_prompt
 
         prompt = get_rule_compile_prompt(rule_text)
-        code = None
+        sleep_cycle = 0
 
-        for attempt in range(max_retries + 1):
-            try:
-                code = self.generate(prompt, xml_tag="CODE")
-            except Exception as e:
-                logger.warning(f"Code generation attempt {attempt + 1} failed: {e}")
-                code = None
+        while True:  # Infinite outer loop with 30-min sleeps
+            code = None
 
-            if code and self._validate_code_syntax(code):
-                return {
-                    "code": code,
-                    "status": "success" if attempt == 0 else "retry_success",
-                    "attempts": attempt + 1,
-                }
+            for attempt in range(max_retries + 1):
+                try:
+                    code = self.generate(prompt, xml_tag="CODE")
+                except Exception as e:
+                    logger.warning(f"Code generation attempt {attempt + 1} failed: {e}")
+                    code = None
 
-            if attempt < max_retries:
-                logger.info(f"Compilation attempt {attempt + 1} failed, retrying...")
+                if code and self._validate_code_syntax(code):
+                    status = "success" if attempt == 0 and sleep_cycle == 0 else "retry_success"
+                    return {
+                        "code": code,
+                        "status": status,
+                        "attempts": attempt + 1,
+                        "sleep_cycles": sleep_cycle,
+                    }
 
-        # All retries failed
-        return {
-            "code": code,  # Last attempt's code (may be None or invalid)
-            "status": "no_code_returned" if not code else "syntax_error",
-            "attempts": max_retries + 1,
-        }
+                if attempt < max_retries:
+                    logger.info(f"Compilation attempt {attempt + 1} failed, retrying...")
+
+            # All retries exhausted - sleep and try again
+            sleep_cycle += 1
+            logger.warning(
+                f"All {max_retries + 1} compilation attempts failed. "
+                f"Sleeping 30 minutes before retry (cycle {sleep_cycle})..."
+            )
+            print(
+                f"[Rule Compiler] All {max_retries + 1} attempts failed. "
+                f"Sleeping 30 minutes before retry (cycle {sleep_cycle})..."
+            )
+            time.sleep(30 * 60)  # 30 minutes
 
     def _validate_code_syntax(self, code: str) -> bool:
         """Check if code compiles without syntax errors.

@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 
 from eleusis.game import GameEngine, GameState, GuessRuleAction, Rule, RuleFactory, RuleValidator
-from eleusis.llm import LLMScientist, create_client
+from eleusis.llm import LLMScientist, create_client, create_client_from_config
 from eleusis.utils import model_spec_to_display_name
 
 __all__ = ["play_round"]
@@ -56,9 +56,8 @@ def play_round(
     max_tokens = llm_config["max_tokens"]
     llm_seed = llm_config.get("seed")
 
-    rule_compiler_client = create_client(
-        rule_compiler_cfg["model"],
-        temperature=rule_compiler_cfg["temperature"],
+    rule_compiler_client = create_client_from_config(
+        rule_compiler_cfg,
         max_tokens=max_tokens,
         role="rule_compiler",
         seed=llm_seed,
