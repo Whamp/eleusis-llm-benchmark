@@ -46,6 +46,15 @@
       }
     },
     {
+      "name": "Gemini 3 Flash Preview High",
+      "quartile_scores": {
+        "Q1": 0.9583333333333334,
+        "Q2": 0.8,
+        "Q3": 0.8888888888888888,
+        "Q4": 0.2857142857142857
+      }
+    },
+    {
       "name": "Gpt 5 Mini Medium",
       "quartile_scores": {
         "Q1": 0.875,
@@ -107,8 +116,8 @@
     "Q4"
   ],
   "metadata": {
-    "optimal_k": 0.17,
-    "complexity_formula": "cyclomatic + 0.17 * node_count",
+    "optimal_k": 0.2,
+    "complexity_formula": "cyclomatic + 0.20 * node_count",
     "value": "success_rate",
     "description": "Success rate = per-model success rate for rules in each quartile."
   }

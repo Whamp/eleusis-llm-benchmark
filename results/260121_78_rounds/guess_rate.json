@@ -133,6 +133,50 @@
       ]
     },
     {
+      "name": "Gemini 3 Flash Preview High",
+      "color": "#A4C8FA",
+      "is_open": false,
+      "provider": "google",
+      "distribution": [
+        {
+          "confidence_level": 5,
+          "guess_rate": 0.0,
+          "total_turns": 102,
+          "guess_count": 0
+        },
+        {
+          "confidence_level": 6,
+          "guess_rate": 0.0,
+          "total_turns": 104,
+          "guess_count": 0
+        },
+        {
+          "confidence_level": 7,
+          "guess_rate": 0.012121212121212121,
+          "total_turns": 165,
+          "guess_count": 2
+        },
+        {
+          "confidence_level": 8,
+          "guess_rate": 0.11560693641618497,
+          "total_turns": 173,
+          "guess_count": 20
+        },
+        {
+          "confidence_level": 9,
+          "guess_rate": 0.627906976744186,
+          "total_turns": 215,
+          "guess_count": 135
+        },
+        {
+          "confidence_level": 10,
+          "guess_rate": 1.0,
+          "total_turns": 36,
+          "guess_count": 36
+        }
+      ]
+    },
+    {
       "name": "Gemini 3 Flash Preview Low",
       "color": "#7BAAF7",
       "is_open": false,

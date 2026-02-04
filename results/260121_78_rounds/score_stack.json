@@ -46,6 +46,15 @@
       "no_stakes_delta": 3.320512820512821
     },
     {
+      "name": "Gemini 3 Flash Preview High",
+      "color": "#A4C8FA",
+      "is_open": false,
+      "provider": "google",
+      "avg_floored_score": 14.051282051282051,
+      "avg_no_stakes_score": 17.5,
+      "no_stakes_delta": 3.448717948717949
+    },
+    {
       "name": "Deepseek R1",
       "color": "#7B1FA2",
       "is_open": true,

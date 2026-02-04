@@ -475,6 +475,164 @@
       ]
     },
     {
+      "name": "Gemini 3 Flash Preview High",
+      "color": "#A4C8FA",
+      "is_open": false,
+      "provider": "google",
+      "tokens_by_turn": [
+        {
+          "turn_number": 1,
+          "avg_output_tokens": 2998.153846153846,
+          "sample_count": 78
+        },
+        {
+          "turn_number": 2,
+          "avg_output_tokens": 8744.28205128205,
+          "sample_count": 78
+        },
+        {
+          "turn_number": 3,
+          "avg_output_tokens": 11469.333333333334,
+          "sample_count": 78
+        },
+        {
+          "turn_number": 4,
+          "avg_output_tokens": 13062.205128205129,
+          "sample_count": 78
+        },
+        {
+          "turn_number": 5,
+          "avg_output_tokens": 13838.76923076923,
+          "sample_count": 78
+        },
+        {
+          "turn_number": 6,
+          "avg_output_tokens": 14372.324675324675,
+          "sample_count": 77
+        },
+        {
+          "turn_number": 7,
+          "avg_output_tokens": 14474.986486486487,
+          "sample_count": 74
+        },
+        {
+          "turn_number": 8,
+          "avg_output_tokens": 15180.542857142857,
+          "sample_count": 70
+        },
+        {
+          "turn_number": 9,
+          "avg_output_tokens": 15061.366666666667,
+          "sample_count": 60
+        },
+        {
+          "turn_number": 10,
+          "avg_output_tokens": 15418.21568627451,
+          "sample_count": 51
+        },
+        {
+          "turn_number": 11,
+          "avg_output_tokens": 15782.186046511628,
+          "sample_count": 43
+        },
+        {
+          "turn_number": 12,
+          "avg_output_tokens": 15696.945945945947,
+          "sample_count": 37
+        },
+        {
+          "turn_number": 13,
+          "avg_output_tokens": 15447.57142857143,
+          "sample_count": 35
+        },
+        {
+          "turn_number": 14,
+          "avg_output_tokens": 15716.151515151516,
+          "sample_count": 33
+        },
+        {
+          "turn_number": 15,
+          "avg_output_tokens": 15632.896551724138,
+          "sample_count": 29
+        },
+        {
+          "turn_number": 16,
+          "avg_output_tokens": 15653.153846153846,
+          "sample_count": 26
+        },
+        {
+          "turn_number": 17,
+          "avg_output_tokens": 15872.541666666666,
+          "sample_count": 24
+        },
+        {
+          "turn_number": 18,
+          "avg_output_tokens": 16599.954545454544,
+          "sample_count": 22
+        },
+        {
+          "turn_number": 19,
+          "avg_output_tokens": 15882.75,
+          "sample_count": 20
+        },
+        {
+          "turn_number": 20,
+          "avg_output_tokens": 15622.684210526315,
+          "sample_count": 19
+        },
+        {
+          "turn_number": 21,
+          "avg_output_tokens": 15887.444444444445,
+          "sample_count": 18
+        },
+        {
+          "turn_number": 22,
+          "avg_output_tokens": 15891.388888888889,
+          "sample_count": 18
+        },
+        {
+          "turn_number": 23,
+          "avg_output_tokens": 15891.176470588236,
+          "sample_count": 17
+        },
+        {
+          "turn_number": 24,
+          "avg_output_tokens": 16823.941176470587,
+          "sample_count": 17
+        },
+        {
+          "turn_number": 25,
+          "avg_output_tokens": 15895.058823529413,
+          "sample_count": 17
+        },
+        {
+          "turn_number": 26,
+          "avg_output_tokens": 15892.0,
+          "sample_count": 17
+        },
+        {
+          "turn_number": 27,
+          "avg_output_tokens": 15898.764705882353,
+          "sample_count": 17
+        },
+        {
+          "turn_number": 28,
+          "avg_output_tokens": 15901.5,
+          "sample_count": 16
+        },
+        {
+          "turn_number": 29,
+          "avg_output_tokens": 15900.0625,
+          "sample_count": 16
+        },
+        {
+          "turn_number": 30,
+          "avg_output_tokens": 14905.9375,
+          "sample_count": 16
+        }
+      ]
+    },
+    {
       "name": "Gemini 3 Flash Preview Low",
       "color": "#7BAAF7",
       "is_open": false,

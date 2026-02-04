@@ -41,6 +41,14 @@
       "provider": "openai"
     },
     {
+      "name": "Gemini 3 Flash Preview High",
+      "avg_floored_score": 14.051282051282051,
+      "avg_failed_guesses": 1.7435897435897436,
+      "color": "#A4C8FA",
+      "is_open": false,
+      "provider": "google"
+    },
+    {
       "name": "Gpt 5 Mini Medium",
       "avg_floored_score": 13.487179487179487,
       "avg_failed_guesses": 1.1666666666666667,

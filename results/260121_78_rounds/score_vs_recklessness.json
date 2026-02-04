@@ -31,6 +31,16 @@
       "provider": "huggingface"
     },
     {
+      "name": "Gemini 3 Flash Preview High",
+      "avg_floored_score": 14.051282051282051,
+      "recklessness_index": 1.7411477411477412,
+      "avg_failed_guesses": 1.7435897435897436,
+      "avg_caution": 1.746031746031746,
+      "color": "#A4C8FA",
+      "is_open": false,
+      "provider": "google"
+    },
+    {
       "name": "Gemini 3 Flash Preview Low",
       "avg_floored_score": 13.128205128205128,
       "recklessness_index": 0.0064102564102563875,

@@ -110,6 +110,44 @@
       ]
     },
     {
+      "name": "Gemini 3 Flash Preview High",
+      "color": "#A4C8FA",
+      "is_open": false,
+      "provider": "google",
+      "calibration_points": [
+        {
+          "confidence_level": 5,
+          "actual_success_rate": 0.14705882352941177,
+          "sample_count": 102
+        },
+        {
+          "confidence_level": 6,
+          "actual_success_rate": 0.15384615384615385,
+          "sample_count": 104
+        },
+        {
+          "confidence_level": 7,
+          "actual_success_rate": 0.15757575757575756,
+          "sample_count": 165
+        },
+        {
+          "confidence_level": 8,
+          "actual_success_rate": 0.2543352601156069,
+          "sample_count": 173
+        },
+        {
+          "confidence_level": 9,
+          "actual_success_rate": 0.27906976744186046,
+          "sample_count": 215
+        },
+        {
+          "confidence_level": 10,
+          "actual_success_rate": 0.6388888888888888,
+          "sample_count": 36
+        }
+      ]
+    },
+    {
       "name": "Gemini 3 Flash Preview Low",
       "color": "#7BAAF7",
       "is_open": false,
