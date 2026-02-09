@@ -1,166 +1,127 @@
 # Eleusis LLM Benchmark
 
-A benchmark for evaluating LLMs on pattern discovery in card games. Models attempt to deduce secret rules by testing cards against hidden patterns.
+A benchmark for evaluating Large Language Models on **inductive reasoning and pattern discovery**, using an adaptation of Robert Abbott's card game [Eleusis](https://en.wikipedia.org/wiki/Eleusis_(card_game)) (1956).
+
+A secret rule determines which cards are accepted. The model must discover the rule by playing cards and observing the outcomes, mimicking the process of scientific hypothesis testing.
+
+Full results on the dedicated [Eleusis space on Hugging Face](https://huggingface.co/spaces/huggingface/eleusis-benchmark)
+
+<p align="center">
+  <img src="results.png" alt="Eleusis benchmark results" style="width: 70%; max-width: 900px;">
+</p>
+
 
 ## Quick Start
 
 ```bash
-# Install dependencies
+# Install dependencies (requires uv: https://docs.astral.sh/uv/)
 uv sync
 
-# Set up API keys in .env file (only the ones you need)
-echo "ANTHROPIC_API_KEY=your_key" > .env
-echo "OPENAI_API_KEY=your_key" >> .env
-echo "GOOGLE_API_KEY=your_key" >> .env
-echo "XAI_API_KEY=your_key" >> .env
-echo "HF_TOKEN=your_hf_token" >> .env
+# Set up API keys (only the providers you need)
+cp .env.example .env
+# Edit .env with your keys
 
-# Run solo evaluation (single model)
-uv run scripts/evaluate_single.py
+# Run evaluation with a model
+uv run python scripts/evaluate_single.py --model "kimi-k2"
 
-# Run parallel evaluation (multiple models)
-./scripts/run_parallel_eval.sh
+# Run parallel evaluation across models
+./scripts/run_parallel_eval.sh eval_models.txt
 ```
 
-## Solo Mode (Primary)
+## How It Works
 
-A single LLM player attempts to discover a hidden pattern as efficiently as possible.
+Each evaluation round plays out as follows:
 
-### Running Evaluations
+1. A **secret rule** is loaded (a Python function that accepts or rejects cards based on their properties and the sequence of previously played cards)
+2. The model receives a hand of 12 cards and sees a starter card on the table
+3. Each turn, the model **plays a card** and observes if it's accepted (mainline) or rejected (sideline)
+4. The model can **guess the rule** at any point, at the cost of a penalty for wrong guesses
+5. The round ends when the model guesses correctly or reaches the turn limit
 
-```bash
-# Default: uses config.yaml settings
-uv run scripts/evaluate_single.py
+**Scoring:** `max_turns - turn_used - (penalty × wrong_guesses)` for a correct guess. Higher is better, score is floored at 0.
 
-# Override player model (using model key from models.yaml)
-uv run scripts/evaluate_single.py --player "claude-opus"
+## Running Evaluations
 
-# Test 20 rules with a specific model and custom tag
-uv run scripts/evaluate_single.py --player "gpt-5.2" --num-rules 20 --tag gpt
+### Single Model
 
-# Start from specific rule index
-uv run scripts/evaluate_single.py --rule-index 10
-
-# Resume interrupted evaluation
-uv run scripts/evaluate_single.py --resume results/solo_evaluation_20251205_151306
-```
-
-### CLI Arguments
 
 | Argument | Description |
 |----------|-------------|
-| `--config FILE` | Config file path (default: config.yaml) |
-| `--player MODEL` | Model key from models.yaml (e.g., `claude-opus`, `gpt-5.2`) |
-| `--num-rules N` | Number of distinct rules to test |
-| `--rule-index N` | Starting rule index (for sequential selection) |
-| `--max-turns N` | Max turns per round |
-| `--tag TAG` | Tag for output folder identification |
+| `--model MODEL` | Model key from `models.yaml` (required unless `--resume`) |
+| `--num-rules N` | Number of distinct rules to test (default: all) |
+| `--rule-index N` | Starting rule index |
+| `--max-turns N` | Max turns per round (default: 30) |
+| `--tag TAG` | Tag appended to output folder name |
 | `--resume PATH` | Resume from checkpoint folder |
+| `--config FILE` | Config file path (default: `config.yaml`) |
 
-### Parallel Evaluation
-
-Run multiple models in parallel:
-
-```bash
-# Run default models (edit DEFAULT_MODELS in script)
-./scripts/run_parallel_eval.sh
-
-# Use custom models file
-./scripts/run_parallel_eval.sh -m models.txt
-
-# 10 rounds each, max 2 parallel jobs
-./scripts/run_parallel_eval.sh -n 10 -j 2
-```
-
-**Options:**
-- `-m, --models FILE` - File with model specs (one per line)
-- `-n, --num-rounds N` - Rounds per evaluation
-- `-r, --rule-index N` - Starting rule index
-- `-j, --jobs N` - Max parallel jobs
-- `-c, --config FILE` - Base config file
-
-**Models file format** (see `models.txt.example`):
-```
-# Comments start with #
-# Use model keys from models.yaml
-claude-opus
-gpt-5.2
-deepseek-r1
-```
-
-### Game Mechanics
-
-- Constant hand size (12 cards) - draw 1 after each play
-- Play a card each turn (no "no play" action)
-- Guess the rule at any time
-- Game ends on correct guess or max turns (default: 30)
-
-### Scoring
-
-- Correct guess: `score = max_turns - current_turn - (wrong_guess_penalty × failed_guesses)`
-- No correct guess: `score = 0`
-- Higher is better (rewards efficiency)
-
-### Resume Feature
-
-Evaluations checkpoint after each round and can be resumed:
+### Multiple Models in Parallel
 
 ```bash
-uv run scripts/evaluate_single.py --resume results/solo_evaluation_20251205_151306
+# Provide a file listing model keys (one per line)
+./scripts/run_parallel_eval.sh eval_models.txt
+
+# With a custom config
+./scripts/run_parallel_eval.sh eval_models.txt custom_config.yaml
 ```
 
-Requirements:
-- Only works with `selection: "sequential"` in config
-- Config parameters must match original run
-- Checkpoints are self-contained (include all rules)
+The models file contains one model key per line (lines starting with `#` are ignored).
+
+### Analyzing Results
+
+```bash
+uv run python scripts/analyze_results.py results/<folder>
+```
+
+Generates charts and tables saved in the input folder: basic metrics comparison, complexity analysis, per-model reports, token usage, and more.
 
 ## Configuration
 
-### models.yaml
+### `models.yaml` — Model Definitions
 
-Model configurations with provider-specific settings:
+Each entry defines a model with its provider and provider-specific settings:
 
 ```yaml
-# Closed providers - direct API access
-claude-opus:
+# Closed-source providers
+claude-opus-4.5:
   provider: anthropic
   model_id: claude-opus-4-5-20251101
-  reasoning_budget: 8192  # Extended thinking budget
+  reasoning_budget: 16000
 
-gpt-5.2:
+gpt-5.2-medium:
   provider: openai
   model_id: gpt-5.2
-  reasoning_effort: medium  # none|minimal|low|medium|high|xhigh
+  reasoning_effort: medium    # none|minimal|low|medium|high|xhigh
 
-gemini-3-pro:
+gemini-3-pro-preview-high:
   provider: google
-  model_id: gemini-3-pro
-  thinking_level: high  # low|high
+  model_id: gemini-3-pro-preview
+  thinking_level: high        # low|high
 
 grok-4:
   provider: xai
-  model_id: grok-4-fast-reasoning
+  model_id: grok-4
 
-# Open models - HuggingFace Inference Providers
+# Open models via HuggingFace Inference Providers
 deepseek-r1:
   provider: huggingface
   model_id: deepseek-ai/DeepSeek-R1
-  hf_provider: together  # or novita, etc.
-  reasoning_format: think_tags  # think_tags or separate_field
+  hf_provider: together
+  reasoning_format: think_tags  # think_tags|separate_field
 ```
 
-### config.yaml
+Supported providers: `anthropic`, `openai`, `google`, `xai`, `huggingface`.
+
+### `config.yaml` — Game Settings
 
 ```yaml
 game:
-  num_rules: 0          # Number of distinct rules to test (0 = use entire library)
-  num_rounds_per_rule: 3  # How many rounds to play with each rule
+  num_rules: 0              # 0 = use entire rule library
+  num_rounds_per_rule: 3
   max_turns: 30
   hand_size: 12
   wrong_guess_penalty: 2
-
-rule_compiler:
-  model: gpt-oss-120b  # References key in models.yaml
+  seed: 42
 
 rules:
   library_path: "rules.json"
@@ -168,101 +129,64 @@ rules:
 
 llm:
   max_tokens: 16384
+  max_llm_retries: 3
   temperature: 0.7
 ```
 
 ### Environment Variables
 
-Create a `.env` file with the API keys you need:
+Create a `.env` file with the API keys for the providers you use:
 
 ```
-ANTHROPIC_API_KEY=your_anthropic_key
-OPENAI_API_KEY=your_openai_key
-GOOGLE_API_KEY=your_google_key
-XAI_API_KEY=your_xai_key
-HF_TOKEN=your_huggingface_token
+ANTHROPIC_API_KEY=...
+OPENAI_API_KEY=...
+GOOGLE_API_KEY=...
+XAI_API_KEY=...
+HF_TOKEN=...
 ```
 
 ## Rule Library
 
-Rules are loaded from a pre-generated JSON library:
+Rules are written in natural language in `rules.txt` and compiled to executable Python via an LLM:
 
 ```bash
-# Compile human-written rules from rules.txt to rules.json (includes validation and evaluation)
-uv run scripts/generate_rule_library.py --input rules.txt --output rules.json
+uv run python scripts/generate_rule_library.py --input rules.txt --output rules.json
 ```
 
-Rules are filtered by acceptance rate (configurable in config.yaml) to ensure playable difficulty.
+Each compiled rule is a Python function body with access to `card` (current card) and `mainline` (list of previously accepted cards). Card properties: `card.rank` (1–13), `card.color` (`"red"` or `"black"`), `card.suit.suit_name` (`"hearts"`, `"diamonds"`, `"clubs"`, `"spades"`).
 
-## Data Analysis
+The game uses a double deck (104 cards).
 
-Analyze evaluation results across multiple models:
+## Project Structure
 
-```bash
-uv run scripts/analyze_results.py
+```
+src/eleusis/
+  game/
+    cards.py          Card, Deck, Hand (double 52-card deck)
+    state.py          GameState, PlayerState, Mainline, Sideline
+    engine.py         Rule, GameEngine, scoring
+    validator.py      RuleValidator, RuleFactory, simulation-based equivalence
+    metrics.py        Rule complexity (cyclomatic, AST node count)
+  llm/
+    base.py           BaseLLMClient interface
+    anthropic.py      Anthropic (extended thinking)
+    openai_client.py  OpenAI (reasoning effort)
+    google.py         Google (thinking levels)
+    xai.py            xAI
+    huggingface.py    HuggingFace Inference Providers
+  prompts/            Prompt templates (action, rule compilation, game rules)
+  analysis/           Result analysis and visualization
+  player.py           LLMScientist — main player logic
+  runner.py           Round orchestration
+
+scripts/
+  evaluate_single.py         Single-model evaluation
+  run_parallel_eval.sh       Parallel multi-model evaluation
+  analyze_results.py         Post-hoc analysis and charts
+  generate_rule_library.py   Compile rules.txt → rules.json
 ```
 
-Outputs are saved to `results/analysis/`.
 
-### Analyses Performed
+## License
 
-**1. Basic Model Comparison**
-Compare models on success rate, average score, turns to completion, and token efficiency (score per 1K tokens). Identifies which models solve rules most efficiently.
-
-**2. Confidence Calibration**
-Measure how well models' self-reported confidence (0-10) predicts actual guess accuracy. Detects overconfidence by comparing mean confidence when correct vs wrong.
-
-**3. Rule Complexity Analysis**
-Correlate success rate with rule complexity using two metrics from `rules.json`:
-- **Cyclomatic complexity**: Number of decision branches in the rule code
-- **Node count**: AST size (total nodes in the parsed code)
-
-Also analyzes success rate vs rule selectivity (acceptance rate).
-
-**4. Learning Curves**
-Track confidence trajectory and card acceptance rate over turns to understand how models learn during a round.
-
-### Output Files
-
-| File | Description |
-|------|-------------|
-| `basic_metrics.csv` | Model comparison table |
-| `basic_metrics.png` | Bar charts for key metrics |
-| `confidence_calibration.png` | Calibration curve + confidence distributions |
-| `complexity_analysis.png` | Success vs complexity (cyclomatic + node count) |
-| `learning_curves.png` | Metrics over turn progression |
-
-## Architecture
-
-### Core Components (src/eleusis/)
-
-| File | Description |
-|------|-------------|
-| `cards.py` | Card representation (rank 1-13, 4 suits) |
-| `game_state.py` | Game state: mainline, sidelines, hands, deck |
-| `game_engine.py` | Game engine with Rule class |
-| `runner.py` | Solo round orchestration |
-| `llm/` | LLM clients (Anthropic, OpenAI, Google, xAI, HuggingFace) |
-| `prompts/` | Prompt templates |
-
-### Key Concepts
-
-- **Mainline**: Row of accepted cards (visible to player)
-- **Sideline**: Rejected cards shown below mainline
-- **Rule**: Deterministic Python function evaluating `(card, mainline) → bool`
-
-### Rule Compilation
-
-Rules are compiled into sandboxed Python with limited builtins:
-- Allowed: `len`, `sum`, `min`, `max`, `abs`, `any`, `all`
-- Available: `card.rank`, `card.color`, `card.suit.suit_name`, `mainline`
-
----
-
-## Development
-
-- Rules must be function body only (no `def`)
-- Rule comparison uses simulation-based equivalence testing
-- Failed guesses are tracked to prevent duplicates
-- Logging: Python logging with console/file levels
-- LLM retries: Up to 3 attempts per turn with fallback to random card; retry causes tracked in results.json (`max_token_reached`, `card_parse_error`, `other_error`)
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.

@@ -1,1 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+
+# Environment
+.env
+
+# Logs
 logs/
+
+# Caches
+.pytest_cache/
+.ruff_cache/
+
+# IDE
+.idea/
+
+# macOS
+.DS_Store
+
+# Claude Code
+CLAUDE.md
+.claude/
