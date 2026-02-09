@@ -7,7 +7,7 @@
   "models": [
     {
       "name": "Gpt Oss 120B",
-      "color": "#5C6BC0",
+      "color": "#707070",
       "is_open": true,
       "median_ratio": 1.3180778392324766,
       "q25": 0.8728261066201694,
@@ -16,7 +16,7 @@
     },
     {
       "name": "Gpt Oss 20B",
-      "color": "#26A69A",
+      "color": "#B2B2B2",
       "is_open": true,
       "median_ratio": 1.1461892247043366,
       "q25": 0.7746177254854699,
@@ -25,7 +25,7 @@
     },
     {
       "name": "Claude Haiku 4.5",
-      "color": "#FF9500",
+      "color": "#D08E76",
       "is_open": false,
       "median_ratio": 1.0489487516425757,
       "q25": 0.7313288069835112,
@@ -34,7 +34,7 @@
     },
     {
       "name": "Deepseek R1",
-      "color": "#7B1FA2",
+      "color": "#5A6AF7",
       "is_open": true,
       "median_ratio": 1.0,
       "q25": 0.7585413929040736,
@@ -43,7 +43,7 @@
     },
     {
       "name": "Gemini 3 Flash Preview High",
-      "color": "#A4C8FA",
+      "color": "#8EADF6",
       "is_open": false,
       "median_ratio": 1.0,
       "q25": 0.8239520958083832,
@@ -52,7 +52,7 @@
     },
     {
       "name": "Gemini 3 Flash Preview Low",
-      "color": "#7BAAF7",
+      "color": "#AEC3F9",
       "is_open": false,
       "median_ratio": 1.0,
       "q25": 0.7748396755708127,
@@ -61,7 +61,7 @@
     },
     {
       "name": "Glm 4.7",
-      "color": "#00ACC1",
+      "color": "#FF7777",
       "is_open": true,
       "median_ratio": 1.0,
       "q25": 0.7285394284290155,
@@ -70,7 +70,7 @@
     },
     {
       "name": "Gpt 5 Mini Medium",
-      "color": "#4A4A4A",
+      "color": "#99BDB4",
       "is_open": false,
       "median_ratio": 1.0,
       "q25": 0.7609756097560977,
@@ -79,7 +79,7 @@
     },
     {
       "name": "Gpt 5.2 High",
-      "color": "#8C8C8C",
+      "color": "#8CB3A8",
       "is_open": false,
       "median_ratio": 1.0,
       "q25": 0.7882716049382716,
@@ -97,7 +97,7 @@
     },
     {
       "name": "Claude Opus 4.5",
-      "color": "#FF6B00",
+      "color": "#C1755A",
       "is_open": false,
       "median_ratio": 0.984157775622373,
       "q25": 0.7082273112807465,
@@ -106,7 +106,7 @@
     },
     {
       "name": "Kimi K2",
-      "color": "#00897B",
+      "color": "#CCCC00",
       "is_open": true,
       "median_ratio": 0.9703703703703703,
       "q25": 0.6212962962962963,

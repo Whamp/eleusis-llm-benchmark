@@ -9,61 +9,61 @@ claude-opus-4.5:
   provider: anthropic
   model_id: claude-opus-4-5-20251101
   reasoning_budget: 16000  # budget_tokens for extended thinking
-  color: "#FF6B00"  # Anthropic orange
+  color: "#C1755A"  # Anthropic warm
 
 claude-haiku-4.5:
   provider: anthropic
   model_id: claude-haiku-4-5-20251001
   reasoning_budget: 16000  # budget_tokens for extended thinking
-  color: "#FF9500"  # Anthropic orange (lighter)
+  color: "#D08E76"  # Anthropic warm (lighter)
 
 gpt-5-mini-medium:
   provider: openai
   model_id: gpt-5-mini-2025-08-07
   reasoning_effort: medium  # none|minimal|low|medium|high|xhigh
-  color: "#4A4A4A"  # OpenAI gray (darkest)
+  color: "#99BDB4"  # OpenAI teal
 
 gpt-5.2-medium:
   provider: openai
   model_id: gpt-5.2
   reasoning_effort: medium  # none|minimal|low|medium|high|xhigh
-  color: "#6B6B6B"  # OpenAI gray
+  color: "#99BDB4"  # OpenAI teal (lightest)
 
 gpt-5.2-high:
   provider: openai
   model_id: gpt-5.2
   reasoning_effort: high  # none|minimal|low|medium|high|xhigh
-  color: "#8C8C8C"  # OpenAI gray (lighter)
+  color: "#8CB3A8"  # OpenAI teal
 
 gpt-5.2-xhigh:
   provider: openai
   model_id: gpt-5.2
   reasoning_effort: xhigh  # none|minimal|low|medium|high|xhigh
-  color: "#ADADAD"  # OpenAI gray (lightest)
+  color: "#7FA99D"  # OpenAI teal (darkest)
 
 gemini-3-pro-preview-low:
   provider: google
   model_id: gemini-3-pro-preview
   thinking_level: low
-  color: "#4285F4"  # Google blue (primary)
+  color: "#6E97F3"  # Gemini blue (lighter)
 
 gemini-3-pro-preview-high:
   provider: google
   model_id: gemini-3-pro-preview
   thinking_level: high
-  color: "#5E97F6"  # Google blue
+  color: "#4E81F0"  # Gemini blue
 
 gemini-3-flash-preview-low:
   provider: google
   model_id: gemini-3-flash-preview
   thinking_level: low
-  color: "#7BAAF7"  # Google blue (lighter)
+  color: "#AEC3F9"  # Gemini blue (lightest)
 
 gemini-3-flash-preview-high:
   provider: google
   model_id: gemini-3-flash-preview
   thinking_level: high
-  color: "#A4C8FA"  # Google blue (lightest)
+  color: "#8EADF6"  # Gemini blue (lighter)
 
 grok-4-1-fast-reasoning:
   provider: xai
@@ -84,32 +84,32 @@ deepseek-r1:
   model_id: deepseek-ai/DeepSeek-R1
   hf_provider: together
   reasoning_format: think_tags  # Uses <think>...</think> in content
-  color: "#7B1FA2"  # Open/HF purple
+  color: "#5A6AF7"  # DeepSeek blue-violet
 
 kimi-k2:
   provider: huggingface
   model_id: moonshotai/Kimi-K2-Thinking
   hf_provider: together
   reasoning_format: separate_field
-  color: "#00897B"  # Open/HF teal
+  color: "#CCCC00"  # Yellow
 
 glm-4.7:
   provider: huggingface
   model_id: zai-org/GLM-4.7
   hf_provider: zai-org
   reasoning_format: separate_field
-  color: "#00ACC1"  # Open/HF cyan
+  color: "#FF7777"  # red-pink
 
 gpt-oss-120b:
   provider: huggingface
   model_id: openai/gpt-oss-120b
   hf_provider: together
   reasoning_format: separate_field
-  color: "#5C6BC0"  # Open/HF indigo
+  color: "#707070"  # Dark gray
 
 gpt-oss-20b:
   provider: huggingface
   model_id: openai/gpt-oss-20b
   hf_provider: together
   reasoning_format: separate_field
-  color: "#26A69A"  # Open/HF teal (lighter)
+  color: "#B2B2B2"  # Light gray

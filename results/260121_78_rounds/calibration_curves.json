@@ -2,7 +2,7 @@
   "models": [
     {
       "name": "Claude Haiku 4.5",
-      "color": "#FF9500",
+      "color": "#D08E76",
       "is_open": false,
       "provider": "anthropic",
       "calibration_points": [
@@ -40,7 +40,7 @@
     },
     {
       "name": "Claude Opus 4.5",
-      "color": "#FF6B00",
+      "color": "#C1755A",
       "is_open": false,
       "provider": "anthropic",
       "calibration_points": [
@@ -73,7 +73,7 @@
     },
     {
       "name": "Deepseek R1",
-      "color": "#7B1FA2",
+      "color": "#5A6AF7",
       "is_open": true,
       "provider": "huggingface",
       "calibration_points": [
@@ -111,7 +111,7 @@
     },
     {
       "name": "Gemini 3 Flash Preview High",
-      "color": "#A4C8FA",
+      "color": "#8EADF6",
       "is_open": false,
       "provider": "google",
       "calibration_points": [
@@ -149,7 +149,7 @@
     },
     {
       "name": "Gemini 3 Flash Preview Low",
-      "color": "#7BAAF7",
+      "color": "#AEC3F9",
       "is_open": false,
       "provider": "google",
       "calibration_points": [
@@ -187,7 +187,7 @@
     },
     {
       "name": "Glm 4.7",
-      "color": "#00ACC1",
+      "color": "#FF7777",
       "is_open": true,
       "provider": "huggingface",
       "calibration_points": [
@@ -225,7 +225,7 @@
     },
     {
       "name": "Gpt 5 Mini Medium",
-      "color": "#4A4A4A",
+      "color": "#99BDB4",
       "is_open": false,
       "provider": "openai",
       "calibration_points": [
@@ -258,7 +258,7 @@
     },
     {
       "name": "Gpt 5.2 High",
-      "color": "#8C8C8C",
+      "color": "#8CB3A8",
       "is_open": false,
       "provider": "openai",
       "calibration_points": [
@@ -291,7 +291,7 @@
     },
     {
       "name": "Gpt Oss 120B",
-      "color": "#5C6BC0",
+      "color": "#707070",
       "is_open": true,
       "provider": "huggingface",
       "calibration_points": [
@@ -324,7 +324,7 @@
     },
     {
       "name": "Gpt Oss 20B",
-      "color": "#26A69A",
+      "color": "#B2B2B2",
       "is_open": true,
       "provider": "huggingface",
       "calibration_points": [
@@ -400,7 +400,7 @@
     },
     {
       "name": "Kimi K2",
-      "color": "#00897B",
+      "color": "#CCCC00",
       "is_open": true,
       "provider": "huggingface",
       "calibration_points": [
