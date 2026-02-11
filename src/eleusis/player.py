@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import random
+import time
 from typing import TYPE_CHECKING
 
 from eleusis.game.cards import Card, Suit
@@ -88,49 +89,54 @@ class LLMScientist:
             wrong_guess_penalty=wrong_guess_penalty,
         )
 
-        for attempt in range(self.max_retries):
-            cause = None
-            try:
-                # Add hint on retries (attempt >= 1)
-                prompt = base_prompt + REASONING_HINT if attempt > 0 else base_prompt
-                self.last_prompt = prompt
+        sleep_cycle = 0
+        while True:
+            for attempt in range(self.max_retries):
+                cause = None
+                try:
+                    # Add hint on retries (attempt >= 1)
+                    prompt = base_prompt + REASONING_HINT if attempt > 0 else base_prompt
+                    self.last_prompt = prompt
 
-                response = self.llm_client.generate(prompt, xml_tag="ACTION", return_dict=True)
-                self.last_action_response = response
+                    response = self.llm_client.generate(prompt, xml_tag="ACTION", return_dict=True)
+                    self.last_action_response = response
 
-                card_value = response.get("card", "").strip()
-                card = self._parse_card(card_value, hand_cards)
+                    card_value = response.get("card", "").strip()
+                    card = self._parse_card(card_value, hand_cards)
 
-                if card:
-                    logger.info(f"{self.name} plays {card}")
-                    tentative = response.get("tentative_rule", "")
-                    if tentative:
-                        logger.debug(f"{self.name}'s tentative rule: {tentative}")
-                    return PlayCardAction(card)
+                    if card:
+                        logger.info(f"{self.name} plays {card}")
+                        tentative = response.get("tentative_rule", "")
+                        if tentative:
+                            logger.debug(f"{self.name}'s tentative rule: {tentative}")
+                        return PlayCardAction(card)
 
-                # Card parsing failed
-                cause = "card_parse_error"
-                logger.warning(f"{self.name} attempt {attempt + 1}: {cause} - card='{card_value}'")
+                    # Card parsing failed
+                    cause = "card_parse_error"
+                    logger.warning(f"{self.name} attempt {attempt + 1}: {cause} - card='{card_value}'")
 
-            except TruncationError as e:
-                cause = "max_token_reached"
-                logger.warning(f"{self.name} attempt {attempt + 1}: {cause} - {e}")
+                except TruncationError as e:
+                    cause = "max_token_reached"
+                    logger.warning(f"{self.name} attempt {attempt + 1}: {cause} - {e}")
 
-            except Exception as e:
-                cause = "other_error"
-                logger.warning(
-                    f"{self.name} attempt {attempt + 1}: {cause} - {type(e).__name__}: {e}"
-                )
+                except Exception as e:
+                    cause = "other_error"
+                    logger.warning(
+                        f"{self.name} attempt {attempt + 1}: {cause} - {type(e).__name__}: {e}"
+                    )
 
-            # Track this failed attempt
-            if cause:
-                self.last_retry_count = attempt + 1
-                self.last_retry_causes.append({"attempt": attempt + 1, "cause": cause})
+                # Track this failed attempt
+                if cause:
+                    self.last_retry_count = attempt + 1
+                    self.last_retry_causes.append({"attempt": attempt + 1, "cause": cause})
 
-        logger.warning(
-            f"{self.name} using random fallback after {self.max_retries} failed attempts"
-        )
-        return PlayCardAction(random.choice(hand_cards))
+            # All retries exhausted - sleep and try again
+            sleep_cycle += 1
+            logger.warning(
+                f"{self.name} all {self.max_retries} attempts failed. "
+                f"Sleep cycle {sleep_cycle}: sleeping 10 minutes before retry..."
+            )
+            time.sleep(10 * 60)  # 10 minutes
 
     def record_action_result(self, result: dict) -> None:
         """Record the result of an action in play history."""
