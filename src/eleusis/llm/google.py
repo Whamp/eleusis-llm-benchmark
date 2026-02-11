@@ -56,7 +56,9 @@ class GoogleClient(BaseLLMClient):
         # Set API key in environment for google-genai
         if self.api_key:
             os.environ["GOOGLE_API_KEY"] = self.api_key
-        self.client = genai.Client()
+        self.client = genai.Client(
+            http_options=types.HttpOptions(timeout=600_000),  # 10min in ms
+        )
 
     @property
     def provider_name(self) -> str:

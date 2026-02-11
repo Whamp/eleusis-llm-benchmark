@@ -53,11 +53,17 @@ class XAIClient(BaseLLMClient):
             seed=seed,
         )
 
-        # xAI API can take longer for reasoning, use extended timeout
+        # xAI API can take longer for reasoning, use extended read timeout
+        # but keep connect/write/pool timeouts short to detect hangs
         self.client = OpenAI(
             base_url=self.XAI_BASE_URL,
             api_key=self.api_key,
-            timeout=httpx.Timeout(3600.0),
+            timeout=httpx.Timeout(
+                connect=30.0,
+                read=600.0,
+                write=30.0,
+                pool=30.0,
+            ),
         )
 
     @property
