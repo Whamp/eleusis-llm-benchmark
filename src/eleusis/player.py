@@ -90,6 +90,7 @@ class LLMScientist:
         )
 
         sleep_cycle = 0
+        had_truncation = False
         while True:
             for attempt in range(self.max_retries):
                 cause = None
@@ -98,7 +99,15 @@ class LLMScientist:
                     prompt = base_prompt + REASONING_HINT if attempt > 0 else base_prompt
                     self.last_prompt = prompt
 
-                    response = self.llm_client.generate(prompt, xml_tag="ACTION", return_dict=True)
+                    # Double max tokens for retries after a truncation
+                    original_max_tokens = self.llm_client.max_tokens
+                    if had_truncation:
+                        self.llm_client.max_tokens = original_max_tokens * 2
+                        logger.info(f"{self.name} doubling max_tokens to {self.llm_client.max_tokens}")
+                    try:
+                        response = self.llm_client.generate(prompt, xml_tag="ACTION", return_dict=True)
+                    finally:
+                        self.llm_client.max_tokens = original_max_tokens
                     self.last_action_response = response
 
                     card_value = response.get("card", "").strip()
@@ -117,6 +126,7 @@ class LLMScientist:
 
                 except TruncationError as e:
                     cause = "max_token_reached"
+                    had_truncation = True
                     logger.warning(f"{self.name} attempt {attempt + 1}: {cause} - {e}")
 
                 except Exception as e:
