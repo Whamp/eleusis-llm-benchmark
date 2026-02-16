@@ -5,6 +5,14 @@
 # Closed Providers - Direct API Access
 # ============================================================================
 
+# Anthropic : https://platform.claude.com/docs/en/about-claude/models/overview
+
+claude-opus-4.6:
+  provider: anthropic
+  model_id: claude-opus-4-6
+  reasoning_budget: 16000  # budget_tokens for extended thinking
+  color: "#C1755A"  # Anthropic warm
+
 claude-opus-4.5:
   provider: anthropic
   model_id: claude-opus-4-5-20251101
@@ -16,6 +24,8 @@ claude-haiku-4.5:
   model_id: claude-haiku-4-5-20251001
   reasoning_budget: 16000  # budget_tokens for extended thinking
   color: "#D08E76"  # Anthropic warm (lighter)
+
+# OpenAI : https://developers.openai.com/api/docs/models
 
 gpt-5-mini-medium:
   provider: openai
@@ -40,6 +50,12 @@ gpt-5.2-xhigh:
   model_id: gpt-5.2
   reasoning_effort: xhigh  # none|minimal|low|medium|high|xhigh
   color: "#7FA99D"  # OpenAI teal (darkest)
+
+gpt-5.2-pro-high:
+    provider: openai
+    model_id: gpt-5.2-pro-2025-12-11
+    reasoning_effort: high  # none|minimal|low|medium|high|xhigh
+    color: "#7FA99D"  # OpenAI teal (darkest)
 
 gemini-3-pro-preview-low:
   provider: google
@@ -78,6 +94,12 @@ grok-4:
 # ============================================================================
 # Open Models - HuggingFace Inference Providers
 # ============================================================================
+
+deepseek-v3.2:
+    provider: huggingface
+    model_id: deepseek-ai/DeepSeek-V3.2
+    reasoning_format: think_tags  # Uses <think>...</think> in content
+    color: "#5A6AF7"  # DeepSeek blue-violet
 
 deepseek-r1:
   provider: huggingface
