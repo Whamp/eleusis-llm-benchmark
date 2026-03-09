@@ -1,0 +1,33 @@
+# Eleusis LLM Benchmark - Smoke Test Configuration
+# Verifies auth and model wiring end-to-end with one short round on an easy rule.
+# Use this with the same --model you plan to benchmark in the full run.
+
+game:
+  num_rules: 1
+  num_rounds_per_rule: 1
+  max_turns: 8
+  hand_size: 12
+  wrong_guess_penalty: 2
+  seed: 42
+
+rule_compiler:
+  provider: huggingface
+  model_id: openai/gpt-oss-120b
+  hf_provider: together
+  reasoning_format: separate_field
+  temperature: 0.2
+  max_retries: 3
+  num_simulations: 20
+  turns_per_simulation: 20
+  simulation_seed: 42
+
+rules:
+  library_path: "rules.json"
+  selection: "sequential"
+  index: 0  # even_ranks_only
+
+llm:
+  max_tokens: 16384
+  max_llm_retries: 3
+  temperature: 0.7
+  seed: 42

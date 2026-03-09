@@ -19,14 +19,43 @@ uv sync
 
 # Set up API keys (only the providers you need)
 cp .env.example .env
-# Edit .env with your keys
+# Edit .env and set at least HF_TOKEN
 
-# Run evaluation with a model
-uv run python scripts/evaluate_single.py --model "kimi-k2"
+# Pick the same model you plan to use for the full benchmark
+MODEL="kimi-k2"
 
-# Run parallel evaluation across models
-./scripts/run_parallel_eval.sh eval_models.txt
+# Run a smoke test to verify auth + config end-to-end for that model
+uv run python scripts/evaluate_single.py \
+  --config config.smoke.yaml \
+  --model "$MODEL" \
+  --tag smoke
+
+# If the smoke test succeeds, run the full benchmark with the same model
+uv run python scripts/evaluate_single.py --model "$MODEL"
 ```
+
+The smoke test runs one short round on a simple known rule. It is only meant to verify
+that your Hugging Face token, rule compiler, and chosen benchmark model are wired
+correctly before starting a much longer run. It is not a quality benchmark.
+
+## Two Model Roles
+
+This benchmark uses two separate model configurations:
+
+1. **Rule compiler** — converts natural-language rules into Python code for execution.
+   By default this is configured in `config.yaml` as `openai/gpt-oss-120b` via
+   Hugging Face Inference Providers.
+2. **Benchmark model** — the model actually playing Eleusis. This is selected with
+   `--model <key>` and loaded from `models.yaml`.
+
+Example:
+
+```bash
+uv run python scripts/evaluate_single.py --model "kimi-k2"
+```
+
+In that command, `kimi-k2` is the benchmark model. The rule compiler still comes from
+`config.yaml` unless you change it.
 
 ## How It Works
 
@@ -41,6 +70,27 @@ Each evaluation round plays out as follows:
 **Scoring:** `max_turns - turn_used - (penalty × wrong_guesses)` for a correct guess. Higher is better, score is floored at 0.
 
 ## Running Evaluations
+
+### Smoke Test
+
+Use the smoke test before a full run, with the same model you intend to benchmark:
+
+```bash
+MODEL="kimi-k2"
+uv run python scripts/evaluate_single.py \
+  --config config.smoke.yaml \
+  --model "$MODEL" \
+  --tag smoke
+```
+
+This uses:
+- your chosen benchmark model from `--model`
+- the default rule compiler from `config.smoke.yaml`: `openai/gpt-oss-120b`
+- one easy rule from `rules.json`: `even_ranks_only`
+
+A successful smoke test means the command completes and writes a results folder under
+`results/` for the same model you plan to use in the full benchmark. The benchmark
+model does not need to solve the rule perfectly.
 
 ### Single Model
 
@@ -123,6 +173,12 @@ game:
   wrong_guess_penalty: 2
   seed: 42
 
+rule_compiler:
+  provider: huggingface
+  model_id: openai/gpt-oss-120b
+  hf_provider: together
+  reasoning_format: separate_field
+
 rules:
   library_path: "rules.json"
   selection: "sequential"
@@ -133,16 +189,27 @@ llm:
   temperature: 0.7
 ```
 
+`config.yaml` controls the game settings and the rule compiler. The benchmark model is
+still chosen separately with `--model` and loaded from `models.yaml`.
+
 ### Environment Variables
 
-Create a `.env` file with the API keys for the providers you use:
+Create a `.env` file with the API keys for the providers you use.
 
-```
-ANTHROPIC_API_KEY=...
-OPENAI_API_KEY=...
-GOOGLE_API_KEY=...
-XAI_API_KEY=...
-HF_TOKEN=...
+For the default setup, `HF_TOKEN` is required because the rule compiler uses Hugging
+Face Inference Providers.
+
+```dotenv
+HF_TOKEN=hf_...
+
+# Optional: bill Inference Providers calls to a Hugging Face org instead of your
+# personal account.
+# HF_BILL_TO=your_org_name
+
+ANTHROPIC_API_KEY=
+OPENAI_API_KEY=
+GOOGLE_API_KEY=
+XAI_API_KEY=
 ```
 
 ## Rule Library
