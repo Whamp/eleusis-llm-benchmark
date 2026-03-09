@@ -52,6 +52,8 @@ class HuggingFaceClient(BaseLLMClient):
                             "think_tags" - reasoning in <think>...</think> tags in content
                             "separate_field" - reasoning in separate API field
             timeout: Request timeout in seconds (default 300s / 5 minutes).
+            Billing defaults to the authenticated user's personal account. Set
+            HF_BILL_TO to bill calls to a Hugging Face organization instead.
         """
         super().__init__(
             model_name=model_name,
@@ -72,9 +74,12 @@ class HuggingFaceClient(BaseLLMClient):
             os.environ["HF_TOKEN"] = self.api_key
 
         # Initialize client with provider if specified
-        client_kwargs = {"bill_to": "huggingface", "timeout": self.timeout}
+        client_kwargs = {"api_key": self.api_key, "timeout": self.timeout}
         if self.hf_provider:
             client_kwargs["provider"] = self.hf_provider
+        hf_bill_to = os.getenv("HF_BILL_TO")
+        if hf_bill_to:
+            client_kwargs["bill_to"] = hf_bill_to
         self.client = InferenceClient(**client_kwargs)
 
     @property
