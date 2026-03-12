@@ -33,7 +33,7 @@ def load_model_metadata() -> dict[str, dict]:
             provider = config.get("provider", "")
             metadata[model_key] = {
                 "color": config.get("color", DEFAULT_COLOR),
-                "is_open": provider in OPEN_PROVIDERS,
+                "is_open": config.get("open_source", provider in OPEN_PROVIDERS),
                 "provider": provider,
             }
     return metadata

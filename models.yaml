@@ -113,3 +113,9 @@ gpt-oss-20b:
   hf_provider: together
   reasoning_format: separate_field
   color: "#B2B2B2"  # Light gray
+
+qwen3.5-27b-gptq-int4:
+  provider: openai_compat
+  model_id: Qwen/Qwen3.5-27B-GPTQ-Int4
+  color: "#7EB8DA"  # Qwen blue
+  open_source: true
