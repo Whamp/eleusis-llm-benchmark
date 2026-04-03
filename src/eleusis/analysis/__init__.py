@@ -209,18 +209,17 @@ def _generate_html_report(results, df_rounds, df_turns, folder):
 
 
 def _build_html_template(models_data, total_rules, folder_name):
-    """Build HTML template string."""
+    """Build HTML template string with refined dark theme."""
 
-    # Build ranking rows with data attributes (including all metrics for JS updates)
+    # Build ranking rows with data attributes
     rows_html = ""
     for i, m in enumerate(models_data, 1):
         css_class = 'in-progress' if m["is_in_progress"] else ''
         tokens = m.get("tokens_per_turn", 0)
         dd_rate = m.get("double_down_rate", 0)
         cr = m.get("complexity_ratio", 1.0)
-        rows_html += f'                <tr class="{css_class}" data-model="{m["name"].replace(chr(34), chr(39))}" data-rank="{i}" data-score="{m["avg_score"]:.2f}" data-success="{m["success_rate"]:.2f}" data-rounds="{m["rounds"]}" data-tokens="{tokens:.0f}" data-dd="{dd_rate:.1f}" data-cr="{cr:.2f}"><td>{i}</td><td>{m["name"]}</td><td>{m["avg_score"]:.2f}</td><td>{m["success_rate"]:.0%}</td><td>{m["rounds"]}</td></tr>\n'
+        rows_html += f'                <tr class="{css_class}" data-model="{m["name"].replace(chr(34), chr(39))}" data-rank="{i}" data-score="{m["avg_score"]:.2f}" data-success="{m["success_rate"]:.2f}" data-rounds="{m["rounds"]}" data-tokens="{tokens:.0f}" data-dd="{dd_rate:.1f}" data-cr="{cr:.2f}"><td>{i}</td><td>{m["name"]}</td><td>{m["avg_score"]:.2f}</td><td>{m["success_rate"]:.0%}</td><td>{tokens:,.0f}</td><td>{dd_rate:.1f}%</td><td>{cr:.2f}</td></tr>\n'
 
-    # Build summary cards HTML - original 6-card layout
     # Find in-progress model and its rank
     in_progress_rank = None
     ref_model = None
@@ -232,15 +231,14 @@ def _build_html_template(models_data, total_rules, folder_name):
     if not ref_model and models_data:
         ref_model = models_data[0]
 
-    # For non-in-progress reports, use first model's stats
     rank_display = in_progress_rank if in_progress_rank else (1 if models_data else 0)
     avg_score = ref_model["avg_score"] if ref_model else 0
     success_rate = ref_model["success_rate"] if ref_model else 0
     tokens_per_turn = ref_model.get("tokens_per_turn", 0) if ref_model else 0
     double_down_rate = ref_model.get("double_down_rate", 0) if ref_model else 0
     complexity_ratio = ref_model.get("complexity_ratio", 1.0) if ref_model else 1.0
-    
-    # Determine complexity label
+
+    # Determine labels
     if complexity_ratio > 1.5:
         complexity_label = "overcomplication"
     elif complexity_ratio > 1.0:
@@ -249,16 +247,14 @@ def _build_html_template(models_data, total_rules, folder_name):
         complexity_label = "balanced"
     else:
         complexity_label = "simplification"
-    
-    # Determine tokens label
+
     if tokens_per_turn < 4000:
         tokens_label = "efficient"
     elif tokens_per_turn < 8000:
         tokens_label = "moderate"
     else:
         tokens_label = "high"
-    
-    # Determine double-down label
+
     if double_down_rate < 15:
         dd_label = "very cautious"
     elif double_down_rate < 30:
@@ -266,42 +262,10 @@ def _build_html_template(models_data, total_rules, folder_name):
     else:
         dd_label = "aggressive"
 
-    summary_cards = f'''
-            <div class="metric-card">
-                <div class="metric-label">Progress</div>
-                <div class="metric-value">{total_rules}/{total_rules}</div>
-                <div class="metric-sub">rules completed</div>
-            </div>
-            <div class="metric-card{' highlight' if in_progress_rank else ''}">
-                <div class="metric-label">Current Rank</div>
-                <div class="metric-value">#{rank_display}</div>
-                <div class="metric-sub">of {len(models_data)} models</div>
-            </div>
-            <div class="metric-card{' highlight' if in_progress_rank else ''}">
-                <div class="metric-label">Avg Floored Score</div>
-                <div class="metric-value">{avg_score:.2f}</div>
-                <div class="metric-sub">{success_rate:.0%} success rate</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">Tokens Per Turn</div>
-                <div class="metric-value" id="card-tokens">{tokens_per_turn:,.0f}</div>
-                <div class="metric-sub">{tokens_label}</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">Double-Down Rate</div>
-                <div class="metric-value" id="card-dd">{double_down_rate:.1f}%</div>
-                <div class="metric-sub">{dd_label}</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">Complexity Ratio</div>
-                <div class="metric-value" id="card-complexity">{complexity_ratio:.2f}</div>
-                <div class="metric-sub">{complexity_label}</div>
-            </div>'''
-
     # Build per-model chart cards
     per_model_cards = ""
     for m in models_data:
-        safe_name = m["name"].lower().replace(" ", "_").replace(".", "_").replace("-", "_").replace("(", "").replace(")", "")
+        safe_name = m["name"].lower().replace(" ", "_").replace(".", "_").replace("-", "_")
         filename = f"model_{safe_name}.png"
         per_model_cards += f'''            <div class="chart-card">
                 <h3>{m["name"]} ({m["avg_score"]:.1f})</h3>
@@ -312,7 +276,7 @@ def _build_html_template(models_data, total_rules, folder_name):
     # Build per-model lightboxes
     per_model_lightboxes = ""
     for m in models_data:
-        safe_name = m["name"].lower().replace(" ", "_").replace(".", "_").replace("-", "_").replace("(", "").replace(")", "")
+        safe_name = m["name"].lower().replace(" ", "_").replace(".", "_").replace("-", "_")
         filename = f"model_{safe_name}.png"
         per_model_lightboxes += f'''    <div id="lb-model-{safe_name[:30]}" class="lightbox" onclick="history.back(); return false;">
         <span class="lightbox-close">&times;</span>
@@ -320,7 +284,7 @@ def _build_html_template(models_data, total_rules, folder_name):
     </div>
 '''
 
-    # Build JavaScript data map for interactive features
+    # Build JavaScript data map
     model_data_js = ""
     for i, m in enumerate(models_data, 1):
         safe_name = m["name"].replace('"', '\\"')
@@ -335,142 +299,293 @@ def _build_html_template(models_data, total_rules, folder_name):
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Eleusis Benchmark Report - {folder_name}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
+        :root {{
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --border-subtle: #30363d;
+            --border-accent: #3d444d;
+            --text-primary: #f0f6fc;
+            --text-secondary: #8b949e;
+            --text-muted: #6e7681;
+            --accent-gold: #d4a853;
+            --accent-gold-dim: #a88a4a;
+            --accent-sage: #7ee787;
+            --accent-rose: #f08888;
+            --accent-blue: #79c0ff;
+            --accent-purple: #d2a8ff;
+        }}
+        
         * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+        
         body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #1a1a2e;
-            color: #eaeaea;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
             line-height: 1.6;
+            min-height: 100vh;
         }}
-        .container {{ max-width: 1400px; margin: 0 auto; padding: 20px; }}
+        
+        .container {{ max-width: 1400px; margin: 0 auto; padding: 40px 24px; }}
+        
+        /* Header - Editorial Style */
         header {{
-            background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
-            padding: 30px;
-            border-radius: 12px;
-            margin-bottom: 30px;
-            border: 1px solid #e94560;
+            position: relative;
+            padding: 60px 0 40px;
+            margin-bottom: 50px;
+            border-bottom: 1px solid var(--border-subtle);
         }}
+        
+        header::before {{
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-gold) 0%, var(--accent-gold-dim) 50%, transparent 100%);
+        }}
+        
+        .header-kicker {{
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: var(--accent-gold);
+            margin-bottom: 12px;
+        }}
+        
         h1 {{
-            color: #e94560;
-            font-size: 2.2em;
-            margin-bottom: 10px;
+            font-family: 'Crimson Pro', Georgia, serif;
+            font-size: 3.2rem;
+            font-weight: 500;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            line-height: 1.1;
         }}
+        
         .subtitle {{
-            color: #a0a0a0;
-            font-size: 1.1em;
+            font-size: 1rem;
+            color: var(--text-secondary);
+            font-weight: 400;
         }}
+        
+        .subtitle strong {{
+            color: var(--text-primary);
+            font-weight: 500;
+        }}
+        
+        /* Summary Grid - Cards */
         .summary-grid {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
+            gap: 20px;
+            margin-bottom: 60px;
         }}
+        
         .metric-card {{
-            background: #16213e;
-            padding: 20px;
-            border-radius: 8px;
-            border-left: 4px solid #e94560;
-            transition: transform 0.2s, border-color 0.2s;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
         }}
+        
+        .metric-card::before {{
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--border-subtle);
+            transition: background 0.3s ease;
+        }}
+        
         .metric-card:hover {{
-            border-left-color: #00d9ff;
+            border-color: var(--border-accent);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
         }}
+        
+        .metric-card:hover::before {{
+            background: var(--accent-gold);
+        }}
+        
+        .metric-card.highlight::before {{
+            background: var(--accent-gold);
+        }}
+        
         .metric-card.highlight {{
-            border-left-color: #00d9ff;
-            background: #1f2d4a;
+            background: var(--bg-tertiary);
+            border-color: var(--accent-gold-dim);
         }}
+        
         .metric-label {{
-            color: #a0a0a0;
-            font-size: 0.85em;
+            font-size: 0.7rem;
+            font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.15em;
+            color: var(--text-muted);
+            margin-bottom: 8px;
         }}
+        
         .metric-value {{
-            color: #eaeaea;
-            font-size: 1.8em;
-            font-weight: bold;
-            margin-top: 5px;
+            font-family: 'Crimson Pro', Georgia, serif;
+            font-size: 2.4rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            letter-spacing: -0.02em;
         }}
+        
         .metric-sub {{
-            color: #888;
-            font-size: 0.9em;
-            margin-top: 3px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 400;
         }}
+        
+        /* Section Headers */
         h2 {{
-            color: #e94560;
-            font-size: 1.5em;
-            margin: 40px 0 20px 0;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #e94560;
+            font-family: 'Crimson Pro', Georgia, serif;
+            font-size: 1.6rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin: 60px 0 24px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-subtle);
+            letter-spacing: -0.01em;
         }}
-        .chart-grid {{
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
-            gap: 25px;
-        }}
-        .chart-card {{
-            background: #16213e;
+        
+        /* Table - Minimal Dark */
+        table {{
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: var(--bg-secondary);
             border-radius: 12px;
             overflow: hidden;
-            border: 1px solid #0f3460;
+            border: 1px solid var(--border-subtle);
+            margin-bottom: 20px;
         }}
+        
+        th {{
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            padding: 16px;
+            text-align: left;
+            font-weight: 500;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            border-bottom: 1px solid var(--border-subtle);
+        }}
+        
+        td {{
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }}
+        
+        td:first-child {{
+            font-weight: 500;
+            color: var(--accent-gold);
+        }}
+        
+        td:nth-child(2) {{
+            color: var(--text-primary);
+            font-weight: 500;
+        }}
+        
+        tr:last-child td {{
+            border-bottom: none;
+        }}
+        
+        tr:hover {{
+            background: var(--bg-tertiary);
+        }}
+        
+        tr.active {{
+            background: var(--bg-tertiary);
+        }}
+        
+        tr.active td:first-child {{
+            border-left: 3px solid var(--accent-gold);
+            padding-left: 13px;
+        }}
+        
+        tr.in-progress {{
+            background: var(--bg-tertiary);
+        }}
+        
+        tr.in-progress td:nth-child(2) {{
+            color: var(--accent-sage);
+        }}
+        
+        tr.in-progress.active td:first-child {{
+            border-left-color: var(--accent-sage);
+        }}
+        
+        #ranking-table tbody tr {{
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }}
+        
+        /* Chart Grid */
+        .chart-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 24px;
+        }}
+        
+        .chart-card {{
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-subtle);
+            transition: all 0.3s ease;
+        }}
+        
+        .chart-card:hover {{
+            border-color: var(--border-accent);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+        }}
+        
         .chart-card h3 {{
-            background: #0f3460;
-            padding: 15px 20px;
-            font-size: 1.1em;
-            color: #eaeaea;
+            background: var(--bg-tertiary);
+            padding: 16px 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-subtle);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
         }}
+        
         .chart-card img {{
             width: 100%;
             height: auto;
             display: block;
             cursor: zoom-in;
-            transition: transform 0.2s;
+            transition: transform 0.3s ease;
         }}
+        
         .chart-card:hover img {{
-            transform: scale(1.02);
+            transform: scale(1.01);
         }}
+        
         .chart-card a {{
             display: block;
             text-decoration: none;
         }}
-        table {{
-            width: 100%;
-            border-collapse: collapse;
-            background: #16213e;
-            border-radius: 8px;
-            overflow: hidden;
-        }}
-        th {{
-            background: #0f3460;
-            color: #eaeaea;
-            padding: 12px;
-            text-align: left;
-            font-weight: 600;
-        }}
-        td {{
-            padding: 10px 12px;
-            border-bottom: 1px solid #0f3460;
-        }}
-        tr:hover {{ background: #1f2d4a; }}
-        tr.active {{
-            background: #0f3460;
-            border-left: 3px solid #e94560;
-        }}
-        tr.in-progress {{
-            background: #1f2d4a;
-            color: #00d9ff;
-            font-weight: bold;
-        }}
-        tr.in-progress.active {{
-            background: #0f3460;
-            border-left: 3px solid #00d9ff;
-        }}
-        #ranking-table tbody tr {{
-            cursor: pointer;
-            transition: background 0.2s;
-        }}
+        
+        /* Lightbox */
         .lightbox {{
             display: none;
             position: fixed;
@@ -478,62 +593,98 @@ def _build_html_template(models_data, total_rules, folder_name):
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.95);
+            background: rgba(13, 17, 23, 0.98);
+            backdrop-filter: blur(8px);
             z-index: 1000;
             justify-content: center;
             align-items: center;
             cursor: zoom-out;
         }}
+        
         .lightbox:target {{
             display: flex;
         }}
+        
         .lightbox img {{
             max-width: 95vw;
             max-height: 95vh;
             object-fit: contain;
             border-radius: 8px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
         }}
+        
         .lightbox-close {{
             position: absolute;
-            top: 20px;
-            right: 30px;
-            color: #eaeaea;
-            font-size: 40px;
+            top: 30px;
+            right: 40px;
+            color: var(--text-secondary);
+            font-size: 32px;
             cursor: pointer;
             opacity: 0.7;
             z-index: 1001;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
         }}
+        
         .lightbox-close:hover {{
             opacity: 1;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
         }}
+        
+        /* Footer */
         footer {{
-            margin-top: 50px;
-            padding: 20px;
+            margin-top: 80px;
+            padding: 30px 0;
             text-align: center;
-            color: #666;
-            border-top: 1px solid #0f3460;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-subtle);
+            font-size: 0.85rem;
         }}
+        
+        /* Animations */
+        @keyframes fadeInUp {{
+            from {{ opacity: 0; transform: translateY(20px); }}
+            to {{ opacity: 1; transform: translateY(0); }}
+        }}
+        
+        .metric-card {{
+            animation: fadeInUp 0.5s ease forwards;
+        }}
+        
+        .metric-card:nth-child(1) {{ animation-delay: 0.05s; }}
+        .metric-card:nth-child(2) {{ animation-delay: 0.1s; }}
+        .metric-card:nth-child(3) {{ animation-delay: 0.15s; }}
+        .metric-card:nth-child(4) {{ animation-delay: 0.2s; }}
+        .metric-card:nth-child(5) {{ animation-delay: 0.25s; }}
+        .metric-card:nth-child(6) {{ animation-delay: 0.3s; }}
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Eleusis Benchmark Report</h1>
-            <div class="subtitle">{folder_name}<br>{len(models_data)} models | {total_rules} rules</div>
+            <div class="header-kicker">Eleusis LLM Benchmark</div>
+            <h1>Benchmark Report</h1>
+            <div class="subtitle"><strong>{folder_name}</strong> · {len(models_data)} models · {total_rules} rules</div>
         </header>
 
         <div class="summary-grid">
             <div class="metric-card">
-                <div class="metric-label">Rules</div>
-                <div class="metric-value" id="card-progress">{total_rules}/{total_rules}</div>
-                <div class="metric-sub">completed</div>
+                <div class="metric-label">Rules Completed</div>
+                <div class="metric-value" id="card-progress">{total_rules}</div>
+                <div class="metric-sub">of {total_rules} total</div>
             </div>
-            <div class="metric-card" id="rank-card">
-                <div class="metric-label">Rank</div>
+            <div class="metric-card{' highlight' if in_progress_rank else ''}" id="rank-card">
+                <div class="metric-label">Current Rank</div>
                 <div class="metric-value" id="card-rank">#{rank_display}</div>
                 <div class="metric-sub">of {len(models_data)} models</div>
             </div>
-            <div class="metric-card" id="score-card">
+            <div class="metric-card{' highlight' if in_progress_rank else ''}" id="score-card">
                 <div class="metric-label">Avg Floored Score</div>
                 <div class="metric-value" id="card-score">{avg_score:.2f}</div>
                 <div class="metric-sub" id="card-success">{success_rate:.0%} success rate</div>
@@ -555,7 +706,8 @@ def _build_html_template(models_data, total_rules, folder_name):
             </div>
         </div>
 
-        <h2>Performance Ranking (click a row to view metrics)</h2>
+        <h2>Performance Ranking</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 16px;">Click a row to view detailed metrics</p>
         <table id="ranking-table">
             <thead>
             <tr>
@@ -563,14 +715,16 @@ def _build_html_template(models_data, total_rules, folder_name):
                 <th>Model</th>
                 <th>Avg Score</th>
                 <th>Success Rate</th>
-                <th>Rounds</th>
+                <th>Tokens Per Turn</th>
+                <th>Double-Down Rate</th>
+                <th>Complexity Ratio</th>
             </tr>
             </thead>
             <tbody>
 {rows_html}            </tbody>
         </table>
 
-        <h2>Charts</h2>
+        <h2>Analysis Charts</h2>
         <div class="chart-grid">
             <div class="chart-card">
                 <h3>Overall Performance</h3>
@@ -623,8 +777,12 @@ def _build_html_template(models_data, total_rules, folder_name):
 {per_model_cards}        </div>
 
         <footer>
-            Generated by Eleusis Benchmark analyze_results.py
+            Generated by Eleusis Benchmark
         </footer>
+    </div>
+    <div id="lb-overall" class="lightbox" onclick="history.back(); return false;">
+        <span class="lightbox-close">&times;</span>
+        <img src="overall_performance.png" alt="Overall Performance">
     </div>
     <div id="lb-failed" class="lightbox" onclick="history.back(); return false;">
         <span class="lightbox-close">&times;</span>
@@ -705,7 +863,7 @@ def _build_html_template(models_data, total_rules, folder_name):
             document.getElementById('card-rank').textContent = '#' + data.rank;
             document.getElementById('card-score').textContent = data.avg_score.toFixed(2);
             document.getElementById('card-success').textContent = (data.success_rate * 100).toFixed(0) + '% success rate';
-            document.getElementById('card-progress').textContent = totalRules + "/" + totalRules;
+            document.getElementById('card-progress').textContent = totalRules;
             
             // Update tokens with label
             const tokens = data.tokens;
