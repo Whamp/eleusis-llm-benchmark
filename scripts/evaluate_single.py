@@ -59,6 +59,10 @@ Examples:
                         help='Maximum turns per round')
     parser.add_argument('--tag', type=str,
                         help='Tag to append to output folder name for identification')
+    parser.add_argument('--batch-round-offset', type=int, default=None,
+                        help='Run only 1 round per rule using this batch index for seeding. '
+                             'Use with parallel workers: worker 0 gets offset 0, worker 1 gets 1, etc. '
+                             'Each offset produces a different deck shuffle for the same rule.')
     return parser.parse_args()
 
 
@@ -86,6 +90,11 @@ def apply_cli_overrides(config: dict, args) -> dict:
     # Rule index override
     if args.rule_index is not None:
         config["rules"]["index"] = args.rule_index
+
+    # Batch round offset: run 1 round per rule with a specific batch index
+    if args.batch_round_offset is not None:
+        game_config["num_rounds_per_rule"] = 1
+        game_config["batch_round_offset"] = args.batch_round_offset
 
     return config
 
@@ -158,6 +167,7 @@ def reconstruct_config_from_checkpoint(checkpoint: dict) -> dict:
             'hand_size': cfg['hand_size'],
             'wrong_guess_penalty': cfg['wrong_guess_penalty'],
             'seed': cfg.get('seed'),
+            'batch_round_offset': cfg.get('batch_round_offset'),
         },
         'llm': {
             'max_tokens': cfg.get('llm_max_tokens'),
@@ -262,6 +272,17 @@ def main():
 
         # Reconstruct full config from checkpoint (self-contained resume)
         config = reconstruct_config_from_checkpoint(checkpoint)
+
+        # Overlay backup_providers from config file if available
+        # (backup_providers are not stored in checkpoint, they're runtime config)
+        try:
+            config_file = load_config(args.config)
+            bp = config_file.get("rule_compiler", {}).get("backup_providers")
+            if bp:
+                config["rule_compiler"]["backup_providers"] = bp
+                temp_logger.info(f"Loaded {len(bp)} backup provider(s) from {args.config}")
+        except Exception:
+            pass  # Config file not required for resume
 
         # Validate CLI model override if provided
         if args.model and args.model != checkpoint['config']['player_model']:
@@ -397,20 +418,18 @@ def main():
             logger.error(f"Not enough rules: {len(checkpoint_rules_library)} in library but need {expected_rules_needed}")
             return
 
-        # Filter to unconsumed rules only (match by name)
-        consumed_names = {r['name'] for r in rules_consumed}
-        unconsumed_rules = [r for r in checkpoint_rules_library if r['name'] not in consumed_names]
-
-        # Start from index 0 of the filtered (unconsumed) list
-        checkpoint_rules_library = unconsumed_rules
-        rule_factory_index = 0
+        # Resume from where we left off in the FULL library (not filtered).
+        # The checkpoint's current_index tracks the next rule index to use.
+        # Filtering + resetting to 0 would restart from the beginning of the
+        # library, replaying rules from other workers' partitions.
+        rule_factory_index = chk['rule_factory_state']['current_index']
 
         logger.info("=" * 80)
         logger.info(f"RESUMING SOLO MODE EVALUATION")
         logger.info("=" * 80)
         logger.info(f"Log file: {log_file}")
         logger.info(f"Resuming from round {start_round} / {total_rounds}")
-        logger.info(f"Rules consumed: {len(rules_consumed)}, unconsumed: {len(unconsumed_rules)}")
+        logger.info(f"Rules consumed: {len(rules_consumed)}, rule_factory_index: {rule_factory_index}")
         logger.info(f"Rounds per rule: {num_rounds_per_rule}")
         if current_rule:
             logger.info(f"Reusing rule: {current_rule.description()[:80]}...")
@@ -469,6 +488,7 @@ def main():
                 'llm_temperature': config['llm'].get('temperature', 0.7),
                 'llm_seed': config['llm'].get('seed'),
                 'llm_max_retries': config['llm'].get('max_llm_retries', 3),
+                'batch_round_offset': game_config.get('batch_round_offset'),
             },
             'rounds': [],
             'statistics': {
@@ -505,8 +525,14 @@ def main():
         logger.info("")
 
         # Determine if new rule needed and batch round index
-        batch_round_index = (round_num - 1) % num_rounds_per_rule
-        need_new_rule = batch_round_index == 0
+        batch_round_offset = game_config.get('batch_round_offset')
+        if batch_round_offset is not None:
+            # Parallel mode: 1 round per rule, use offset for seed variation
+            batch_round_index = batch_round_offset
+            need_new_rule = True
+        else:
+            batch_round_index = (round_num - 1) % num_rounds_per_rule
+            need_new_rule = batch_round_index == 0
 
         if need_new_rule:
             logger.info("Generating new rule for this batch of rounds...")
