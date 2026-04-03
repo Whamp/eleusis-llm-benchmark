@@ -113,3 +113,25 @@ gpt-oss-20b:
   hf_provider: together
   reasoning_format: separate_field
   color: "#B2B2B2"  # Light gray
+
+# ============================================================================
+# Self-Hosted Models - OpenAI-Compatible APIs (SGLang, vLLM)
+# ============================================================================
+
+qwen3.5-27b-gptq-int4:
+  provider: openai_compat
+  model_id: Qwen/Qwen3.5-27B-GPTQ-Int4
+  base_url: http://100.92.238.117:30000/v1
+  api_key: sk-no-key-required
+  reasoning_format: reasoning_content  # Qwen3 uses reasoning_content field
+  timeout: 600
+  color: "#8B5CF6"  # Purple
+
+rys-qwen3.5-27b-fp8-xl:
+  provider: openai_compat
+  model_id: dnhkng/RYS-Qwen3.5-27B-FP8-XL
+  base_url: http://100.92.238.117:30000/v1
+  api_key: sk-no-key-required
+  reasoning_format: reasoning_content  # Qwen3 uses reasoning_content field
+  timeout: 600
+  color: "#A855F7"  # Purple (variant)
