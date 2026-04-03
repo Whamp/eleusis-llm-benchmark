@@ -104,6 +104,63 @@ model does not need to solve the rule perfectly.
 | `--tag TAG` | Tag appended to output folder name |
 | `--resume PATH` | Resume from checkpoint folder |
 | `--config FILE` | Config file path (default: `config.yaml`) |
+| `--batch-round-offset N` | Run 1 round per rule with batch index N (for parallel workers) |
+
+### Parallel Workers (Single Model)
+
+A full benchmark with 26 rules × 3 rounds can take tens of hours. Split the work
+across parallel workers, each playing every rule once with a different deck shuffle:
+
+```bash
+uv run python scripts/run_parallel_benchmark.py \
+  --model "kimi-k2" \
+  --workers 3
+```
+
+This launches 3 processes. Each worker plays all 26 rules exactly once (26 rounds
+per worker). The workers stay balanced because they all play the same rules — when
+a hard rule slows one worker down, it slows all of them equally.
+
+Under the hood, each worker runs `evaluate_single.py` with a different
+`--batch-round-offset` (0, 1, or 2). The offset feeds into the deck seed so the
+same rule produces a different shuffle per worker.
+
+Preview the commands without running:
+
+```bash
+uv run python scripts/run_parallel_benchmark.py --model "kimi-k2" --workers 3 --dry-run
+```
+
+Results land in separate folders (`results/solo_evaluation_*_w0_*`,
+`results/solo_evaluation_*_w1_*`, etc.) and are merged automatically by
+`analyze_results.py`.
+
+### Pause and Resume
+
+The checkpoint saves to `results.json` after every completed round. If a process
+is killed mid-round, you lose at most 1 in-progress round per worker.
+
+**Pause:** Kill the processes (`Ctrl+C`, or `kill <pid>`).
+
+**Resume:** Point `--resume` at each worker's result folder. The checkpoint is
+self-contained — model, config, rules library, and batch round offset are all
+stored in `results.json`.
+
+```bash
+# Find the result folders from the interrupted run
+ls results/solo_evaluation_*_w*_kimi-k2/
+
+# Resume each worker
+uv run python scripts/evaluate_single.py \
+  --resume results/solo_evaluation_20260403_120000_w0_kimi-k2 &
+uv run python scripts/evaluate_single.py \
+  --resume results/solo_evaluation_20260403_120000_w1_kimi-k2 &
+uv run python scripts/evaluate_single.py \
+  --resume results/solo_evaluation_20260403_120000_w2_kimi-k2 &
+```
+
+No need to re-specify `--config`, `--model`, or `--batch-round-offset` — they are
+all read from the checkpoint.
 
 ### Multiple Models in Parallel
 
@@ -123,7 +180,22 @@ The models file contains one model key per line (lines starting with `#` are ign
 uv run python scripts/analyze_results.py results/<folder>
 ```
 
-Generates charts and tables saved in the input folder: basic metrics comparison, complexity analysis, per-model reports, token usage, and more.
+Generates charts and tables: basic metrics comparison, complexity analysis, per-model reports, token usage, and more.
+
+### Status Reports (In-Progress Benchmarks)
+
+Compare a running benchmark against completed reference models. Merges worker results,
+identifies completed rules (rules with all rounds across workers), filters all
+models to those rules, and runs the full analysis pipeline.
+
+```bash
+uv run python scripts/status_report.py \
+  --reference results/260312_all_models_corrected \
+  results/solo_evaluation_*_w*_rys-qwen3.5-27b-fp8-xl
+```
+
+Output goes to `status/` inside the first worker folder. Re-run anytime to get
+an updated report with newly completed rules.
 
 ## Configuration
 
@@ -160,7 +232,19 @@ deepseek-r1:
   reasoning_format: think_tags  # think_tags|separate_field
 ```
 
-Supported providers: `anthropic`, `openai`, `google`, `xai`, `huggingface`.
+Supported providers: `anthropic`, `openai`, `google`, `xai`, `huggingface`, `openai_compat`.
+
+Self-hosted models (vLLM, SGLang, llama.cpp) use the `openai_compat` provider:
+
+```yaml
+my-local-model:
+  provider: openai_compat
+  model_id: my-org/My-Model
+  base_url: http://localhost:8000/v1
+  api_key: sk-no-key-required
+  reasoning_format: reasoning_content  # reasoning_content|think_tags
+  timeout: 600
+```
 
 ### `config.yaml` — Game Settings
 
@@ -248,6 +332,7 @@ src/eleusis/
 
 scripts/
   evaluate_single.py         Single-model evaluation
+  run_parallel_benchmark.py  Parallel multi-worker evaluation (single model)
   run_parallel_eval.sh       Parallel multi-model evaluation
   analyze_results.py         Post-hoc analysis and charts
   generate_rule_library.py   Compile rules.txt → rules.json

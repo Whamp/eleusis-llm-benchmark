@@ -1,0 +1,120 @@
+{
+  "models": [
+    {
+      "name": "Kimi K2",
+      "avg_floored_score": 22.818181818181817,
+      "avg_failed_guesses": 0.5151515151515151,
+      "color": "#CCCC00",
+      "is_open": true,
+      "provider": "huggingface"
+    },
+    {
+      "name": "Glm 4.7",
+      "avg_floored_score": 22.424242424242426,
+      "avg_failed_guesses": 0.6363636363636364,
+      "color": "#FF7777",
+      "is_open": true,
+      "provider": "huggingface"
+    },
+    {
+      "name": "Claude Opus 4.5",
+      "avg_floored_score": 22.151515151515152,
+      "avg_failed_guesses": 0.8787878787878788,
+      "color": "#C1755A",
+      "is_open": false,
+      "provider": "anthropic"
+    },
+    {
+      "name": "Grok 4 1 Fast Reasoning",
+      "avg_floored_score": 22.09090909090909,
+      "avg_failed_guesses": 0.7878787878787878,
+      "color": "#1A1A1A",
+      "is_open": false,
+      "provider": "xai"
+    },
+    {
+      "name": "Qwen3.5 27B Gptq Int4",
+      "avg_floored_score": 21.939393939393938,
+      "avg_failed_guesses": 0.6060606060606061,
+      "color": "#8B5CF6",
+      "is_open": true,
+      "provider": "openai_compat"
+    },
+    {
+      "name": "Rys Qwen3.5 27B Fp8 Xl (in-progress)",
+      "avg_floored_score": 20.03030303030303,
+      "avg_failed_guesses": 0.6363636363636364,
+      "color": "#A855F7",
+      "is_open": true,
+      "provider": "openai_compat"
+    },
+    {
+      "name": "Deepseek R1",
+      "avg_floored_score": 19.636363636363637,
+      "avg_failed_guesses": 1.606060606060606,
+      "color": "#5A6AF7",
+      "is_open": true,
+      "provider": "huggingface"
+    },
+    {
+      "name": "Gemini 3 Flash Preview High",
+      "avg_floored_score": 19.12121212121212,
+      "avg_failed_guesses": 0.6363636363636364,
+      "color": "#8EADF6",
+      "is_open": false,
+      "provider": "google"
+    },
+    {
+      "name": "Gemini 3 Flash Preview Low",
+      "avg_floored_score": 18.454545454545453,
+      "avg_failed_guesses": 0.42424242424242425,
+      "color": "#AEC3F9",
+      "is_open": false,
+      "provider": "google"
+    },
+    {
+      "name": "Gpt 5.2 High",
+      "avg_floored_score": 17.545454545454547,
+      "avg_failed_guesses": 0.030303030303030304,
+      "color": "#8CB3A8",
+      "is_open": false,
+      "provider": "openai"
+    },
+    {
+      "name": "Gpt Oss 20B",
+      "avg_floored_score": 17.333333333333332,
+      "avg_failed_guesses": 1.696969696969697,
+      "color": "#B2B2B2",
+      "is_open": true,
+      "provider": "huggingface"
+    },
+    {
+      "name": "Claude Haiku 4.5",
+      "avg_floored_score": 17.151515151515152,
+      "avg_failed_guesses": 2.5757575757575757,
+      "color": "#D08E76",
+      "is_open": false,
+      "provider": "anthropic"
+    },
+    {
+      "name": "Gpt 5 Mini Medium",
+      "avg_floored_score": 16.78787878787879,
+      "avg_failed_guesses": 0.8787878787878788,
+      "color": "#99BDB4",
+      "is_open": false,
+      "provider": "openai"
+    },
+    {
+      "name": "Gpt Oss 120B",
+      "avg_floored_score": 16.151515151515152,
+      "avg_failed_guesses": 1.5757575757575757,
+      "color": "#707070",
+      "is_open": true,
+      "provider": "huggingface"
+    }
+  ],
+  "metadata": {
+    "x_axis": "avg_failed_guesses",
+    "y_axis": "avg_floored_score"
+  }
+}

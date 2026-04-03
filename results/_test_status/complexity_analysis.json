@@ -1,0 +1,142 @@
+{
+  "models": [
+    {
+      "name": "Kimi K2",
+      "quartile_scores": {
+        "Q1": 1.0,
+        "Q2": 1.0,
+        "Q3": 1.0,
+        "Q4": 1.0
+      }
+    },
+    {
+      "name": "Grok 4 1 Fast Reasoning",
+      "quartile_scores": {
+        "Q1": 1.0,
+        "Q2": 1.0,
+        "Q3": 1.0,
+        "Q4": 1.0
+      }
+    },
+    {
+      "name": "Qwen3.5 27B Gptq Int4",
+      "quartile_scores": {
+        "Q1": 1.0,
+        "Q2": 1.0,
+        "Q3": 1.0,
+        "Q4": 1.0
+      }
+    },
+    {
+      "name": "Claude Opus 4.5",
+      "quartile_scores": {
+        "Q1": 1.0,
+        "Q2": 0.8888888888888888,
+        "Q3": 1.0,
+        "Q4": 1.0
+      }
+    },
+    {
+      "name": "Glm 4.7",
+      "quartile_scores": {
+        "Q1": 1.0,
+        "Q2": 1.0,
+        "Q3": 1.0,
+        "Q4": 1.0
+      }
+    },
+    {
+      "name": "Rys Qwen3.5 27B Fp8 Xl (in-progress)",
+      "quartile_scores": {
+        "Q1": 1.0,
+        "Q2": 1.0,
+        "Q3": 1.0,
+        "Q4": 1.0
+      }
+    },
+    {
+      "name": "Deepseek R1",
+      "quartile_scores": {
+        "Q1": 1.0,
+        "Q2": 0.7777777777777778,
+        "Q3": 1.0,
+        "Q4": 0.6666666666666666
+      }
+    },
+    {
+      "name": "Gemini 3 Flash Preview High",
+      "quartile_scores": {
+        "Q1": 1.0,
+        "Q2": 0.8888888888888888,
+        "Q3": 1.0,
+        "Q4": 1.0
+      }
+    },
+    {
+      "name": "Gemini 3 Flash Preview Low",
+      "quartile_scores": {
+        "Q1": 1.0,
+        "Q2": 0.8888888888888888,
+        "Q3": 1.0,
+        "Q4": 1.0
+      }
+    },
+    {
+      "name": "Gpt Oss 20B",
+      "quartile_scores": {
+        "Q1": 0.8333333333333334,
+        "Q2": 0.8888888888888888,
+        "Q3": 1.0,
+        "Q4": 0.6666666666666666
+      }
+    },
+    {
+      "name": "Claude Haiku 4.5",
+      "quartile_scores": {
+        "Q1": 1.0,
+        "Q2": 0.6666666666666666,
+        "Q3": 0.8333333333333334,
+        "Q4": 1.0
+      }
+    },
+    {
+      "name": "Gpt 5.2 High",
+      "quartile_scores": {
+        "Q1": 1.0,
+        "Q2": 1.0,
+        "Q3": 1.0,
+        "Q4": 1.0
+      }
+    },
+    {
+      "name": "Gpt 5 Mini Medium",
+      "quartile_scores": {
+        "Q1": 0.8333333333333334,
+        "Q2": 0.7777777777777778,
+        "Q3": 1.0,
+        "Q4": 1.0
+      }
+    },
+    {
+      "name": "Gpt Oss 120B",
+      "quartile_scores": {
+        "Q1": 1.0,
+        "Q2": 0.6666666666666666,
+        "Q3": 0.6666666666666666,
+        "Q4": 1.0
+      }
+    }
+  ],
+  "quartiles": [
+    "Q1",
+    "Q2",
+    "Q3",
+    "Q4"
+  ],
+  "metadata": {
+    "optimal_k": 0.1,
+    "complexity_formula": "cyclomatic + 0.10 * node_count",
+    "value": "success_rate",
+    "description": "Success rate = per-model success rate for rules in each quartile."
+  }
+}

@@ -1,0 +1,258 @@
+============================================================
+ELEUSIS RESULTS ANALYSIS
+============================================================
+
+Analyzing: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status
+
+Loading results...
+Loaded 14 evaluation runs:
+  - solo_evaluation_20260120_091620_gpt_5_2_high
+  - solo_evaluation_20260120_091622_gpt_oss_120b
+  - solo_evaluation_20260121_070517_claude_haiku_4_5
+  - solo_evaluation_20260121_070518_gpt_5_mini_medium
+  - solo_evaluation_20260121_070520_gemini_3_flash_preview_low
+  - solo_evaluation_20260121_070522_gpt_oss_20b
+  - solo_evaluation_20260122_110723_grok_4_1_fast_reasoning
+  - solo_evaluation_20260122_180323_deepseek_r1
+  - solo_evaluation_20260126_084128_claude_opus_4_5
+  - solo_evaluation_20260126_084154_kimi_k2
+  - solo_evaluation_20260126_084210_glm_4_7
+  - solo_evaluation_20260202_094341_gemini_3_flash_preview_high
+  - solo_evaluation_20260312_qwen3_5_27b_gptq_int4_corrected
+  - solo_evaluation_in_progress_rys_qwen3_5_27b_fp8_xl
+
+Extracted 26 unique rules from results files
+Built DataFrames: 462 rounds, 4826 turns
+Loaded colors for 19 models
+
+============================================================
+BASIC MODEL COMPARISON
+============================================================
+
+                               model  rounds_played  total_score  avg_score  total_floored_score  avg_floored_score  total_turns  total_output_tokens  total_wall_clock  avg_failed_guesses  success_rate  counting_output_tokens  total_no_stakes_score  avg_no_stakes_score  avg_output_tokens_per_turn  wall_clock_per_turn  intra_rule_variance  inter_rule_variance  variance_ratio
+                             Kimi K2             33          753  22.818182                  753          22.818182          236              1906733          15226.53            0.515152      1.000000                 1595437                  822.0            24.909091                 6760.326271            64.519195            10.666667            10.274747        1.038144
+                             Glm 4.7             33          740  22.424242                  740          22.424242          241              2466550          45797.13            0.636364      1.000000                 1319670                  801.0            24.272727                 5475.809129           190.029585            31.727273            24.468687        1.296648
+                     Claude Opus 4.5             33          730  22.121212                  731          22.151515          231               929217          15104.75            0.878788      0.969697                  902170                  816.0            24.727273                 3905.497835            65.388528             8.606061            35.563636        0.241990
+             Grok 4 1 Fast Reasoning             33          729  22.090909                  729          22.090909          241              1019651          14127.78            0.787879      0.969697                  998382                  802.0            24.303030                 4142.663900            58.621494            14.424242            24.913131        0.578982
+               Qwen3.5 27B Gptq Int4             33          724  21.939394                  724          21.939394          259              1738243          64327.13            0.606061      1.000000                 1738243                  823.0            24.939394                 6711.362934           248.367297            17.878788            11.751515        1.521403
+Rys Qwen3.5 27B Fp8 Xl (in-progress)             33          661  20.030303                  661          20.030303          320              1369952          29513.63            0.636364      1.000000                 1009504                  787.0            23.848485                 3154.700000            92.230094            10.666667            21.676768        0.492078
+                         Deepseek R1             33          646  19.575758                  648          19.636364          268              1868010          33925.61            1.606061      0.909091                 1787752                  776.0            23.515152                 6670.716418           126.588097            35.909091            55.721212        0.644442
+         Gemini 3 Flash Preview High             33          631  19.121212                  631          19.121212          347              4552651          27633.27            0.636364      0.969697                 4310586                  766.0            23.212121                12422.438040            79.634784            17.242424            14.272727        1.208068
+          Gemini 3 Flash Preview Low             33          598  18.121212                  609          18.454545          382               442500           3528.67            0.424242      0.939394                  433413                  713.0            21.606061                 1134.589005             9.237356            25.939394            32.583838        0.796082
+                        Gpt 5.2 High             33          579  17.545455                  579          17.545455          442               867069          19323.65            0.030303      1.000000                  867069                  740.0            22.424242                 1961.694570            43.718665            27.181818            20.739394        1.310637
+                         Gpt Oss 20B             33          461  13.969697                  572          17.333333          334              1400013          12040.08            1.696970      0.848485                  973175                  729.0            22.090909                 2913.697605            36.048144            68.515152            35.533333        1.928194
+                    Claude Haiku 4.5             33          386  11.696970                  566          17.151515          278              1771026          15135.57            2.575758      0.818182                 1260121                  688.0            20.848485                 4532.809353            54.444496            56.393939            78.185859        0.721281
+                   Gpt 5 Mini Medium             33          544  16.484848                  554          16.787879          408               921518          14898.99            0.878788      0.848485                  872493                  729.0            22.090909                 2138.463235            36.517132            44.757576            62.628283        0.714654
+                        Gpt Oss 120B             33          435  13.181818                  533          16.151515          375               930815           6748.92            1.575758      0.787879                  719434                  661.0            20.030303                 1918.490667            17.997120            38.939394            78.119192        0.498461
+
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/basic_metrics.csv
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/overall_performance.png
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/overall_performance.json
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/score_vs_failed_guesses.png
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/score_vs_failed_guesses.json
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/calibration_curves.png
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/calibration_curves.json
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/guess_rate.png
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/guess_rate.json
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/score_stack.png
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/score_stack.json
+
+============================================================
+COMPLEXITY ANALYSIS
+============================================================
+
+Optimal K for aggregated complexity: 0.01
+  Formula: complexity = cyclomatic + 0.01 * node_count
+  Correlation with success_rate: -0.543
+
+Stats by complexity quartile:
+complexity_bin  count  avg_floored_score  success_rate
+            Q1    420          20.190476      0.947619
+            Q4     42          13.095238      0.785714
+
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/complexity_analysis.png
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/complexity_analysis.json
+
+============================================================
+BY-RULE ANALYSIS
+============================================================
+
+Score by rule (sorted by avg_floored_score):
+                                               rule_description  count  avg_floored_score  std_floored_score  success_rate
+                           Only red cards (hearts or diamonds).     42          25.357143           2.184440      1.000000
+                                 Only cards of the suit spades.     42          25.095238           1.960706      1.000000
+                  Only cards with an even rank (2,4,6,8,10,12).     42          24.309524           2.352872      1.000000
+                                           Only Aces (rank 1) .     42          21.285714           7.474463      0.952381
+Only hearts, clubs, and diamonds allowed. Spades are forbidden.     42          20.833333           4.953031      0.976190
+                                    Only face cards (11,12,13).     42          20.619048           7.443945      0.928571
+             Only ranks that are prime numbers (2,3,5,7,11,13).     42          20.428571           6.227958      0.952381
+                                      Only spades and diamonds.     42          19.476190           4.109704      1.000000
+                          Only cards between 1 and 7 inclusive.     42          15.190476           6.960649      0.928571
+                                         Only black face cards.     42          13.095238           8.598949      0.785714
+                          Only cards between 5 and 9 inclusive.     42           9.309524           7.442423      0.738095
+
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/by_rule.png
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/by_rule.json
+
+============================================================
+EXCESS CAUTION ANALYSIS
+============================================================
+
+Early Correct Turns: consecutive correct shadow guesses before winning guess
+(Only counts successful rounds where model eventually guessed correctly)
+
+                               Model  Rounds  Mean  Median  % with Early
+                        Gpt 5.2 High      33  4.55     5.0          97.0
+          Gemini 3 Flash Preview Low      33  2.30     2.0          75.8
+         Gemini 3 Flash Preview High      33  2.18     1.0          81.8
+Rys Qwen3.5 27B Fp8 Xl (in-progress)      33  2.15     2.0          84.8
+                             Kimi K2      33  1.79     2.0          87.9
+                   Gpt 5 Mini Medium      32  1.75     1.0          78.1
+                         Gpt Oss 20B      30  1.50     1.0          70.0
+                        Gpt Oss 120B      29  1.41     1.0          69.0
+               Qwen3.5 27B Gptq Int4      33  1.39     1.0          69.7
+                     Claude Opus 4.5      33  1.33     1.0          81.8
+                             Glm 4.7      33  1.12     1.0          72.7
+             Grok 4 1 Fast Reasoning      33  0.85     0.0          48.5
+                    Claude Haiku 4.5      29  0.76     1.0          55.2
+                         Deepseek R1      33  0.76     0.0          48.5
+
+Overall: 772 total early correct turns across 450 successful rounds
+Mean: 1.72, Median: 1.0
+329/450 (73.1%) rounds had at least 1 early correct turn
+
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/excess_caution.png
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/excess_caution.json
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/caution_vs_failed_guesses.png
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/caution_vs_failed_guesses.json
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/score_vs_recklessness.png
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/score_vs_recklessness.json
+
+============================================================
+RECKLESS GUESSING ANALYSIS
+============================================================
+
+Double-Down Rate: After a wrong guess, % of next turns with another guess
+(Only counts official guesses, not shadow/tentative guesses)
+
+                               Model  Wrong Guesses  Next Turn Guesses  Double-Down %
+                         Deepseek R1             53                 27           50.9
+                    Claude Haiku 4.5             85                 43           50.6
+             Grok 4 1 Fast Reasoning             26                 13           50.0
+                             Glm 4.7             21                  9           42.9
+          Gemini 3 Flash Preview Low             14                  6           42.9
+                         Gpt Oss 20B             56                 23           41.1
+               Qwen3.5 27B Gptq Int4             20                  7           35.0
+                     Claude Opus 4.5             29                  8           27.6
+                        Gpt Oss 120B             52                 10           19.2
+         Gemini 3 Flash Preview High             21                  4           19.0
+Rys Qwen3.5 27B Fp8 Xl (in-progress)             21                  3           14.3
+                   Gpt 5 Mini Medium             29                  4           13.8
+                             Kimi K2             17                  2           11.8
+                        Gpt 5.2 High              1                  0            0.0
+
+Wrong Guess Streak Statistics:
+                               Model  Streaks  Mean Length  Max Length  Total Wrong
+                         Deepseek R1       27         1.96           5           53
+                    Claude Haiku 4.5       47         1.81           6           85
+             Grok 4 1 Fast Reasoning       19         1.37           5           26
+                             Glm 4.7       13         1.62           3           21
+          Gemini 3 Flash Preview Low        9         1.56           4           14
+                         Gpt Oss 20B       35         1.60           7           56
+               Qwen3.5 27B Gptq Int4       15         1.33           2           20
+                     Claude Opus 4.5       24         1.21           3           29
+                        Gpt Oss 120B       43         1.21           3           52
+         Gemini 3 Flash Preview High       17         1.24           3           21
+Rys Qwen3.5 27B Fp8 Xl (in-progress)       19         1.11           2           21
+                   Gpt 5 Mini Medium       25         1.16           3           29
+                             Kimi K2       16         1.06           2           17
+                        Gpt 5.2 High        1         1.00           1            1
+
+Longest streak: 7 consecutive wrong guesses
+  - Gpt Oss 20B in round 15
+
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/reckless_guessing.png
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/reckless_guessing.json
+
+============================================================
+COMPLEXITY RATIO ANALYSIS
+============================================================
+
+Analyzed 3813 tentative rules with confidence >= 5
+Using optimal k = 0.020 for aggregated complexity
+
+Complexity Ratio by Model:
+(Ratio = Tentative Complexity / Actual Complexity)
+
+                               Model  Median   Q25   Q75  Count
+                    Claude Haiku 4.5   2.033 1.000 3.243    304
+                        Gpt Oss 120B   2.033 1.000 3.242    412
+                         Deepseek R1   1.992 1.000 2.101    234
+                         Gpt Oss 20B   1.934 1.000 2.169    357
+                     Claude Opus 4.5   1.000 0.967 2.000    179
+         Gemini 3 Flash Preview High   1.000 1.000 2.082    269
+                             Glm 4.7   1.000 0.967 1.857    183
+          Gemini 3 Flash Preview Low   1.000 1.000 2.034    300
+                        Gpt 5.2 High   1.000 1.000 2.033    317
+                   Gpt 5 Mini Medium   1.000 0.967 2.062    352
+             Grok 4 1 Fast Reasoning   1.000 0.967 2.033    223
+                             Kimi K2   1.000 0.967 1.889    203
+               Qwen3.5 27B Gptq Int4   1.000 0.967 2.033    212
+Rys Qwen3.5 27B Fp8 Xl (in-progress)   1.000 0.967 2.068    268
+
+Interpretation:
+  - Ratio > 1: Model tends to overcomplicate rules
+  - Ratio < 1: Model tends to oversimplify rules
+  - Ratio ≈ 1: Model matches actual rule complexity
+
+Highest median: Claude Haiku 4.5 (2.033)
+Lowest median: Rys Qwen3.5 27B Fp8 Xl (in-progress) (1.000)
+
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/complexity_ratio.png
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/complexity_ratio.json
+
+============================================================
+OUTPUT TOKENS BY TURN
+============================================================
+
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/tokens_by_turn.png
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/tokens_by_turn.json
+
+Tokens trend summary (early vs late turns):
+  Claude Haiku 4.5: early=3147, late=5612 (+78.3%)
+  Claude Opus 4.5: early=2614, late=6836 (+161.6%)
+  Deepseek R1: early=5157, late=9946 (+92.8%)
+  Gemini 3 Flash Preview High: early=9945, late=14819 (+49.0%)
+  Gemini 3 Flash Preview Low: early=1055, late=754 (-28.5%)
+  Glm 4.7: early=3784, late=8084 (+113.6%)
+  Gpt 5 Mini Medium: early=1195, late=2920 (+144.3%)
+  Gpt 5.2 High: early=900, late=3356 (+272.9%)
+  Gpt Oss 120B: early=1074, late=3944 (+267.1%)
+  Gpt Oss 20B: early=1757, late=7250 (+312.6%)
+  Grok 4 1 Fast Reasoning: early=2787, late=9232 (+231.3%)
+  Kimi K2: early=5562, late=7834 (+40.8%)
+  Qwen3.5 27B Gptq Int4: early=5984, late=8701 (+45.4%)
+  Rys Qwen3.5 27B Fp8 Xl (in-progress): early=3004, late=5695 (+89.6%)
+
+============================================================
+PER-MODEL REPORTS
+============================================================
+
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/model_gpt_5_2_high.png
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/model_gpt_oss_120b.png
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/model_claude_haiku_4_5.png
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/model_gpt_5_mini_medium.png
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/model_gemini_3_flash_preview_low.png
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/model_gpt_oss_20b.png
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/model_grok_4_1_fast_reasoning.png
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/model_deepseek_r1.png
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/model_claude_opus_4_5.png
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/model_kimi_k2.png
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/model_glm_4_7.png
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/model_gemini_3_flash_preview_high.png
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/model_qwen3_5_27b_gptq_int4.png
+Saved: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status/model_rys_qwen3_5_27b_fp8_xl_(in_progress).png
+
+============================================================
+Analysis complete! All outputs saved to: results/solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl/status
+============================================================

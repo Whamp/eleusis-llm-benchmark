@@ -1,0 +1,4155 @@
+{
+  "timestamp": "20260403_095727",
+  "folder_name": "solo_evaluation_20260403_095727_w0_rys-qwen3.5-27b-fp8-xl",
+  "config": {
+    "num_rules": 26,
+    "num_rounds_per_rule": 1,
+    "rule_compiler": "Gpt Oss 120B",
+    "rule_compiler_provider": "huggingface",
+    "rule_compiler_model_id": "openai/gpt-oss-120b",
+    "rule_compiler_reasoning_format": "separate_field",
+    "rule_compiler_temperature": 0.7,
+    "rule_compiler_max_retries": 10,
+    "rule_compiler_num_simulations": 100,
+    "rule_compiler_turns_per_simulation": 40,
+    "rule_compiler_simulation_seed": 42,
+    "player": "Rys Qwen3.5 27B Fp8 Xl (in-progress)",
+    "player_model": "rys-qwen3.5-27b-fp8-xl",
+    "hand_size": 12,
+    "max_turns": 30,
+    "wrong_guess_penalty": 2,
+    "seed": 42,
+    "llm_max_tokens": 16384,
+    "llm_temperature": 0.7,
+    "llm_seed": 42,
+    "llm_max_retries": 3,
+    "batch_round_offset": 0
+  },
+  "rounds": [
+    {
+      "round_number": 1,
+      "rule_name": "even_ranks_only",
+      "batch_round_index": 0,
+      "turn_count": 7,
+      "rule_description": "Only cards with an even rank (2,4,6,8,10,12).",
+      "rule_code": "return card.rank % 2 == 0",
+      "success": true,
+      "score": 24,
+      "floored_score": 24,
+      "no_stakes_score": 28,
+      "first_correct_turn": 3,
+      "failed_guesses": 0,
+      "game_over_reason": "correct_guess",
+      "llm_usage": {
+        "rule_compiler": {
+          "prompt_tokens": 6726,
+          "output_tokens": 1084,
+          "reasoning_tokens": 1014,
+          "answer_tokens": 70,
+          "cost_usd": null,
+          "duration_seconds": 16.82,
+          "throughput_tokens_per_sec": 64.46,
+          "call_count": 6,
+          "continuation_calls": 0,
+          "calls_requiring_continuation": 0,
+          "provider": "huggingface"
+        },
+        "player": {
+          "prompt_tokens": 12983,
+          "output_tokens": 24792,
+          "reasoning_tokens": 24301,
+          "answer_tokens": 491,
+          "cost_usd": null,
+          "duration_seconds": 556.94,
+          "throughput_tokens_per_sec": 44.51,
+          "call_count": 7,
+          "continuation_calls": 0,
+          "calls_requiring_continuation": 0,
+          "provider": "openai_compat"
+        }
+      },
+      "turns": [
+        {
+          "turn_number": 1,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660",
+          "hand": [
+            "8\u2666",
+            "2\u2665",
+            "A\u2660",
+            "2\u2660",
+            "3\u2666",
+            "6\u2665",
+            "6\u2660",
+            "J\u2665",
+            "4\u2663",
+            "4\u2663",
+            "7\u2666",
+            "7\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "With only a starter card (4\u2660), I play 8\u2666 to test if the rule requires a change in color or suit, as it contrasts the starter's black spade with a red diamond.",
+            "card": "8\u2666",
+            "tentative_rule": "The card must be a different color than the last mainline card",
+            "confidence_level": 1,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "8\u2666",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": null,
+          "tokens": {
+            "output_tokens": 4046,
+            "reasoning_tokens": 3974,
+            "answer_tokens": 72
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 2,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660 8\u2666",
+          "hand": [
+            "2\u2665",
+            "A\u2660",
+            "2\u2660",
+            "3\u2666",
+            "6\u2665",
+            "6\u2660",
+            "J\u2665",
+            "4\u2663",
+            "4\u2663",
+            "7\u2666",
+            "7\u2665",
+            "8\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "Testing 'different color' vs 'even rank' by playing 2\u2665 (red even); acceptance disproves color change, rejection supports it.",
+            "card": "2\u2665",
+            "tentative_rule": "The card must be a different color than the last mainline card.",
+            "confidence_level": 6,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "2\u2665",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must be a different color than the last mainline card.",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2663, actual=False, guessed=True",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.color != mainline[-1].color",
+            "node_count": 24,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 5700,
+            "reasoning_tokens": 5646,
+            "answer_tokens": 54
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 3,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660 8\u2666 2\u2665",
+          "hand": [
+            "A\u2660",
+            "2\u2660",
+            "3\u2666",
+            "6\u2665",
+            "6\u2660",
+            "J\u2665",
+            "4\u2663",
+            "4\u2663",
+            "7\u2666",
+            "7\u2665",
+            "8\u2666",
+            "2\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All accepted cards (4\u2660, 8\u2666, 2\u2665) share the property of having even ranks, while suits and colors vary, so I play an odd rank card (3\u2666) to test if the rule requires even ranks.",
+            "card": "3\u2666",
+            "tentative_rule": "The card's rank must be even",
+            "confidence_level": 5,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "3\u2666",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card's rank must be even",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "return card.rank % 2 == 0",
+            "node_count": 12,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 3456,
+            "reasoning_tokens": 3389,
+            "answer_tokens": 67
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 4,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660 8\u2666 2\u2665 [3\u2666]",
+          "hand": [
+            "A\u2660",
+            "2\u2660",
+            "6\u2665",
+            "6\u2660",
+            "J\u2665",
+            "4\u2663",
+            "4\u2663",
+            "7\u2666",
+            "7\u2665",
+            "8\u2666",
+            "2\u2660",
+            "5\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All accepted cards (4\u2660, 8\u2666, 2\u2665) have even ranks while the rejected card (3\u2666) has an odd rank, suggesting the rule requires even ranks; I'll play 4\u2663 (even rank, different suit and color from last card) to further test this hypothesis before making an official guess.",
+            "card": "4\u2663",
+            "tentative_rule": "The card must have an even rank (2, 4, 6, 8, 10, Q)",
+            "confidence_level": 7,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "4\u2663",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must have an even rank (2, 4, 6, 8, 10, Q)",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "return card.rank % 2 == 0",
+            "node_count": 12,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 880,
+            "reasoning_tokens": 788,
+            "answer_tokens": 92
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 5,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660 8\u2666 2\u2665 [3\u2666] 4\u2663",
+          "hand": [
+            "A\u2660",
+            "2\u2660",
+            "6\u2665",
+            "6\u2660",
+            "J\u2665",
+            "4\u2663",
+            "7\u2666",
+            "7\u2665",
+            "8\u2666",
+            "2\u2660",
+            "5\u2660",
+            "Q\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All 4 accepted cards (4\u2660, 8\u2666, 2\u2665, 4\u2663) have even ranks while the rejected card (3\u2666) has an odd rank, suggesting the rule requires even ranks; I'll test this by playing A\u2660 (rank 1, odd) to confirm the pattern before making an official guess.",
+            "card": "A\u2660",
+            "tentative_rule": "The card must have an even rank (2, 4, 6, 8, 10, Q)",
+            "confidence_level": 8,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "A\u2660",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must have an even rank (2, 4, 6, 8, 10, Q)",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "return card.rank % 2 == 0",
+            "node_count": 12,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 977,
+            "reasoning_tokens": 888,
+            "answer_tokens": 89
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 6,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660 8\u2666 2\u2665 [3\u2666] 4\u2663 [A\u2660]",
+          "hand": [
+            "2\u2660",
+            "6\u2665",
+            "6\u2660",
+            "J\u2665",
+            "4\u2663",
+            "7\u2666",
+            "7\u2665",
+            "8\u2666",
+            "2\u2660",
+            "5\u2660",
+            "Q\u2665",
+            "8\u2663"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All accepted cards have even ranks while rejected cards have odd ranks; playing 6\u2665 tests a new even rank to confirm the 'Even' pattern before guessing.",
+            "card": "6\u2665",
+            "tentative_rule": "The card must have an even rank",
+            "confidence_level": 9,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "6\u2665",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must have an even rank",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "return card.rank % 2 == 0",
+            "node_count": 12,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 7109,
+            "reasoning_tokens": 7051,
+            "answer_tokens": 58
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 7,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660 8\u2666 2\u2665 [3\u2666] 4\u2663 [A\u2660] 6\u2665",
+          "hand": [
+            "2\u2660",
+            "6\u2660",
+            "J\u2665",
+            "4\u2663",
+            "7\u2666",
+            "7\u2665",
+            "8\u2666",
+            "2\u2660",
+            "5\u2660",
+            "Q\u2665",
+            "8\u2663",
+            "A\u2663"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All 5 accepted cards have even ranks (4,8,2,4,6) and both rejected cards have odd ranks (3,1), creating a perfect 7/7 consistent pattern suggesting the rule is 'even ranks only'.",
+            "card": "5\u2660",
+            "tentative_rule": "Cards must have even ranks",
+            "confidence_level": 9,
+            "guess_rule": true
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "5\u2660",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must have even ranks",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "return card.rank % 2 == 0",
+            "node_count": 12,
+            "cyclomatic_complexity": 1
+          },
+          "tokens": {
+            "output_tokens": 2624,
+            "reasoning_tokens": 2565,
+            "answer_tokens": 59
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        }
+      ],
+      "wall_clock_seconds": 573.95
+    },
+    {
+      "round_number": 2,
+      "rule_name": "face_cards_only",
+      "batch_round_index": 0,
+      "turn_count": 7,
+      "rule_description": "Only face cards (11,12,13).",
+      "rule_code": "return card.rank in {11, 12, 13}",
+      "success": true,
+      "score": 24,
+      "floored_score": 24,
+      "no_stakes_score": 27,
+      "first_correct_turn": 4,
+      "failed_guesses": 0,
+      "game_over_reason": "correct_guess",
+      "llm_usage": {
+        "rule_compiler": {
+          "prompt_tokens": 5636,
+          "output_tokens": 905,
+          "reasoning_tokens": 850,
+          "answer_tokens": 55,
+          "cost_usd": null,
+          "duration_seconds": 10.92,
+          "throughput_tokens_per_sec": 82.87,
+          "call_count": 5,
+          "continuation_calls": 0,
+          "calls_requiring_continuation": 0,
+          "provider": "huggingface"
+        },
+        "player": {
+          "prompt_tokens": 13125,
+          "output_tokens": 13229,
+          "reasoning_tokens": 12678,
+          "answer_tokens": 551,
+          "cost_usd": null,
+          "duration_seconds": 300.48,
+          "throughput_tokens_per_sec": 44.03,
+          "call_count": 7,
+          "continuation_calls": 0,
+          "calls_requiring_continuation": 0,
+          "provider": "openai_compat"
+        }
+      },
+      "turns": [
+        {
+          "turn_number": 1,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "J\u2660",
+          "hand": [
+            "10\u2663",
+            "3\u2663",
+            "2\u2660",
+            "10\u2666",
+            "4\u2666",
+            "2\u2666",
+            "4\u2665",
+            "2\u2660",
+            "10\u2660",
+            "5\u2660",
+            "4\u2666",
+            "6\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "I am testing for color alternation by playing a red card against the black starter card to see if the rule depends on color change.",
+            "card": "10\u2666",
+            "tentative_rule": "The card must be a different color than the last mainline card",
+            "confidence_level": 1,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "10\u2666",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": null,
+          "tokens": {
+            "output_tokens": 3074,
+            "reasoning_tokens": 3011,
+            "answer_tokens": 63
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 2,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "J\u2660 [10\u2666]",
+          "hand": [
+            "10\u2663",
+            "3\u2663",
+            "2\u2660",
+            "4\u2666",
+            "2\u2666",
+            "4\u2665",
+            "2\u2660",
+            "10\u2660",
+            "5\u2660",
+            "4\u2666",
+            "6\u2665",
+            "6\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The red 10\u2666 was rejected after the black J\u2660, suggesting the rule might require the same color; I will play a black card (10\u2663) to test if color matching is sufficient regardless of suit.",
+            "card": "10\u2663",
+            "tentative_rule": "The card must be the same color as the last mainline card",
+            "confidence_level": 3,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "10\u2663",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": null,
+          "tokens": {
+            "output_tokens": 2435,
+            "reasoning_tokens": 2360,
+            "answer_tokens": 75
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 3,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "J\u2660 [10\u2666] [10\u2663]",
+          "hand": [
+            "3\u2663",
+            "2\u2660",
+            "4\u2666",
+            "2\u2666",
+            "4\u2665",
+            "2\u2660",
+            "10\u2660",
+            "5\u2660",
+            "4\u2666",
+            "6\u2665",
+            "6\u2660",
+            "Q\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "Both rejected cards (10\u2666 and 10\u2663) were rank 10 regardless of color or suit, suggesting the rule depends on rank - likely requiring ranks higher than 10 (face cards only) or ranks greater than the previous card's rank; playing Q\u2666 (rank 12) tests this hypothesis.",
+            "card": "Q\u2666",
+            "tentative_rule": "The card's rank must be greater than the previous mainline card's rank",
+            "confidence_level": 5,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "Q\u2666",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card's rank must be greater than the previous mainline card's rank",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=J\u2665, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.rank > mainline[-1].rank",
+            "node_count": 24,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 1097,
+            "reasoning_tokens": 1008,
+            "answer_tokens": 89
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 4,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "J\u2660 [10\u2666] [10\u2663] Q\u2666",
+          "hand": [
+            "3\u2663",
+            "2\u2660",
+            "4\u2666",
+            "2\u2666",
+            "4\u2665",
+            "2\u2660",
+            "10\u2660",
+            "5\u2660",
+            "4\u2666",
+            "6\u2665",
+            "6\u2660",
+            "K\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "Both rejected cards (10\u2666, 10\u2663) had rank 10, while accepted card Q\u2666 had rank 12, suggesting the rule requires face cards (ranks 11-13); testing K\u2666 (rank 13) to confirm another face card is accepted.",
+            "card": "K\u2666",
+            "tentative_rule": "Cards must have a rank of 11-13 (face cards: Jack, Queen, or King)",
+            "confidence_level": 6,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "K\u2666",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must have a rank of 11-13 (face cards: Jack, Queen, or King)",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "return 11 <= card.rank <= 13",
+            "node_count": 11,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 979,
+            "reasoning_tokens": 903,
+            "answer_tokens": 76
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 5,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "J\u2660 [10\u2666] [10\u2663] Q\u2666 K\u2666",
+          "hand": [
+            "3\u2663",
+            "2\u2660",
+            "4\u2666",
+            "2\u2666",
+            "4\u2665",
+            "2\u2660",
+            "10\u2660",
+            "5\u2660",
+            "4\u2666",
+            "6\u2665",
+            "6\u2660",
+            "5\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "Both rejected cards (10\u2666, 10\u2663) had rank 10 while all accepted cards (J\u2660, Q\u2666, K\u2666) are face cards (ranks 11-13), suggesting the rule is face cards only; playing 10\u2660 (rank 10) to test this hypothesis and draw new cards.",
+            "card": "10\u2660",
+            "tentative_rule": "Cards must be face cards (ranks 11-13: Jack, Queen, King)",
+            "confidence_level": 6,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "10\u2660",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must be face cards (ranks 11-13: Jack, Queen, King)",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "return card.rank >= 11",
+            "node_count": 9,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 3315,
+            "reasoning_tokens": 3236,
+            "answer_tokens": 79
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 6,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "J\u2660 [10\u2666] [10\u2663] Q\u2666 K\u2666 [10\u2660]",
+          "hand": [
+            "3\u2663",
+            "2\u2660",
+            "4\u2666",
+            "2\u2666",
+            "4\u2665",
+            "2\u2660",
+            "5\u2660",
+            "4\u2666",
+            "6\u2665",
+            "6\u2660",
+            "5\u2666",
+            "8\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All accepted cards (J\u2660, Q\u2666, K\u2666) are face cards (ranks 11-13), while all rejected cards (10\u2666, 10\u2663, 10\u2660) are rank 10, strongly suggesting the rule requires face cards; I'll test with 8\u2666 to confirm non-face cards are rejected.",
+            "card": "8\u2666",
+            "tentative_rule": "Cards must be face cards (Jack, Queen, or King - ranks 11, 12, or 13)",
+            "confidence_level": 9,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "8\u2666",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must be face cards (Jack, Queen, or King - ranks 11, 12, or 13)",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "return card.rank in {11, 12, 13}",
+            "node_count": 12,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 916,
+            "reasoning_tokens": 832,
+            "answer_tokens": 84
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 7,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "J\u2660 [10\u2666] [10\u2663] Q\u2666 K\u2666 [10\u2660] [8\u2666]",
+          "hand": [
+            "3\u2663",
+            "2\u2660",
+            "4\u2666",
+            "2\u2666",
+            "4\u2665",
+            "2\u2660",
+            "5\u2660",
+            "4\u2666",
+            "6\u2665",
+            "6\u2660",
+            "5\u2666",
+            "J\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All 3 accepted cards (J\u2660, Q\u2666, K\u2666) are face cards (ranks 11-13), while all 4 rejected cards (10\u2666, 10\u2663, 10\u2660, 8\u2666) are number cards (ranks 1-10); playing J\u2665 to confirm this pattern with another face card and make an official guess.",
+            "card": "J\u2665",
+            "tentative_rule": "The card must be a face card (Jack, Queen, or King, ranks 11-13)",
+            "confidence_level": 8,
+            "guess_rule": true
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "J\u2665",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must be a face card (Jack, Queen, or King, ranks 11-13)",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "return card.rank >= 11",
+            "node_count": 9,
+            "cyclomatic_complexity": 1
+          },
+          "tokens": {
+            "output_tokens": 1413,
+            "reasoning_tokens": 1328,
+            "answer_tokens": 85
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        }
+      ],
+      "wall_clock_seconds": 311.53
+    },
+    {
+      "round_number": 3,
+      "rule_name": "only_aces",
+      "batch_round_index": 0,
+      "turn_count": 7,
+      "rule_description": "Only Aces (rank 1) .",
+      "rule_code": "return card.rank == 1",
+      "success": true,
+      "score": 24,
+      "floored_score": 24,
+      "no_stakes_score": 26,
+      "first_correct_turn": 5,
+      "failed_guesses": 0,
+      "game_over_reason": "correct_guess",
+      "llm_usage": {
+        "rule_compiler": {
+          "prompt_tokens": 5579,
+          "output_tokens": 851,
+          "reasoning_tokens": 804,
+          "answer_tokens": 47,
+          "cost_usd": null,
+          "duration_seconds": 11.04,
+          "throughput_tokens_per_sec": 77.06,
+          "call_count": 5,
+          "continuation_calls": 0,
+          "calls_requiring_continuation": 0,
+          "provider": "huggingface"
+        },
+        "player": {
+          "prompt_tokens": 13064,
+          "output_tokens": 20579,
+          "reasoning_tokens": 20077,
+          "answer_tokens": 502,
+          "cost_usd": null,
+          "duration_seconds": 482.3,
+          "throughput_tokens_per_sec": 42.67,
+          "call_count": 7,
+          "continuation_calls": 0,
+          "calls_requiring_continuation": 0,
+          "provider": "openai_compat"
+        }
+      },
+      "turns": [
+        {
+          "turn_number": 1,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "A\u2663",
+          "hand": [
+            "5\u2660",
+            "3\u2665",
+            "J\u2665",
+            "Q\u2665",
+            "5\u2660",
+            "6\u2660",
+            "K\u2660",
+            "J\u2666",
+            "A\u2663",
+            "8\u2660",
+            "2\u2663",
+            "5\u2663"
+          ],
+          "llm_response": {
+            "reasoning_summary": "Since the starter card is A\u2663 (Black), I will play 3\u2665 (Red) to test if the rule requires black cards or alternates colors, as this provides the most distinct color contrast available.",
+            "card": "3\u2665",
+            "tentative_rule": "The card must be black.",
+            "confidence_level": 2,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "3\u2665",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": null,
+          "tokens": {
+            "output_tokens": 4374,
+            "reasoning_tokens": 4311,
+            "answer_tokens": 63
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 2,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "A\u2663 [3\u2665]",
+          "hand": [
+            "5\u2660",
+            "J\u2665",
+            "Q\u2665",
+            "5\u2660",
+            "6\u2660",
+            "K\u2660",
+            "J\u2666",
+            "A\u2663",
+            "8\u2660",
+            "2\u2663",
+            "5\u2663",
+            "Q\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "Since the Red 3\u2665 was rejected after the Black A\u2663, I suspect the rule requires Black cards; playing a Black 5\u2660 tests if color is the determining factor or if the suit must specifically be Clubs.",
+            "card": "5\u2660",
+            "tentative_rule": "The card must be black",
+            "confidence_level": 4,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "5\u2660",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": null,
+          "tokens": {
+            "output_tokens": 2322,
+            "reasoning_tokens": 2254,
+            "answer_tokens": 68
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 3,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "A\u2663 [3\u2665] [5\u2660]",
+          "hand": [
+            "J\u2665",
+            "Q\u2665",
+            "5\u2660",
+            "6\u2660",
+            "K\u2660",
+            "J\u2666",
+            "A\u2663",
+            "8\u2660",
+            "2\u2663",
+            "5\u2663",
+            "Q\u2660",
+            "3\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "Since color is ruled out by previous rejections, I am testing if the rule is 'Must be Club' or 'Must be Even Rank' by playing an Even Spade (6\u2660), which would be accepted if rank parity matters but rejected if suit matters.",
+            "card": "6\u2660",
+            "tentative_rule": "The card must have an even rank.",
+            "confidence_level": 5,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "6\u2660",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must have an even rank.",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2665, actual=True, guessed=False",
+            "guessed_code": "return card.rank % 2 == 0",
+            "node_count": 12,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 5795,
+            "reasoning_tokens": 5716,
+            "answer_tokens": 79
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 4,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "A\u2663 [3\u2665] [5\u2660] [6\u2660]",
+          "hand": [
+            "J\u2665",
+            "Q\u2665",
+            "5\u2660",
+            "K\u2660",
+            "J\u2666",
+            "A\u2663",
+            "8\u2660",
+            "2\u2663",
+            "5\u2663",
+            "Q\u2660",
+            "3\u2660",
+            "2\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "After A\u2663 (Club) was accepted, all non-Club cards (3\u2665, 5\u2660, 6\u2660) were rejected, suggesting the rule may require Club suit; playing 2\u2663 tests this hypothesis with another Club card.",
+            "card": "2\u2663",
+            "tentative_rule": "The card must be a Club",
+            "confidence_level": 7,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "2\u2663",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must be a Club",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2665, actual=True, guessed=False",
+            "guessed_code": "return card.suit.suit_name == \"clubs\"",
+            "node_count": 11,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 892,
+            "reasoning_tokens": 831,
+            "answer_tokens": 61
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 5,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "A\u2663 [3\u2665] [5\u2660] [6\u2660] [2\u2663]",
+          "hand": [
+            "J\u2665",
+            "Q\u2665",
+            "5\u2660",
+            "K\u2660",
+            "J\u2666",
+            "A\u2663",
+            "8\u2660",
+            "5\u2663",
+            "Q\u2660",
+            "3\u2660",
+            "2\u2660",
+            "4\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All 4 cards I've played were rejected after A\u2663; only Ace rank remains consistent with acceptance (3\u2665, 5\u2660, 6\u2660, 2\u2663 are all non-Aces), so I'll test if the rule is 'Must be Ace' by playing another A\u2663 from my hand.",
+            "card": "A\u2663",
+            "tentative_rule": "The card must be an Ace (rank 1)",
+            "confidence_level": 7,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "A\u2663",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must be an Ace (rank 1)",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "return card.rank == 1",
+            "node_count": 9,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 991,
+            "reasoning_tokens": 913,
+            "answer_tokens": 78
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 6,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "A\u2663 [3\u2665] [5\u2660] [6\u2660] [2\u2663] A\u2663",
+          "hand": [
+            "J\u2665",
+            "Q\u2665",
+            "5\u2660",
+            "K\u2660",
+            "J\u2666",
+            "8\u2660",
+            "5\u2663",
+            "Q\u2660",
+            "3\u2660",
+            "2\u2660",
+            "4\u2665",
+            "9\u2663"
+          ],
+          "llm_response": {
+            "reasoning_summary": "Both accepted cards (A\u2663, A\u2663) are Aces while all rejected cards (3\u2665, 5\u2660, 6\u2660, 2\u2663) are non-Aces, strongly suggesting the rule requires playing an Ace; I'll play 5\u2660 to confirm the pattern since I don't have an Ace in hand.",
+            "card": "5\u2660",
+            "tentative_rule": "The card must be an Ace (rank 1)",
+            "confidence_level": 8,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "5\u2660",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must be an Ace (rank 1)",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "return card.rank == 1",
+            "node_count": 9,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 3137,
+            "reasoning_tokens": 3059,
+            "answer_tokens": 78
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 7,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "A\u2663 [3\u2665] [5\u2660] [6\u2660] [2\u2663] A\u2663 [5\u2660]",
+          "hand": [
+            "J\u2665",
+            "Q\u2665",
+            "K\u2660",
+            "J\u2666",
+            "8\u2660",
+            "5\u2663",
+            "Q\u2660",
+            "3\u2660",
+            "2\u2660",
+            "4\u2665",
+            "9\u2663",
+            "9\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All 2 accepted cards are Aces (A\u2663, A\u2663) while all 5 rejected cards (3\u2665, 5\u2660, 6\u2660, 2\u2663, 5\u2660) are non-Aces; suit and color vary among rejected cards, eliminating those hypotheses; the pattern strongly indicates the rule requires playing an Ace.",
+            "card": "5\u2663",
+            "tentative_rule": "The card must be an Ace",
+            "confidence_level": 8,
+            "guess_rule": true
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "5\u2663",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must be an Ace",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "return card.rank == 1",
+            "node_count": 9,
+            "cyclomatic_complexity": 1
+          },
+          "tokens": {
+            "output_tokens": 3068,
+            "reasoning_tokens": 2993,
+            "answer_tokens": 75
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        }
+      ],
+      "wall_clock_seconds": 493.5
+    },
+    {
+      "round_number": 4,
+      "rule_name": "only_red_cards",
+      "batch_round_index": 0,
+      "turn_count": 6,
+      "rule_description": "Only red cards (hearts or diamonds).",
+      "rule_code": "return card.color == \"red\"",
+      "success": true,
+      "score": 25,
+      "floored_score": 25,
+      "no_stakes_score": 28,
+      "first_correct_turn": 3,
+      "failed_guesses": 0,
+      "game_over_reason": "correct_guess",
+      "llm_usage": {
+        "rule_compiler": {
+          "prompt_tokens": 4483,
+          "output_tokens": 702,
+          "reasoning_tokens": 642,
+          "answer_tokens": 60,
+          "cost_usd": null,
+          "duration_seconds": 7.76,
+          "throughput_tokens_per_sec": 90.48,
+          "call_count": 4,
+          "continuation_calls": 0,
+          "calls_requiring_continuation": 0,
+          "provider": "huggingface"
+        },
+        "player": {
+          "prompt_tokens": 11094,
+          "output_tokens": 12657,
+          "reasoning_tokens": 12242,
+          "answer_tokens": 415,
+          "cost_usd": null,
+          "duration_seconds": 277.33,
+          "throughput_tokens_per_sec": 45.64,
+          "call_count": 6,
+          "continuation_calls": 0,
+          "calls_requiring_continuation": 0,
+          "provider": "openai_compat"
+        }
+      },
+      "turns": [
+        {
+          "turn_number": 1,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "J\u2666",
+          "hand": [
+            "3\u2665",
+            "Q\u2660",
+            "6\u2660",
+            "4\u2663",
+            "9\u2663",
+            "10\u2665",
+            "J\u2663",
+            "8\u2665",
+            "5\u2663",
+            "10\u2660",
+            "9\u2665",
+            "5\u2663"
+          ],
+          "llm_response": {
+            "reasoning_summary": "With only a starter card (J\u2666), I play Q\u2660 to test hypotheses regarding color alternation and rank progression, while avoiding an official guess due to lack of data.",
+            "card": "Q\u2660",
+            "tentative_rule": "The card must be a different color than the last mainline card.",
+            "confidence_level": 1,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "Q\u2660",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": null,
+          "tokens": {
+            "output_tokens": 3530,
+            "reasoning_tokens": 3463,
+            "answer_tokens": 67
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 2,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "J\u2666 [Q\u2660]",
+          "hand": [
+            "3\u2665",
+            "6\u2660",
+            "4\u2663",
+            "9\u2663",
+            "10\u2665",
+            "J\u2663",
+            "8\u2665",
+            "5\u2663",
+            "10\u2660",
+            "9\u2665",
+            "5\u2663",
+            "9\u2663"
+          ],
+          "llm_response": {
+            "reasoning_summary": "Playing 10\u2665 (Red, Even) tests if the rule requires matching color or parity against J\u2666 (Red, Odd), since the previous Black card was rejected.",
+            "card": "10\u2665",
+            "tentative_rule": "The card must be the same color as the last mainline card.",
+            "confidence_level": 4,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "10\u2665",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": null,
+          "tokens": {
+            "output_tokens": 5206,
+            "reasoning_tokens": 5144,
+            "answer_tokens": 62
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 3,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "J\u2666 [Q\u2660] 10\u2665",
+          "hand": [
+            "3\u2665",
+            "6\u2660",
+            "4\u2663",
+            "9\u2663",
+            "J\u2663",
+            "8\u2665",
+            "5\u2663",
+            "10\u2660",
+            "9\u2665",
+            "5\u2663",
+            "9\u2663",
+            "6\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "Based on J\u2666(Red)\u2192Q\u2660(Black) rejected and J\u2666(Red)\u219210\u2665(Red) accepted, I hypothesize the rule requires matching color with the previous card, so I'm playing 3\u2665(Red) to test this hypothesis.",
+            "card": "3\u2665",
+            "tentative_rule": "The card must be the same color as the last mainline card",
+            "confidence_level": 7,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "3\u2665",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must be the same color as the last mainline card",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.color == mainline[-1].color",
+            "node_count": 24,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 933,
+            "reasoning_tokens": 868,
+            "answer_tokens": 65
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 4,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "J\u2666 [Q\u2660] 10\u2665 3\u2665",
+          "hand": [
+            "6\u2660",
+            "4\u2663",
+            "9\u2663",
+            "J\u2663",
+            "8\u2665",
+            "5\u2663",
+            "10\u2660",
+            "9\u2665",
+            "5\u2663",
+            "9\u2663",
+            "6\u2660",
+            "7\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "Based on the pattern where Red\u2192Black was rejected (J\u2666\u2192Q\u2660) while Red\u2192Red was accepted twice (J\u2666\u219210\u2665, 10\u2665\u21923\u2665), I hypothesize the rule requires matching the previous card's color; playing 6\u2660 (Black) after 3\u2665 (Red) will test if black cards are rejected after red cards.",
+            "card": "6\u2660",
+            "tentative_rule": "The card must be the same color as the previous mainline card",
+            "confidence_level": 7,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "6\u2660",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must be the same color as the previous mainline card",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.color == mainline[-1].color",
+            "node_count": 24,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 1353,
+            "reasoning_tokens": 1268,
+            "answer_tokens": 85
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 5,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "J\u2666 [Q\u2660] 10\u2665 3\u2665 [6\u2660]",
+          "hand": [
+            "4\u2663",
+            "9\u2663",
+            "J\u2663",
+            "8\u2665",
+            "5\u2663",
+            "10\u2660",
+            "9\u2665",
+            "5\u2663",
+            "9\u2663",
+            "6\u2660",
+            "7\u2666",
+            "K\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All accepted transitions show same color (Red\u2192Red), all rejected show different color (Red\u2192Black), so I'm testing the hypothesis that cards must match the previous card's color by playing 8\u2665 (Red) after 3\u2665 (Red).",
+            "card": "8\u2665",
+            "tentative_rule": "The card must be the same color as the last mainline card",
+            "confidence_level": 8,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "8\u2665",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must be the same color as the last mainline card",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.color == mainline[-1].color",
+            "node_count": 24,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 837,
+            "reasoning_tokens": 763,
+            "answer_tokens": 74
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 6,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "J\u2666 [Q\u2660] 10\u2665 3\u2665 [6\u2660] 8\u2665",
+          "hand": [
+            "4\u2663",
+            "9\u2663",
+            "J\u2663",
+            "5\u2663",
+            "10\u2660",
+            "9\u2665",
+            "5\u2663",
+            "9\u2663",
+            "6\u2660",
+            "7\u2666",
+            "K\u2666",
+            "8\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All 5 transitions show a consistent pattern: red\u2192black was rejected twice, red\u2192red was accepted three times, strongly suggesting cards must match the previous card's color.",
+            "card": "9\u2665",
+            "tentative_rule": "Cards must be the same color as the previous mainline card",
+            "confidence_level": 9,
+            "guess_rule": true
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "9\u2665",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must be the same color as the previous mainline card",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.color == mainline[-1].color",
+            "node_count": 24,
+            "cyclomatic_complexity": 2
+          },
+          "tokens": {
+            "output_tokens": 798,
+            "reasoning_tokens": 736,
+            "answer_tokens": 62
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        }
+      ],
+      "wall_clock_seconds": 285.27
+    },
+    {
+      "round_number": 5,
+      "rule_name": "prime_ranks_only",
+      "batch_round_index": 0,
+      "turn_count": 8,
+      "rule_description": "Only ranks that are prime numbers (2,3,5,7,11,13).",
+      "rule_code": "primes = {2, 3, 5, 7, 11, 13}\nreturn card.rank in primes",
+      "success": true,
+      "score": 23,
+      "floored_score": 23,
+      "no_stakes_score": 24,
+      "first_correct_turn": 7,
+      "failed_guesses": 0,
+      "game_over_reason": "correct_guess",
+      "llm_usage": {
+        "rule_compiler": {
+          "prompt_tokens": 7866,
+          "output_tokens": 1495,
+          "reasoning_tokens": 1376,
+          "answer_tokens": 119,
+          "cost_usd": null,
+          "duration_seconds": 15.8,
+          "throughput_tokens_per_sec": 94.65,
+          "call_count": 7,
+          "continuation_calls": 0,
+          "calls_requiring_continuation": 0,
+          "provider": "huggingface"
+        },
+        "player": {
+          "prompt_tokens": 17207,
+          "output_tokens": 44506,
+          "reasoning_tokens": 43906,
+          "answer_tokens": 600,
+          "cost_usd": null,
+          "duration_seconds": 913.08,
+          "throughput_tokens_per_sec": 48.74,
+          "call_count": 9,
+          "continuation_calls": 0,
+          "calls_requiring_continuation": 0,
+          "provider": "openai_compat"
+        }
+      },
+      "turns": [
+        {
+          "turn_number": 1,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "K\u2660",
+          "hand": [
+            "2\u2665",
+            "J\u2663",
+            "6\u2660",
+            "10\u2665",
+            "4\u2660",
+            "6\u2666",
+            "Q\u2665",
+            "A\u2663",
+            "3\u2660",
+            "Q\u2663",
+            "8\u2665",
+            "A\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "Since this is the first turn with only a starter card (K\u2660), I will play a card with contrasting properties (Red, Heart, Low, Even) to test hypotheses regarding color, suit, and rank parity.",
+            "card": "2\u2665",
+            "tentative_rule": "The card must be a different color than the last mainline card",
+            "confidence_level": 2,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "2\u2665",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": null,
+          "tokens": {
+            "output_tokens": 3796,
+            "reasoning_tokens": 3722,
+            "answer_tokens": 74
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 2,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "K\u2660 2\u2665",
+          "hand": [
+            "J\u2663",
+            "6\u2660",
+            "10\u2665",
+            "4\u2660",
+            "6\u2666",
+            "Q\u2665",
+            "A\u2663",
+            "3\u2660",
+            "Q\u2663",
+            "8\u2665",
+            "A\u2666",
+            "7\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "Playing 6\u2660 (Black, Even) to test if the rule requires color alternation (accept) or parity alternation (reject) given the last card was 2\u2665 (Red, Even).",
+            "card": "6\u2660",
+            "tentative_rule": "The card must be a different color than the previous mainline card.",
+            "confidence_level": 6,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "6\u2660",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must be a different color than the previous mainline card.",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2663, actual=False, guessed=True",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.color != mainline[-1].color",
+            "node_count": 24,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 7049,
+            "reasoning_tokens": 6986,
+            "answer_tokens": 63
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 3,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "K\u2660 2\u2665 [6\u2660]",
+          "hand": [
+            "J\u2663",
+            "10\u2665",
+            "4\u2660",
+            "6\u2666",
+            "Q\u2665",
+            "A\u2663",
+            "3\u2660",
+            "Q\u2663",
+            "8\u2665",
+            "A\u2666",
+            "7\u2665",
+            "9\u2663"
+          ],
+          "llm_response": {
+            "reasoning_summary": "Testing parity alternation hypothesis: K\u2660(odd)\u21922\u2665(even) was accepted, 2\u2665(even)\u21926\u2660(even) was rejected, suggesting cards must alternate between odd and even ranks, so I play 3\u2660(odd) to test if an odd card is accepted after an even card.",
+            "card": "3\u2660",
+            "tentative_rule": "Cards must alternate between odd and even ranks (parity alternation)",
+            "confidence_level": 5,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "3\u2660",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must alternate between odd and even ranks (parity alternation)",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=3\u2665, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nreturn (card.rank % 2) != (mainline[-1].rank % 2)",
+            "node_count": 30,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 1595,
+            "reasoning_tokens": 1521,
+            "answer_tokens": 74
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 4,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "K\u2660 2\u2665 [6\u2660] 3\u2660",
+          "hand": [
+            "J\u2663",
+            "10\u2665",
+            "4\u2660",
+            "6\u2666",
+            "Q\u2665",
+            "A\u2663",
+            "Q\u2663",
+            "8\u2665",
+            "A\u2666",
+            "7\u2665",
+            "9\u2663",
+            "J\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The pattern strongly suggests rank parity alternation (odd\u2192even\u2192odd), as K\u2660(odd)\u21922\u2665(even) accepted, 2\u2665(even)\u21926\u2660(even) rejected, 2\u2665(even)\u21923\u2660(odd) accepted; playing 4\u2660(even) after 3\u2660(odd) tests if even cards are accepted after odd cards.",
+            "card": "4\u2660",
+            "tentative_rule": "Cards must alternate between odd and even ranks",
+            "confidence_level": 7,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "4\u2660",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must alternate between odd and even ranks",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=3\u2665, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nreturn (card.rank % 2) != (mainline[-1].rank % 2)",
+            "node_count": 30,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 1857,
+            "reasoning_tokens": 1795,
+            "answer_tokens": 62
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 5,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "K\u2660 2\u2665 [6\u2660] 3\u2660 [4\u2660]",
+          "hand": [
+            "J\u2663",
+            "10\u2665",
+            "6\u2666",
+            "Q\u2665",
+            "A\u2663",
+            "Q\u2663",
+            "8\u2665",
+            "A\u2666",
+            "7\u2665",
+            "9\u2663",
+            "J\u2666",
+            "9\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "Data shows even cards accepted only when Hearts (2\u2665), rejected when non-Hearts (6\u2660, 4\u2660); playing 6\u2666 (even, Diamond) to test if rule is 'even ranks must be hearts' (reject) vs 'spades only on odd ranks' (accept)",
+            "card": "6\u2666",
+            "tentative_rule": "Cards with even ranks must be Hearts",
+            "confidence_level": 7,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "6\u2666",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards with even ranks must be Hearts",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2665, actual=False, guessed=True",
+            "guessed_code": "return (card.rank % 2 != 0) or (card.suit.suit_name == \"hearts\")",
+            "node_count": 23,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 5270,
+            "reasoning_tokens": 5199,
+            "answer_tokens": 71
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 6,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "K\u2660 2\u2665 [6\u2660] 3\u2660 [4\u2660] [6\u2666]",
+          "hand": [
+            "J\u2663",
+            "10\u2665",
+            "Q\u2665",
+            "A\u2663",
+            "Q\u2663",
+            "8\u2665",
+            "A\u2666",
+            "7\u2665",
+            "9\u2663",
+            "J\u2666",
+            "9\u2660",
+            "2\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "Analyzing the pattern: accepted cards (2\u2665, 3\u2660) have prime rank values (2, 3), while rejected cards (6\u2660, 4\u2660, 6\u2666) have non-prime ranks (6, 4, 6); playing 7\u2665 (prime rank 7) to test the hypothesis that cards must have prime-number ranks.",
+            "card": "7\u2665",
+            "tentative_rule": "The card's rank must be a prime number (2, 3, 5, 7, 11)",
+            "confidence_level": 7,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "7\u2665",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card's rank must be a prime number (2, 3, 5, 7, 11)",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=K\u2665, actual=True, guessed=False",
+            "guessed_code": "return card.rank in {2, 3, 5, 7, 11}",
+            "node_count": 14,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 4641,
+            "reasoning_tokens": 4557,
+            "answer_tokens": 84
+          },
+          "retry_count": 1,
+          "retry_causes": [
+            {
+              "attempt": 1,
+              "cause": "max_token_reached"
+            }
+          ]
+        },
+        {
+          "turn_number": 7,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "K\u2660 2\u2665 [6\u2660] 3\u2660 [4\u2660] [6\u2666] 7\u2665",
+          "hand": [
+            "J\u2663",
+            "10\u2665",
+            "Q\u2665",
+            "A\u2663",
+            "Q\u2663",
+            "8\u2665",
+            "A\u2666",
+            "9\u2663",
+            "J\u2666",
+            "9\u2660",
+            "2\u2660",
+            "2\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All accepted cards (K\u2660=13, 2\u2665=2, 3\u2660=3, 7\u2665=7) have prime-number ranks while all rejected cards (6\u2660=6, 4\u2660=4, 6\u2666=6) have non-prime ranks - this 7/7 perfect match strongly suggests the rule is about prime-number ranks; playing J\u2663 (11, prime) to confirm the hypothesis before making an official guess.",
+            "card": "J\u2663",
+            "tentative_rule": "Cards must have prime-number ranks (2, 3, 5, 7, 11, 13)",
+            "confidence_level": 8,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "J\u2663",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must have prime-number ranks (2, 3, 5, 7, 11, 13)",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "return card.rank in {2, 3, 5, 7, 11, 13}",
+            "node_count": 15,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 2689,
+            "reasoning_tokens": 2600,
+            "answer_tokens": 89
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 8,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "K\u2660 2\u2665 [6\u2660] 3\u2660 [4\u2660] [6\u2666] 7\u2665 J\u2663",
+          "hand": [
+            "10\u2665",
+            "Q\u2665",
+            "A\u2663",
+            "Q\u2663",
+            "8\u2665",
+            "A\u2666",
+            "9\u2663",
+            "J\u2666",
+            "9\u2660",
+            "2\u2660",
+            "2\u2660",
+            "5\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All 5 accepted cards (K\u2660=13, 2\u2665=2, 3\u2660=3, 7\u2665=7, J\u2663=11) have prime-number ranks, while all 3 rejected cards (6\u2660=6, 4\u2660=4, 6\u2666=6) have non-prime ranks - this 7/7 perfect pattern is conclusive, and playing 5\u2660 (prime rank 5) will confirm before official guess",
+            "card": "5\u2660",
+            "tentative_rule": "Cards must have prime-number ranks (2, 3, 5, 7, 11, 13)",
+            "confidence_level": 10,
+            "guess_rule": true
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "5\u2660",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must have prime-number ranks (2, 3, 5, 7, 11, 13)",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "primes = {2, 3, 5, 7, 11, 13}\nreturn card.rank in primes",
+            "node_count": 20,
+            "cyclomatic_complexity": 1
+          },
+          "tokens": {
+            "output_tokens": 1225,
+            "reasoning_tokens": 1142,
+            "answer_tokens": 83
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        }
+      ],
+      "wall_clock_seconds": 929.01
+    },
+    {
+      "round_number": 6,
+      "rule_name": "ranks_five_to_nine",
+      "batch_round_index": 0,
+      "turn_count": 14,
+      "rule_description": "Only cards between 5 and 9 inclusive.",
+      "rule_code": "return 5 <= card.rank <= 9",
+      "success": true,
+      "score": 13,
+      "floored_score": 13,
+      "no_stakes_score": 18,
+      "first_correct_turn": 13,
+      "failed_guesses": 2,
+      "game_over_reason": "correct_guess",
+      "llm_usage": {
+        "rule_compiler": {
+          "prompt_tokens": 14587,
+          "output_tokens": 2858,
+          "reasoning_tokens": 2694,
+          "answer_tokens": 164,
+          "cost_usd": null,
+          "duration_seconds": 45.67,
+          "throughput_tokens_per_sec": 62.58,
+          "call_count": 13,
+          "continuation_calls": 0,
+          "calls_requiring_continuation": 0,
+          "provider": "huggingface"
+        },
+        "player": {
+          "prompt_tokens": 31590,
+          "output_tokens": 64254,
+          "reasoning_tokens": 63088,
+          "answer_tokens": 1166,
+          "cost_usd": null,
+          "duration_seconds": 1272.94,
+          "throughput_tokens_per_sec": 50.48,
+          "call_count": 16,
+          "continuation_calls": 0,
+          "calls_requiring_continuation": 0,
+          "provider": "openai_compat"
+        }
+      },
+      "turns": [
+        {
+          "turn_number": 1,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "5\u2665",
+          "hand": [
+            "5\u2660",
+            "A\u2660",
+            "Q\u2660",
+            "10\u2660",
+            "2\u2660",
+            "3\u2666",
+            "J\u2660",
+            "5\u2666",
+            "A\u2663",
+            "K\u2663",
+            "9\u2663",
+            "2\u2663"
+          ],
+          "llm_response": {
+            "reasoning_summary": "Playing 5\u2660 tests both rank matching (5) and color alternation (Black vs Red), which are strong initial hypotheses given the 5\u2665 starter.",
+            "card": "5\u2660",
+            "tentative_rule": "The card must be a different color than the last mainline card",
+            "confidence_level": 2,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "5\u2660",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": null,
+          "tokens": {
+            "output_tokens": 2279,
+            "reasoning_tokens": 2220,
+            "answer_tokens": 59
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 2,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "5\u2665 5\u2660",
+          "hand": [
+            "A\u2660",
+            "Q\u2660",
+            "10\u2660",
+            "2\u2660",
+            "3\u2666",
+            "J\u2660",
+            "5\u2666",
+            "A\u2663",
+            "K\u2663",
+            "9\u2663",
+            "2\u2663",
+            "7\u2663"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The pattern 5\u2665 -> 5\u2660 suggests either matching rank or alternating color; I play 3\u2666 (Red, Rank 3) to distinguish these, as acceptance implies color alternation while rejection implies rank matching.",
+            "card": "3\u2666",
+            "tentative_rule": "The card must have the same rank as the last mainline card",
+            "confidence_level": 5,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "3\u2666",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must have the same rank as the last mainline card",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=6\u2665, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.rank == mainline[-1].rank",
+            "node_count": 24,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 3576,
+            "reasoning_tokens": 3505,
+            "answer_tokens": 71
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 3,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "5\u2665 5\u2660 [3\u2666]",
+          "hand": [
+            "A\u2660",
+            "Q\u2660",
+            "10\u2660",
+            "2\u2660",
+            "J\u2660",
+            "5\u2666",
+            "A\u2663",
+            "K\u2663",
+            "9\u2663",
+            "2\u2663",
+            "7\u2663",
+            "8\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The pattern 5\u2665\u21925\u2660 (accepted) followed by 3\u2666 (rejected) strongly suggests cards must match the rank of the last mainline card; playing 5\u2666 tests this hypothesis by offering another rank-5 card.",
+            "card": "5\u2666",
+            "tentative_rule": "The card must have the same rank as the last mainline card",
+            "confidence_level": 7,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "5\u2666",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must have the same rank as the last mainline card",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=6\u2665, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.rank == mainline[-1].rank",
+            "node_count": 24,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 718,
+            "reasoning_tokens": 648,
+            "answer_tokens": 70
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 4,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "5\u2665 5\u2660 [3\u2666] 5\u2666",
+          "hand": [
+            "A\u2660",
+            "Q\u2660",
+            "10\u2660",
+            "2\u2660",
+            "J\u2660",
+            "A\u2663",
+            "K\u2663",
+            "9\u2663",
+            "2\u2663",
+            "7\u2663",
+            "8\u2660",
+            "9\u2663"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All three accepted cards (5\u2665, 5\u2660, 5\u2666) have rank 5, while the rejected card (3\u2666) has rank 3, strongly suggesting cards must match the rank of the last mainline card; I'll play 2\u2663 to confirm non-5 ranks are rejected before making an official guess.",
+            "card": "2\u2663",
+            "tentative_rule": "Cards must have the same rank as the last mainline card",
+            "confidence_level": 9,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "2\u2663",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must have the same rank as the last mainline card",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=6\u2665, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.rank == mainline[-1].rank",
+            "node_count": 24,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 1585,
+            "reasoning_tokens": 1498,
+            "answer_tokens": 87
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 5,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "5\u2665 5\u2660 [3\u2666] 5\u2666 [2\u2663]",
+          "hand": [
+            "A\u2660",
+            "Q\u2660",
+            "10\u2660",
+            "2\u2660",
+            "J\u2660",
+            "A\u2663",
+            "K\u2663",
+            "9\u2663",
+            "7\u2663",
+            "8\u2660",
+            "9\u2663",
+            "Q\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All 3 accepted cards have rank 5 while both rejected cards had different ranks; I'm playing 2\u2660 (rank 2) to further confirm that non-5 ranks are rejected before making an official guess.",
+            "card": "2\u2660",
+            "tentative_rule": "Cards must have the same rank as the last mainline card",
+            "confidence_level": 8,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "2\u2660",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must have the same rank as the last mainline card",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=6\u2665, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.rank == mainline[-1].rank",
+            "node_count": 24,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 1068,
+            "reasoning_tokens": 997,
+            "answer_tokens": 71
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 6,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "5\u2665 5\u2660 [3\u2666] 5\u2666 [2\u2663] [2\u2660]",
+          "hand": [
+            "A\u2660",
+            "Q\u2660",
+            "10\u2660",
+            "J\u2660",
+            "A\u2663",
+            "K\u2663",
+            "9\u2663",
+            "7\u2663",
+            "8\u2660",
+            "9\u2663",
+            "Q\u2665",
+            "Q\u2663"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All 6 cards tested fit the pattern perfectly: 3 accepted cards (5\u2665, 5\u2660, 5\u2666) all have rank 5 matching the previous mainline card, and 3 rejected cards (3\u2666, 2\u2663, 2\u2660) all have different ranks from the last mainline card - this strongly indicates cards must match the rank of the last mainline card.",
+            "card": "9\u2663",
+            "tentative_rule": "Cards must have the same rank as the last mainline card",
+            "confidence_level": 9,
+            "guess_rule": true
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "9\u2663",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must have the same rank as the last mainline card",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=5\u2665, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.rank == mainline[-1].rank",
+            "node_count": 24,
+            "cyclomatic_complexity": 2
+          },
+          "tokens": {
+            "output_tokens": 2532,
+            "reasoning_tokens": 2434,
+            "answer_tokens": 98
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 7,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "5\u2665 5\u2660 [3\u2666] 5\u2666 [2\u2663] [2\u2660] 9\u2663",
+          "hand": [
+            "A\u2660",
+            "Q\u2660",
+            "10\u2660",
+            "J\u2660",
+            "A\u2663",
+            "K\u2663",
+            "7\u2663",
+            "8\u2660",
+            "9\u2663",
+            "Q\u2665",
+            "Q\u2663",
+            "9\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "Testing if rank must be >= last card's rank vs >= 5; playing 7\u2663 (rank 7) to distinguish - if rejected, rule is relative to last card (9), if accepted, rule is static (>= 5)",
+            "card": "7\u2663",
+            "tentative_rule": "The card's rank must be greater than or equal to the last mainline card's rank",
+            "confidence_level": 6,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "7\u2663",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card's rank must be greater than or equal to the last mainline card's rank",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=5\u2665, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.rank >= mainline[-1].rank",
+            "node_count": 24,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 3500,
+            "reasoning_tokens": 3420,
+            "answer_tokens": 80
+          },
+          "retry_count": 1,
+          "retry_causes": [
+            {
+              "attempt": 1,
+              "cause": "max_token_reached"
+            }
+          ]
+        },
+        {
+          "turn_number": 8,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "5\u2665 5\u2660 [3\u2666] 5\u2666 [2\u2663] [2\u2660] 9\u2663 7\u2663",
+          "hand": [
+            "A\u2660",
+            "Q\u2660",
+            "10\u2660",
+            "J\u2660",
+            "A\u2663",
+            "K\u2663",
+            "8\u2660",
+            "9\u2663",
+            "Q\u2665",
+            "Q\u2663",
+            "9\u2665",
+            "A\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All 8 cards tested follow a perfect pattern: accepted cards (5\u2665, 5\u2660, 5\u2666, 9\u2663, 7\u2663) all have rank >= 5, while rejected cards (3\u2666, 2\u2663, 2\u2660) all have rank < 5, so I'm testing A\u2660 (rank 1) to confirm this threshold rule before making an official guess.",
+            "card": "A\u2660",
+            "tentative_rule": "Cards must have a rank of 5 or higher to be accepted",
+            "confidence_level": 9,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "A\u2660",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must have a rank of 5 or higher to be accepted",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=10\u2665, actual=False, guessed=True",
+            "guessed_code": "return card.rank >= 5",
+            "node_count": 9,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 903,
+            "reasoning_tokens": 811,
+            "answer_tokens": 92
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 9,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "5\u2665 5\u2660 [3\u2666] 5\u2666 [2\u2663] [2\u2660] 9\u2663 7\u2663 [A\u2660]",
+          "hand": [
+            "Q\u2660",
+            "10\u2660",
+            "J\u2660",
+            "A\u2663",
+            "K\u2663",
+            "8\u2660",
+            "9\u2663",
+            "Q\u2665",
+            "Q\u2663",
+            "9\u2665",
+            "A\u2660",
+            "3\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All 8 tested cards fit a clear pattern: accepted cards (5\u2660, 5\u2666, 9\u2663, 7\u2663) all have rank \u2265 5, while rejected cards (3\u2666, 2\u2663, 2\u2660, A\u2660) all have rank < 5, so I'm playing 3\u2665 (rank 3) to confirm this threshold rule before making an official guess.",
+            "card": "3\u2665",
+            "tentative_rule": "Cards must have rank >= 5",
+            "confidence_level": 8,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "3\u2665",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must have rank >= 5",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=10\u2665, actual=False, guessed=True",
+            "guessed_code": "return card.rank >= 5",
+            "node_count": 9,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 1406,
+            "reasoning_tokens": 1322,
+            "answer_tokens": 84
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 10,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "5\u2665 5\u2660 [3\u2666] 5\u2666 [2\u2663] [2\u2660] 9\u2663 7\u2663 [A\u2660] [3\u2665]",
+          "hand": [
+            "Q\u2660",
+            "10\u2660",
+            "J\u2660",
+            "A\u2663",
+            "K\u2663",
+            "8\u2660",
+            "9\u2663",
+            "Q\u2665",
+            "Q\u2663",
+            "9\u2665",
+            "A\u2660",
+            "4\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All 8 tested cards fit a perfect pattern: accepted cards (5\u2665,5\u2660,5\u2666,9\u2663,7\u2663) all have rank\u22655, rejected cards (3\u2666,2\u2663,2\u2660,A\u2660,3\u2665) all have rank<5; playing 4\u2666 to test the boundary between accepted and rejected to confirm the rank threshold rule before making an official guess.",
+            "card": "4\u2666",
+            "tentative_rule": "Cards must have a rank greater than or equal to 5 (ranks 5-13 are accepted, ranks 1-4 are rejected)",
+            "confidence_level": 9,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "4\u2666",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must have a rank greater than or equal to 5 (ranks 5-13 are accepted, ranks 1-4 are rejected)",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=10\u2665, actual=False, guessed=True",
+            "guessed_code": "return card.rank >= 5",
+            "node_count": 9,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 929,
+            "reasoning_tokens": 836,
+            "answer_tokens": 93
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 11,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "5\u2665 5\u2660 [3\u2666] 5\u2666 [2\u2663] [2\u2660] 9\u2663 7\u2663 [A\u2660] [3\u2665] [4\u2666]",
+          "hand": [
+            "Q\u2660",
+            "10\u2660",
+            "J\u2660",
+            "A\u2663",
+            "K\u2663",
+            "8\u2660",
+            "9\u2663",
+            "Q\u2665",
+            "Q\u2663",
+            "9\u2665",
+            "A\u2660",
+            "5\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All 11 tested cards show a perfect pattern: accepted cards (5,5,5,9,7) all have rank \u2265 5, rejected cards (3,2,2,1,3,4) all have rank < 5; playing 5\u2660 tests the boundary rank 5 against a different mainline card (7\u2663) to confirm the absolute rank threshold rule before making an official guess.",
+            "card": "5\u2660",
+            "tentative_rule": "Cards must have rank greater than or equal to 5",
+            "confidence_level": 9,
+            "guess_rule": true
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "5\u2660",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must have rank greater than or equal to 5",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=10\u2665, actual=False, guessed=True",
+            "guessed_code": "return card.rank >= 5",
+            "node_count": 9,
+            "cyclomatic_complexity": 1
+          },
+          "tokens": {
+            "output_tokens": 2008,
+            "reasoning_tokens": 1916,
+            "answer_tokens": 92
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 12,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "5\u2665 5\u2660 [3\u2666] 5\u2666 [2\u2663] [2\u2660] 9\u2663 7\u2663 [A\u2660] [3\u2665] [4\u2666] 5\u2660",
+          "hand": [
+            "Q\u2660",
+            "10\u2660",
+            "J\u2660",
+            "A\u2663",
+            "K\u2663",
+            "8\u2660",
+            "9\u2663",
+            "Q\u2665",
+            "Q\u2663",
+            "9\u2665",
+            "A\u2660",
+            "7\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "Since 'Rank >= 5' was proven incorrect but all accepted cards fit it, the rule likely adds a parity constraint; I play 10\u2660 (even rank >= 5) to test if even ranks are rejected.",
+            "card": "10\u2660",
+            "tentative_rule": "Cards must have an odd rank greater than or equal to 5",
+            "confidence_level": 8,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "10\u2660",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must have an odd rank greater than or equal to 5",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=6\u2665, actual=True, guessed=False",
+            "guessed_code": "return card.rank >= 5 and card.rank % 2 == 1",
+            "node_count": 21,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 6749,
+            "reasoning_tokens": 6674,
+            "answer_tokens": 75
+          },
+          "retry_count": 1,
+          "retry_causes": [
+            {
+              "attempt": 1,
+              "cause": "max_token_reached"
+            }
+          ]
+        },
+        {
+          "turn_number": 13,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "5\u2665 5\u2660 [3\u2666] 5\u2666 [2\u2663] [2\u2660] 9\u2663 7\u2663 [A\u2660] [3\u2665] [4\u2666] 5\u2660 [10\u2660]",
+          "hand": [
+            "Q\u2660",
+            "J\u2660",
+            "A\u2663",
+            "K\u2663",
+            "8\u2660",
+            "9\u2663",
+            "Q\u2665",
+            "Q\u2663",
+            "9\u2665",
+            "A\u2660",
+            "7\u2666",
+            "Q\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All 13 tested cards fit the pattern: accepted cards (5,5,5,9,7,5) all have ranks 5-9, rejected cards (3,2,2,1,3,4,10) all have ranks outside 5-9; playing 8\u2660 (rank 8, even, in range) tests if the rule is 'ranks 5-9' vs 'odd ranks 5-9' before making final guess",
+            "card": "8\u2660",
+            "tentative_rule": "Cards must have rank between 5 and 9 (inclusive)",
+            "confidence_level": 8,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "8\u2660",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must have rank between 5 and 9 (inclusive)",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "return 5 <= card.rank <= 9",
+            "node_count": 11,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 2247,
+            "reasoning_tokens": 2163,
+            "answer_tokens": 84
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 14,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "5\u2665 5\u2660 [3\u2666] 5\u2666 [2\u2663] [2\u2660] 9\u2663 7\u2663 [A\u2660] [3\u2665] [4\u2666] 5\u2660 [10\u2660] 8\u2660",
+          "hand": [
+            "Q\u2660",
+            "J\u2660",
+            "A\u2663",
+            "K\u2663",
+            "9\u2663",
+            "Q\u2665",
+            "Q\u2663",
+            "9\u2665",
+            "A\u2660",
+            "7\u2666",
+            "Q\u2666",
+            "J\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All 14 tested cards show a perfect pattern: 7 accepted cards all have ranks 5-9 (5,5,5,9,7,5,8), 7 rejected cards all have ranks outside 5-9 (1,2,2,3,3,4,10); the failed guess 'rank >= 5' was disproven by 10\u2660 rejection, confirming an upper bound; playing 7\u2666 (rank 7) tests the middle of the range and I'm confident enough to make an official guess.",
+            "card": "7\u2666",
+            "tentative_rule": "Cards must have rank between 5 and 9 inclusive (5 \u2264 rank \u2264 9)",
+            "confidence_level": 9,
+            "guess_rule": true
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "7\u2666",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must have rank between 5 and 9 inclusive (5 \u2264 rank \u2264 9)",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "return 5 <= card.rank <= 9",
+            "node_count": 11,
+            "cyclomatic_complexity": 1
+          },
+          "tokens": {
+            "output_tokens": 1986,
+            "reasoning_tokens": 1876,
+            "answer_tokens": 110
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        }
+      ],
+      "wall_clock_seconds": 1318.71
+    },
+    {
+      "round_number": 7,
+      "rule_name": "ranks_one_to_seven",
+      "batch_round_index": 0,
+      "turn_count": 17,
+      "rule_description": "Only cards between 1 and 7 inclusive.",
+      "rule_code": "return 1 <= card.rank <= 7",
+      "success": true,
+      "score": 10,
+      "floored_score": 10,
+      "no_stakes_score": 20,
+      "first_correct_turn": 11,
+      "failed_guesses": 2,
+      "game_over_reason": "correct_guess",
+      "llm_usage": {
+        "rule_compiler": {
+          "prompt_tokens": 18008,
+          "output_tokens": 3186,
+          "reasoning_tokens": 2976,
+          "answer_tokens": 210,
+          "cost_usd": null,
+          "duration_seconds": 38.43,
+          "throughput_tokens_per_sec": 82.89,
+          "call_count": 16,
+          "continuation_calls": 0,
+          "calls_requiring_continuation": 0,
+          "provider": "huggingface"
+        },
+        "player": {
+          "prompt_tokens": 37518,
+          "output_tokens": 104468,
+          "reasoning_tokens": 103119,
+          "answer_tokens": 1349,
+          "cost_usd": null,
+          "duration_seconds": 2146.66,
+          "throughput_tokens_per_sec": 48.67,
+          "call_count": 19,
+          "continuation_calls": 0,
+          "calls_requiring_continuation": 0,
+          "provider": "openai_compat"
+        }
+      },
+      "turns": [
+        {
+          "turn_number": 1,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660",
+          "hand": [
+            "Q\u2666",
+            "9\u2666",
+            "5\u2663",
+            "4\u2665",
+            "5\u2663",
+            "9\u2666",
+            "K\u2666",
+            "A\u2660",
+            "2\u2666",
+            "9\u2665",
+            "A\u2665",
+            "9\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "Playing 4\u2665 tests if rank equality is required while changing color and suit, distinguishing between rank-based and color-based rules given the 4\u2660 starter.",
+            "card": "4\u2665",
+            "tentative_rule": "The card must be a different color than the last mainline card.",
+            "confidence_level": 1,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "4\u2665",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": null,
+          "tokens": {
+            "output_tokens": 5253,
+            "reasoning_tokens": 5192,
+            "answer_tokens": 61
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 2,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660 4\u2665",
+          "hand": [
+            "Q\u2666",
+            "9\u2666",
+            "5\u2663",
+            "5\u2663",
+            "9\u2666",
+            "K\u2666",
+            "A\u2660",
+            "2\u2666",
+            "9\u2665",
+            "A\u2665",
+            "9\u2660",
+            "Q\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "I play 5\u2663 to test the 'different color' hypothesis against the current red card, as I cannot test 'same rank' without a 4.",
+            "card": "5\u2663",
+            "tentative_rule": "The card must be a different color than the last mainline card",
+            "confidence_level": 6,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "5\u2663",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must be a different color than the last mainline card",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2663, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.color != mainline[-1].color",
+            "node_count": 24,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 4599,
+            "reasoning_tokens": 4538,
+            "answer_tokens": 61
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 3,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660 4\u2665 5\u2663",
+          "hand": [
+            "Q\u2666",
+            "9\u2666",
+            "5\u2663",
+            "9\u2666",
+            "K\u2666",
+            "A\u2660",
+            "2\u2666",
+            "9\u2665",
+            "A\u2665",
+            "9\u2660",
+            "Q\u2666",
+            "6\u2663"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The mainline shows 4\u2660(black)\u21924\u2665(red)\u21925\u2663(black), suggesting alternating colors; I'll play a red card to test this hypothesis.",
+            "card": "9\u2666",
+            "tentative_rule": "Cards must alternate between black and red colors (each card must be a different color than the previous mainline card)",
+            "confidence_level": 7,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "9\u2666",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must alternate between black and red colors (each card must be a different color than the previous mainline card)",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2663, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.color != mainline[-1].color",
+            "node_count": 24,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 528,
+            "reasoning_tokens": 466,
+            "answer_tokens": 62
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 4,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660 4\u2665 5\u2663 [9\u2666]",
+          "hand": [
+            "Q\u2666",
+            "5\u2663",
+            "9\u2666",
+            "K\u2666",
+            "A\u2660",
+            "2\u2666",
+            "9\u2665",
+            "A\u2665",
+            "9\u2660",
+            "Q\u2666",
+            "6\u2663",
+            "A\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The mainline shows 4\u2660\u21924\u2665\u21925\u2663 with rank differences of 0 and 1, while 9\u2666 was rejected with rank difference 4, suggesting a rank difference limit; I'll test 2\u2666 (difference 3) to find the boundary of acceptable rank differences.",
+            "card": "2\u2666",
+            "tentative_rule": "The card's rank must differ from the previous mainline card's rank by at most 2",
+            "confidence_level": 6,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "2\u2666",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card's rank must differ from the previous mainline card's rank by at most 2",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=5\u2665, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nreturn abs(card.rank - mainline[-1].rank) <= 2",
+            "node_count": 30,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 3886,
+            "reasoning_tokens": 3803,
+            "answer_tokens": 83
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 5,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660 4\u2665 5\u2663 [9\u2666] 2\u2666",
+          "hand": [
+            "Q\u2666",
+            "5\u2663",
+            "9\u2666",
+            "K\u2666",
+            "A\u2660",
+            "9\u2665",
+            "A\u2665",
+            "9\u2660",
+            "Q\u2666",
+            "6\u2663",
+            "A\u2666",
+            "A\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The pattern shows color alternation (black\u2192red\u2192black\u2192red) and all accepted rank differences are \u22643 (0,1,3), while 9\u2666 was rejected with rank difference 4, suggesting the rule is color alternation AND |rank difference|\u22643",
+            "card": "5\u2663",
+            "tentative_rule": "The card must alternate colors from the last mainline card and the absolute rank difference must be at most 3",
+            "confidence_level": 8,
+            "guess_rule": true
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "5\u2663",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must alternate colors from the last mainline card and the absolute rank difference must be at most 3",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2665, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nlast = mainline[-1]\nreturn (card.color != last.color) and (abs(card.rank - last.rank) <= 3)",
+            "node_count": 47,
+            "cyclomatic_complexity": 3
+          },
+          "tokens": {
+            "output_tokens": 2174,
+            "reasoning_tokens": 2093,
+            "answer_tokens": 81
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 6,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660 4\u2665 5\u2663 [9\u2666] 2\u2666 5\u2663",
+          "hand": [
+            "Q\u2666",
+            "9\u2666",
+            "K\u2666",
+            "A\u2660",
+            "9\u2665",
+            "A\u2665",
+            "9\u2660",
+            "Q\u2666",
+            "6\u2663",
+            "A\u2666",
+            "A\u2665",
+            "7\u2663"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The mainline shows all rank differences \u22643 (0,1,3,3) with 9\u2666 rejected at diff 4, suggesting |rank diff|\u22643; playing 6\u2663 (black after black, diff=1) will test if color alternation is actually required or just coincidental.",
+            "card": "6\u2663",
+            "tentative_rule": "The absolute rank difference from the last mainline card must be at most 3",
+            "confidence_level": 7,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "6\u2663",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The absolute rank difference from the last mainline card must be at most 3",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2665, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nreturn abs(card.rank - mainline[-1].rank) <= 3",
+            "node_count": 30,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 1552,
+            "reasoning_tokens": 1474,
+            "answer_tokens": 78
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 7,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660 4\u2665 5\u2663 [9\u2666] 2\u2666 5\u2663 6\u2663",
+          "hand": [
+            "Q\u2666",
+            "9\u2666",
+            "K\u2666",
+            "A\u2660",
+            "9\u2665",
+            "A\u2665",
+            "9\u2660",
+            "Q\u2666",
+            "A\u2666",
+            "A\u2665",
+            "7\u2663",
+            "10\u2663"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All accepted cards have rank difference \u22643 from previous mainline card (0,1,3), while the only rejected card (9\u2666) had difference 4; playing 10\u2663 (difference=4 from 6\u2663) tests the boundary to confirm the rank difference constraint",
+            "card": "10\u2663",
+            "tentative_rule": "The card's rank must differ from the last mainline card's rank by at most 3 (absolute rank difference \u2264 3)",
+            "confidence_level": 8,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "10\u2663",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card's rank must differ from the last mainline card's rank by at most 3 (absolute rank difference \u2264 3)",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2665, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nreturn abs(card.rank - mainline[-1].rank) <= 3",
+            "node_count": 30,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 2551,
+            "reasoning_tokens": 2464,
+            "answer_tokens": 87
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 8,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660 4\u2665 5\u2663 [9\u2666] 2\u2666 5\u2663 6\u2663 [10\u2663]",
+          "hand": [
+            "Q\u2666",
+            "9\u2666",
+            "K\u2666",
+            "A\u2660",
+            "9\u2665",
+            "A\u2665",
+            "9\u2660",
+            "Q\u2666",
+            "A\u2666",
+            "A\u2665",
+            "7\u2663",
+            "8\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "Color alternation was disproven when 6\u2663 (black) was accepted after 5\u2663 (black); all accepted cards have |rank diff|\u22643 from previous (0,1,3,3,1) while both rejected cards had |rank diff|=4, suggesting the rule is simply |rank difference from last mainline card|\u22643",
+            "card": "9\u2666",
+            "tentative_rule": "The absolute rank difference between the played card and the last mainline card must be at most 3",
+            "confidence_level": 9,
+            "guess_rule": true
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "9\u2666",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The absolute rank difference between the played card and the last mainline card must be at most 3",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2665, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nreturn abs(card.rank - mainline[-1].rank) <= 3",
+            "node_count": 30,
+            "cyclomatic_complexity": 2
+          },
+          "tokens": {
+            "output_tokens": 1333,
+            "reasoning_tokens": 1244,
+            "answer_tokens": 89
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 9,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660 4\u2665 5\u2663 [9\u2666] 2\u2666 5\u2663 6\u2663 [10\u2663] [9\u2666]",
+          "hand": [
+            "Q\u2666",
+            "K\u2666",
+            "A\u2660",
+            "9\u2665",
+            "A\u2665",
+            "9\u2660",
+            "Q\u2666",
+            "A\u2666",
+            "A\u2665",
+            "7\u2663",
+            "8\u2666",
+            "J\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All accepted cards have rank \u2264 6 (4,4,5,2,5,6) while all rejected cards have rank > 6 (9,10,9); the 'rank diff \u2264 3' hypothesis was disproven when 6\u2663\u21929\u2666 (diff=3) was rejected; playing A\u2660 (rank 1, diff=5 from 6\u2663) will test if rank \u2264 6 is the sole constraint independent of difference.",
+            "card": "A\u2660",
+            "tentative_rule": "The card's rank must be at most 6 (Ace=1 through 6)",
+            "confidence_level": 8,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "A\u2660",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card's rank must be at most 6 (Ace=1 through 6)",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=7\u2665, actual=True, guessed=False",
+            "guessed_code": "return card.rank <= 6",
+            "node_count": 9,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 4674,
+            "reasoning_tokens": 4580,
+            "answer_tokens": 94
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 10,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660 4\u2665 5\u2663 [9\u2666] 2\u2666 5\u2663 6\u2663 [10\u2663] [9\u2666] A\u2660",
+          "hand": [
+            "Q\u2666",
+            "K\u2666",
+            "9\u2665",
+            "A\u2665",
+            "9\u2660",
+            "Q\u2666",
+            "A\u2666",
+            "A\u2665",
+            "7\u2663",
+            "8\u2666",
+            "J\u2665",
+            "7\u2663"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All accepted cards have rank \u2264 6 and all rejected cards have rank > 6, so I play 7\u2663 to test the boundary rank before guessing.",
+            "card": "7\u2663",
+            "tentative_rule": "The card's rank must be 6 or less",
+            "confidence_level": 9,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "7\u2663",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card's rank must be 6 or less",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=7\u2665, actual=True, guessed=False",
+            "guessed_code": "return card.rank <= 6",
+            "node_count": 9,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 7028,
+            "reasoning_tokens": 6969,
+            "answer_tokens": 59
+          },
+          "retry_count": 2,
+          "retry_causes": [
+            {
+              "attempt": 1,
+              "cause": "max_token_reached"
+            },
+            {
+              "attempt": 2,
+              "cause": "max_token_reached"
+            }
+          ]
+        },
+        {
+          "turn_number": 11,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660 4\u2665 5\u2663 [9\u2666] 2\u2666 5\u2663 6\u2663 [10\u2663] [9\u2666] A\u2660 7\u2663",
+          "hand": [
+            "Q\u2666",
+            "K\u2666",
+            "9\u2665",
+            "A\u2665",
+            "9\u2660",
+            "Q\u2666",
+            "A\u2666",
+            "A\u2665",
+            "8\u2666",
+            "J\u2665",
+            "7\u2663",
+            "7\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All 8 accepted cards have rank \u2264 7 (4,4,5,2,5,6,1,7) while all 3 rejected cards have rank > 7 (9,10,9); playing 8\u2666 tests the boundary between accepted and rejected to confirm the rank threshold hypothesis before making an official guess.",
+            "card": "8\u2666",
+            "tentative_rule": "The card's rank must be 7 or lower (Ace=1 through 7)",
+            "confidence_level": 8,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "8\u2666",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card's rank must be 7 or lower (Ace=1 through 7)",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "return card.rank <= 7",
+            "node_count": 9,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 2251,
+            "reasoning_tokens": 2171,
+            "answer_tokens": 80
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 12,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660 4\u2665 5\u2663 [9\u2666] 2\u2666 5\u2663 6\u2663 [10\u2663] [9\u2666] A\u2660 7\u2663 [8\u2666]",
+          "hand": [
+            "Q\u2666",
+            "K\u2666",
+            "9\u2665",
+            "A\u2665",
+            "9\u2660",
+            "Q\u2666",
+            "A\u2666",
+            "A\u2665",
+            "J\u2665",
+            "7\u2663",
+            "7\u2665",
+            "3\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All 8 accepted cards have ranks 1-7 while all 4 rejected cards have ranks 8-10, strongly suggesting the rule is 'rank \u2264 7'; playing 7\u2665 tests the boundary rank 7 with a different suit to confirm before making an official guess.",
+            "card": "7\u2665",
+            "tentative_rule": "The card's rank must be at most 7 (rank \u2264 7)",
+            "confidence_level": 9,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "7\u2665",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card's rank must be at most 7 (rank \u2264 7)",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "return card.rank <= 7",
+            "node_count": 9,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 1320,
+            "reasoning_tokens": 1237,
+            "answer_tokens": 83
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 13,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660 4\u2665 5\u2663 [9\u2666] 2\u2666 5\u2663 6\u2663 [10\u2663] [9\u2666] A\u2660 7\u2663 [8\u2666] 7\u2665",
+          "hand": [
+            "Q\u2666",
+            "K\u2666",
+            "9\u2665",
+            "A\u2665",
+            "9\u2660",
+            "Q\u2666",
+            "A\u2666",
+            "A\u2665",
+            "J\u2665",
+            "7\u2663",
+            "3\u2660",
+            "A\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The accepted cards consistently have ranks 1-7 while rejected cards have ranks 8-10, strongly indicating a rank threshold of 7, but rank 3 is untested; playing 3\u2660 confirms the full range before risking an official guess to avoid penalty.",
+            "card": "3\u2660",
+            "tentative_rule": "The card's rank must be less than or equal to 7",
+            "confidence_level": 9,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "3\u2660",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card's rank must be less than or equal to 7",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "return card.rank <= 7",
+            "node_count": 9,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 10133,
+            "reasoning_tokens": 10053,
+            "answer_tokens": 80
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 14,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660 4\u2665 5\u2663 [9\u2666] 2\u2666 5\u2663 6\u2663 [10\u2663] [9\u2666] A\u2660 7\u2663 [8\u2666] 7\u2665 3\u2660",
+          "hand": [
+            "Q\u2666",
+            "K\u2666",
+            "9\u2665",
+            "A\u2665",
+            "9\u2660",
+            "Q\u2666",
+            "A\u2666",
+            "A\u2665",
+            "J\u2665",
+            "7\u2663",
+            "A\u2660",
+            "8\u2663"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The pattern strongly suggests a rank threshold (all accepted <= 7, all rejected > 7), but face cards (11-13) are untested; playing J\u2665 tests the face card boundary to confirm if the rule is 'Rank <= 7' or 'Rank not 8, 9, 10' before risking a guess.",
+            "card": "J\u2665",
+            "tentative_rule": "The card's rank must be less than or equal to 7",
+            "confidence_level": 9,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "J\u2665",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card's rank must be less than or equal to 7",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "return card.rank <= 7",
+            "node_count": 9,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 10331,
+            "reasoning_tokens": 10240,
+            "answer_tokens": 91
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 15,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660 4\u2665 5\u2663 [9\u2666] 2\u2666 5\u2663 6\u2663 [10\u2663] [9\u2666] A\u2660 7\u2663 [8\u2666] 7\u2665 3\u2660 [J\u2665]",
+          "hand": [
+            "Q\u2666",
+            "K\u2666",
+            "9\u2665",
+            "A\u2665",
+            "9\u2660",
+            "Q\u2666",
+            "A\u2666",
+            "A\u2665",
+            "7\u2663",
+            "A\u2660",
+            "8\u2663",
+            "K\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All 10 accepted cards have ranks 1-7 while all 5 rejected cards have ranks 8-13, strongly indicating the rule is 'rank \u2264 7'; playing 8\u2663 tests the boundary (first rank that should be rejected) to confirm before making an official guess.",
+            "card": "8\u2663",
+            "tentative_rule": "The card's rank must be 7 or less (ranks 1-7)",
+            "confidence_level": 9,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "8\u2663",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card's rank must be 7 or less (ranks 1-7)",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "return card.rank <= 7",
+            "node_count": 9,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 2559,
+            "reasoning_tokens": 2478,
+            "answer_tokens": 81
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 16,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660 4\u2665 5\u2663 [9\u2666] 2\u2666 5\u2663 6\u2663 [10\u2663] [9\u2666] A\u2660 7\u2663 [8\u2666] 7\u2665 3\u2660 [J\u2665] [8\u2663]",
+          "hand": [
+            "Q\u2666",
+            "K\u2666",
+            "9\u2665",
+            "A\u2665",
+            "9\u2660",
+            "Q\u2666",
+            "A\u2666",
+            "A\u2665",
+            "7\u2663",
+            "A\u2660",
+            "K\u2666",
+            "4\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "I am 95% confident the rule is Rank <= 7 based on all accepted cards having ranks 1-7 and all rejected cards having ranks 8-11, but playing K\u2666 confirms the face card boundary (rank 13) without risking a penalty on a potentially incorrect guess.",
+            "card": "K\u2666",
+            "tentative_rule": "The card's rank must be less than or equal to 7",
+            "confidence_level": 9,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "K\u2666",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card's rank must be less than or equal to 7",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "return card.rank <= 7",
+            "node_count": 9,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 9323,
+            "reasoning_tokens": 9236,
+            "answer_tokens": 87
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 17,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660 4\u2665 5\u2663 [9\u2666] 2\u2666 5\u2663 6\u2663 [10\u2663] [9\u2666] A\u2660 7\u2663 [8\u2666] 7\u2665 3\u2660 [J\u2665] [8\u2663] [K\u2666]",
+          "hand": [
+            "Q\u2666",
+            "9\u2665",
+            "A\u2665",
+            "9\u2660",
+            "Q\u2666",
+            "A\u2666",
+            "A\u2665",
+            "7\u2663",
+            "A\u2660",
+            "K\u2666",
+            "4\u2660",
+            "8\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All 10 accepted cards have ranks 1-7 while all 7 rejected cards have ranks 8-13, creating a perfect boundary pattern with no exceptions across 17 turns, so I'm confident enough to make an official guess while playing 7\u2663 as a boundary test card.",
+            "card": "7\u2663",
+            "tentative_rule": "The card's rank must be 7 or less (ranks 1-7 are accepted, ranks 8-13 are rejected)",
+            "confidence_level": 9,
+            "guess_rule": true
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "7\u2663",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card's rank must be 7 or less (ranks 1-7 are accepted, ranks 8-13 are rejected)",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "return card.rank <= 7",
+            "node_count": 9,
+            "cyclomatic_complexity": 1
+          },
+          "tokens": {
+            "output_tokens": 2205,
+            "reasoning_tokens": 2113,
+            "answer_tokens": 92
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        }
+      ],
+      "wall_clock_seconds": 2185.35
+    },
+    {
+      "round_number": 8,
+      "rule_name": "spades_only",
+      "batch_round_index": 0,
+      "turn_count": 8,
+      "rule_description": "Only cards of the suit spades.",
+      "rule_code": "return card.suit.suit_name == \"spades\"",
+      "success": true,
+      "score": 23,
+      "floored_score": 23,
+      "no_stakes_score": 27,
+      "first_correct_turn": 4,
+      "failed_guesses": 0,
+      "game_over_reason": "correct_guess",
+      "llm_usage": {
+        "rule_compiler": {
+          "prompt_tokens": 6698,
+          "output_tokens": 987,
+          "reasoning_tokens": 931,
+          "answer_tokens": 56,
+          "cost_usd": null,
+          "duration_seconds": 10.44,
+          "throughput_tokens_per_sec": 94.55,
+          "call_count": 6,
+          "continuation_calls": 0,
+          "calls_requiring_continuation": 0,
+          "provider": "huggingface"
+        },
+        "player": {
+          "prompt_tokens": 14980,
+          "output_tokens": 21601,
+          "reasoning_tokens": 21045,
+          "answer_tokens": 556,
+          "cost_usd": null,
+          "duration_seconds": 467.9,
+          "throughput_tokens_per_sec": 46.17,
+          "call_count": 8,
+          "continuation_calls": 0,
+          "calls_requiring_continuation": 0,
+          "provider": "openai_compat"
+        }
+      },
+      "turns": [
+        {
+          "turn_number": 1,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "9\u2660",
+          "hand": [
+            "Q\u2665",
+            "10\u2663",
+            "7\u2663",
+            "2\u2660",
+            "3\u2660",
+            "7\u2666",
+            "5\u2665",
+            "9\u2665",
+            "A\u2660",
+            "6\u2666",
+            "A\u2663",
+            "5\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "I am playing a red card against a black starter to test color alternation and color-specific hypotheses which are common in card pattern rules.",
+            "card": "5\u2665",
+            "tentative_rule": "The card must be a different color than the last mainline card.",
+            "confidence_level": 2,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "5\u2665",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": null,
+          "tokens": {
+            "output_tokens": 3711,
+            "reasoning_tokens": 3649,
+            "answer_tokens": 62
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 2,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "9\u2660 [5\u2665]",
+          "hand": [
+            "Q\u2665",
+            "10\u2663",
+            "7\u2663",
+            "2\u2660",
+            "3\u2660",
+            "7\u2666",
+            "9\u2665",
+            "A\u2660",
+            "6\u2666",
+            "A\u2663",
+            "5\u2665",
+            "A\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "I played a Red Odd card against a Black Odd starter and it was rejected, so I play a Black Odd card to test if the rule requires the same color or the same suit.",
+            "card": "7\u2663",
+            "tentative_rule": "The card must be the same color as the last mainline card",
+            "confidence_level": 4,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "7\u2663",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": null,
+          "tokens": {
+            "output_tokens": 7657,
+            "reasoning_tokens": 7581,
+            "answer_tokens": 76
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 3,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "9\u2660 [5\u2665] [7\u2663]",
+          "hand": [
+            "Q\u2665",
+            "10\u2663",
+            "2\u2660",
+            "3\u2660",
+            "7\u2666",
+            "9\u2665",
+            "A\u2660",
+            "6\u2666",
+            "A\u2663",
+            "5\u2665",
+            "A\u2665",
+            "10\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "Both rejected cards (5\u2665, 7\u2663) were Odd numbers while the starter (9\u2660) is also Odd, suggesting the rule may require Even-ranked cards; playing 10\u2663 (Even, not Spades) tests if Even parity is the key pattern rather than suit matching.",
+            "card": "10\u2663",
+            "tentative_rule": "The card must have an Even rank (2, 4, 6, 8, 10, Q)",
+            "confidence_level": 7,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "10\u2663",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must have an Even rank (2, 4, 6, 8, 10, Q)",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2660, actual=True, guessed=False",
+            "guessed_code": "return card.rank % 2 == 0",
+            "node_count": 12,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 1272,
+            "reasoning_tokens": 1189,
+            "answer_tokens": 83
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 4,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "9\u2660 [5\u2665] [7\u2663] [10\u2663]",
+          "hand": [
+            "Q\u2665",
+            "2\u2660",
+            "3\u2660",
+            "7\u2666",
+            "9\u2665",
+            "A\u2660",
+            "6\u2666",
+            "A\u2663",
+            "5\u2665",
+            "A\u2665",
+            "10\u2660",
+            "9\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "Testing whether the rule is suit-based (Spades) or rank-based (rank 9) by playing 9\u2665 which is rank 9 but not Spades - if accepted it's rank-based, if rejected it's suit-based",
+            "card": "9\u2665",
+            "tentative_rule": "Cards must be of Spades suit",
+            "confidence_level": 5,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "9\u2665",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must be of Spades suit",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "return card.suit.suit_name == \"spades\"",
+            "node_count": 11,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 2695,
+            "reasoning_tokens": 2633,
+            "answer_tokens": 62
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 5,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "9\u2660 [5\u2665] [7\u2663] [10\u2663] [9\u2665]",
+          "hand": [
+            "Q\u2665",
+            "2\u2660",
+            "3\u2660",
+            "7\u2666",
+            "A\u2660",
+            "6\u2666",
+            "A\u2663",
+            "5\u2665",
+            "A\u2665",
+            "10\u2660",
+            "9\u2666",
+            "2\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All 4 rejected cards (5\u2665, 7\u2663, 10\u2663, 9\u2665) are non-Spades while the only accepted card (9\u2660) is a Spade, suggesting the rule is 'cards must be Spades'; playing 2\u2660 tests this hypothesis.",
+            "card": "2\u2660",
+            "tentative_rule": "Cards must be Spades",
+            "confidence_level": 9,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "2\u2660",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must be Spades",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "return card.suit.suit_name == \"spades\"",
+            "node_count": 11,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 1912,
+            "reasoning_tokens": 1850,
+            "answer_tokens": 62
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 6,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "9\u2660 [5\u2665] [7\u2663] [10\u2663] [9\u2665] 2\u2660",
+          "hand": [
+            "Q\u2665",
+            "3\u2660",
+            "7\u2666",
+            "A\u2660",
+            "6\u2666",
+            "A\u2663",
+            "5\u2665",
+            "A\u2665",
+            "10\u2660",
+            "9\u2666",
+            "2\u2665",
+            "7\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All 2 accepted cards (9\u2660, 2\u2660) are Spades while all 4 rejected cards (5\u2665, 7\u2663, 10\u2663, 9\u2665) are non-Spades, strongly suggesting the rule is 'cards must be Spades'; playing 10\u2660 tests this hypothesis with another Spade card.",
+            "card": "10\u2660",
+            "tentative_rule": "Cards must be Spades",
+            "confidence_level": 8,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "10\u2660",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must be Spades",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "return card.suit.suit_name == \"spades\"",
+            "node_count": 11,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 1160,
+            "reasoning_tokens": 1092,
+            "answer_tokens": 68
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 7,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "9\u2660 [5\u2665] [7\u2663] [10\u2663] [9\u2665] 2\u2660 10\u2660",
+          "hand": [
+            "Q\u2665",
+            "3\u2660",
+            "7\u2666",
+            "A\u2660",
+            "6\u2666",
+            "A\u2663",
+            "5\u2665",
+            "A\u2665",
+            "9\u2666",
+            "2\u2665",
+            "7\u2660",
+            "Q\u2663"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All 3 accepted cards (9\u2660, 2\u2660, 10\u2660) are Spades and all 4 rejected cards are non-Spades - playing 3\u2660 tests the 'must be Spades' hypothesis with another Spade card before making an official guess.",
+            "card": "3\u2660",
+            "tentative_rule": "Cards must be Spades",
+            "confidence_level": 9,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "3\u2660",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must be Spades",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "return card.suit.suit_name == \"spades\"",
+            "node_count": 11,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 1578,
+            "reasoning_tokens": 1513,
+            "answer_tokens": 65
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 8,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "9\u2660 [5\u2665] [7\u2663] [10\u2663] [9\u2665] 2\u2660 10\u2660 3\u2660",
+          "hand": [
+            "Q\u2665",
+            "7\u2666",
+            "A\u2660",
+            "6\u2666",
+            "A\u2663",
+            "5\u2665",
+            "A\u2665",
+            "9\u2666",
+            "2\u2665",
+            "7\u2660",
+            "Q\u2663",
+            "8\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All 4 accepted cards (9\u2660, 2\u2660, 10\u2660, 3\u2660) are Spades while all 4 rejected cards (5\u2665, 7\u2663, 10\u2663, 9\u2665) are non-Spades with no rank pattern evident, strongly indicating the rule is 'cards must be Spades'; playing A\u2660 confirms this before making an official guess.",
+            "card": "A\u2660",
+            "tentative_rule": "Cards must be Spades",
+            "confidence_level": 9,
+            "guess_rule": true
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "A\u2660",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must be Spades",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "return card.suit.suit_name == \"spades\"",
+            "node_count": 11,
+            "cyclomatic_complexity": 1
+          },
+          "tokens": {
+            "output_tokens": 1616,
+            "reasoning_tokens": 1538,
+            "answer_tokens": 78
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        }
+      ],
+      "wall_clock_seconds": 478.51
+    }
+  ],
+  "statistics": {
+    "total_score": 166,
+    "successful_rounds": 8,
+    "failed_rounds": 0,
+    "total_turns": 74,
+    "total_failed_guesses": 4,
+    "total_output_tokens": 306086,
+    "total_reasoning_tokens": 300456,
+    "total_answer_tokens": 5630,
+    "total_wall_clock_seconds": 6575.83,
+    "total_retries": 5,
+    "retry_by_cause": {
+      "max_token_reached": 5
+    }
+  },
+  "checkpoint": {
+    "completed_rounds": 8,
+    "total_rounds": 26,
+    "rule_factory_state": {
+      "selection": "sequential",
+      "current_index": 8
+    },
+    "current_rule": {
+      "description": "Only red cards (hearts or diamonds).",
+      "code": "return card.color == \"red\"",
+      "rounds_used_in_batch": 1,
+      "num_rounds_per_rule": 1
+    },
+    "rules_consumed": [
+      {
+        "name": "even_ranks_only",
+        "description": "Only cards with an even rank (2,4,6,8,10,12).",
+        "code": "return card.rank % 2 == 0",
+        "rounds_completed": 1
+      },
+      {
+        "name": "face_cards_only",
+        "description": "Only face cards (11,12,13).",
+        "code": "return card.rank in {11, 12, 13}",
+        "rounds_completed": 1
+      },
+      {
+        "name": "ranks_one_to_seven",
+        "description": "Only cards between 1 and 7 inclusive.",
+        "code": "return 1 <= card.rank <= 7",
+        "rounds_completed": 1
+      },
+      {
+        "name": "ranks_five_to_nine",
+        "description": "Only cards between 5 and 9 inclusive.",
+        "code": "return 5 <= card.rank <= 9",
+        "rounds_completed": 1
+      },
+      {
+        "name": "prime_ranks_only",
+        "description": "Only ranks that are prime numbers (2,3,5,7,11,13).",
+        "code": "primes = {2, 3, 5, 7, 11, 13}\nreturn card.rank in primes",
+        "rounds_completed": 1
+      },
+      {
+        "name": "only_aces",
+        "description": "Only Aces (rank 1) .",
+        "code": "return card.rank == 1",
+        "rounds_completed": 1
+      },
+      {
+        "name": "spades_only",
+        "description": "Only cards of the suit spades.",
+        "code": "return card.suit.suit_name == \"spades\"",
+        "rounds_completed": 1
+      },
+      {
+        "name": "only_red_cards",
+        "description": "Only red cards (hearts or diamonds).",
+        "code": "return card.color == \"red\"",
+        "rounds_completed": 1
+      }
+    ],
+    "rules_library": [
+      {
+        "name": "even_ranks_only",
+        "description": "Only cards with an even rank (2,4,6,8,10,12).",
+        "code": "return card.rank % 2 == 0",
+        "avg_acceptance_rate": 0.47000000000000003,
+        "node_count": 12,
+        "cyclomatic_complexity": 1
+      },
+      {
+        "name": "face_cards_only",
+        "description": "Only face cards (11,12,13).",
+        "code": "return card.rank in {11, 12, 13}",
+        "avg_acceptance_rate": 0.244,
+        "node_count": 12,
+        "cyclomatic_complexity": 1
+      },
+      {
+        "name": "ranks_one_to_seven",
+        "description": "Only cards between 1 and 7 inclusive.",
+        "code": "return 1 <= card.rank <= 7",
+        "avg_acceptance_rate": 0.524,
+        "node_count": 11,
+        "cyclomatic_complexity": 1
+      },
+      {
+        "name": "ranks_five_to_nine",
+        "description": "Only cards between 5 and 9 inclusive.",
+        "code": "return 5 <= card.rank <= 9",
+        "avg_acceptance_rate": 0.384,
+        "node_count": 11,
+        "cyclomatic_complexity": 1
+      },
+      {
+        "name": "prime_ranks_only",
+        "description": "Only ranks that are prime numbers (2,3,5,7,11,13).",
+        "code": "primes = {2, 3, 5, 7, 11, 13}\nreturn card.rank in primes",
+        "avg_acceptance_rate": 0.44400000000000006,
+        "node_count": 20,
+        "cyclomatic_complexity": 1
+      },
+      {
+        "name": "only_aces",
+        "description": "Only Aces (rank 1) .",
+        "code": "return card.rank == 1",
+        "avg_acceptance_rate": 0.076,
+        "node_count": 9,
+        "cyclomatic_complexity": 1
+      },
+      {
+        "name": "spades_only",
+        "description": "Only cards of the suit spades.",
+        "code": "return card.suit.suit_name == \"spades\"",
+        "avg_acceptance_rate": 0.27,
+        "node_count": 11,
+        "cyclomatic_complexity": 1
+      },
+      {
+        "name": "only_red_cards",
+        "description": "Only red cards (hearts or diamonds).",
+        "code": "return card.color == \"red\"",
+        "avg_acceptance_rate": 0.492,
+        "node_count": 9,
+        "cyclomatic_complexity": 1
+      },
+      {
+        "name": "spades_and_diamonds_only",
+        "description": "Only spades and diamonds.",
+        "code": "return card.suit.suit_name in (\"spades\", \"diamonds\")",
+        "avg_acceptance_rate": 0.47000000000000003,
+        "node_count": 14,
+        "cyclomatic_complexity": 1
+      },
+      {
+        "name": "no_spades",
+        "description": "Only hearts, clubs, and diamonds allowed. Spades are forbidden.",
+        "code": "return card.suit.suit_name != \"spades\"",
+        "avg_acceptance_rate": 0.732,
+        "node_count": 11,
+        "cyclomatic_complexity": 1
+      },
+      {
+        "name": "black_face_cards",
+        "description": "Only black face cards.",
+        "code": "if not mainline:\n    return card.color == \"black\" and card.rank >= 11\nreturn card.color == \"black\" and card.rank >= 11",
+        "avg_acceptance_rate": 0.11400000000000002,
+        "node_count": 40,
+        "cyclomatic_complexity": 4
+      },
+      {
+        "name": "red_rank_up_to_seven",
+        "description": "Only red cards whose rank is <=7.",
+        "code": "return card.color == \"red\" and card.rank <= 7",
+        "avg_acceptance_rate": 0.252,
+        "node_count": 18,
+        "cyclomatic_complexity": 2
+      },
+      {
+        "name": "face_cards_red_number_cards_black",
+        "description": "Face cards (11-13) must be red; number cards (1-10) must be black.",
+        "code": "if card.rank >= 11:\n    return card.color == \"red\"\nelse:\n    return card.color == \"black\"",
+        "avg_acceptance_rate": 0.516,
+        "node_count": 25,
+        "cyclomatic_complexity": 2
+      },
+      {
+        "name": "alternating_face_number",
+        "description": "Alternate face and number cards. Any card may start the line.",
+        "code": "if not mainline:\n    return True\nprev_is_face = mainline[-1].rank >= 11\nif prev_is_face:\n    return card.rank <= 10\nelse:\n    return card.rank >= 11",
+        "avg_acceptance_rate": 0.386,
+        "node_count": 42,
+        "cyclomatic_complexity": 3
+      },
+      {
+        "name": "opposite_parity",
+        "description": "Card rank must have opposite odd/even parity to the previous card's rank. Any card may start the line.",
+        "code": "if not mainline:\n    return True\nreturn (card.rank % 2) != (mainline[-1].rank % 2)",
+        "avg_acceptance_rate": 0.53,
+        "node_count": 30,
+        "cyclomatic_complexity": 2
+      },
+      {
+        "name": "rank_non_decreasing_start_ace",
+        "description": "Each card must have a rank greater or equal to the previous card. Only Ace can start the line.",
+        "code": "if not mainline:\n    return card.rank == 1\nreturn card.rank >= mainline[-1].rank",
+        "avg_acceptance_rate": 0.156,
+        "node_count": 30,
+        "cyclomatic_complexity": 2
+      },
+      {
+        "name": "alternating_colors",
+        "description": "Cards must alternate between red and black colors. Any card may start the line.",
+        "code": "if not mainline:\n    return True\nreturn card.color != mainline[-1].color",
+        "avg_acceptance_rate": 0.52,
+        "node_count": 24,
+        "cyclomatic_complexity": 2
+      },
+      {
+        "name": "different_suit",
+        "description": "The card must be of a different suit than the card just before it. Any card may start the line.",
+        "code": "if not mainline:\n    return True\nreturn card.suit.suit_name != mainline[-1].suit.suit_name",
+        "avg_acceptance_rate": 0.76,
+        "node_count": 28,
+        "cyclomatic_complexity": 2
+      },
+      {
+        "name": "different_suit_same_color",
+        "description": "The card must be of a different suit than but same color as the card just before it. Any card may start the line.",
+        "code": "if not mainline:\n    return True\nprev = mainline[-1]\nreturn card.suit.suit_name != prev.suit.suit_name and card.color == prev.color",
+        "avg_acceptance_rate": 0.24,
+        "node_count": 45,
+        "cyclomatic_complexity": 3
+      },
+      {
+        "name": "cyclic_suit_order",
+        "description": "Suits must repeat in the cyclic order hearts \u2192 spades \u2192 clubs \u2192 diamonds \u2192 hearts... Any card may start the line.",
+        "code": "if not mainline:\n    return True\norder = [\"hearts\", \"spades\", \"clubs\", \"diamonds\"]\nprev_suit = mainline[-1].suit.suit_name\nprev_idx = order.index(prev_suit)\nexpected = order[(prev_idx + 1) % 4]\nreturn card.suit.suit_name == expected",
+        "avg_acceptance_rate": 0.22600000000000003,
+        "node_count": 67,
+        "cyclomatic_complexity": 2
+      },
+      {
+        "name": "alternating_groups",
+        "description": "Hearts and spades form Group A; clubs and diamonds form Group B. Alternate between groups. Any card may start the line.",
+        "code": "if not mainline:\n    return True\nprev = mainline[-1].suit.suit_name\ncurr = card.suit.suit_name\ngroup_a = {\"hearts\", \"spades\"}\n# Determine groups: True for group A, False for group B\nprev_group = prev in group_a\ncurr_group = curr in group_a\nreturn curr_group != prev_group",
+        "avg_acceptance_rate": 0.506,
+        "node_count": 62,
+        "cyclomatic_complexity": 2
+      },
+      {
+        "name": "share_color_or_parity",
+        "description": "Each card must share at least one property with the previous card: same color, or same parity. Any card may start the line.",
+        "code": "if not mainline:\n    return True\nprev = mainline[-1]\nsame_color = card.color == prev.color\nsame_parity = (card.rank % 2) == (prev.rank % 2)\nreturn same_color or same_parity",
+        "avg_acceptance_rate": 0.722,
+        "node_count": 57,
+        "cyclomatic_complexity": 3
+      },
+      {
+        "name": "red_up_black_down",
+        "description": "If the previous card was red, rank must increase or be equal; if black, rank must decrease or be equal. Starting card must be between 5 and 9 inclusive.",
+        "code": "if not mainline:\n    return 5 <= card.rank <= 9\nprev = mainline[-1]\nif prev.color == \"red\":\n    return card.rank >= prev.rank\nelse:  # black\n    return card.rank <= prev.rank",
+        "avg_acceptance_rate": 0.386,
+        "node_count": 56,
+        "cyclomatic_complexity": 3
+      },
+      {
+        "name": "face_card_imposes_suit",
+        "description": "Face cards imposes the suit: if a face card is played, the next card must match its suit. Otherwise, the next card must be a different suit than it.",
+        "code": "if not mainline:\n    return True\nprev = mainline[-1]\nif prev.rank in (11, 12, 13):\n    return card.suit.suit_name == prev.suit.suit_name\nelse:\n    return card.suit.suit_name != prev.suit.suit_name",
+        "avg_acceptance_rate": 0.53,
+        "node_count": 60,
+        "cyclomatic_complexity": 3
+      },
+      {
+        "name": "paired_suits_alternating",
+        "description": "Suits must appear in pairs: card 1 and 2 same suit, cards 3 and 4 same suit (different from 1 and 2), cards 5 and 6 same suit (different from 3 and 4), etc.",
+        "code": "if not mainline:\n    return True\npos = len(mainline) % 2\nif pos == 0:\n    # first card of a new pair must differ from previous pair's suit\n    return card.suit.suit_name != mainline[-1].suit.suit_name\nelse:\n    # second card of a pair must match the first card's suit\n    return card.suit.suit_name == mainline[-1].suit.suit_name",
+        "avg_acceptance_rate": 0.338,
+        "node_count": 65,
+        "cyclomatic_complexity": 3
+      },
+      {
+        "name": "paired_ranks_distinct",
+        "description": "Rank repeats in pairs: ranks must come in doubles: (x, x), then (y, y) with y different from x, then (z, z) with z different from y, etc.",
+        "code": "if not mainline:\n    return True\ni = len(mainline)\nif i % 2 == 0:\n    # start of a new pair: rank must differ from previous pair's rank\n    return card.rank != mainline[-1].rank\nelse:\n    # second card of the current pair: rank must match the first card of this pair\n    return card.rank == mainline[-1].rank",
+        "avg_acceptance_rate": 0.148,
+        "node_count": 57,
+        "cyclomatic_complexity": 3
+      }
+    ]
+  }
+}

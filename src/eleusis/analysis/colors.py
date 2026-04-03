@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_COLOR = "#888888"
 
 # Providers that indicate open-source models
-OPEN_PROVIDERS = {"huggingface"}
+OPEN_PROVIDERS = {"huggingface", "openai_compat"}
 
 
 def load_model_metadata() -> dict[str, dict]:

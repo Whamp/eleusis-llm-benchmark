@@ -1,0 +1,625 @@
+{
+  "models": [
+    {
+      "name": "Claude Haiku 4.5",
+      "color": "#D08E76",
+      "is_open": false,
+      "provider": "anthropic",
+      "distribution": [
+        {
+          "confidence_level": 5,
+          "guess_rate": 0.10526315789473684,
+          "total_turns": 19,
+          "guess_count": 2
+        },
+        {
+          "confidence_level": 6,
+          "guess_rate": 0.0784313725490196,
+          "total_turns": 51,
+          "guess_count": 4
+        },
+        {
+          "confidence_level": 7,
+          "guess_rate": 0.41025641025641024,
+          "total_turns": 78,
+          "guess_count": 32
+        },
+        {
+          "confidence_level": 8,
+          "guess_rate": 0.7413793103448276,
+          "total_turns": 58,
+          "guess_count": 43
+        },
+        {
+          "confidence_level": 9,
+          "guess_rate": 1.0,
+          "total_turns": 26,
+          "guess_count": 26
+        },
+        {
+          "confidence_level": 10,
+          "guess_rate": 1.0,
+          "total_turns": 0,
+          "guess_count": 0
+        }
+      ]
+    },
+    {
+      "name": "Claude Opus 4.5",
+      "color": "#C1755A",
+      "is_open": false,
+      "provider": "anthropic",
+      "distribution": [
+        {
+          "confidence_level": 5,
+          "guess_rate": 0.0,
+          "total_turns": 37,
+          "guess_count": 0
+        },
+        {
+          "confidence_level": 6,
+          "guess_rate": 0.043478260869565216,
+          "total_turns": 23,
+          "guess_count": 1
+        },
+        {
+          "confidence_level": 7,
+          "guess_rate": 0.13043478260869565,
+          "total_turns": 46,
+          "guess_count": 6
+        },
+        {
+          "confidence_level": 8,
+          "guess_rate": 0.5833333333333334,
+          "total_turns": 36,
+          "guess_count": 21
+        },
+        {
+          "confidence_level": 9,
+          "guess_rate": 1.0,
+          "total_turns": 33,
+          "guess_count": 33
+        },
+        {
+          "confidence_level": 10,
+          "guess_rate": 1.0,
+          "total_turns": 0,
+          "guess_count": 0
+        }
+      ]
+    },
+    {
+      "name": "Deepseek R1",
+      "color": "#5A6AF7",
+      "is_open": true,
+      "provider": "huggingface",
+      "distribution": [
+        {
+          "confidence_level": 5,
+          "guess_rate": 0.0,
+          "total_turns": 50,
+          "guess_count": 0
+        },
+        {
+          "confidence_level": 6,
+          "guess_rate": 0.03225806451612903,
+          "total_turns": 31,
+          "guess_count": 1
+        },
+        {
+          "confidence_level": 7,
+          "guess_rate": 0.06666666666666667,
+          "total_turns": 45,
+          "guess_count": 3
+        },
+        {
+          "confidence_level": 8,
+          "guess_rate": 0.2608695652173913,
+          "total_turns": 23,
+          "guess_count": 6
+        },
+        {
+          "confidence_level": 9,
+          "guess_rate": 0.8955223880597015,
+          "total_turns": 67,
+          "guess_count": 60
+        },
+        {
+          "confidence_level": 10,
+          "guess_rate": 1.0,
+          "total_turns": 13,
+          "guess_count": 13
+        }
+      ]
+    },
+    {
+      "name": "Gemini 3 Flash Preview High",
+      "color": "#8EADF6",
+      "is_open": false,
+      "provider": "google",
+      "distribution": [
+        {
+          "confidence_level": 5,
+          "guess_rate": 0.0,
+          "total_turns": 35,
+          "guess_count": 0
+        },
+        {
+          "confidence_level": 6,
+          "guess_rate": 0.0,
+          "total_turns": 45,
+          "guess_count": 0
+        },
+        {
+          "confidence_level": 7,
+          "guess_rate": 0.0,
+          "total_turns": 45,
+          "guess_count": 0
+        },
+        {
+          "confidence_level": 8,
+          "guess_rate": 0.07936507936507936,
+          "total_turns": 63,
+          "guess_count": 5
+        },
+        {
+          "confidence_level": 9,
+          "guess_rate": 0.5147058823529411,
+          "total_turns": 68,
+          "guess_count": 35
+        },
+        {
+          "confidence_level": 10,
+          "guess_rate": 1.0,
+          "total_turns": 13,
+          "guess_count": 13
+        }
+      ]
+    },
+    {
+      "name": "Gemini 3 Flash Preview Low",
+      "color": "#AEC3F9",
+      "is_open": false,
+      "provider": "google",
+      "distribution": [
+        {
+          "confidence_level": 5,
+          "guess_rate": 0.0,
+          "total_turns": 39,
+          "guess_count": 0
+        },
+        {
+          "confidence_level": 6,
+          "guess_rate": 0.0,
+          "total_turns": 46,
+          "guess_count": 0
+        },
+        {
+          "confidence_level": 7,
+          "guess_rate": 0.0,
+          "total_turns": 53,
+          "guess_count": 0
+        },
+        {
+          "confidence_level": 8,
+          "guess_rate": 0.0,
+          "total_turns": 47,
+          "guess_count": 0
+        },
+        {
+          "confidence_level": 9,
+          "guess_rate": 0.3711340206185567,
+          "total_turns": 97,
+          "guess_count": 36
+        },
+        {
+          "confidence_level": 10,
+          "guess_rate": 1.0,
+          "total_turns": 9,
+          "guess_count": 9
+        }
+      ]
+    },
+    {
+      "name": "Glm 4.7",
+      "color": "#FF7777",
+      "is_open": true,
+      "provider": "huggingface",
+      "distribution": [
+        {
+          "confidence_level": 5,
+          "guess_rate": 0.043478260869565216,
+          "total_turns": 23,
+          "guess_count": 1
+        },
+        {
+          "confidence_level": 6,
+          "guess_rate": 0.02857142857142857,
+          "total_turns": 35,
+          "guess_count": 1
+        },
+        {
+          "confidence_level": 7,
+          "guess_rate": 0.09090909090909091,
+          "total_turns": 44,
+          "guess_count": 4
+        },
+        {
+          "confidence_level": 8,
+          "guess_rate": 0.40540540540540543,
+          "total_turns": 37,
+          "guess_count": 15
+        },
+        {
+          "confidence_level": 9,
+          "guess_rate": 0.7441860465116279,
+          "total_turns": 43,
+          "guess_count": 32
+        },
+        {
+          "confidence_level": 10,
+          "guess_rate": 1.0,
+          "total_turns": 1,
+          "guess_count": 1
+        }
+      ]
+    },
+    {
+      "name": "Gpt 5 Mini Medium",
+      "color": "#99BDB4",
+      "is_open": false,
+      "provider": "openai",
+      "distribution": [
+        {
+          "confidence_level": 5,
+          "guess_rate": 0.0,
+          "total_turns": 26,
+          "guess_count": 0
+        },
+        {
+          "confidence_level": 6,
+          "guess_rate": 0.007692307692307693,
+          "total_turns": 130,
+          "guess_count": 1
+        },
+        {
+          "confidence_level": 7,
+          "guess_rate": 0.0380952380952381,
+          "total_turns": 105,
+          "guess_count": 4
+        },
+        {
+          "confidence_level": 8,
+          "guess_rate": 0.5862068965517241,
+          "total_turns": 58,
+          "guess_count": 34
+        },
+        {
+          "confidence_level": 9,
+          "guess_rate": 1.0,
+          "total_turns": 18,
+          "guess_count": 18
+        },
+        {
+          "confidence_level": 10,
+          "guess_rate": 1.0,
+          "total_turns": 0,
+          "guess_count": 0
+        }
+      ]
+    },
+    {
+      "name": "Gpt 5.2 High",
+      "color": "#8CB3A8",
+      "is_open": false,
+      "provider": "openai",
+      "distribution": [
+        {
+          "confidence_level": 5,
+          "guess_rate": 0.0,
+          "total_turns": 48,
+          "guess_count": 0
+        },
+        {
+          "confidence_level": 6,
+          "guess_rate": 0.007692307692307693,
+          "total_turns": 130,
+          "guess_count": 1
+        },
+        {
+          "confidence_level": 7,
+          "guess_rate": 0.025,
+          "total_turns": 80,
+          "guess_count": 2
+        },
+        {
+          "confidence_level": 8,
+          "guess_rate": 0.2702702702702703,
+          "total_turns": 37,
+          "guess_count": 10
+        },
+        {
+          "confidence_level": 9,
+          "guess_rate": 0.9545454545454546,
+          "total_turns": 22,
+          "guess_count": 21
+        },
+        {
+          "confidence_level": 10,
+          "guess_rate": 1.0,
+          "total_turns": 0,
+          "guess_count": 0
+        }
+      ]
+    },
+    {
+      "name": "Gpt Oss 120B",
+      "color": "#707070",
+      "is_open": true,
+      "provider": "huggingface",
+      "distribution": [
+        {
+          "confidence_level": 5,
+          "guess_rate": 0.0,
+          "total_turns": 35,
+          "guess_count": 0
+        },
+        {
+          "confidence_level": 6,
+          "guess_rate": 0.041237113402061855,
+          "total_turns": 97,
+          "guess_count": 4
+        },
+        {
+          "confidence_level": 7,
+          "guess_rate": 0.10526315789473684,
+          "total_turns": 114,
+          "guess_count": 12
+        },
+        {
+          "confidence_level": 8,
+          "guess_rate": 0.4777777777777778,
+          "total_turns": 90,
+          "guess_count": 43
+        },
+        {
+          "confidence_level": 9,
+          "guess_rate": 0.9047619047619048,
+          "total_turns": 21,
+          "guess_count": 19
+        },
+        {
+          "confidence_level": 10,
+          "guess_rate": 1.0,
+          "total_turns": 0,
+          "guess_count": 0
+        }
+      ]
+    },
+    {
+      "name": "Gpt Oss 20B",
+      "color": "#B2B2B2",
+      "is_open": true,
+      "provider": "huggingface",
+      "distribution": [
+        {
+          "confidence_level": 5,
+          "guess_rate": 0.0,
+          "total_turns": 35,
+          "guess_count": 0
+        },
+        {
+          "confidence_level": 6,
+          "guess_rate": 0.057971014492753624,
+          "total_turns": 69,
+          "guess_count": 4
+        },
+        {
+          "confidence_level": 7,
+          "guess_rate": 0.20253164556962025,
+          "total_turns": 79,
+          "guess_count": 16
+        },
+        {
+          "confidence_level": 8,
+          "guess_rate": 0.367816091954023,
+          "total_turns": 87,
+          "guess_count": 32
+        },
+        {
+          "confidence_level": 9,
+          "guess_rate": 0.8333333333333334,
+          "total_turns": 36,
+          "guess_count": 30
+        },
+        {
+          "confidence_level": 10,
+          "guess_rate": 1.0,
+          "total_turns": 2,
+          "guess_count": 2
+        }
+      ]
+    },
+    {
+      "name": "Grok 4 1 Fast Reasoning",
+      "color": "#1A1A1A",
+      "is_open": false,
+      "provider": "xai",
+      "distribution": [
+        {
+          "confidence_level": 5,
+          "guess_rate": 0.0,
+          "total_turns": 24,
+          "guess_count": 0
+        },
+        {
+          "confidence_level": 6,
+          "guess_rate": 0.0,
+          "total_turns": 46,
+          "guess_count": 0
+        },
+        {
+          "confidence_level": 7,
+          "guess_rate": 0.0,
+          "total_turns": 42,
+          "guess_count": 0
+        },
+        {
+          "confidence_level": 8,
+          "guess_rate": 0.05714285714285714,
+          "total_turns": 35,
+          "guess_count": 2
+        },
+        {
+          "confidence_level": 9,
+          "guess_rate": 0.7142857142857143,
+          "total_turns": 63,
+          "guess_count": 45
+        },
+        {
+          "confidence_level": 10,
+          "guess_rate": 1.0,
+          "total_turns": 11,
+          "guess_count": 11
+        }
+      ]
+    },
+    {
+      "name": "Kimi K2",
+      "color": "#CCCC00",
+      "is_open": true,
+      "provider": "huggingface",
+      "distribution": [
+        {
+          "confidence_level": 5,
+          "guess_rate": 0.0,
+          "total_turns": 15,
+          "guess_count": 0
+        },
+        {
+          "confidence_level": 6,
+          "guess_rate": 0.0,
+          "total_turns": 54,
+          "guess_count": 0
+        },
+        {
+          "confidence_level": 7,
+          "guess_rate": 0.01818181818181818,
+          "total_turns": 55,
+          "guess_count": 1
+        },
+        {
+          "confidence_level": 8,
+          "guess_rate": 0.3023255813953488,
+          "total_turns": 43,
+          "guess_count": 13
+        },
+        {
+          "confidence_level": 9,
+          "guess_rate": 1.0,
+          "total_turns": 35,
+          "guess_count": 35
+        },
+        {
+          "confidence_level": 10,
+          "guess_rate": 1.0,
+          "total_turns": 1,
+          "guess_count": 1
+        }
+      ]
+    },
+    {
+      "name": "Qwen3.5 27B Gptq Int4",
+      "color": "#8B5CF6",
+      "is_open": true,
+      "provider": "openai_compat",
+      "distribution": [
+        {
+          "confidence_level": 5,
+          "guess_rate": 0.0,
+          "total_turns": 16,
+          "guess_count": 0
+        },
+        {
+          "confidence_level": 6,
+          "guess_rate": 0.0,
+          "total_turns": 26,
+          "guess_count": 0
+        },
+        {
+          "confidence_level": 7,
+          "guess_rate": 0.0,
+          "total_turns": 40,
+          "guess_count": 0
+        },
+        {
+          "confidence_level": 8,
+          "guess_rate": 0.05,
+          "total_turns": 60,
+          "guess_count": 3
+        },
+        {
+          "confidence_level": 9,
+          "guess_rate": 0.696969696969697,
+          "total_turns": 66,
+          "guess_count": 46
+        },
+        {
+          "confidence_level": 10,
+          "guess_rate": 1.0,
+          "total_turns": 4,
+          "guess_count": 4
+        }
+      ]
+    },
+    {
+      "name": "Rys Qwen3.5 27B Fp8 Xl (in-progress)",
+      "color": "#A855F7",
+      "is_open": true,
+      "provider": "openai_compat",
+      "distribution": [
+        {
+          "confidence_level": 5,
+          "guess_rate": 0.0,
+          "total_turns": 21,
+          "guess_count": 0
+        },
+        {
+          "confidence_level": 6,
+          "guess_rate": 0.0,
+          "total_turns": 34,
+          "guess_count": 0
+        },
+        {
+          "confidence_level": 7,
+          "guess_rate": 0.0,
+          "total_turns": 52,
+          "guess_count": 0
+        },
+        {
+          "confidence_level": 8,
+          "guess_rate": 0.1,
+          "total_turns": 80,
+          "guess_count": 8
+        },
+        {
+          "confidence_level": 9,
+          "guess_rate": 0.5512820512820513,
+          "total_turns": 78,
+          "guess_count": 43
+        },
+        {
+          "confidence_level": 10,
+          "guess_rate": 1.0,
+          "total_turns": 3,
+          "guess_count": 3
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "x_axis": "confidence_level",
+    "y_axis": "guess_rate",
+    "description": "Guess rate by confidence level (counting turns only)"
+  }
+}

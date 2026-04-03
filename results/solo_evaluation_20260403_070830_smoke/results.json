@@ -1,0 +1,556 @@
+{
+  "timestamp": "20260403_070830",
+  "folder_name": "solo_evaluation_20260403_070830_smoke",
+  "config": {
+    "num_rules": 1,
+    "num_rounds_per_rule": 1,
+    "rule_compiler": "Gpt Oss 120B",
+    "rule_compiler_provider": "huggingface",
+    "rule_compiler_model_id": "openai/gpt-oss-120b",
+    "rule_compiler_reasoning_format": "separate_field",
+    "rule_compiler_temperature": 0.2,
+    "rule_compiler_max_retries": 3,
+    "rule_compiler_num_simulations": 20,
+    "rule_compiler_turns_per_simulation": 20,
+    "rule_compiler_simulation_seed": 42,
+    "player": "Rys Qwen3.5 27B Fp8 Xl",
+    "player_model": "rys-qwen3.5-27b-fp8-xl",
+    "hand_size": 12,
+    "max_turns": 8,
+    "wrong_guess_penalty": 2,
+    "seed": 42,
+    "llm_max_tokens": 16384,
+    "llm_temperature": 0.7,
+    "llm_seed": 42,
+    "llm_max_retries": 3
+  },
+  "rounds": [
+    {
+      "round_number": 1,
+      "rule_name": "even_ranks_only",
+      "batch_round_index": 0,
+      "turn_count": 5,
+      "rule_description": "Only cards with an even rank (2,4,6,8,10,12).",
+      "rule_code": "return card.rank % 2 == 0",
+      "success": true,
+      "score": 4,
+      "floored_score": 4,
+      "no_stakes_score": 6,
+      "first_correct_turn": 3,
+      "failed_guesses": 0,
+      "game_over_reason": "correct_guess",
+      "llm_usage": {
+        "rule_compiler": {
+          "prompt_tokens": 4512,
+          "output_tokens": 575,
+          "reasoning_tokens": 527,
+          "answer_tokens": 48,
+          "cost_usd": null,
+          "duration_seconds": 7.08,
+          "throughput_tokens_per_sec": 81.18,
+          "call_count": 4,
+          "continuation_calls": 0,
+          "calls_requiring_continuation": 0,
+          "provider": "huggingface"
+        },
+        "player": {
+          "prompt_tokens": 9052,
+          "output_tokens": 13550,
+          "reasoning_tokens": 13194,
+          "answer_tokens": 356,
+          "cost_usd": null,
+          "duration_seconds": 194.79,
+          "throughput_tokens_per_sec": 69.56,
+          "call_count": 5,
+          "continuation_calls": 0,
+          "calls_requiring_continuation": 0,
+          "provider": "openai_compat"
+        }
+      },
+      "turns": [
+        {
+          "turn_number": 1,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660",
+          "hand": [
+            "8\u2666",
+            "2\u2665",
+            "A\u2660",
+            "2\u2660",
+            "3\u2666",
+            "6\u2665",
+            "6\u2660",
+            "J\u2665",
+            "4\u2663",
+            "4\u2663",
+            "7\u2666",
+            "7\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "I play 8\u2666 (Red) against the starter 4\u2660 (Black) to test the common hypothesis that cards must alternate colors.",
+            "card": "8\u2666",
+            "tentative_rule": "The card must be a different color than the last mainline card",
+            "confidence_level": 2,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "8\u2666",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": null,
+          "tokens": {
+            "output_tokens": 3888,
+            "reasoning_tokens": 3833,
+            "answer_tokens": 55
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 2,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660 8\u2666",
+          "hand": [
+            "2\u2665",
+            "A\u2660",
+            "2\u2660",
+            "3\u2666",
+            "6\u2665",
+            "6\u2660",
+            "J\u2665",
+            "4\u2663",
+            "4\u2663",
+            "7\u2666",
+            "7\u2665",
+            "8\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "I play A\u2660 (Black, Odd) to distinguish between Color Alternation (expects Black, should Accept) and Even Ranks (expects Even, should Reject), as acceptance confirms Color Alternation while rejection supports Even Ranks.",
+            "card": "A\u2660",
+            "tentative_rule": "The card must be a different color than the last mainline card",
+            "confidence_level": 5,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "A\u2660",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must be a different color than the last mainline card",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2663, actual=False, guessed=True",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.color != mainline[-1].color",
+            "node_count": 24,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 5962,
+            "reasoning_tokens": 5891,
+            "answer_tokens": 71
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 3,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660 8\u2666 [A\u2660]",
+          "hand": [
+            "2\u2665",
+            "2\u2660",
+            "3\u2666",
+            "6\u2665",
+            "6\u2660",
+            "J\u2665",
+            "4\u2663",
+            "4\u2663",
+            "7\u2666",
+            "7\u2665",
+            "8\u2666",
+            "2\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The A\u2660 rejection eliminates color alternation hypothesis; even ranks explains both 8\u2666 acceptance and A\u2660 rejection, so I'm testing with 3\u2666 (odd rank) to confirm the even-ranks pattern.",
+            "card": "3\u2666",
+            "tentative_rule": "Cards must have even ranks (2, 4, 6, 8, 10, Q)",
+            "confidence_level": 7,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "3\u2666",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must have even ranks (2, 4, 6, 8, 10, Q)",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 20800 comparisons, all matched",
+            "guessed_code": "return card.rank % 2 == 0",
+            "node_count": 12,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 1139,
+            "reasoning_tokens": 1073,
+            "answer_tokens": 66
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 4,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660 8\u2666 [A\u2660] [3\u2666]",
+          "hand": [
+            "2\u2665",
+            "2\u2660",
+            "6\u2665",
+            "6\u2660",
+            "J\u2665",
+            "4\u2663",
+            "4\u2663",
+            "7\u2666",
+            "7\u2665",
+            "8\u2666",
+            "2\u2660",
+            "5\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All accepted cards (4\u2660, 8\u2666) are even ranks, all rejected cards (A\u2660=1, 3\u2666=3) are odd ranks - this strongly suggests the rule is 'even rank only', so I play 6\u2665 (even) to confirm before guessing",
+            "card": "6\u2665",
+            "tentative_rule": "Cards must have an even rank (2, 4, 6, 8, 10, 12)",
+            "confidence_level": 8,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "6\u2665",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must have an even rank (2, 4, 6, 8, 10, 12)",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 20800 comparisons, all matched",
+            "guessed_code": "return card.rank % 2 == 0",
+            "node_count": 12,
+            "cyclomatic_complexity": 1,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 1769,
+            "reasoning_tokens": 1693,
+            "answer_tokens": 76
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 5,
+          "player": "Rys Qwen3.5 27B Fp8 Xl",
+          "mainline_state": "4\u2660 8\u2666 [A\u2660] [3\u2666] 6\u2665",
+          "hand": [
+            "2\u2665",
+            "2\u2660",
+            "6\u2660",
+            "J\u2665",
+            "4\u2663",
+            "4\u2663",
+            "7\u2666",
+            "7\u2665",
+            "8\u2666",
+            "2\u2660",
+            "5\u2660",
+            "Q\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All accepted cards (4\u2660, 8\u2666, 6\u2665) have even ranks (4, 8, 6) and all rejected cards (A\u2660=1, 3\u2666=3) have odd ranks - this perfect pattern strongly indicates the rule is 'even rank only', so I'll play 2\u2665 (even) and make an official guess.",
+            "card": "2\u2665",
+            "tentative_rule": "The card must have an even rank (2, 4, 6, 8, 10, Q)",
+            "confidence_level": 9,
+            "guess_rule": true
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "2\u2665",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must have an even rank (2, 4, 6, 8, 10, Q)",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 20800 comparisons, all matched",
+            "guessed_code": "return card.rank % 2 == 0",
+            "node_count": 12,
+            "cyclomatic_complexity": 1
+          },
+          "tokens": {
+            "output_tokens": 792,
+            "reasoning_tokens": 704,
+            "answer_tokens": 88
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        }
+      ],
+      "wall_clock_seconds": 201.91
+    }
+  ],
+  "statistics": {
+    "total_score": 4,
+    "successful_rounds": 1,
+    "failed_rounds": 0,
+    "total_turns": 5,
+    "total_failed_guesses": 0,
+    "total_output_tokens": 13550,
+    "total_reasoning_tokens": 13194,
+    "total_answer_tokens": 356,
+    "total_wall_clock_seconds": 201.91,
+    "total_retries": 0,
+    "retry_by_cause": {},
+    "success_rate": 100.0,
+    "average_score": 4.0,
+    "average_turns": 5.0,
+    "average_turns_when_successful": 5.0,
+    "average_failed_guesses": 0.0
+  },
+  "checkpoint": {
+    "completed_rounds": 1,
+    "total_rounds": 1,
+    "rule_factory_state": {
+      "selection": "sequential",
+      "current_index": 1
+    },
+    "current_rule": {
+      "description": "Only cards with an even rank (2,4,6,8,10,12).",
+      "code": "return card.rank % 2 == 0",
+      "rounds_used_in_batch": 1,
+      "num_rounds_per_rule": 1
+    },
+    "rules_consumed": [
+      {
+        "name": "even_ranks_only",
+        "description": "Only cards with an even rank (2,4,6,8,10,12).",
+        "code": "return card.rank % 2 == 0",
+        "rounds_completed": 1
+      }
+    ],
+    "rules_library": [
+      {
+        "name": "even_ranks_only",
+        "description": "Only cards with an even rank (2,4,6,8,10,12).",
+        "code": "return card.rank % 2 == 0",
+        "avg_acceptance_rate": 0.47000000000000003,
+        "node_count": 12,
+        "cyclomatic_complexity": 1
+      },
+      {
+        "name": "face_cards_only",
+        "description": "Only face cards (11,12,13).",
+        "code": "return card.rank in {11, 12, 13}",
+        "avg_acceptance_rate": 0.244,
+        "node_count": 12,
+        "cyclomatic_complexity": 1
+      },
+      {
+        "name": "ranks_one_to_seven",
+        "description": "Only cards between 1 and 7 inclusive.",
+        "code": "return 1 <= card.rank <= 7",
+        "avg_acceptance_rate": 0.524,
+        "node_count": 11,
+        "cyclomatic_complexity": 1
+      },
+      {
+        "name": "ranks_five_to_nine",
+        "description": "Only cards between 5 and 9 inclusive.",
+        "code": "return 5 <= card.rank <= 9",
+        "avg_acceptance_rate": 0.384,
+        "node_count": 11,
+        "cyclomatic_complexity": 1
+      },
+      {
+        "name": "prime_ranks_only",
+        "description": "Only ranks that are prime numbers (2,3,5,7,11,13).",
+        "code": "primes = {2, 3, 5, 7, 11, 13}\nreturn card.rank in primes",
+        "avg_acceptance_rate": 0.44400000000000006,
+        "node_count": 20,
+        "cyclomatic_complexity": 1
+      },
+      {
+        "name": "only_aces",
+        "description": "Only Aces (rank 1) .",
+        "code": "return card.rank == 1",
+        "avg_acceptance_rate": 0.076,
+        "node_count": 9,
+        "cyclomatic_complexity": 1
+      },
+      {
+        "name": "spades_only",
+        "description": "Only cards of the suit spades.",
+        "code": "return card.suit.suit_name == \"spades\"",
+        "avg_acceptance_rate": 0.27,
+        "node_count": 11,
+        "cyclomatic_complexity": 1
+      },
+      {
+        "name": "only_red_cards",
+        "description": "Only red cards (hearts or diamonds).",
+        "code": "return card.color == \"red\"",
+        "avg_acceptance_rate": 0.492,
+        "node_count": 9,
+        "cyclomatic_complexity": 1
+      },
+      {
+        "name": "spades_and_diamonds_only",
+        "description": "Only spades and diamonds.",
+        "code": "return card.suit.suit_name in (\"spades\", \"diamonds\")",
+        "avg_acceptance_rate": 0.47000000000000003,
+        "node_count": 14,
+        "cyclomatic_complexity": 1
+      },
+      {
+        "name": "no_spades",
+        "description": "Only hearts, clubs, and diamonds allowed. Spades are forbidden.",
+        "code": "return card.suit.suit_name != \"spades\"",
+        "avg_acceptance_rate": 0.732,
+        "node_count": 11,
+        "cyclomatic_complexity": 1
+      },
+      {
+        "name": "black_face_cards",
+        "description": "Only black face cards.",
+        "code": "if not mainline:\n    return card.color == \"black\" and card.rank >= 11\nreturn card.color == \"black\" and card.rank >= 11",
+        "avg_acceptance_rate": 0.11400000000000002,
+        "node_count": 40,
+        "cyclomatic_complexity": 4
+      },
+      {
+        "name": "red_rank_up_to_seven",
+        "description": "Only red cards whose rank is <=7.",
+        "code": "return card.color == \"red\" and card.rank <= 7",
+        "avg_acceptance_rate": 0.252,
+        "node_count": 18,
+        "cyclomatic_complexity": 2
+      },
+      {
+        "name": "face_cards_red_number_cards_black",
+        "description": "Face cards (11-13) must be red; number cards (1-10) must be black.",
+        "code": "if card.rank >= 11:\n    return card.color == \"red\"\nelse:\n    return card.color == \"black\"",
+        "avg_acceptance_rate": 0.516,
+        "node_count": 25,
+        "cyclomatic_complexity": 2
+      },
+      {
+        "name": "alternating_face_number",
+        "description": "Alternate face and number cards. Any card may start the line.",
+        "code": "if not mainline:\n    return True\nprev_is_face = mainline[-1].rank >= 11\nif prev_is_face:\n    return card.rank <= 10\nelse:\n    return card.rank >= 11",
+        "avg_acceptance_rate": 0.386,
+        "node_count": 42,
+        "cyclomatic_complexity": 3
+      },
+      {
+        "name": "opposite_parity",
+        "description": "Card rank must have opposite odd/even parity to the previous card's rank. Any card may start the line.",
+        "code": "if not mainline:\n    return True\nreturn (card.rank % 2) != (mainline[-1].rank % 2)",
+        "avg_acceptance_rate": 0.53,
+        "node_count": 30,
+        "cyclomatic_complexity": 2
+      },
+      {
+        "name": "rank_non_decreasing_start_ace",
+        "description": "Each card must have a rank greater or equal to the previous card. Only Ace can start the line.",
+        "code": "if not mainline:\n    return card.rank == 1\nreturn card.rank >= mainline[-1].rank",
+        "avg_acceptance_rate": 0.156,
+        "node_count": 30,
+        "cyclomatic_complexity": 2
+      },
+      {
+        "name": "alternating_colors",
+        "description": "Cards must alternate between red and black colors. Any card may start the line.",
+        "code": "if not mainline:\n    return True\nreturn card.color != mainline[-1].color",
+        "avg_acceptance_rate": 0.52,
+        "node_count": 24,
+        "cyclomatic_complexity": 2
+      },
+      {
+        "name": "different_suit",
+        "description": "The card must be of a different suit than the card just before it. Any card may start the line.",
+        "code": "if not mainline:\n    return True\nreturn card.suit.suit_name != mainline[-1].suit.suit_name",
+        "avg_acceptance_rate": 0.76,
+        "node_count": 28,
+        "cyclomatic_complexity": 2
+      },
+      {
+        "name": "different_suit_same_color",
+        "description": "The card must be of a different suit than but same color as the card just before it. Any card may start the line.",
+        "code": "if not mainline:\n    return True\nprev = mainline[-1]\nreturn card.suit.suit_name != prev.suit.suit_name and card.color == prev.color",
+        "avg_acceptance_rate": 0.24,
+        "node_count": 45,
+        "cyclomatic_complexity": 3
+      },
+      {
+        "name": "cyclic_suit_order",
+        "description": "Suits must repeat in the cyclic order hearts \u2192 spades \u2192 clubs \u2192 diamonds \u2192 hearts... Any card may start the line.",
+        "code": "if not mainline:\n    return True\norder = [\"hearts\", \"spades\", \"clubs\", \"diamonds\"]\nprev_suit = mainline[-1].suit.suit_name\nprev_idx = order.index(prev_suit)\nexpected = order[(prev_idx + 1) % 4]\nreturn card.suit.suit_name == expected",
+        "avg_acceptance_rate": 0.22600000000000003,
+        "node_count": 67,
+        "cyclomatic_complexity": 2
+      },
+      {
+        "name": "alternating_groups",
+        "description": "Hearts and spades form Group A; clubs and diamonds form Group B. Alternate between groups. Any card may start the line.",
+        "code": "if not mainline:\n    return True\nprev = mainline[-1].suit.suit_name\ncurr = card.suit.suit_name\ngroup_a = {\"hearts\", \"spades\"}\n# Determine groups: True for group A, False for group B\nprev_group = prev in group_a\ncurr_group = curr in group_a\nreturn curr_group != prev_group",
+        "avg_acceptance_rate": 0.506,
+        "node_count": 62,
+        "cyclomatic_complexity": 2
+      },
+      {
+        "name": "share_color_or_parity",
+        "description": "Each card must share at least one property with the previous card: same color, or same parity. Any card may start the line.",
+        "code": "if not mainline:\n    return True\nprev = mainline[-1]\nsame_color = card.color == prev.color\nsame_parity = (card.rank % 2) == (prev.rank % 2)\nreturn same_color or same_parity",
+        "avg_acceptance_rate": 0.722,
+        "node_count": 57,
+        "cyclomatic_complexity": 3
+      },
+      {
+        "name": "red_up_black_down",
+        "description": "If the previous card was red, rank must increase or be equal; if black, rank must decrease or be equal. Starting card must be between 5 and 9 inclusive.",
+        "code": "if not mainline:\n    return 5 <= card.rank <= 9\nprev = mainline[-1]\nif prev.color == \"red\":\n    return card.rank >= prev.rank\nelse:  # black\n    return card.rank <= prev.rank",
+        "avg_acceptance_rate": 0.386,
+        "node_count": 56,
+        "cyclomatic_complexity": 3
+      },
+      {
+        "name": "face_card_imposes_suit",
+        "description": "Face cards imposes the suit: if a face card is played, the next card must match its suit. Otherwise, the next card must be a different suit than it.",
+        "code": "if not mainline:\n    return True\nprev = mainline[-1]\nif prev.rank in (11, 12, 13):\n    return card.suit.suit_name == prev.suit.suit_name\nelse:\n    return card.suit.suit_name != prev.suit.suit_name",
+        "avg_acceptance_rate": 0.53,
+        "node_count": 60,
+        "cyclomatic_complexity": 3
+      },
+      {
+        "name": "paired_suits_alternating",
+        "description": "Suits must appear in pairs: card 1 and 2 same suit, cards 3 and 4 same suit (different from 1 and 2), cards 5 and 6 same suit (different from 3 and 4), etc.",
+        "code": "if not mainline:\n    return True\npos = len(mainline) % 2\nif pos == 0:\n    # first card of a new pair must differ from previous pair's suit\n    return card.suit.suit_name != mainline[-1].suit.suit_name\nelse:\n    # second card of a pair must match the first card's suit\n    return card.suit.suit_name == mainline[-1].suit.suit_name",
+        "avg_acceptance_rate": 0.338,
+        "node_count": 65,
+        "cyclomatic_complexity": 3
+      },
+      {
+        "name": "paired_ranks_distinct",
+        "description": "Rank repeats in pairs: ranks must come in doubles: (x, x), then (y, y) with y different from x, then (z, z) with z different from y, etc.",
+        "code": "if not mainline:\n    return True\ni = len(mainline)\nif i % 2 == 0:\n    # start of a new pair: rank must differ from previous pair's rank\n    return card.rank != mainline[-1].rank\nelse:\n    # second card of the current pair: rank must match the first card of this pair\n    return card.rank == mainline[-1].rank",
+        "avg_acceptance_rate": 0.148,
+        "node_count": 57,
+        "cyclomatic_complexity": 3
+      }
+    ]
+  }
+}

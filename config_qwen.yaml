@@ -1,0 +1,47 @@
+# Eleusis LLM Benchmark - Qwen3.5-27B-GPTQ-Int4 Configuration
+# Self-hosted player model via SGLang on server60
+# Rule compiler: gpt-oss-120b via HuggingFace (matches original benchmark)
+# Backup rule compilers: OpenRouter free -> OpenRouter paid
+
+# Game settings
+game:
+  num_rules: 0  # 0 = use entire rule library
+  num_rounds_per_rule: 3
+  max_turns: 30
+  hand_size: 12
+  wrong_guess_penalty: 2
+  seed: 42
+
+# Rule compiler - gpt-oss-120b via HuggingFace (same as original benchmark)
+rule_compiler:
+  provider: huggingface
+  model_id: openai/gpt-oss-120b
+  hf_provider: together
+  reasoning_format: separate_field
+  temperature: 0.7
+  max_retries: 10
+  num_simulations: 100
+  turns_per_simulation: 40
+  simulation_seed: 42
+  # Fallback providers tried in order when primary fails
+  backup_providers:
+    # OpenRouter paid tier (reliable fallback)
+    - provider: openai_compat
+      model_id: openai/gpt-oss-120b
+      base_url: https://openrouter.ai/api/v1
+      api_key: ${OPENROUTER_API_KEY}
+      reasoning_format: reasoning_content
+      timeout: 300
+
+# Rule source configuration
+rules:
+  library_path: "rules.json"
+  selection: "sequential"
+  index: 0
+
+# LLM configuration
+llm:
+  max_tokens: 16384
+  max_llm_retries: 3
+  temperature: 0.7
+  seed: 42

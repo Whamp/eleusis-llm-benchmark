@@ -1,0 +1,135 @@
+{
+  "metadata": {
+    "description": "Complexity ratio: tentative rule complexity / actual rule complexity",
+    "confidence_threshold": 5,
+    "interpretation": "Ratio > 1 means model overcomplicates, < 1 means oversimplifies"
+  },
+  "models": [
+    {
+      "name": "Gpt Oss 120B",
+      "color": "#707070",
+      "is_open": true,
+      "median_ratio": 2.072072072072072,
+      "q25": 1.984234234234234,
+      "q75": 4.067084942084942,
+      "count": 290
+    },
+    {
+      "name": "Claude Haiku 4.5",
+      "color": "#D08E76",
+      "is_open": false,
+      "median_ratio": 2.055045871559633,
+      "q25": 1.0,
+      "q75": 3.1576576576576576,
+      "count": 208
+    },
+    {
+      "name": "Gpt Oss 20B",
+      "color": "#B2B2B2",
+      "is_open": true,
+      "median_ratio": 2.018018018018018,
+      "q25": 1.0,
+      "q75": 3.0535714285714284,
+      "count": 239
+    },
+    {
+      "name": "Deepseek R1",
+      "color": "#5A6AF7",
+      "is_open": true,
+      "median_ratio": 2.009009009009009,
+      "q25": 1.0,
+      "q75": 2.055045871559633,
+      "count": 159
+    },
+    {
+      "name": "Gemini 3 Flash Preview Low",
+      "color": "#AEC3F9",
+      "is_open": false,
+      "median_ratio": 1.054054054054054,
+      "q25": 1.0,
+      "q75": 2.0825688073394493,
+      "count": 216
+    },
+    {
+      "name": "Grok 4 1 Fast Reasoning",
+      "color": "#1A1A1A",
+      "is_open": false,
+      "median_ratio": 1.0225225225225225,
+      "q25": 1.0,
+      "q75": 2.018018018018018,
+      "count": 158
+    },
+    {
+      "name": "Qwen3.5 27B Gptq Int4",
+      "color": "#8B5CF6",
+      "is_open": true,
+      "median_ratio": 1.009009009009009,
+      "q25": 1.0,
+      "q75": 2.038288288288288,
+      "count": 144
+    },
+    {
+      "name": "Glm 4.7",
+      "color": "#FF7777",
+      "is_open": true,
+      "median_ratio": 1.0,
+      "q25": 1.0,
+      "q75": 2.0,
+      "count": 131
+    },
+    {
+      "name": "Claude Opus 4.5",
+      "color": "#C1755A",
+      "is_open": false,
+      "median_ratio": 1.0,
+      "q25": 1.0,
+      "q75": 2.018018018018018,
+      "count": 124
+    },
+    {
+      "name": "Gemini 3 Flash Preview High",
+      "color": "#8EADF6",
+      "is_open": false,
+      "median_ratio": 1.0,
+      "q25": 1.0,
+      "q75": 2.054308650065531,
+      "count": 191
+    },
+    {
+      "name": "Gpt 5 Mini Medium",
+      "color": "#99BDB4",
+      "is_open": false,
+      "median_ratio": 1.0,
+      "q25": 1.0,
+      "q75": 2.054054054054054,
+      "count": 241
+    },
+    {
+      "name": "Gpt 5.2 High",
+      "color": "#8CB3A8",
+      "is_open": false,
+      "median_ratio": 1.0,
+      "q25": 1.0,
+      "q75": 2.018348623853211,
+      "count": 227
+    },
+    {
+      "name": "Kimi K2",
+      "color": "#CCCC00",
+      "is_open": true,
+      "median_ratio": 1.0,
+      "q25": 1.0,
+      "q75": 1.9438063063063062,
+      "count": 142
+    },
+    {
+      "name": "Rys Qwen3.5 27B Fp8 Xl (in-progress)",
+      "color": "#A855F7",
+      "is_open": true,
+      "median_ratio": 1.0,
+      "q25": 0.9819819819819819,
+      "q75": 2.018018018018018,
+      "count": 62
+    }
+  ]
+}

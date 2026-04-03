@@ -102,6 +102,7 @@ class BaseLLMClient(ABC):
         self.seed = seed
         self.call_metrics: list[LLMCallMetrics] = []
         self.generate_metrics: list[GenerateMetrics] = []
+        self.fallback_clients: list["BaseLLMClient"] = []
 
     @property
     @abstractmethod
@@ -204,56 +205,75 @@ class BaseLLMClient(ABC):
 
         return extracted or response_text.strip()
 
-    def convert_rule_to_code(self, rule_text: str, max_retries: int = 1) -> dict:
-        """Convert natural language rule to Python code with retry and sleep.
+    def convert_rule_to_code(
+        self,
+        rule_text: str,
+        max_retries: int = 1,
+        fallback_clients: list["BaseLLMClient"] | None = None,
+    ) -> dict:
+        """Convert natural language rule to Python code with fallback and exponential backoff.
 
-        If all retries fail, sleeps 30 minutes and tries again indefinitely
-        until success.
+        Tries this client first, then each fallback client in order.
+        If all clients fail, sleeps with exponential backoff (1m -> 2m -> 4m -> ...
+        capped at 15m) before retrying the full sequence.
 
         Returns dict with:
         - code: The generated code (may be None or invalid on failure)
         - status: "success", "retry_success", "no_code_returned", or "syntax_error"
         - attempts: Number of attempts made
-        - sleep_cycles: Number of 30-minute sleep cycles before success
+        - sleep_cycles: Number of sleep cycles before success
+        - provider_used: Which provider ultimately succeeded
         """
         from eleusis.prompts import get_rule_compile_prompt
 
         prompt = get_rule_compile_prompt(rule_text)
+        all_clients = [self] + (fallback_clients if fallback_clients is not None else self.fallback_clients)
         sleep_cycle = 0
+        base_sleep = 60  # 1 minute initial
+        max_sleep = 15 * 60  # 15 minute cap
 
-        while True:  # Infinite outer loop with 30-min sleeps
-            code = None
+        while True:
+            for client_idx, client in enumerate(all_clients):
+                client_label = f"{client.provider_name}/{client.model_name}"
+                if client_idx > 0:
+                    logger.info(f"Trying fallback provider: {client_label}")
 
-            for attempt in range(max_retries + 1):
-                try:
-                    code = self.generate(prompt, xml_tag="CODE")
-                except Exception as e:
-                    logger.warning(f"Code generation attempt {attempt + 1} failed: {e}")
-                    code = None
+                code = None
+                for attempt in range(max_retries + 1):
+                    try:
+                        code = client.generate(prompt, xml_tag="CODE")
+                    except Exception as e:
+                        logger.warning(f"[{client_label}] Code generation attempt {attempt + 1} failed: {e}")
+                        code = None
 
-                if code and self._validate_code_syntax(code):
-                    status = "success" if attempt == 0 and sleep_cycle == 0 else "retry_success"
-                    return {
-                        "code": code,
-                        "status": status,
-                        "attempts": attempt + 1,
-                        "sleep_cycles": sleep_cycle,
-                    }
+                    if code and self._validate_code_syntax(code):
+                        status = "success" if attempt == 0 and sleep_cycle == 0 and client_idx == 0 else "retry_success"
+                        return {
+                            "code": code,
+                            "status": status,
+                            "attempts": attempt + 1,
+                            "sleep_cycles": sleep_cycle,
+                            "provider_used": client_label,
+                        }
 
-                if attempt < max_retries:
-                    logger.info(f"Compilation attempt {attempt + 1} failed, retrying...")
+                    if attempt < max_retries:
+                        logger.info(f"[{client_label}] Compilation attempt {attempt + 1} failed, retrying...")
 
-            # All retries exhausted - sleep and try again
+                logger.warning(f"[{client_label}] All {max_retries + 1} attempts failed.")
+
+            # All clients exhausted — exponential backoff
             sleep_cycle += 1
+            sleep_secs = min(base_sleep * (2 ** (sleep_cycle - 1)), max_sleep)
+            sleep_mins = sleep_secs / 60
             logger.warning(
-                f"All {max_retries + 1} compilation attempts failed. "
-                f"Sleeping 30 minutes before retry (cycle {sleep_cycle})..."
+                f"All providers failed. Sleeping {sleep_mins:.0f}m before retry "
+                f"(cycle {sleep_cycle})..."
             )
             print(
-                f"[Rule Compiler] All {max_retries + 1} attempts failed. "
-                f"Sleeping 30 minutes before retry (cycle {sleep_cycle})..."
+                f"[Rule Compiler] All providers failed. "
+                f"Sleeping {sleep_mins:.0f}m before retry (cycle {sleep_cycle})..."
             )
-            time.sleep(30 * 60)  # 30 minutes
+            time.sleep(sleep_secs)
 
     def _validate_code_syntax(self, code: str) -> bool:
         """Check if code compiles without syntax errors.

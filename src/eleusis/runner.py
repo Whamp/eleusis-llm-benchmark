@@ -63,6 +63,21 @@ def play_round(
         seed=llm_seed,
     )
 
+    # Set up fallback providers for rule compilation resilience
+    backup_providers = rule_compiler_cfg.get("backup_providers", [])
+    for bp_cfg in backup_providers:
+        try:
+            fallback = create_client_from_config(
+                bp_cfg,
+                max_tokens=max_tokens,
+                role="rule_compiler_fallback",
+                seed=llm_seed,
+            )
+            rule_compiler_client.fallback_clients.append(fallback)
+            logger.info(f"Registered fallback rule compiler: {fallback.provider_name}/{fallback.model_name}")
+        except Exception as e:
+            logger.warning(f"Failed to create fallback provider: {e}")
+
     scientist_client = create_client(
         player_model,
         temperature=llm_config["temperature"],

@@ -23,3 +23,6 @@ logs/
 # Claude Code
 CLAUDE.md
 .claude/
+
+.memory/
+.pi/

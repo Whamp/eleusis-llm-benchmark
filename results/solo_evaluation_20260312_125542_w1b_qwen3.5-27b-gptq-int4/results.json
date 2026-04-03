@@ -1,0 +1,2478 @@
+{
+  "timestamp": "20260312_125542",
+  "folder_name": "solo_evaluation_20260312_125542_w1b_qwen3.5-27b-gptq-int4",
+  "config": {
+    "num_rules": 1,
+    "num_rounds_per_rule": 3,
+    "rule_compiler": "Gpt Oss 120B",
+    "rule_compiler_provider": "huggingface",
+    "rule_compiler_model_id": "openai/gpt-oss-120b",
+    "rule_compiler_reasoning_format": "separate_field",
+    "rule_compiler_temperature": 0.7,
+    "rule_compiler_max_retries": 10,
+    "rule_compiler_num_simulations": 100,
+    "rule_compiler_turns_per_simulation": 40,
+    "rule_compiler_simulation_seed": 42,
+    "player": "Qwen3.5 27B Gptq Int4",
+    "player_model": "qwen3.5-27b-gptq-int4",
+    "hand_size": 12,
+    "max_turns": 30,
+    "wrong_guess_penalty": 2,
+    "seed": 42,
+    "llm_max_tokens": 16384,
+    "llm_temperature": 0.7,
+    "llm_seed": 42,
+    "llm_max_retries": 3
+  },
+  "rounds": [
+    {
+      "round_number": 1,
+      "rule_name": "face_card_imposes_suit",
+      "batch_round_index": 0,
+      "turn_count": 16,
+      "rule_description": "Face cards imposes the suit: if a face card is played, the next card must match its suit. Otherwise, the next card must be a different suit than it.",
+      "rule_code": "if not mainline:\n    return True\nprev = mainline[-1]\nif prev.rank in (11, 12, 13):\n    return card.suit.suit_name == prev.suit.suit_name\nelse:\n    return card.suit.suit_name != prev.suit.suit_name",
+      "success": true,
+      "score": 5,
+      "floored_score": 5,
+      "no_stakes_score": 15,
+      "first_correct_turn": 16,
+      "failed_guesses": 5,
+      "game_over_reason": "correct_guess",
+      "llm_usage": {
+        "rule_compiler": {
+          "prompt_tokens": 16998,
+          "output_tokens": 5407,
+          "reasoning_tokens": 4790,
+          "answer_tokens": 617,
+          "cost_usd": null,
+          "duration_seconds": 77.95,
+          "throughput_tokens_per_sec": 69.37,
+          "call_count": 15,
+          "continuation_calls": 0,
+          "calls_requiring_continuation": 0,
+          "provider": "huggingface"
+        },
+        "player": {
+          "prompt_tokens": 33391,
+          "output_tokens": 164622,
+          "reasoning_tokens": 163214,
+          "answer_tokens": 1408,
+          "cost_usd": null,
+          "duration_seconds": 4128.63,
+          "throughput_tokens_per_sec": 39.87,
+          "call_count": 17,
+          "continuation_calls": 0,
+          "calls_requiring_continuation": 0,
+          "provider": "openai_compat"
+        }
+      },
+      "turns": [
+        {
+          "turn_number": 1,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "7\u2666",
+          "hand": [
+            "2\u2663",
+            "J\u2660",
+            "K\u2665",
+            "2\u2660",
+            "7\u2663",
+            "6\u2660",
+            "Q\u2666",
+            "K\u2666",
+            "K\u2666",
+            "8\u2663",
+            "10\u2665",
+            "6\u2663"
+          ],
+          "llm_response": {
+            "reasoning_summary": "I am playing a Diamond to test if the rule requires the next card to share the same suit as the previous card, as this is a common pattern.",
+            "card": "K\u2666",
+            "tentative_rule": "The card must be of the same suit as the previous card.",
+            "confidence_level": 3,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "K\u2666",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": null,
+          "tokens": {
+            "output_tokens": 3856,
+            "reasoning_tokens": 3788,
+            "answer_tokens": 68
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 2,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "7\u2666 [K\u2666]",
+          "hand": [
+            "2\u2663",
+            "J\u2660",
+            "K\u2665",
+            "2\u2660",
+            "7\u2663",
+            "6\u2660",
+            "Q\u2666",
+            "K\u2666",
+            "8\u2663",
+            "10\u2665",
+            "6\u2663",
+            "5\u2663"
+          ],
+          "llm_response": {
+            "reasoning_summary": "I am playing a Red Heart (10\u2665) to distinguish between a 'Different Suit' rule and a 'Different Color' rule, since the previous Red Diamond (7\u2666) was followed by a rejected Red Diamond (K\u2666).",
+            "card": "10\u2665",
+            "tentative_rule": "The card must be of a different suit than the previous card.",
+            "confidence_level": 6,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "10\u2665",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must be of a different suit than the previous card.",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 9: card=A\u2665, actual=False, guessed=True",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.suit.suit_name != mainline[-1].suit.suit_name",
+            "node_count": 28,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 7335,
+            "reasoning_tokens": 7261,
+            "answer_tokens": 74
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 3,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "7\u2666 [K\u2666] 10\u2665",
+          "hand": [
+            "2\u2663",
+            "J\u2660",
+            "K\u2665",
+            "2\u2660",
+            "7\u2663",
+            "6\u2660",
+            "Q\u2666",
+            "K\u2666",
+            "8\u2663",
+            "6\u2663",
+            "5\u2663",
+            "A\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "I am playing the 2\u2663 (Even, Club) to test if the rule requires a different suit or different parity, since the last card 10\u2665 (Even, Heart) shares parity but differs in suit.",
+            "card": "2\u2663",
+            "tentative_rule": "The card must have a different suit than the last mainline card",
+            "confidence_level": 5,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "2\u2663",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must have a different suit than the last mainline card",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 9: card=A\u2665, actual=False, guessed=True",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.suit.suit_name != mainline[-1].suit.suit_name",
+            "node_count": 28,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 6425,
+            "reasoning_tokens": 6353,
+            "answer_tokens": 72
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 4,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "7\u2666 [K\u2666] 10\u2665 2\u2663",
+          "hand": [
+            "J\u2660",
+            "K\u2665",
+            "2\u2660",
+            "7\u2663",
+            "6\u2660",
+            "Q\u2666",
+            "K\u2666",
+            "8\u2663",
+            "6\u2663",
+            "5\u2663",
+            "A\u2665",
+            "7\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "I have two competing hypotheses ('Different Suit' vs 'No Face Cards') that fit all current data, so I am playing J\u2660 (Face, Different Suit) to distinguish between them.",
+            "card": "J\u2660",
+            "tentative_rule": "The card must be a different suit than the previous mainline card",
+            "confidence_level": 5,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "J\u2660",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must be a different suit than the previous mainline card",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2665, actual=False, guessed=True",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.suit.suit_name != mainline[-1].suit.suit_name",
+            "node_count": 28,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 9015,
+            "reasoning_tokens": 8948,
+            "answer_tokens": 67
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 5,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "7\u2666 [K\u2666] 10\u2665 2\u2663 J\u2660",
+          "hand": [
+            "K\u2665",
+            "2\u2660",
+            "7\u2663",
+            "6\u2660",
+            "Q\u2666",
+            "K\u2666",
+            "8\u2663",
+            "6\u2663",
+            "5\u2663",
+            "A\u2665",
+            "7\u2665",
+            "3\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The pattern strongly suggests 'different suit than previous card' - K\u2666 was rejected after 7\u2666 (same suit), while all accepted transitions (7\u2666\u219210\u2665, 10\u2665\u21922\u2663, 2\u2663\u2192J\u2660) involved different suits.",
+            "card": "K\u2665",
+            "tentative_rule": "The card must be a different suit than the last mainline card",
+            "confidence_level": 9,
+            "guess_rule": true
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "K\u2665",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must be a different suit than the last mainline card",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2665, actual=False, guessed=True",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.suit.suit_name != mainline[-1].suit.suit_name",
+            "node_count": 28,
+            "cyclomatic_complexity": 2
+          },
+          "tokens": {
+            "output_tokens": 1713,
+            "reasoning_tokens": 1647,
+            "answer_tokens": 66
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 6,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "7\u2666 [K\u2666] 10\u2665 2\u2663 J\u2660 [K\u2665]",
+          "hand": [
+            "2\u2660",
+            "7\u2663",
+            "6\u2660",
+            "Q\u2666",
+            "K\u2666",
+            "8\u2663",
+            "6\u2663",
+            "5\u2663",
+            "A\u2665",
+            "7\u2665",
+            "3\u2666",
+            "4\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The rejected cards K\u2666 and K\u2665 are both Kings, while all accepted cards are non-Kings, and the 'Different Suit' hypothesis was invalidated by the K\u2665 rejection after J\u2660.",
+            "card": "K\u2666",
+            "tentative_rule": "The card must not be a King",
+            "confidence_level": 9,
+            "guess_rule": true
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "K\u2666",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must not be a King",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2665, actual=False, guessed=True",
+            "guessed_code": "return card.rank != 13",
+            "node_count": 9,
+            "cyclomatic_complexity": 1
+          },
+          "tokens": {
+            "output_tokens": 8404,
+            "reasoning_tokens": 8343,
+            "answer_tokens": 61
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 7,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "7\u2666 [K\u2666] 10\u2665 2\u2663 J\u2660 [K\u2665] [K\u2666]",
+          "hand": [
+            "2\u2660",
+            "7\u2663",
+            "6\u2660",
+            "Q\u2666",
+            "8\u2663",
+            "6\u2663",
+            "5\u2663",
+            "A\u2665",
+            "7\u2665",
+            "3\u2666",
+            "4\u2660",
+            "Q\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The accepted mainline cards follow a strict suit order (Diamonds -> Hearts -> Clubs -> Spades), and rejected Kings indicate a rank constraint, so I play 3\u2666 to confirm the suit cycle continues from Spades to Diamonds without the King restriction.",
+            "card": "3\u2666",
+            "tentative_rule": "The card's suit must follow the sequence Diamonds -> Hearts -> Clubs -> Spades, and the card cannot be a King.",
+            "confidence_level": 8,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "3\u2666",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card's suit must follow the sequence Diamonds -> Hearts -> Clubs -> Spades, and the card cannot be a King.",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2666, actual=False, guessed=True",
+            "guessed_code": "order = [\"diamonds\", \"hearts\", \"clubs\", \"spades\"]\nif not mainline:\n    return card.suit.suit_name == \"diamonds\" and card.rank != 13\nprev = mainline[-1].suit.suit_name\nexpected = order[(order.index(prev) + 1) % 4]\nreturn card.suit.suit_name == expected and card.rank != 13",
+            "node_count": 88,
+            "cyclomatic_complexity": 4,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 10447,
+            "reasoning_tokens": 10351,
+            "answer_tokens": 96
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 8,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "7\u2666 [K\u2666] 10\u2665 2\u2663 J\u2660 [K\u2665] [K\u2666] [3\u2666]",
+          "hand": [
+            "2\u2660",
+            "7\u2663",
+            "6\u2660",
+            "Q\u2666",
+            "8\u2663",
+            "6\u2663",
+            "5\u2663",
+            "A\u2665",
+            "7\u2665",
+            "4\u2660",
+            "Q\u2660",
+            "3\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The accepted mainline ranks are 7 (Odd), 10 (Even), 2 (Even), 11 (Odd), and all rejected cards after Odd ranks (7 and J) were also Odd (K, 3), indicating a rule that forbids playing an Odd rank immediately after another Odd rank.",
+            "card": "Q\u2666",
+            "tentative_rule": "The next card must have an Even rank if the previous mainline card has an Odd rank.",
+            "confidence_level": 9,
+            "guess_rule": true
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "Q\u2666",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The next card must have an Even rank if the previous mainline card has an Odd rank.",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2660, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nprev_rank = mainline[-1].rank\nif prev_rank % 2 == 1:\n    return card.rank % 2 == 0\nreturn True",
+            "node_count": 42,
+            "cyclomatic_complexity": 3
+          },
+          "tokens": {
+            "output_tokens": 9530,
+            "reasoning_tokens": 9438,
+            "answer_tokens": 92
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 9,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "7\u2666 [K\u2666] 10\u2665 2\u2663 J\u2660 [K\u2665] [K\u2666] [3\u2666] [Q\u2666]",
+          "hand": [
+            "2\u2660",
+            "7\u2663",
+            "6\u2660",
+            "8\u2663",
+            "6\u2663",
+            "5\u2663",
+            "A\u2665",
+            "7\u2665",
+            "4\u2660",
+            "Q\u2660",
+            "3\u2666",
+            "8\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The pattern indicates that Black cards must be followed by Black cards (supported by 2\u2663->J\u2660 acceptance and all Red rejections after J\u2660), while Red cards must be followed by a different suit (supported by 7\u2666->10\u2665 acceptance vs 7\u2666->K\u2666 rejection).",
+            "card": "7\u2663",
+            "tentative_rule": "If the last card is Black, the next card must be Black. If the last card is Red, the next card must be a different suit.",
+            "confidence_level": 8,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "7\u2663",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "If the last card is Black, the next card must be Black. If the last card is Red, the next card must be a different suit.",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2663, actual=False, guessed=True",
+            "guessed_code": "if not mainline:\n    return True\nlast = mainline[-1]\nif last.color == \"black\":\n    return card.color == \"black\"\nelse:  # last.color == \"red\"\n    return card.suit.suit_name != last.suit.suit_name",
+            "node_count": 49,
+            "cyclomatic_complexity": 3,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 10812,
+            "reasoning_tokens": 10712,
+            "answer_tokens": 100
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 10,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "7\u2666 [K\u2666] 10\u2665 2\u2663 J\u2660 [K\u2665] [K\u2666] [3\u2666] [Q\u2666] [7\u2663]",
+          "hand": [
+            "2\u2660",
+            "6\u2660",
+            "8\u2663",
+            "6\u2663",
+            "5\u2663",
+            "A\u2665",
+            "7\u2665",
+            "4\u2660",
+            "Q\u2660",
+            "3\u2666",
+            "8\u2666",
+            "9\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All non-Spade cards (Hearts, Diamonds, Clubs) were rejected after the Spade `J\u2660`, suggesting the rule requires a Spade to follow a Spade, while other suits must change.",
+            "card": "4\u2660",
+            "tentative_rule": "If the previous card is a Spade, the next card must be a Spade; otherwise, the suit must change.",
+            "confidence_level": 9,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "4\u2660",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "If the previous card is a Spade, the next card must be a Spade; otherwise, the suit must change.",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2665, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nprev = mainline[-1]\nif prev.suit.suit_name == \"spades\":\n    return card.suit.suit_name == \"spades\"\nelse:\n    return card.suit.suit_name != prev.suit.suit_name",
+            "node_count": 53,
+            "cyclomatic_complexity": 3,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 13569,
+            "reasoning_tokens": 13494,
+            "answer_tokens": 75
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 11,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "7\u2666 [K\u2666] 10\u2665 2\u2663 J\u2660 [K\u2665] [K\u2666] [3\u2666] [Q\u2666] [7\u2663] 4\u2660",
+          "hand": [
+            "2\u2660",
+            "6\u2660",
+            "8\u2663",
+            "6\u2663",
+            "5\u2663",
+            "A\u2665",
+            "7\u2665",
+            "Q\u2660",
+            "3\u2666",
+            "8\u2666",
+            "9\u2665",
+            "5\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The pattern indicates a conditional suit rule where Spades must follow Spades, while non-Spades must change suits, which explains all previous acceptances and rejections including the specific rejections after the Spade J\u2660.",
+            "card": "2\u2660",
+            "tentative_rule": "If the previous card is a Spade, the next card must be a Spade; otherwise, the next card must be a different suit.",
+            "confidence_level": 9,
+            "guess_rule": true
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "2\u2660",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "If the previous card is a Spade, the next card must be a Spade; otherwise, the next card must be a different suit.",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2665, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nprev_suit = mainline[-1].suit.suit_name\nif prev_suit == \"spades\":\n    return card.suit.suit_name == \"spades\"\nelse:\n    return card.suit.suit_name != prev_suit",
+            "node_count": 49,
+            "cyclomatic_complexity": 3
+          },
+          "tokens": {
+            "output_tokens": 9259,
+            "reasoning_tokens": 9172,
+            "answer_tokens": 87
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 12,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "7\u2666 [K\u2666] 10\u2665 2\u2663 J\u2660 [K\u2665] [K\u2666] [3\u2666] [Q\u2666] [7\u2663] 4\u2660 [2\u2660]",
+          "hand": [
+            "6\u2660",
+            "8\u2663",
+            "6\u2663",
+            "5\u2663",
+            "A\u2665",
+            "7\u2665",
+            "Q\u2660",
+            "3\u2666",
+            "8\u2666",
+            "9\u2665",
+            "5\u2665",
+            "J\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The pattern suggests that Black cards must be followed by Black cards of opposite parity (explaining J\u2660->4\u2660 acceptance and 4\u2660->2\u2660 rejection), while Red cards must be followed by cards of a different suit (explaining 7\u2666->10\u2665 acceptance and 7\u2666->K\u2666 rejection).",
+            "card": "5\u2663",
+            "tentative_rule": "If the previous card is Black, the next card must be Black and have a different parity. If the previous card is Red, the next card must be a different suit.",
+            "confidence_level": 9,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "5\u2663",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "If the previous card is Black, the next card must be Black and have a different parity. If the previous card is Red, the next card must be a different suit.",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2665, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nprev = mainline[-1]\nif prev.color == \"black\":\n    return card.color == \"black\" and (card.rank % 2) != (prev.rank % 2)\nelse:  # prev.color == \"red\"\n    return card.suit.suit_name != prev.suit.suit_name",
+            "node_count": 67,
+            "cyclomatic_complexity": 4,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 11349,
+            "reasoning_tokens": 11243,
+            "answer_tokens": 106
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 13,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "7\u2666 [K\u2666] 10\u2665 2\u2663 J\u2660 [K\u2665] [K\u2666] [3\u2666] [Q\u2666] [7\u2663] 4\u2660 [2\u2660] 5\u2663",
+          "hand": [
+            "6\u2660",
+            "8\u2663",
+            "6\u2663",
+            "A\u2665",
+            "7\u2665",
+            "Q\u2660",
+            "3\u2666",
+            "8\u2666",
+            "9\u2665",
+            "5\u2665",
+            "J\u2660",
+            "3\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The pattern indicates that after a Black card, the next must be Black (no Red after Black), and if the color is the same, the parity must change; 6\u2660 is Black and Even, satisfying the requirements after 5\u2663 (Black Odd).",
+            "card": "6\u2660",
+            "tentative_rule": "If the previous card is Black, the next card must be Black. If the previous card is Red, the next card must be a different suit. In all cases, if the color is the same, the parity must change.",
+            "confidence_level": 8,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "6\u2660",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "If the previous card is Black, the next card must be Black. If the previous card is Red, the next card must be a different suit. In all cases, if the color is the same, the parity must change.",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2665, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nprev = mainline[-1]\n\nif prev.color == \"black\":\n    # next must also be black\n    if card.color != \"black\":\n        return False\n    # same color => parity must change\n    if (card.rank % 2) == (prev.rank % 2):\n        return False\n    return True\nelse:  # prev.color == \"red\"\n    # next must be a different suit\n    if card.suit.suit_name == prev.suit.suit_name:\n        return False\n    # if the color stays red, parity must change\n    if card.color == \"red\" and (card.rank % 2) == (prev.rank % 2):\n        return False\n    return True",
+            "node_count": 104,
+            "cyclomatic_complexity": 8,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 14103,
+            "reasoning_tokens": 13985,
+            "answer_tokens": 118
+          },
+          "retry_count": 1,
+          "retry_causes": [
+            {
+              "attempt": 1,
+              "cause": "max_token_reached"
+            }
+          ]
+        },
+        {
+          "turn_number": 14,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "7\u2666 [K\u2666] 10\u2665 2\u2663 J\u2660 [K\u2665] [K\u2666] [3\u2666] [Q\u2666] [7\u2663] 4\u2660 [2\u2660] 5\u2663 6\u2660",
+          "hand": [
+            "8\u2663",
+            "6\u2663",
+            "A\u2665",
+            "7\u2665",
+            "Q\u2660",
+            "3\u2666",
+            "8\u2666",
+            "9\u2665",
+            "5\u2665",
+            "J\u2660",
+            "3\u2660",
+            "7\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The data shows that once a Black card is played, no Red cards are accepted, and within the same color, parity must alternate (Odd->Even->Odd), explaining all rejections like K\u2666 after 7\u2666 (Same Color, Same Parity) and Red cards after J\u2660 (Black->Red forbidden).",
+            "card": "3\u2660",
+            "tentative_rule": "If the previous card is Black, the next card must be Black. If the previous and next cards share the same color, their ranks must have different parity.",
+            "confidence_level": 9,
+            "guess_rule": true
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "3\u2660",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "If the previous card is Black, the next card must be Black. If the previous and next cards share the same color, their ranks must have different parity.",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2665, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nprev = mainline[-1]\n# If previous card is black, next must be black\nif prev.color == \"black\" and card.color != \"black\":\n    return False\n# If colors are the same, ranks must have opposite parity\nif prev.color == card.color:\n    if (prev.rank % 2) == (card.rank % 2):\n        return False\nreturn True",
+            "node_count": 69,
+            "cyclomatic_complexity": 6
+          },
+          "tokens": {
+            "output_tokens": 9933,
+            "reasoning_tokens": 9827,
+            "answer_tokens": 106
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 15,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "7\u2666 [K\u2666] 10\u2665 2\u2663 J\u2660 [K\u2665] [K\u2666] [3\u2666] [Q\u2666] [7\u2663] 4\u2660 [2\u2660] 5\u2663 6\u2660 [3\u2660]",
+          "hand": [
+            "8\u2663",
+            "6\u2663",
+            "A\u2665",
+            "7\u2665",
+            "Q\u2660",
+            "3\u2666",
+            "8\u2666",
+            "9\u2665",
+            "5\u2665",
+            "J\u2660",
+            "7\u2666",
+            "Q\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "I am playing J\u2660 to test the 'Number to Different Suit' constraint, as the previous card 6\u2660 is a Number and J\u2660 is the same suit, expecting rejection to confirm the rule.",
+            "card": "J\u2660",
+            "tentative_rule": "If the previous card is Black, the next must be Black. If the previous and next cards share the same color, their ranks must have different parity. If the previous card is a Number (2-10), the next card must be a different suit.",
+            "confidence_level": 9,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "J\u2660",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "If the previous card is Black, the next must be Black. If the previous and next cards share the same color, their ranks must have different parity. If the previous card is a Number (2-10), the next card must be a different suit.",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2665, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nprev = mainline[-1]\n# If previous is black, next must be black\nif prev.color == \"black\" and card.color != \"black\":\n    return False\n# Same color => ranks must have different parity\nif card.color == prev.color and (card.rank % 2) == (prev.rank % 2):\n    return False\n# Previous is a number (2-10) => suit must differ\nif 2 <= prev.rank <= 10 and card.suit.suit_name == prev.suit.suit_name:\n    return False\nreturn True",
+            "node_count": 98,
+            "cyclomatic_complexity": 8,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 12204,
+            "reasoning_tokens": 12091,
+            "answer_tokens": 113
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 16,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "7\u2666 [K\u2666] 10\u2665 2\u2663 J\u2660 [K\u2665] [K\u2666] [3\u2666] [Q\u2666] [7\u2663] 4\u2660 [2\u2660] 5\u2663 6\u2660 [3\u2660] [J\u2660]",
+          "hand": [
+            "8\u2663",
+            "6\u2663",
+            "A\u2665",
+            "7\u2665",
+            "Q\u2660",
+            "3\u2666",
+            "8\u2666",
+            "9\u2665",
+            "5\u2665",
+            "7\u2666",
+            "Q\u2665",
+            "8\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "I have identified a pattern where Number cards (Ace-10) require the next card to be a different suit, while Face cards (Jack-King) require the next card to be the same suit, which explains all accepted and rejected cards in the history.",
+            "card": "8\u2663",
+            "tentative_rule": "If the previous card is a Face card (Jack, Queen, King), the next card must be of the same suit; otherwise, the next card must be of a different suit.",
+            "confidence_level": 10,
+            "guess_rule": true
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "8\u2663",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "If the previous card is a Face card (Jack, Queen, King), the next card must be of the same suit; otherwise, the next card must be of a different suit.",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "if not mainline:\n    return True\nprev = mainline[-1]\nif prev.rank in (11, 12, 13):\n    return card.suit.suit_name == prev.suit.suit_name\nelse:\n    return card.suit.suit_name != prev.suit.suit_name",
+            "node_count": 60,
+            "cyclomatic_complexity": 3
+          },
+          "tokens": {
+            "output_tokens": 10284,
+            "reasoning_tokens": 10177,
+            "answer_tokens": 107
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        }
+      ],
+      "wall_clock_seconds": 4209.53
+    },
+    {
+      "round_number": 2,
+      "rule_name": "face_card_imposes_suit",
+      "batch_round_index": 1,
+      "turn_count": 15,
+      "rule_description": "Face cards imposes the suit: if a face card is played, the next card must match its suit. Otherwise, the next card must be a different suit than it.",
+      "rule_code": "if not mainline:\n    return True\nprev = mainline[-1]\nif prev.rank in (11, 12, 13):\n    return card.suit.suit_name == prev.suit.suit_name\nelse:\n    return card.suit.suit_name != prev.suit.suit_name",
+      "success": true,
+      "score": 10,
+      "floored_score": 10,
+      "no_stakes_score": 16,
+      "first_correct_turn": 15,
+      "failed_guesses": 3,
+      "game_over_reason": "correct_guess",
+      "llm_usage": {
+        "rule_compiler": {
+          "prompt_tokens": 15815,
+          "output_tokens": 3439,
+          "reasoning_tokens": 3082,
+          "answer_tokens": 357,
+          "cost_usd": null,
+          "duration_seconds": 70.66,
+          "throughput_tokens_per_sec": 48.67,
+          "call_count": 14,
+          "continuation_calls": 0,
+          "calls_requiring_continuation": 0,
+          "provider": "huggingface"
+        },
+        "player": {
+          "prompt_tokens": 31197,
+          "output_tokens": 137842,
+          "reasoning_tokens": 136503,
+          "answer_tokens": 1339,
+          "cost_usd": null,
+          "duration_seconds": 3480.2,
+          "throughput_tokens_per_sec": 39.61,
+          "call_count": 16,
+          "continuation_calls": 0,
+          "calls_requiring_continuation": 0,
+          "provider": "openai_compat"
+        }
+      },
+      "turns": [
+        {
+          "turn_number": 1,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "4\u2663",
+          "hand": [
+            "Q\u2660",
+            "8\u2663",
+            "10\u2663",
+            "3\u2663",
+            "2\u2665",
+            "Q\u2665",
+            "3\u2665",
+            "2\u2660",
+            "5\u2660",
+            "10\u2660",
+            "Q\u2665",
+            "2\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The starter card 4\u2663 is black, so I am playing 2\u2665 (red) to test if the rule requires alternating colors or matching colors.",
+            "card": "2\u2665",
+            "tentative_rule": "The card must be a different color than the last mainline card.",
+            "confidence_level": 2,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "2\u2665",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": null,
+          "tokens": {
+            "output_tokens": 4507,
+            "reasoning_tokens": 4446,
+            "answer_tokens": 61
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 2,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "4\u2663 2\u2665",
+          "hand": [
+            "Q\u2660",
+            "8\u2663",
+            "10\u2663",
+            "3\u2663",
+            "Q\u2665",
+            "3\u2665",
+            "2\u2660",
+            "5\u2660",
+            "10\u2660",
+            "Q\u2665",
+            "2\u2660",
+            "5\u2663"
+          ],
+          "llm_response": {
+            "reasoning_summary": "I am playing 3\u2663 to distinguish between the 'alternating colors' hypothesis and the 'same parity' hypothesis, as this card satisfies the color change (Red to Black) but violates the even rank pattern observed so far.",
+            "card": "3\u2663",
+            "tentative_rule": "Cards must alternate colors between red and black",
+            "confidence_level": 5,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "3\u2663",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must alternate colors between red and black",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2660, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.color != mainline[-1].color",
+            "node_count": 24,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 5577,
+            "reasoning_tokens": 5506,
+            "answer_tokens": 71
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 3,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "4\u2663 2\u2665 3\u2663",
+          "hand": [
+            "Q\u2660",
+            "8\u2663",
+            "10\u2663",
+            "Q\u2665",
+            "3\u2665",
+            "2\u2660",
+            "5\u2660",
+            "10\u2660",
+            "Q\u2665",
+            "2\u2660",
+            "5\u2663",
+            "A\u2663"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The mainline sequence (4\u2663 Black, 2\u2665 Red, 3\u2663 Black) strongly suggests an alternating color pattern, so I am playing 3\u2665 (Red) to confirm this hypothesis continues.",
+            "card": "3\u2665",
+            "tentative_rule": "Cards must alternate colors between Red and Black",
+            "confidence_level": 8,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "3\u2665",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "Cards must alternate colors between Red and Black",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2666, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.color != mainline[-1].color",
+            "node_count": 24,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 8201,
+            "reasoning_tokens": 8142,
+            "answer_tokens": 59
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 4,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "4\u2663 2\u2665 3\u2663 3\u2665",
+          "hand": [
+            "Q\u2660",
+            "8\u2663",
+            "10\u2663",
+            "Q\u2665",
+            "2\u2660",
+            "5\u2660",
+            "10\u2660",
+            "Q\u2665",
+            "2\u2660",
+            "5\u2663",
+            "A\u2663",
+            "K\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The mainline shows a strict alternation of colors (Black, Red, Black, Red) and suits (Club, Heart, Club, Heart); playing a Black Spade will distinguish if the rule is simply 'alternate color' (accepted) or requires 'same suit as the card two positions ago' (rejected).",
+            "card": "5\u2660",
+            "tentative_rule": "The card must be a different color than the previous mainline card",
+            "confidence_level": 8,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "5\u2660",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must be a different color than the previous mainline card",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2663, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.color != mainline[-1].color",
+            "node_count": 24,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 5497,
+            "reasoning_tokens": 5410,
+            "answer_tokens": 87
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 5,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "4\u2663 2\u2665 3\u2663 3\u2665 5\u2660",
+          "hand": [
+            "Q\u2660",
+            "8\u2663",
+            "10\u2663",
+            "Q\u2665",
+            "2\u2660",
+            "10\u2660",
+            "Q\u2665",
+            "2\u2660",
+            "5\u2663",
+            "A\u2663",
+            "K\u2660",
+            "7\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The mainline exhibits a perfect alternating color pattern (Black, Red, Black, Red, Black), but the suit pattern is less consistent; playing a Black Club (8\u2663) will distinguish between 'Alternating Colors' (should be rejected) and 'Different Suit' (should be accepted).",
+            "card": "8\u2663",
+            "tentative_rule": "The card must be a different color than the last mainline card",
+            "confidence_level": 8,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "8\u2663",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must be a different color than the last mainline card",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2660, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.color != mainline[-1].color",
+            "node_count": 24,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 7578,
+            "reasoning_tokens": 7497,
+            "answer_tokens": 81
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 6,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "4\u2663 2\u2665 3\u2663 3\u2665 5\u2660 8\u2663",
+          "hand": [
+            "Q\u2660",
+            "10\u2663",
+            "Q\u2665",
+            "2\u2660",
+            "10\u2660",
+            "Q\u2665",
+            "2\u2660",
+            "5\u2663",
+            "A\u2663",
+            "K\u2660",
+            "7\u2666",
+            "8\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The mainline shows a consistent pattern where every card has a different suit than the previous one, and the acceptance of 8\u2663 after 5\u2660 disproves the alternating color hypothesis, so I play 10\u2663 to confirm if same-suit cards are rejected.",
+            "card": "10\u2663",
+            "tentative_rule": "The card must have a different suit than the last mainline card.",
+            "confidence_level": 9,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "10\u2663",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must have a different suit than the last mainline card.",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 9: card=A\u2665, actual=False, guessed=True",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.suit.suit_name != mainline[-1].suit.suit_name",
+            "node_count": 28,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 6777,
+            "reasoning_tokens": 6694,
+            "answer_tokens": 83
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 7,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "4\u2663 2\u2665 3\u2663 3\u2665 5\u2660 8\u2663 [10\u2663]",
+          "hand": [
+            "Q\u2660",
+            "Q\u2665",
+            "2\u2660",
+            "10\u2660",
+            "Q\u2665",
+            "2\u2660",
+            "5\u2663",
+            "A\u2663",
+            "K\u2660",
+            "7\u2666",
+            "8\u2665",
+            "2\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "Every accepted transition in the mainline involves a change in suit (e.g., 5\u2660 to 8\u2663), while the only rejected card (10\u2663) shared the same suit as the preceding card (8\u2663), confirming the rule is strictly about suit differentiation.",
+            "card": "Q\u2660",
+            "tentative_rule": "The played card must have a different suit than the last card in the mainline",
+            "confidence_level": 10,
+            "guess_rule": true
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "Q\u2660",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The played card must have a different suit than the last card in the mainline",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2665, actual=False, guessed=True",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.suit.suit_name != mainline[-1].suit.suit_name",
+            "node_count": 28,
+            "cyclomatic_complexity": 2
+          },
+          "tokens": {
+            "output_tokens": 4617,
+            "reasoning_tokens": 4533,
+            "answer_tokens": 84
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 8,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "4\u2663 2\u2665 3\u2663 3\u2665 5\u2660 8\u2663 [10\u2663] Q\u2660",
+          "hand": [
+            "Q\u2665",
+            "2\u2660",
+            "10\u2660",
+            "Q\u2665",
+            "2\u2660",
+            "5\u2663",
+            "A\u2663",
+            "K\u2660",
+            "7\u2666",
+            "8\u2665",
+            "2\u2666",
+            "3\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "Since 'Different Suit' was marked incorrect despite fitting all observed transitions, there must be an additional constraint, and the complete absence of Diamonds in the mainline suggests they are banned, so I play a Diamond to test this.",
+            "card": "7\u2666",
+            "tentative_rule": "The card must have a different suit than the last card and cannot be a Diamond",
+            "confidence_level": 7,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "7\u2666",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must have a different suit than the last card and cannot be a Diamond",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2665, actual=False, guessed=True",
+            "guessed_code": "if not mainline:\n    return card.suit.suit_name != \"diamonds\"\nlast_suit = mainline[-1].suit.suit_name\nreturn card.suit.suit_name != last_suit and card.suit.suit_name != \"diamonds\"",
+            "node_count": 52,
+            "cyclomatic_complexity": 3,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 9426,
+            "reasoning_tokens": 9341,
+            "answer_tokens": 85
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 9,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "4\u2663 2\u2665 3\u2663 3\u2665 5\u2660 8\u2663 [10\u2663] Q\u2660 [7\u2666]",
+          "hand": [
+            "Q\u2665",
+            "2\u2660",
+            "10\u2660",
+            "Q\u2665",
+            "2\u2660",
+            "5\u2663",
+            "A\u2663",
+            "K\u2660",
+            "8\u2665",
+            "2\u2666",
+            "3\u2660",
+            "A\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The rejection of 7\u2666 despite being a different suit from Q\u2660 indicates Diamonds are banned, while 10\u2663 rejection confirms same-suit cards are banned, so I play 5\u2663 (different suit, not a Diamond) to confirm acceptance.",
+            "card": "5\u2663",
+            "tentative_rule": "The played card must have a different suit than the last card in the mainline and cannot be a Diamond.",
+            "confidence_level": 9,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "5\u2663",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The played card must have a different suit than the last card in the mainline and cannot be a Diamond.",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2665, actual=False, guessed=True",
+            "guessed_code": "if not mainline:\n    return card.suit.suit_name != \"diamonds\"\nlast_suit = mainline[-1].suit.suit_name\nreturn card.suit.suit_name != last_suit and card.suit.suit_name != \"diamonds\"",
+            "node_count": 52,
+            "cyclomatic_complexity": 3,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 7557,
+            "reasoning_tokens": 7470,
+            "answer_tokens": 87
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 10,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "4\u2663 2\u2665 3\u2663 3\u2665 5\u2660 8\u2663 [10\u2663] Q\u2660 [7\u2666] [5\u2663]",
+          "hand": [
+            "Q\u2665",
+            "2\u2660",
+            "10\u2660",
+            "Q\u2665",
+            "2\u2660",
+            "A\u2663",
+            "K\u2660",
+            "8\u2665",
+            "2\u2666",
+            "3\u2660",
+            "A\u2660",
+            "6\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The rejection of 7\u2666 and 5\u2663 after Q\u2660 (Face) suggests a constraint on playing Numbers after Faces, while 10\u2663 rejection confirms the 'Different Suit' requirement; playing 8\u2665 (Even Number, Different Suit) tests if 'Even Rank' is sufficient or if 'Face Card' is required.",
+            "card": "8\u2665",
+            "tentative_rule": "The card must have a different suit than the last card, and if the last card is a Face card, the next card must also be a Face card.",
+            "confidence_level": 9,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "8\u2665",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must have a different suit than the last card, and if the last card is a Face card, the next card must also be a Face card.",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2660, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nlast = mainline[-1]\ndifferent_suit = card.suit.suit_name != last.suit.suit_name\nif last.rank >= 11:  # last card is a face card\n    return different_suit and card.rank >= 11\nreturn different_suit",
+            "node_count": 58,
+            "cyclomatic_complexity": 4,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 13099,
+            "reasoning_tokens": 12990,
+            "answer_tokens": 109
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 11,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "4\u2663 2\u2665 3\u2663 3\u2665 5\u2660 8\u2663 [10\u2663] Q\u2660 [7\u2666] [5\u2663] [8\u2665]",
+          "hand": [
+            "Q\u2665",
+            "2\u2660",
+            "10\u2660",
+            "Q\u2665",
+            "2\u2660",
+            "A\u2663",
+            "K\u2660",
+            "2\u2666",
+            "3\u2660",
+            "A\u2660",
+            "6\u2665",
+            "5\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The rejections of number cards (7\u2666, 5\u2663, 8\u2665) after the face card Q\u2660, combined with the rejection of the same-suit card 10\u2663 after 8\u2663, strongly suggest the rule requires a different suit and prohibits number cards immediately following a face card.",
+            "card": "Q\u2665",
+            "tentative_rule": "The card must be a different suit than the last mainline card, and if the last card is a Face card (Jack, Queen, King), the new card must also be a Face card.",
+            "confidence_level": 9,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "Q\u2665",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must be a different suit than the last mainline card, and if the last card is a Face card (Jack, Queen, King), the new card must also be a Face card.",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2660, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nlast = mainline[-1]\nsuit_diff = card.suit.suit_name != last.suit.suit_name\nlast_is_face = last.rank in (11, 12, 13)\nnew_is_face = card.rank in (11, 12, 13)\nreturn suit_diff and (not last_is_face or new_is_face)",
+            "node_count": 76,
+            "cyclomatic_complexity": 4,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 9920,
+            "reasoning_tokens": 9809,
+            "answer_tokens": 111
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 12,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "4\u2663 2\u2665 3\u2663 3\u2665 5\u2660 8\u2663 [10\u2663] Q\u2660 [7\u2666] [5\u2663] [8\u2665] [Q\u2665]",
+          "hand": [
+            "2\u2660",
+            "10\u2660",
+            "Q\u2665",
+            "2\u2660",
+            "A\u2663",
+            "K\u2660",
+            "2\u2666",
+            "3\u2660",
+            "A\u2660",
+            "6\u2665",
+            "5\u2665",
+            "2\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The rejection of all cards after the Face card Q\u2660 suggests a Face card cannot be followed by any card, while the rejection of 10\u2663 after 8\u2663 confirms the Different Suit requirement, leading to the hypothesis that cards are only accepted if the previous card was a Number and the suit is different.",
+            "card": "6\u2665",
+            "tentative_rule": "The card must have a different suit than the previous card, and the previous card must be a Number (Rank 1-10).",
+            "confidence_level": 9,
+            "guess_rule": true
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "6\u2665",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must have a different suit than the previous card, and the previous card must be a Number (Rank 1-10).",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2660, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nprev = mainline[-1]\nif not (1 <= prev.rank <= 10):\n    return False\nreturn card.suit.suit_name != prev.suit.suit_name",
+            "node_count": 47,
+            "cyclomatic_complexity": 3
+          },
+          "tokens": {
+            "output_tokens": 9190,
+            "reasoning_tokens": 9079,
+            "answer_tokens": 111
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 13,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "4\u2663 2\u2665 3\u2663 3\u2665 5\u2660 8\u2663 [10\u2663] Q\u2660 [7\u2666] [5\u2663] [8\u2665] [Q\u2665] [6\u2665]",
+          "hand": [
+            "2\u2660",
+            "10\u2660",
+            "Q\u2665",
+            "2\u2660",
+            "A\u2663",
+            "K\u2660",
+            "2\u2666",
+            "3\u2660",
+            "A\u2660",
+            "5\u2665",
+            "2\u2665",
+            "4\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "I am testing if an Ace (Number) can be played after a Face card (Q\u2660) to distinguish between the 'Previous must be Number' hypothesis (which failed) and 'Previous must not be Face' hypothesis, as all other cards have been rejected after Q\u2660.",
+            "card": "A\u2663",
+            "tentative_rule": "The card must have a different suit than the previous card, and the previous card must not be a Face card (Jack, Queen, King).",
+            "confidence_level": 8,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "A\u2663",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must have a different suit than the previous card, and the previous card must not be a Face card (Jack, Queen, King).",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2660, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nprev = mainline[-1]\nif prev.rank in (11, 12, 13):\n    return False\nreturn card.suit.suit_name != prev.suit.suit_name",
+            "node_count": 47,
+            "cyclomatic_complexity": 3,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 11562,
+            "reasoning_tokens": 11461,
+            "answer_tokens": 101
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 14,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "4\u2663 2\u2665 3\u2663 3\u2665 5\u2660 8\u2663 [10\u2663] Q\u2660 [7\u2666] [5\u2663] [8\u2665] [Q\u2665] [6\u2665] [A\u2663]",
+          "hand": [
+            "2\u2660",
+            "10\u2660",
+            "Q\u2665",
+            "2\u2660",
+            "K\u2660",
+            "2\u2666",
+            "3\u2660",
+            "A\u2660",
+            "5\u2665",
+            "2\u2665",
+            "4\u2660",
+            "A\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All cards played after the Face card Q\u2660 have been rejected, while all accepted transitions involved different suits and a Number card preceding the new card, suggesting the rule requires a different suit and prohibits playing after a Face card.",
+            "card": "2\u2660",
+            "tentative_rule": "The card must have a different suit than the previous card, and the previous card must not be a Face card (Jack, Queen, or King).",
+            "confidence_level": 9,
+            "guess_rule": true
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "2\u2660",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must have a different suit than the previous card, and the previous card must not be a Face card (Jack, Queen, or King).",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 9: card=A\u2663, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nprev = mainline[-1]\nif prev.rank in (11, 12, 13):\n    return False\nreturn card.suit.suit_name != prev.suit.suit_name",
+            "node_count": 47,
+            "cyclomatic_complexity": 3
+          },
+          "tokens": {
+            "output_tokens": 12033,
+            "reasoning_tokens": 11933,
+            "answer_tokens": 100
+          },
+          "retry_count": 1,
+          "retry_causes": [
+            {
+              "attempt": 1,
+              "cause": "max_token_reached"
+            }
+          ]
+        },
+        {
+          "turn_number": 15,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "4\u2663 2\u2665 3\u2663 3\u2665 5\u2660 8\u2663 [10\u2663] Q\u2660 [7\u2666] [5\u2663] [8\u2665] [Q\u2665] [6\u2665] [A\u2663] 2\u2660",
+          "hand": [
+            "10\u2660",
+            "Q\u2665",
+            "2\u2660",
+            "K\u2660",
+            "2\u2666",
+            "3\u2660",
+            "A\u2660",
+            "5\u2665",
+            "2\u2665",
+            "4\u2660",
+            "A\u2666",
+            "6\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The pattern shows that after Number cards (1-10), the next card must be a different suit, while after Face cards (J-K), the next card must be the same suit, which explains all accepted and rejected transitions in the history.",
+            "card": "5\u2665",
+            "tentative_rule": "If the previous card is a Number (1-10), the next card must be a different suit. If the previous card is a Face card (11-13), the next card must be the same suit.",
+            "confidence_level": 9,
+            "guess_rule": true
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "5\u2665",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "If the previous card is a Number (1-10), the next card must be a different suit. If the previous card is a Face card (11-13), the next card must be the same suit.",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "if not mainline:\n    return True\nprev = mainline[-1]\nif prev.rank <= 10:\n    return card.suit.suit_name != prev.suit.suit_name\nelse:\n    return card.suit.suit_name == prev.suit.suit_name",
+            "node_count": 56,
+            "cyclomatic_complexity": 3
+          },
+          "tokens": {
+            "output_tokens": 5917,
+            "reasoning_tokens": 5808,
+            "answer_tokens": 109
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        }
+      ],
+      "wall_clock_seconds": 3551.08
+    },
+    {
+      "round_number": 3,
+      "rule_name": "face_card_imposes_suit",
+      "batch_round_index": 2,
+      "turn_count": 15,
+      "rule_description": "Face cards imposes the suit: if a face card is played, the next card must match its suit. Otherwise, the next card must be a different suit than it.",
+      "rule_code": "if not mainline:\n    return True\nprev = mainline[-1]\nif prev.rank in (11, 12, 13):\n    return card.suit.suit_name == prev.suit.suit_name\nelse:\n    return card.suit.suit_name != prev.suit.suit_name",
+      "success": true,
+      "score": 8,
+      "floored_score": 8,
+      "no_stakes_score": 18,
+      "first_correct_turn": 13,
+      "failed_guesses": 4,
+      "game_over_reason": "correct_guess",
+      "llm_usage": {
+        "rule_compiler": {
+          "prompt_tokens": 15878,
+          "output_tokens": 3710,
+          "reasoning_tokens": 3313,
+          "answer_tokens": 397,
+          "cost_usd": null,
+          "duration_seconds": 60.21,
+          "throughput_tokens_per_sec": 61.62,
+          "call_count": 14,
+          "continuation_calls": 0,
+          "calls_requiring_continuation": 0,
+          "provider": "huggingface"
+        },
+        "player": {
+          "prompt_tokens": 29104,
+          "output_tokens": 121749,
+          "reasoning_tokens": 120409,
+          "answer_tokens": 1340,
+          "cost_usd": null,
+          "duration_seconds": 2116.39,
+          "throughput_tokens_per_sec": 57.53,
+          "call_count": 15,
+          "continuation_calls": 0,
+          "calls_requiring_continuation": 0,
+          "provider": "openai_compat"
+        }
+      },
+      "turns": [
+        {
+          "turn_number": 1,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "3\u2666",
+          "hand": [
+            "5\u2666",
+            "K\u2665",
+            "9\u2663",
+            "5\u2663",
+            "4\u2665",
+            "Q\u2666",
+            "4\u2666",
+            "6\u2660",
+            "4\u2663",
+            "2\u2663",
+            "8\u2663",
+            "4\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "I am playing 4\u2663 to test if the rule involves alternating colors or increasing rank by 1 relative to the starter 3\u2666.",
+            "card": "4\u2663",
+            "tentative_rule": "The card's rank must be exactly 1 higher than the last mainline card",
+            "confidence_level": 2,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "4\u2663",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": null,
+          "tokens": {
+            "output_tokens": 5131,
+            "reasoning_tokens": 5070,
+            "answer_tokens": 61
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 2,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "3\u2666 4\u2663",
+          "hand": [
+            "5\u2666",
+            "K\u2665",
+            "9\u2663",
+            "5\u2663",
+            "4\u2665",
+            "Q\u2666",
+            "4\u2666",
+            "6\u2660",
+            "2\u2663",
+            "8\u2663",
+            "4\u2660",
+            "Q\u2663"
+          ],
+          "llm_response": {
+            "reasoning_summary": "I am playing 5\u2663 to test the 'rank increases by 1' hypothesis, as it continues the numerical sequence but repeats the color and suit of the previous card.",
+            "card": "5\u2663",
+            "tentative_rule": "The rank of the played card must be exactly 1 higher than the rank of the last mainline card.",
+            "confidence_level": 6,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "5\u2663",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The rank of the played card must be exactly 1 higher than the rank of the last mainline card.",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2665, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.rank == mainline[-1].rank + 1",
+            "node_count": 27,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 6012,
+            "reasoning_tokens": 5936,
+            "answer_tokens": 76
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 3,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "3\u2666 4\u2663 [5\u2663]",
+          "hand": [
+            "5\u2666",
+            "K\u2665",
+            "9\u2663",
+            "4\u2665",
+            "Q\u2666",
+            "4\u2666",
+            "6\u2660",
+            "2\u2663",
+            "8\u2663",
+            "4\u2660",
+            "Q\u2663",
+            "6\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The rejection of 5\u2663 (Black, Club) after 4\u2663 (Black, Club) suggests the rule requires a change in either color or suit, as both remained the same. Playing 6\u2660 (Black, Spade) keeps the color Black but changes the suit, which will definitively distinguish between 'Alternate Color' and 'Change Suit' hypotheses.",
+            "card": "6\u2660",
+            "tentative_rule": "The card must be a different color than the last mainline card",
+            "confidence_level": 6,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "6\u2660",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must be a different color than the last mainline card",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2663, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.color != mainline[-1].color",
+            "node_count": 24,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 6788,
+            "reasoning_tokens": 6694,
+            "answer_tokens": 94
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 4,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "3\u2666 4\u2663 [5\u2663] 6\u2660",
+          "hand": [
+            "5\u2666",
+            "K\u2665",
+            "9\u2663",
+            "4\u2665",
+            "Q\u2666",
+            "4\u2666",
+            "2\u2663",
+            "8\u2663",
+            "4\u2660",
+            "Q\u2663",
+            "6\u2665",
+            "K\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "I am playing 4\u2660 to test the 'Different Suit' hypothesis by attempting to play a card with the same suit as the last mainline card (6\u2660), expecting rejection to definitively confirm the rule.",
+            "card": "4\u2660",
+            "tentative_rule": "The card must have a different suit than the immediately preceding mainline card.",
+            "confidence_level": 9,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "4\u2660",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must have a different suit than the immediately preceding mainline card.",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 9: card=A\u2665, actual=False, guessed=True",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.suit.suit_name != mainline[-1].suit.suit_name",
+            "node_count": 28,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 5760,
+            "reasoning_tokens": 5685,
+            "answer_tokens": 75
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 5,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "3\u2666 4\u2663 [5\u2663] 6\u2660 [4\u2660]",
+          "hand": [
+            "5\u2666",
+            "K\u2665",
+            "9\u2663",
+            "4\u2665",
+            "Q\u2666",
+            "4\u2666",
+            "2\u2663",
+            "8\u2663",
+            "Q\u2663",
+            "6\u2665",
+            "K\u2665",
+            "2\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "I am playing 2\u2663 to test if the rule requires rank to increase, as it has a different suit from the last card (6\u2660) but a lower rank.",
+            "card": "2\u2663",
+            "tentative_rule": "The card must have a different suit than the previous mainline card.",
+            "confidence_level": 8,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "2\u2663",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must have a different suit than the previous mainline card.",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 9: card=A\u2665, actual=False, guessed=True",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.suit.suit_name != mainline[-1].suit.suit_name",
+            "node_count": 28,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 5644,
+            "reasoning_tokens": 5577,
+            "answer_tokens": 67
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 6,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "3\u2666 4\u2663 [5\u2663] 6\u2660 [4\u2660] 2\u2663",
+          "hand": [
+            "5\u2666",
+            "K\u2665",
+            "9\u2663",
+            "4\u2665",
+            "Q\u2666",
+            "4\u2666",
+            "8\u2663",
+            "Q\u2663",
+            "6\u2665",
+            "K\u2665",
+            "2\u2666",
+            "7\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All accepted cards so far are number cards (ranks 1-10), so I need to test if Face Cards are allowed by playing a Face Card with a different suit (K\u2665) to distinguish between 'Different Suit' and 'Different Suit and Number' hypotheses.",
+            "card": "K\u2665",
+            "tentative_rule": "The card must have a different suit than the last mainline card.",
+            "confidence_level": 8,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "K\u2665",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must have a different suit than the last mainline card.",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2665, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.suit.suit_name != mainline[-1].suit.suit_name",
+            "node_count": 28,
+            "cyclomatic_complexity": 2,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 7649,
+            "reasoning_tokens": 7565,
+            "answer_tokens": 84
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 7,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "3\u2666 4\u2663 [5\u2663] 6\u2660 [4\u2660] 2\u2663 K\u2665",
+          "hand": [
+            "5\u2666",
+            "9\u2663",
+            "4\u2665",
+            "Q\u2666",
+            "4\u2666",
+            "8\u2663",
+            "Q\u2663",
+            "6\u2665",
+            "K\u2665",
+            "2\u2666",
+            "7\u2665",
+            "K\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "All accepted transitions involved a change in suit, while both rejected cards shared the same suit as the preceding mainline card, strongly indicating the rule requires a different suit.",
+            "card": "5\u2666",
+            "tentative_rule": "The card must be of a different suit than the last mainline card.",
+            "confidence_level": 9,
+            "guess_rule": true
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "5\u2666",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must be of a different suit than the last mainline card.",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2665, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nreturn card.suit.suit_name != mainline[-1].suit.suit_name",
+            "node_count": 28,
+            "cyclomatic_complexity": 2
+          },
+          "tokens": {
+            "output_tokens": 4754,
+            "reasoning_tokens": 4684,
+            "answer_tokens": 70
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 8,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "3\u2666 4\u2663 [5\u2663] 6\u2660 [4\u2660] 2\u2663 K\u2665 [5\u2666]",
+          "hand": [
+            "9\u2663",
+            "4\u2665",
+            "Q\u2666",
+            "4\u2666",
+            "8\u2663",
+            "Q\u2663",
+            "6\u2665",
+            "K\u2665",
+            "2\u2666",
+            "7\u2665",
+            "K\u2666",
+            "8\u2663"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The pattern shows that same-suit cards are always rejected, and Red cards cannot follow Red cards (5\u2666 rejected after K\u2665), while Black cards can follow Black cards (4\u2663->6\u2660 accepted), suggesting the rule is 'Different Suit' combined with 'No Red after Red'.",
+            "card": "9\u2663",
+            "tentative_rule": "The card must be of a different suit than the last mainline card, and cannot be Red if the last mainline card is Red.",
+            "confidence_level": 9,
+            "guess_rule": true
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "9\u2663",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must be of a different suit than the last mainline card, and cannot be Red if the last mainline card is Red.",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2665, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nlast = mainline[-1]\nif card.suit.suit_name == last.suit.suit_name:\n    return False\nif last.color == \"red\" and card.color == \"red\":\n    return False\nreturn True",
+            "node_count": 56,
+            "cyclomatic_complexity": 5
+          },
+          "tokens": {
+            "output_tokens": 9063,
+            "reasoning_tokens": 8963,
+            "answer_tokens": 100
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 9,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "3\u2666 4\u2663 [5\u2663] 6\u2660 [4\u2660] 2\u2663 K\u2665 [5\u2666] [9\u2663]",
+          "hand": [
+            "4\u2665",
+            "Q\u2666",
+            "4\u2666",
+            "8\u2663",
+            "Q\u2663",
+            "6\u2665",
+            "K\u2665",
+            "2\u2666",
+            "7\u2665",
+            "K\u2666",
+            "8\u2663",
+            "10\u2666"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The pattern indicates a 'Different Suit' requirement, but the rejection of number cards after the King (Face Card) suggests a secondary rule where Face cards must be followed by Face cards, so I am playing a Face card (Q\u2666) to verify this.",
+            "card": "Q\u2666",
+            "tentative_rule": "The card must be of a different suit than the last mainline card, and a Face card must be followed by a Face card.",
+            "confidence_level": 9,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "Q\u2666",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must be of a different suit than the last mainline card, and a Face card must be followed by a Face card.",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2665, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nprev = mainline[-1]\nif card.suit.suit_name == prev.suit.suit_name:\n    return False\nprev_is_face = prev.rank >= 11\ncurr_is_face = card.rank >= 11\nif prev_is_face and not curr_is_face:\n    return False\nreturn True",
+            "node_count": 68,
+            "cyclomatic_complexity": 5,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 11398,
+            "reasoning_tokens": 11297,
+            "answer_tokens": 101
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 10,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "3\u2666 4\u2663 [5\u2663] 6\u2660 [4\u2660] 2\u2663 K\u2665 [5\u2666] [9\u2663] [Q\u2666]",
+          "hand": [
+            "4\u2665",
+            "4\u2666",
+            "8\u2663",
+            "Q\u2663",
+            "6\u2665",
+            "K\u2665",
+            "2\u2666",
+            "7\u2665",
+            "K\u2666",
+            "8\u2663",
+            "10\u2666",
+            "7\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "After the Heart (K\u2665), both Diamonds and Clubs were rejected, and Hearts are rejected as same-suit, leaving Spades as the only remaining valid suit to test the hypothesis that specific suit transitions are required (specifically Heart -> Spade).",
+            "card": "7\u2660",
+            "tentative_rule": "The card must be of a different suit than the last mainline card. Additionally, specific suit transitions are enforced: Hearts must be followed by Spades.",
+            "confidence_level": 7,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "7\u2660",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "The card must be of a different suit than the last mainline card. Additionally, specific suit transitions are enforced: Hearts must be followed by Spades.",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2665, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nprev_suit = mainline[-1].suit.suit_name\ncurr_suit = card.suit.suit_name\nif curr_suit == prev_suit:\n    return False\nif prev_suit == \"hearts\":\n    return curr_suit == \"spades\"\nreturn True",
+            "node_count": 54,
+            "cyclomatic_complexity": 4,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 10435,
+            "reasoning_tokens": 10338,
+            "answer_tokens": 97
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 11,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "3\u2666 4\u2663 [5\u2663] 6\u2660 [4\u2660] 2\u2663 K\u2665 [5\u2666] [9\u2663] [Q\u2666] [7\u2660]",
+          "hand": [
+            "4\u2665",
+            "4\u2666",
+            "8\u2663",
+            "Q\u2663",
+            "6\u2665",
+            "K\u2665",
+            "2\u2666",
+            "7\u2665",
+            "K\u2666",
+            "8\u2663",
+            "10\u2666",
+            "3\u2660"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The pattern indicates a strict suit alternation rule where non-Clubs must be followed by Clubs, and Clubs must be followed by Spades or Hearts (Diamonds are forbidden after Clubs).",
+            "card": "8\u2663",
+            "tentative_rule": "If the last card is not a Club, the next card must be a Club. If the last card is a Club, the next card must be a Spade or a Heart.",
+            "confidence_level": 9,
+            "guess_rule": true
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "8\u2663",
+            "accepted": false,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "If the last card is not a Club, the next card must be a Club. If the last card is a Club, the next card must be a Spade or a Heart.",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2665, actual=True, guessed=False",
+            "guessed_code": "if not mainline:\n    return True\nprev_suit = mainline[-1].suit.suit_name\nif prev_suit != \"clubs\":\n    return card.suit.suit_name == \"clubs\"\nreturn card.suit.suit_name in (\"spades\", \"hearts\")",
+            "node_count": 51,
+            "cyclomatic_complexity": 3
+          },
+          "tokens": {
+            "output_tokens": 13090,
+            "reasoning_tokens": 12996,
+            "answer_tokens": 94
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 12,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "3\u2666 4\u2663 [5\u2663] 6\u2660 [4\u2660] 2\u2663 K\u2665 [5\u2666] [9\u2663] [Q\u2666] [7\u2660] [8\u2663]",
+          "hand": [
+            "4\u2665",
+            "4\u2666",
+            "Q\u2663",
+            "6\u2665",
+            "K\u2665",
+            "2\u2666",
+            "7\u2665",
+            "K\u2666",
+            "8\u2663",
+            "10\u2666",
+            "3\u2660",
+            "10\u2663"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The rejections of all non-Heart suits after the King of Hearts, combined with the rejections of same-suit cards after non-Hearts, indicate that Hearts must be followed by Hearts, while all other cards must be followed by a different suit.",
+            "card": "4\u2665",
+            "tentative_rule": "If the last card is a Heart, the next card must be a Heart; otherwise, the next card must be of a different suit.",
+            "confidence_level": 9,
+            "guess_rule": true
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "4\u2665",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "If the last card is a Heart, the next card must be a Heart; otherwise, the next card must be of a different suit.",
+            "correct": false,
+            "reasoning": "Mismatch at sim 1, turn 1: card=A\u2665, actual=False, guessed=True",
+            "guessed_code": "if not mainline:\n    return True\nprev = mainline[-1]\nif prev.suit.suit_name == \"hearts\":\n    return card.suit.suit_name == \"hearts\"\nreturn card.suit.suit_name != prev.suit.suit_name",
+            "node_count": 53,
+            "cyclomatic_complexity": 3
+          },
+          "tokens": {
+            "output_tokens": 7581,
+            "reasoning_tokens": 7484,
+            "answer_tokens": 97
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 13,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "3\u2666 4\u2663 [5\u2663] 6\u2660 [4\u2660] 2\u2663 K\u2665 [5\u2666] [9\u2663] [Q\u2666] [7\u2660] [8\u2663] 4\u2665",
+          "hand": [
+            "4\u2666",
+            "Q\u2663",
+            "6\u2665",
+            "K\u2665",
+            "2\u2666",
+            "7\u2665",
+            "K\u2666",
+            "8\u2663",
+            "10\u2666",
+            "3\u2660",
+            "10\u2663",
+            "5\u2663"
+          ],
+          "llm_response": {
+            "reasoning_summary": "I suspect the rule depends on Face cards (J, Q, K) requiring the next card to be the same suit, while Number cards require a different suit, which explains why the 'Heart' hypothesis was rejected despite fitting the data.",
+            "card": "Q\u2663",
+            "tentative_rule": "If the last card is a Face card (Jack, Queen, King), the next card must be of the same suit; otherwise, the next card must be of a different suit.",
+            "confidence_level": 9,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "Q\u2663",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "If the last card is a Face card (Jack, Queen, King), the next card must be of the same suit; otherwise, the next card must be of a different suit.",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "if not mainline:\n    return True\nlast = mainline[-1]\nif last.rank in (11, 12, 13):\n    return card.suit.suit_name == last.suit.suit_name\nelse:\n    return card.suit.suit_name != last.suit.suit_name",
+            "node_count": 60,
+            "cyclomatic_complexity": 3,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 11383,
+            "reasoning_tokens": 11278,
+            "answer_tokens": 105
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 14,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "3\u2666 4\u2663 [5\u2663] 6\u2660 [4\u2660] 2\u2663 K\u2665 [5\u2666] [9\u2663] [Q\u2666] [7\u2660] [8\u2663] 4\u2665 Q\u2663",
+          "hand": [
+            "4\u2666",
+            "6\u2665",
+            "K\u2665",
+            "2\u2666",
+            "7\u2665",
+            "K\u2666",
+            "8\u2663",
+            "10\u2666",
+            "3\u2660",
+            "10\u2663",
+            "5\u2663",
+            "J\u2663"
+          ],
+          "llm_response": {
+            "reasoning_summary": "I need to verify if the 'Face card requires Same Suit' rule applies to Black Face cards (Q\u2663) or only Red Face cards (K\u2665), so I will play a Club to test if Same Suit is accepted.",
+            "card": "8\u2663",
+            "tentative_rule": "If the last card is a Face card (J, Q, K), the next card must be the same suit; if the last card is a Number card (A-10), the next card must be a different suit.",
+            "confidence_level": 8,
+            "guess_rule": false
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "8\u2663",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "If the last card is a Face card (J, Q, K), the next card must be the same suit; if the last card is a Number card (A-10), the next card must be a different suit.",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "if not mainline:\n    return True\nlast = mainline[-1]\nif last.rank >= 11:  # J, Q, K are face cards\n    return card.suit.suit_name == last.suit.suit_name\nelse:               # Number cards (A-10)\n    return card.suit.suit_name != last.suit.suit_name",
+            "node_count": 56,
+            "cyclomatic_complexity": 3,
+            "shadow": true
+          },
+          "tokens": {
+            "output_tokens": 8378,
+            "reasoning_tokens": 8268,
+            "answer_tokens": 110
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        },
+        {
+          "turn_number": 15,
+          "player": "Qwen3.5 27B Gptq Int4",
+          "mainline_state": "3\u2666 4\u2663 [5\u2663] 6\u2660 [4\u2660] 2\u2663 K\u2665 [5\u2666] [9\u2663] [Q\u2666] [7\u2660] [8\u2663] 4\u2665 Q\u2663 8\u2663",
+          "hand": [
+            "4\u2666",
+            "6\u2665",
+            "K\u2665",
+            "2\u2666",
+            "7\u2665",
+            "K\u2666",
+            "10\u2666",
+            "3\u2660",
+            "10\u2663",
+            "5\u2663",
+            "J\u2663",
+            "5\u2665"
+          ],
+          "llm_response": {
+            "reasoning_summary": "The pattern indicates Face cards (K, Q) require the next card to be the same suit, while Number cards require a different suit, which 4\u2666 tests against the last Number card 8\u2663.",
+            "card": "4\u2666",
+            "tentative_rule": "If the last mainline card is a Face Card (Jack, Queen, King), the next card must be of the same suit; if the last mainline card is a Number Card (Ace-10), the next card must be of a different suit.",
+            "confidence_level": 9,
+            "guess_rule": true
+          },
+          "action_result": {
+            "action": "PlayCardAction",
+            "card": "4\u2666",
+            "accepted": true,
+            "success": true
+          },
+          "guess_attempt": {
+            "guess": "If the last mainline card is a Face Card (Jack, Queen, King), the next card must be of the same suit; if the last mainline card is a Number Card (Ace-10), the next card must be of a different suit.",
+            "correct": true,
+            "reasoning": "Rules appear equivalent: 208000 comparisons, all matched",
+            "guessed_code": "if not mainline:\n    return True\nlast = mainline[-1]\nif last.rank >= 11:  # Jack, Queen, King\n    return card.suit.suit_name == last.suit.suit_name\nelse:  # Number cards (Ace through 10)\n    return card.suit.suit_name != last.suit.suit_name",
+            "node_count": 56,
+            "cyclomatic_complexity": 3
+          },
+          "tokens": {
+            "output_tokens": 8683,
+            "reasoning_tokens": 8574,
+            "answer_tokens": 109
+          },
+          "retry_count": 0,
+          "retry_causes": []
+        }
+      ],
+      "wall_clock_seconds": 2177.08
+    }
+  ],
+  "statistics": {
+    "total_score": 23,
+    "successful_rounds": 3,
+    "failed_rounds": 0,
+    "total_turns": 46,
+    "total_failed_guesses": 12,
+    "total_output_tokens": 424213,
+    "total_reasoning_tokens": 420126,
+    "total_answer_tokens": 4087,
+    "total_wall_clock_seconds": 9937.689999999999,
+    "total_retries": 2,
+    "retry_by_cause": {
+      "max_token_reached": 2
+    },
+    "success_rate": 100.0,
+    "average_score": 7.666666666666667,
+    "average_turns": 15.333333333333334,
+    "average_turns_when_successful": 15.333333333333334,
+    "average_failed_guesses": 4.0
+  },
+  "checkpoint": {
+    "completed_rounds": 3,
+    "total_rounds": 3,
+    "rule_factory_state": {
+      "selection": "sequential",
+      "current_index": 9
+    },
+    "current_rule": {
+      "description": "Face cards imposes the suit: if a face card is played, the next card must match its suit. Otherwise, the next card must be a different suit than it.",
+      "code": "if not mainline:\n    return True\nprev = mainline[-1]\nif prev.rank in (11, 12, 13):\n    return card.suit.suit_name == prev.suit.suit_name\nelse:\n    return card.suit.suit_name != prev.suit.suit_name",
+      "rounds_used_in_batch": 3,
+      "num_rounds_per_rule": 3
+    },
+    "rules_consumed": [
+      {
+        "name": "face_card_imposes_suit",
+        "description": "Face cards imposes the suit: if a face card is played, the next card must match its suit. Otherwise, the next card must be a different suit than it.",
+        "code": "if not mainline:\n    return True\nprev = mainline[-1]\nif prev.rank in (11, 12, 13):\n    return card.suit.suit_name == prev.suit.suit_name\nelse:\n    return card.suit.suit_name != prev.suit.suit_name",
+        "rounds_completed": 3
+      }
+    ],
+    "rules_library": [
+      {
+        "name": "red_rank_up_to_seven",
+        "description": "Only red cards whose rank is <=7.",
+        "code": "return card.color == \"red\" and card.rank <= 7",
+        "avg_acceptance_rate": 0.252,
+        "node_count": 18,
+        "cyclomatic_complexity": 2
+      },
+      {
+        "name": "face_cards_red_number_cards_black",
+        "description": "Face cards (11-13) must be red; number cards (1-10) must be black.",
+        "code": "if card.rank >= 11:\n    return card.color == \"red\"\nelse:\n    return card.color == \"black\"",
+        "avg_acceptance_rate": 0.516,
+        "node_count": 25,
+        "cyclomatic_complexity": 2
+      },
+      {
+        "name": "alternating_face_number",
+        "description": "Alternate face and number cards. Any card may start the line.",
+        "code": "if not mainline:\n    return True\nprev_is_face = mainline[-1].rank >= 11\nif prev_is_face:\n    return card.rank <= 10\nelse:\n    return card.rank >= 11",
+        "avg_acceptance_rate": 0.386,
+        "node_count": 42,
+        "cyclomatic_complexity": 3
+      },
+      {
+        "name": "different_suit",
+        "description": "The card must be of a different suit than the card just before it. Any card may start the line.",
+        "code": "if not mainline:\n    return True\nreturn card.suit.suit_name != mainline[-1].suit.suit_name",
+        "avg_acceptance_rate": 0.76,
+        "node_count": 28,
+        "cyclomatic_complexity": 2
+      },
+      {
+        "name": "different_suit_same_color",
+        "description": "The card must be of a different suit than but same color as the card just before it. Any card may start the line.",
+        "code": "if not mainline:\n    return True\nprev = mainline[-1]\nreturn card.suit.suit_name != prev.suit.suit_name and card.color == prev.color",
+        "avg_acceptance_rate": 0.24,
+        "node_count": 45,
+        "cyclomatic_complexity": 3
+      },
+      {
+        "name": "cyclic_suit_order",
+        "description": "Suits must repeat in the cyclic order hearts \u2192 spades \u2192 clubs \u2192 diamonds \u2192 hearts... Any card may start the line.",
+        "code": "if not mainline:\n    return True\norder = [\"hearts\", \"spades\", \"clubs\", \"diamonds\"]\nprev_suit = mainline[-1].suit.suit_name\nprev_idx = order.index(prev_suit)\nexpected = order[(prev_idx + 1) % 4]\nreturn card.suit.suit_name == expected",
+        "avg_acceptance_rate": 0.22600000000000003,
+        "node_count": 67,
+        "cyclomatic_complexity": 2
+      },
+      {
+        "name": "alternating_groups",
+        "description": "Hearts and spades form Group A; clubs and diamonds form Group B. Alternate between groups. Any card may start the line.",
+        "code": "if not mainline:\n    return True\nprev = mainline[-1].suit.suit_name\ncurr = card.suit.suit_name\ngroup_a = {\"hearts\", \"spades\"}\n# Determine groups: True for group A, False for group B\nprev_group = prev in group_a\ncurr_group = curr in group_a\nreturn curr_group != prev_group",
+        "avg_acceptance_rate": 0.506,
+        "node_count": 62,
+        "cyclomatic_complexity": 2
+      },
+      {
+        "name": "red_up_black_down",
+        "description": "If the previous card was red, rank must increase or be equal; if black, rank must decrease or be equal. Starting card must be between 5 and 9 inclusive.",
+        "code": "if not mainline:\n    return 5 <= card.rank <= 9\nprev = mainline[-1]\nif prev.color == \"red\":\n    return card.rank >= prev.rank\nelse:  # black\n    return card.rank <= prev.rank",
+        "avg_acceptance_rate": 0.386,
+        "node_count": 56,
+        "cyclomatic_complexity": 3
+      },
+      {
+        "name": "face_card_imposes_suit",
+        "description": "Face cards imposes the suit: if a face card is played, the next card must match its suit. Otherwise, the next card must be a different suit than it.",
+        "code": "if not mainline:\n    return True\nprev = mainline[-1]\nif prev.rank in (11, 12, 13):\n    return card.suit.suit_name == prev.suit.suit_name\nelse:\n    return card.suit.suit_name != prev.suit.suit_name",
+        "avg_acceptance_rate": 0.53,
+        "node_count": 60,
+        "cyclomatic_complexity": 3
+      },
+      {
+        "name": "paired_suits_alternating",
+        "description": "Suits must appear in pairs: card 1 and 2 same suit, cards 3 and 4 same suit (different from 1 and 2), cards 5 and 6 same suit (different from 3 and 4), etc.",
+        "code": "if not mainline:\n    return True\npos = len(mainline) % 2\nif pos == 0:\n    # first card of a new pair must differ from previous pair's suit\n    return card.suit.suit_name != mainline[-1].suit.suit_name\nelse:\n    # second card of a pair must match the first card's suit\n    return card.suit.suit_name == mainline[-1].suit.suit_name",
+        "avg_acceptance_rate": 0.338,
+        "node_count": 65,
+        "cyclomatic_complexity": 3
+      },
+      {
+        "name": "paired_ranks_distinct",
+        "description": "Rank repeats in pairs: ranks must come in doubles: (x, x), then (y, y) with y different from x, then (z, z) with z different from y, etc.",
+        "code": "if not mainline:\n    return True\ni = len(mainline)\nif i % 2 == 0:\n    # start of a new pair: rank must differ from previous pair's rank\n    return card.rank != mainline[-1].rank\nelse:\n    # second card of the current pair: rank must match the first card of this pair\n    return card.rank == mainline[-1].rank",
+        "avg_acceptance_rate": 0.148,
+        "node_count": 57,
+        "cyclomatic_complexity": 3
+      }
+    ]
+  }
+}

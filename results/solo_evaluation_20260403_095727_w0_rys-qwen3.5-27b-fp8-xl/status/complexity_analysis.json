@@ -1,0 +1,114 @@
+{
+  "models": [
+    {
+      "name": "Kimi K2",
+      "quartile_scores": {
+        "Q1": 1.0,
+        "Q4": 1.0
+      }
+    },
+    {
+      "name": "Glm 4.7",
+      "quartile_scores": {
+        "Q1": 1.0,
+        "Q4": 1.0
+      }
+    },
+    {
+      "name": "Claude Opus 4.5",
+      "quartile_scores": {
+        "Q1": 0.9666666666666667,
+        "Q4": 1.0
+      }
+    },
+    {
+      "name": "Grok 4 1 Fast Reasoning",
+      "quartile_scores": {
+        "Q1": 1.0,
+        "Q4": 0.6666666666666666
+      }
+    },
+    {
+      "name": "Qwen3.5 27B Gptq Int4",
+      "quartile_scores": {
+        "Q1": 1.0,
+        "Q4": 1.0
+      }
+    },
+    {
+      "name": "Rys Qwen3.5 27B Fp8 Xl (in-progress)",
+      "quartile_scores": {
+        "Q1": 1.0,
+        "Q4": 1.0
+      }
+    },
+    {
+      "name": "Deepseek R1",
+      "quartile_scores": {
+        "Q1": 0.9,
+        "Q4": 1.0
+      }
+    },
+    {
+      "name": "Gemini 3 Flash Preview High",
+      "quartile_scores": {
+        "Q1": 0.9666666666666667,
+        "Q4": 1.0
+      }
+    },
+    {
+      "name": "Gemini 3 Flash Preview Low",
+      "quartile_scores": {
+        "Q1": 0.9666666666666667,
+        "Q4": 0.6666666666666666
+      }
+    },
+    {
+      "name": "Gpt 5.2 High",
+      "quartile_scores": {
+        "Q1": 1.0,
+        "Q4": 1.0
+      }
+    },
+    {
+      "name": "Gpt Oss 20B",
+      "quartile_scores": {
+        "Q1": 0.9,
+        "Q4": 0.3333333333333333
+      }
+    },
+    {
+      "name": "Claude Haiku 4.5",
+      "quartile_scores": {
+        "Q1": 0.8333333333333334,
+        "Q4": 0.6666666666666666
+      }
+    },
+    {
+      "name": "Gpt 5 Mini Medium",
+      "quartile_scores": {
+        "Q1": 0.9,
+        "Q4": 0.3333333333333333
+      }
+    },
+    {
+      "name": "Gpt Oss 120B",
+      "quartile_scores": {
+        "Q1": 0.8333333333333334,
+        "Q4": 0.3333333333333333
+      }
+    }
+  ],
+  "quartiles": [
+    "Q1",
+    "Q2",
+    "Q3",
+    "Q4"
+  ],
+  "metadata": {
+    "optimal_k": 0.01,
+    "complexity_formula": "cyclomatic + 0.01 * node_count",
+    "value": "success_rate",
+    "description": "Success rate = per-model success rate for rules in each quartile."
+  }
+}

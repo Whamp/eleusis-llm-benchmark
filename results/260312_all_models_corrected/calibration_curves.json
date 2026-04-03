@@ -1,0 +1,483 @@
+{
+  "models": [
+    {
+      "name": "Claude Haiku 4.5",
+      "color": "#D08E76",
+      "is_open": false,
+      "provider": "anthropic",
+      "calibration_points": [
+        {
+          "confidence_level": 5,
+          "actual_success_rate": 0.06,
+          "sample_count": 50
+        },
+        {
+          "confidence_level": 6,
+          "actual_success_rate": 0.057971014492753624,
+          "sample_count": 138
+        },
+        {
+          "confidence_level": 7,
+          "actual_success_rate": 0.09359605911330049,
+          "sample_count": 203
+        },
+        {
+          "confidence_level": 8,
+          "actual_success_rate": 0.15873015873015872,
+          "sample_count": 189
+        },
+        {
+          "confidence_level": 9,
+          "actual_success_rate": 0.17721518987341772,
+          "sample_count": 79
+        },
+        {
+          "confidence_level": 10,
+          "actual_success_rate": 0.0,
+          "sample_count": 1
+        }
+      ]
+    },
+    {
+      "name": "Claude Opus 4.5",
+      "color": "#C1755A",
+      "is_open": false,
+      "provider": "anthropic",
+      "calibration_points": [
+        {
+          "confidence_level": 5,
+          "actual_success_rate": 0.12,
+          "sample_count": 100
+        },
+        {
+          "confidence_level": 6,
+          "actual_success_rate": 0.2261904761904762,
+          "sample_count": 84
+        },
+        {
+          "confidence_level": 7,
+          "actual_success_rate": 0.22875816993464052,
+          "sample_count": 153
+        },
+        {
+          "confidence_level": 8,
+          "actual_success_rate": 0.18382352941176472,
+          "sample_count": 136
+        },
+        {
+          "confidence_level": 9,
+          "actual_success_rate": 0.46078431372549017,
+          "sample_count": 102
+        }
+      ]
+    },
+    {
+      "name": "Deepseek R1",
+      "color": "#5A6AF7",
+      "is_open": true,
+      "provider": "huggingface",
+      "calibration_points": [
+        {
+          "confidence_level": 5,
+          "actual_success_rate": 0.07246376811594203,
+          "sample_count": 138
+        },
+        {
+          "confidence_level": 6,
+          "actual_success_rate": 0.0975609756097561,
+          "sample_count": 82
+        },
+        {
+          "confidence_level": 7,
+          "actual_success_rate": 0.13445378151260504,
+          "sample_count": 119
+        },
+        {
+          "confidence_level": 8,
+          "actual_success_rate": 0.10526315789473684,
+          "sample_count": 95
+        },
+        {
+          "confidence_level": 9,
+          "actual_success_rate": 0.18502202643171806,
+          "sample_count": 227
+        },
+        {
+          "confidence_level": 10,
+          "actual_success_rate": 0.2702702702702703,
+          "sample_count": 37
+        }
+      ]
+    },
+    {
+      "name": "Gemini 3 Flash Preview High",
+      "color": "#8EADF6",
+      "is_open": false,
+      "provider": "google",
+      "calibration_points": [
+        {
+          "confidence_level": 5,
+          "actual_success_rate": 0.14705882352941177,
+          "sample_count": 102
+        },
+        {
+          "confidence_level": 6,
+          "actual_success_rate": 0.15384615384615385,
+          "sample_count": 104
+        },
+        {
+          "confidence_level": 7,
+          "actual_success_rate": 0.15757575757575756,
+          "sample_count": 165
+        },
+        {
+          "confidence_level": 8,
+          "actual_success_rate": 0.2543352601156069,
+          "sample_count": 173
+        },
+        {
+          "confidence_level": 9,
+          "actual_success_rate": 0.27906976744186046,
+          "sample_count": 215
+        },
+        {
+          "confidence_level": 10,
+          "actual_success_rate": 0.6388888888888888,
+          "sample_count": 36
+        }
+      ]
+    },
+    {
+      "name": "Gemini 3 Flash Preview Low",
+      "color": "#AEC3F9",
+      "is_open": false,
+      "provider": "google",
+      "calibration_points": [
+        {
+          "confidence_level": 5,
+          "actual_success_rate": 0.05925925925925926,
+          "sample_count": 135
+        },
+        {
+          "confidence_level": 6,
+          "actual_success_rate": 0.1118421052631579,
+          "sample_count": 152
+        },
+        {
+          "confidence_level": 7,
+          "actual_success_rate": 0.12571428571428572,
+          "sample_count": 175
+        },
+        {
+          "confidence_level": 8,
+          "actual_success_rate": 0.20353982300884957,
+          "sample_count": 113
+        },
+        {
+          "confidence_level": 9,
+          "actual_success_rate": 0.35,
+          "sample_count": 300
+        },
+        {
+          "confidence_level": 10,
+          "actual_success_rate": 0.6666666666666666,
+          "sample_count": 27
+        }
+      ]
+    },
+    {
+      "name": "Glm 4.7",
+      "color": "#FF7777",
+      "is_open": true,
+      "provider": "huggingface",
+      "calibration_points": [
+        {
+          "confidence_level": 5,
+          "actual_success_rate": 0.13043478260869565,
+          "sample_count": 69
+        },
+        {
+          "confidence_level": 6,
+          "actual_success_rate": 0.16101694915254236,
+          "sample_count": 118
+        },
+        {
+          "confidence_level": 7,
+          "actual_success_rate": 0.1411764705882353,
+          "sample_count": 170
+        },
+        {
+          "confidence_level": 8,
+          "actual_success_rate": 0.14583333333333334,
+          "sample_count": 192
+        },
+        {
+          "confidence_level": 9,
+          "actual_success_rate": 0.2986111111111111,
+          "sample_count": 144
+        },
+        {
+          "confidence_level": 10,
+          "actual_success_rate": 1.0,
+          "sample_count": 2
+        }
+      ]
+    },
+    {
+      "name": "Gpt 5 Mini Medium",
+      "color": "#99BDB4",
+      "is_open": false,
+      "provider": "openai",
+      "calibration_points": [
+        {
+          "confidence_level": 5,
+          "actual_success_rate": 0.13432835820895522,
+          "sample_count": 67
+        },
+        {
+          "confidence_level": 6,
+          "actual_success_rate": 0.13975155279503104,
+          "sample_count": 322
+        },
+        {
+          "confidence_level": 7,
+          "actual_success_rate": 0.2134387351778656,
+          "sample_count": 253
+        },
+        {
+          "confidence_level": 8,
+          "actual_success_rate": 0.26875,
+          "sample_count": 160
+        },
+        {
+          "confidence_level": 9,
+          "actual_success_rate": 0.49206349206349204,
+          "sample_count": 63
+        }
+      ]
+    },
+    {
+      "name": "Gpt 5.2 High",
+      "color": "#8CB3A8",
+      "is_open": false,
+      "provider": "openai",
+      "calibration_points": [
+        {
+          "confidence_level": 5,
+          "actual_success_rate": 0.29365079365079366,
+          "sample_count": 126
+        },
+        {
+          "confidence_level": 6,
+          "actual_success_rate": 0.34545454545454546,
+          "sample_count": 330
+        },
+        {
+          "confidence_level": 7,
+          "actual_success_rate": 0.5377777777777778,
+          "sample_count": 225
+        },
+        {
+          "confidence_level": 8,
+          "actual_success_rate": 0.693069306930693,
+          "sample_count": 101
+        },
+        {
+          "confidence_level": 9,
+          "actual_success_rate": 0.828125,
+          "sample_count": 64
+        }
+      ]
+    },
+    {
+      "name": "Gpt Oss 120B",
+      "color": "#707070",
+      "is_open": true,
+      "provider": "huggingface",
+      "calibration_points": [
+        {
+          "confidence_level": 5,
+          "actual_success_rate": 0.06451612903225806,
+          "sample_count": 93
+        },
+        {
+          "confidence_level": 6,
+          "actual_success_rate": 0.09363295880149813,
+          "sample_count": 267
+        },
+        {
+          "confidence_level": 7,
+          "actual_success_rate": 0.13402061855670103,
+          "sample_count": 291
+        },
+        {
+          "confidence_level": 8,
+          "actual_success_rate": 0.24324324324324326,
+          "sample_count": 259
+        },
+        {
+          "confidence_level": 9,
+          "actual_success_rate": 0.3620689655172414,
+          "sample_count": 58
+        }
+      ]
+    },
+    {
+      "name": "Gpt Oss 20B",
+      "color": "#B2B2B2",
+      "is_open": true,
+      "provider": "huggingface",
+      "calibration_points": [
+        {
+          "confidence_level": 5,
+          "actual_success_rate": 0.13953488372093023,
+          "sample_count": 86
+        },
+        {
+          "confidence_level": 6,
+          "actual_success_rate": 0.08823529411764706,
+          "sample_count": 170
+        },
+        {
+          "confidence_level": 7,
+          "actual_success_rate": 0.1201923076923077,
+          "sample_count": 208
+        },
+        {
+          "confidence_level": 8,
+          "actual_success_rate": 0.16730038022813687,
+          "sample_count": 263
+        },
+        {
+          "confidence_level": 9,
+          "actual_success_rate": 0.24060150375939848,
+          "sample_count": 133
+        },
+        {
+          "confidence_level": 10,
+          "actual_success_rate": 0.25,
+          "sample_count": 4
+        }
+      ]
+    },
+    {
+      "name": "Grok 4 1 Fast Reasoning",
+      "color": "#1A1A1A",
+      "is_open": false,
+      "provider": "xai",
+      "calibration_points": [
+        {
+          "confidence_level": 5,
+          "actual_success_rate": 0.03225806451612903,
+          "sample_count": 62
+        },
+        {
+          "confidence_level": 6,
+          "actual_success_rate": 0.11403508771929824,
+          "sample_count": 114
+        },
+        {
+          "confidence_level": 7,
+          "actual_success_rate": 0.11818181818181818,
+          "sample_count": 110
+        },
+        {
+          "confidence_level": 8,
+          "actual_success_rate": 0.12727272727272726,
+          "sample_count": 110
+        },
+        {
+          "confidence_level": 9,
+          "actual_success_rate": 0.1791044776119403,
+          "sample_count": 268
+        },
+        {
+          "confidence_level": 10,
+          "actual_success_rate": 0.39215686274509803,
+          "sample_count": 51
+        }
+      ]
+    },
+    {
+      "name": "Kimi K2",
+      "color": "#CCCC00",
+      "is_open": true,
+      "provider": "huggingface",
+      "calibration_points": [
+        {
+          "confidence_level": 5,
+          "actual_success_rate": 0.09803921568627451,
+          "sample_count": 51
+        },
+        {
+          "confidence_level": 6,
+          "actual_success_rate": 0.0958904109589041,
+          "sample_count": 146
+        },
+        {
+          "confidence_level": 7,
+          "actual_success_rate": 0.2261904761904762,
+          "sample_count": 168
+        },
+        {
+          "confidence_level": 8,
+          "actual_success_rate": 0.24242424242424243,
+          "sample_count": 165
+        },
+        {
+          "confidence_level": 9,
+          "actual_success_rate": 0.32098765432098764,
+          "sample_count": 162
+        },
+        {
+          "confidence_level": 10,
+          "actual_success_rate": 0.6666666666666666,
+          "sample_count": 3
+        }
+      ]
+    },
+    {
+      "name": "Qwen3.5 27B Gptq Int4",
+      "color": "#8B5CF6",
+      "is_open": true,
+      "provider": "openai_compat",
+      "calibration_points": [
+        {
+          "confidence_level": 5,
+          "actual_success_rate": 0.12244897959183673,
+          "sample_count": 49
+        },
+        {
+          "confidence_level": 6,
+          "actual_success_rate": 0.12,
+          "sample_count": 75
+        },
+        {
+          "confidence_level": 7,
+          "actual_success_rate": 0.15217391304347827,
+          "sample_count": 138
+        },
+        {
+          "confidence_level": 8,
+          "actual_success_rate": 0.15025906735751296,
+          "sample_count": 193
+        },
+        {
+          "confidence_level": 9,
+          "actual_success_rate": 0.2851985559566787,
+          "sample_count": 277
+        },
+        {
+          "confidence_level": 10,
+          "actual_success_rate": 0.47058823529411764,
+          "sample_count": 17
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "x_axis": "confidence_level",
+    "y_axis": "actual_success_rate",
+    "description": "Calibration curve showing confidence vs actual success rate for rule guesses (counting turns only)"
+  }
+}

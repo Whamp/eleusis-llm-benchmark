@@ -16,6 +16,7 @@ from eleusis.llm.base import (
 from eleusis.llm.google import GoogleClient
 from eleusis.llm.huggingface import HuggingFaceClient
 from eleusis.llm.openai_client import OpenAIClient
+from eleusis.llm.openai_compat import OpenAICompatClient
 from eleusis.llm.xai import XAIClient
 from eleusis.player import LLMScientist  # Re-export for backward compat
 
@@ -27,6 +28,7 @@ __all__ = [
     "GoogleClient",
     "HuggingFaceClient",
     "OpenAIClient",
+    "OpenAICompatClient",
     "XAIClient",
     "LLMCallMetrics",
     "GenerateMetrics",
@@ -36,6 +38,21 @@ __all__ = [
     "create_client_from_config",
     "load_model_config",
 ]
+
+
+def _resolve_env_vars(value: str) -> str:
+    """Resolve ${ENV_VAR} references in a string."""
+    if not isinstance(value, str):
+        return value
+    import re
+    def _replace(match):
+        var_name = match.group(1)
+        env_val = os.getenv(var_name)
+        if env_val is None:
+            logger.warning(f"Environment variable {var_name} not set")
+            return match.group(0)  # Leave as-is
+        return env_val
+    return re.sub(r'\$\{(\w+)\}', _replace, value)
 
 
 def find_models_yaml() -> Path:
@@ -135,6 +152,21 @@ def create_client(
             **common_kwargs,
         )
 
+    elif provider == "openai_compat":
+        base_url = config.get("base_url")
+        if not base_url:
+            raise ValueError("openai_compat provider requires 'base_url' in model config")
+        api_key = _resolve_env_vars(config.get("api_key", "sk-no-key-required"))
+        reasoning_format = config.get("reasoning_format", "reasoning_content")
+        timeout = config.get("timeout", 600)
+        return OpenAICompatClient(
+            base_url=base_url,
+            api_key=api_key,
+            reasoning_format=reasoning_format,
+            timeout=timeout,
+            **common_kwargs,
+        )
+
     else:
         raise ValueError(f"Unknown provider: {provider}")
 
@@ -180,5 +212,20 @@ def create_client_from_config(
             **common_kwargs,
         )
 
+    if provider == "openai_compat":
+        base_url = config.get("base_url")
+        if not base_url:
+            raise ValueError("openai_compat provider requires 'base_url' in config")
+        api_key = _resolve_env_vars(config.get("api_key", "sk-no-key-required"))
+        reasoning_format = config.get("reasoning_format", "reasoning_content")
+        timeout = config.get("timeout", 600)
+        return OpenAICompatClient(
+            base_url=base_url,
+            api_key=api_key,
+            reasoning_format=reasoning_format,
+            timeout=timeout,
+            **common_kwargs,
+        )
+
     # Could extend to other providers if needed
-    raise ValueError(f"create_client_from_config only supports huggingface, got: {provider}")
+    raise ValueError(f"create_client_from_config only supports huggingface and openai_compat, got: {provider}")

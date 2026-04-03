@@ -1,0 +1,113 @@
+{
+  "models": [
+    {
+      "name": "Claude Haiku 4.5",
+      "avg_early_correct_turns": 0.5272727272727272,
+      "avg_failed_guesses": 3.948717948717949,
+      "color": "#D08E76",
+      "is_open": false,
+      "provider": "anthropic"
+    },
+    {
+      "name": "Claude Opus 4.5",
+      "avg_early_correct_turns": 0.9444444444444444,
+      "avg_failed_guesses": 2.0,
+      "color": "#C1755A",
+      "is_open": false,
+      "provider": "anthropic"
+    },
+    {
+      "name": "Deepseek R1",
+      "avg_early_correct_turns": 0.49230769230769234,
+      "avg_failed_guesses": 3.1923076923076925,
+      "color": "#5A6AF7",
+      "is_open": true,
+      "provider": "huggingface"
+    },
+    {
+      "name": "Gemini 3 Flash Preview High",
+      "avg_early_correct_turns": 1.746031746031746,
+      "avg_failed_guesses": 1.7435897435897436,
+      "color": "#8EADF6",
+      "is_open": false,
+      "provider": "google"
+    },
+    {
+      "name": "Gemini 3 Flash Preview Low",
+      "avg_early_correct_turns": 1.9166666666666667,
+      "avg_failed_guesses": 0.9615384615384616,
+      "color": "#AEC3F9",
+      "is_open": false,
+      "provider": "google"
+    },
+    {
+      "name": "Glm 4.7",
+      "avg_early_correct_turns": 0.9402985074626866,
+      "avg_failed_guesses": 1.935897435897436,
+      "color": "#FF7777",
+      "is_open": true,
+      "provider": "huggingface"
+    },
+    {
+      "name": "Gpt 5 Mini Medium",
+      "avg_early_correct_turns": 1.3220338983050848,
+      "avg_failed_guesses": 1.1666666666666667,
+      "color": "#99BDB4",
+      "is_open": false,
+      "provider": "openai"
+    },
+    {
+      "name": "Gpt 5.2 High",
+      "avg_early_correct_turns": 3.56,
+      "avg_failed_guesses": 0.28205128205128205,
+      "color": "#8CB3A8",
+      "is_open": false,
+      "provider": "openai"
+    },
+    {
+      "name": "Gpt Oss 120B",
+      "avg_early_correct_turns": 1.305084745762712,
+      "avg_failed_guesses": 2.1538461538461537,
+      "color": "#707070",
+      "is_open": true,
+      "provider": "huggingface"
+    },
+    {
+      "name": "Gpt Oss 20B",
+      "avg_early_correct_turns": 1.0892857142857142,
+      "avg_failed_guesses": 2.9743589743589745,
+      "color": "#B2B2B2",
+      "is_open": true,
+      "provider": "huggingface"
+    },
+    {
+      "name": "Grok 4 1 Fast Reasoning",
+      "avg_early_correct_turns": 0.7536231884057971,
+      "avg_failed_guesses": 2.5641025641025643,
+      "color": "#1A1A1A",
+      "is_open": false,
+      "provider": "xai"
+    },
+    {
+      "name": "Kimi K2",
+      "avg_early_correct_turns": 1.2835820895522387,
+      "avg_failed_guesses": 2.0384615384615383,
+      "color": "#CCCC00",
+      "is_open": true,
+      "provider": "huggingface"
+    },
+    {
+      "name": "Qwen3.5 27B Gptq Int4",
+      "avg_early_correct_turns": 1.2028985507246377,
+      "avg_failed_guesses": 2.1153846153846154,
+      "color": "#8B5CF6",
+      "is_open": true,
+      "provider": "openai_compat"
+    }
+  ],
+  "metadata": {
+    "x_axis": "avg_failed_guesses",
+    "y_axis": "avg_early_correct_turns",
+    "description": "Trade-off between caution (delaying correct guesses) and recklessness (failed guesses)"
+  }
+}
