@@ -172,3 +172,26 @@ class TestCompilerCache:
         client.convert_rule_to_code("Only even ranks", max_retries=0)
 
         assert client._call_count == 2
+
+    def test_different_max_attempts_not_cached(self, mock_sleep):
+        """Different max_total_attempts should produce separate cache entries.
+
+        A call with a small budget that exhausts should not prevent a later
+        call with a larger budget from retrying.
+        """
+        valid_code = "return card.rank % 2 == 0"
+        bad_code = "invalid!!!"
+        # First 2 responses are bad (exhaust budget=2), next response is valid
+        client = FakeCompilerClient([bad_code, bad_code, valid_code])
+
+        result1 = client.convert_rule_to_code(
+            "Only even ranks", max_retries=0, max_total_attempts=2,
+        )
+        assert result1["status"] == "exhausted"
+
+        result2 = client.convert_rule_to_code(
+            "Only even ranks", max_retries=0, max_total_attempts=5,
+        )
+        # With the larger budget, it should retry and succeed
+        assert result2["status"] != "exhausted"
+        assert result2["code"] == valid_code

@@ -231,8 +231,9 @@ class BaseLLMClient(ABC):
         """
         from eleusis.prompts import get_rule_compile_prompt
 
-        # Check compile cache — keyed on rule text only (same client = same config)
-        cache_key = rule_text
+        # Cache key includes max_total_attempts so a small-budget exhaustion
+        # doesn't prevent a later larger-budget call from retrying.
+        cache_key = (rule_text, max_total_attempts)
         if cache_key in self._compile_cache:
             logger.debug(f"Compile cache hit for rule: {rule_text[:60]}")
             return self._compile_cache[cache_key]
