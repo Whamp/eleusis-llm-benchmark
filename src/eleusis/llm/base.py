@@ -210,6 +210,7 @@ class BaseLLMClient(ABC):
         rule_text: str,
         max_retries: int = 1,
         fallback_clients: list["BaseLLMClient"] | None = None,
+        max_total_attempts: int = 5,
     ) -> dict:
         """Convert natural language rule to Python code with fallback and exponential backoff.
 
@@ -217,18 +218,22 @@ class BaseLLMClient(ABC):
         If all clients fail, sleeps with exponential backoff (1m -> 2m -> 4m -> ...
         capped at 15m) before retrying the full sequence.
 
+        Stops after max_total_attempts total generate() calls across all clients
+        and sleep cycles. Returns status="exhausted" if the cap is reached.
+
         Returns dict with:
-        - code: The generated code (may be None or invalid on failure)
-        - status: "success", "retry_success", "no_code_returned", or "syntax_error"
+        - code: The generated code (None on failure)
+        - status: "success", "retry_success", "exhausted", "no_code_returned", or "syntax_error"
         - attempts: Number of attempts made
         - sleep_cycles: Number of sleep cycles before success
-        - provider_used: Which provider ultimately succeeded
+        - provider_used: Which provider ultimately succeeded (None on exhaustion)
         """
         from eleusis.prompts import get_rule_compile_prompt
 
         prompt = get_rule_compile_prompt(rule_text)
         all_clients = [self] + (fallback_clients if fallback_clients is not None else self.fallback_clients)
         sleep_cycle = 0
+        total_attempts = 0
         base_sleep = 60  # 1 minute initial
         max_sleep = 15 * 60  # 15 minute cap
 
@@ -240,9 +245,23 @@ class BaseLLMClient(ABC):
 
                 code = None
                 for attempt in range(max_retries + 1):
+                    if total_attempts >= max_total_attempts:
+                        logger.warning(
+                            f"Rule compiler exhausted after {total_attempts} total attempts"
+                        )
+                        return {
+                            "code": None,
+                            "status": "exhausted",
+                            "attempts": total_attempts,
+                            "sleep_cycles": sleep_cycle,
+                            "provider_used": None,
+                        }
+
                     try:
                         code = client.generate(prompt, xml_tag="CODE")
+                        total_attempts += 1
                     except Exception as e:
+                        total_attempts += 1
                         logger.warning(f"[{client_label}] Code generation attempt {attempt + 1} failed: {e}")
                         code = None
 
@@ -251,7 +270,7 @@ class BaseLLMClient(ABC):
                         return {
                             "code": code,
                             "status": status,
-                            "attempts": attempt + 1,
+                            "attempts": total_attempts,
                             "sleep_cycles": sleep_cycle,
                             "provider_used": client_label,
                         }
@@ -260,6 +279,19 @@ class BaseLLMClient(ABC):
                         logger.info(f"[{client_label}] Compilation attempt {attempt + 1} failed, retrying...")
 
                 logger.warning(f"[{client_label}] All {max_retries + 1} attempts failed.")
+
+            # All clients exhausted — check total attempt cap before sleeping
+            if total_attempts >= max_total_attempts:
+                logger.warning(
+                    f"Rule compiler exhausted after {total_attempts} total attempts"
+                )
+                return {
+                    "code": None,
+                    "status": "exhausted",
+                    "attempts": total_attempts,
+                    "sleep_cycles": sleep_cycle,
+                    "provider_used": None,
+                }
 
             # All clients exhausted — exponential backoff
             sleep_cycle += 1

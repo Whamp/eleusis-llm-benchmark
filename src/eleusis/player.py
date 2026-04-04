@@ -59,7 +59,15 @@ class LLMScientist:
         self.last_retry_count = 0
         self.last_retry_causes = []
 
-        REASONING_HINT = "\n\nIMPORTANT: DO NOT REASON TOO LONG ABOUT THIS."
+        TRUNCATION_HINT = (
+            "\n\nYour last response hit the output token limit. "
+            "Output ONLY the <ACTION> XML block with no reasoning."
+        )
+        PARSE_ERROR_HINT = (
+            "\n\nThe card value could not be parsed. "
+            "Use exact symbol format: 5♥, K♠, A♦, etc."
+        )
+        GENERIC_RETRY_HINT = "\n\nIMPORTANT: DO NOT REASON TOO LONG ABOUT THIS."
 
         player = game_state.player
         hand_cards = player.hand.get_all_cards()
@@ -91,11 +99,19 @@ class LLMScientist:
             wrong_guess_penalty=wrong_guess_penalty,
         )
 
+        last_cause = None
         for attempt in range(self.max_retries):
             cause = None
             try:
-                # Add hint on retries (attempt >= 1)
-                prompt = base_prompt + REASONING_HINT if attempt > 0 else base_prompt
+                # Add cause-specific hint on retries
+                if attempt == 0:
+                    prompt = base_prompt
+                elif last_cause == "max_token_reached":
+                    prompt = base_prompt + TRUNCATION_HINT
+                elif last_cause == "card_parse_error":
+                    prompt = base_prompt + PARSE_ERROR_HINT
+                else:
+                    prompt = base_prompt + GENERIC_RETRY_HINT
                 self.last_prompt = prompt
 
                 response = self.llm_client.generate(prompt, xml_tag="ACTION", return_dict=True)
@@ -127,6 +143,7 @@ class LLMScientist:
 
             # Track this failed attempt
             if cause:
+                last_cause = cause
                 self.last_retry_count = attempt + 1
                 self.last_retry_causes.append({"attempt": attempt + 1, "cause": cause})
 
