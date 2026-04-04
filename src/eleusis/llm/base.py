@@ -103,6 +103,7 @@ class BaseLLMClient(ABC):
         self.call_metrics: list[LLMCallMetrics] = []
         self.generate_metrics: list[GenerateMetrics] = []
         self.fallback_clients: list["BaseLLMClient"] = []
+        self._compile_cache: dict[str, dict] = {}
 
     @property
     @abstractmethod
@@ -230,6 +231,12 @@ class BaseLLMClient(ABC):
         """
         from eleusis.prompts import get_rule_compile_prompt
 
+        # Check compile cache — keyed on rule text only (same client = same config)
+        cache_key = rule_text
+        if cache_key in self._compile_cache:
+            logger.debug(f"Compile cache hit for rule: {rule_text[:60]}")
+            return self._compile_cache[cache_key]
+
         prompt = get_rule_compile_prompt(rule_text)
         all_clients = [self] + (fallback_clients if fallback_clients is not None else self.fallback_clients)
         sleep_cycle = 0
@@ -267,13 +274,15 @@ class BaseLLMClient(ABC):
 
                     if code and self._validate_code_syntax(code):
                         status = "success" if attempt == 0 and sleep_cycle == 0 and client_idx == 0 else "retry_success"
-                        return {
+                        result = {
                             "code": code,
                             "status": status,
                             "attempts": total_attempts,
                             "sleep_cycles": sleep_cycle,
                             "provider_used": client_label,
                         }
+                        self._compile_cache[cache_key] = result
+                        return result
 
                     if attempt < max_retries:
                         logger.info(f"[{client_label}] Compilation attempt {attempt + 1} failed, retrying...")
@@ -285,13 +294,15 @@ class BaseLLMClient(ABC):
                 logger.warning(
                     f"Rule compiler exhausted after {total_attempts} total attempts"
                 )
-                return {
+                result = {
                     "code": None,
                     "status": "exhausted",
                     "attempts": total_attempts,
                     "sleep_cycles": sleep_cycle,
                     "provider_used": None,
                 }
+                self._compile_cache[cache_key] = result
+                return result
 
             # All clients exhausted — exponential backoff
             sleep_cycle += 1
@@ -401,6 +412,10 @@ class BaseLLMClient(ABC):
                 for g in self.generate_metrics
             ],
         }
+
+    def clear_compile_cache(self) -> None:
+        """Clear the compile cache, forcing re-compilation on next call."""
+        self._compile_cache.clear()
 
     def reset_usage_stats(self) -> None:
         """Reset call metrics (called at start of each round)."""

@@ -1,11 +1,14 @@
-"""Tests for bounded rule compiler attempts.
+"""Tests for bounded rule compiler attempts and compile caching.
 
 Verifies:
 - convert_rule_to_code() respects max_total_attempts parameter
 - Returns failure status on exhaustion instead of looping forever
+- Repeated identical rule texts reuse cached compile results
+- Cached failures are reused (no re-compilation)
 """
 
 from __future__ import annotations
+
 from unittest.mock import patch
 
 from eleusis.llm.base import BaseLLMClient
@@ -18,6 +21,7 @@ class FakeCompilerClient(FakeLLMClient):
     def __init__(self, responses=None):
         super().__init__(responses)
         self.prompts_seen: list[str] = []
+        self._compile_cache: dict[str, dict] = {}
 
     def _validate_code_syntax(self, code):
         """Delegate to BaseLLMClient's real validation."""
@@ -31,6 +35,10 @@ class FakeCompilerClient(FakeLLMClient):
             fallback_clients=fallback_clients,
             max_total_attempts=max_total_attempts,
         )
+
+    def clear_compile_cache(self):
+        """Delegate to BaseLLMClient's real implementation."""
+        BaseLLMClient.clear_compile_cache(self)
 
 
 @patch("time.sleep")
@@ -104,3 +112,63 @@ class TestCompilerTotalAttemptCap:
 
         assert client._call_count <= 5
         assert result["status"] == "exhausted"
+
+
+@patch("time.sleep")
+class TestCompilerCache:
+    """Compile cache deduplicates identical rule text compilations."""
+
+    def test_repeated_rule_compiles_once(self, mock_sleep):
+        """Compiling the same rule text twice should call generate() only once."""
+        valid_code = "return card.rank % 2 == 0"
+        client = FakeCompilerClient([valid_code])
+
+        result1 = client.convert_rule_to_code("Only even ranks", max_retries=0)
+        result2 = client.convert_rule_to_code("Only even ranks", max_retries=0)
+
+        assert client._call_count == 1
+        assert result1["status"] == "success"
+        assert result2["status"] == "success"
+        assert result2["code"] == valid_code
+
+    def test_cached_failure_reused(self, mock_sleep):
+        """Failed compilations are also cached — no re-attempt on same text."""
+        bad_code = "invalid!!!"
+        client = FakeCompilerClient([bad_code] * 10)
+
+        result1 = client.convert_rule_to_code(
+            "Bad rule", max_retries=0, max_total_attempts=3,
+        )
+        calls_after_first = client._call_count
+
+        result2 = client.convert_rule_to_code(
+            "Bad rule", max_retries=0, max_total_attempts=3,
+        )
+
+        assert client._call_count == calls_after_first  # no new calls
+        assert result1["status"] == "exhausted"
+        assert result2["status"] == "exhausted"
+
+    def test_different_rule_text_not_cached(self, mock_sleep):
+        """Different rule texts should each compile independently."""
+        valid_code_1 = "return card.rank % 2 == 0"
+        valid_code_2 = 'return card.color == "red"'
+        client = FakeCompilerClient([valid_code_1, valid_code_2])
+
+        result1 = client.convert_rule_to_code("Only even ranks", max_retries=0)
+        result2 = client.convert_rule_to_code("Only red cards", max_retries=0)
+
+        assert client._call_count == 2
+        assert result1["code"] == valid_code_1
+        assert result2["code"] == valid_code_2
+
+    def test_cache_cleared_on_reset(self, mock_sleep):
+        """clear_compile_cache() should force re-compilation."""
+        valid_code = "return card.rank % 2 == 0"
+        client = FakeCompilerClient([valid_code, valid_code])
+
+        client.convert_rule_to_code("Only even ranks", max_retries=0)
+        client.clear_compile_cache()
+        client.convert_rule_to_code("Only even ranks", max_retries=0)
+
+        assert client._call_count == 2

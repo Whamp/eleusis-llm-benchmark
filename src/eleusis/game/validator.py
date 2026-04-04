@@ -28,6 +28,13 @@ class ValidationResult:
 class RuleValidator:
     """Validates rules and compares guessed rules to actual rules."""
 
+    def __init__(self):
+        self._shadow_cache: dict[tuple, tuple[bool, str, dict]] = {}
+
+    def clear_shadow_cache(self) -> None:
+        """Clear the shadow evaluation cache, forcing re-simulation on next call."""
+        self._shadow_cache.clear()
+
     def validate_rule(self, rule: Rule, num_test_cases: int = 3) -> ValidationResult:
         """Validate that a rule meets requirements."""
         issues = []
@@ -117,7 +124,23 @@ class RuleValidator:
         simulation_seed: int = 42,
         compiler_max_retries: int = 2,
     ) -> tuple[bool, str, dict]:
-        """Compare rules using simulation-based comparison."""
+        """Compare rules using simulation-based comparison.
+
+        Results are cached by (actual_rule_code, guessed_rule_desc,
+        num_simulations, turns_per_simulation, simulation_seed) so identical
+        shadow evaluations within or across rounds are not re-simulated.
+        """
+        cache_key = (
+            actual_rule.get_code(),
+            guessed_rule_desc,
+            num_simulations,
+            turns_per_simulation,
+            simulation_seed,
+        )
+        if cache_key in self._shadow_cache:
+            logger.debug(f"Shadow cache hit for tentative rule: {guessed_rule_desc[:60]}")
+            return self._shadow_cache[cache_key]
+
         compile_result = rule_compiler_client.convert_rule_to_code(
             guessed_rule_desc,
             max_retries=compiler_max_retries,
@@ -148,7 +171,7 @@ class RuleValidator:
         # Compute complexity metrics for guessed rule code
         complexity_metrics = code_complexity(guessed_code) if guessed_code else None
 
-        return sim_equivalent, sim_reasoning, {
+        result = (sim_equivalent, sim_reasoning, {
             "simulation_comparisons": comparisons,
             "simulation_mismatches": mismatches,
             "simulation_duration_seconds": round(sim_duration, 3),
@@ -156,7 +179,9 @@ class RuleValidator:
             "complexity_metrics": complexity_metrics,
             "compilation_status": compilation_status,
             "compilation_attempts": compilation_attempts,
-        }
+        })
+        self._shadow_cache[cache_key] = result
+        return result
 
     def check_equivalence_by_simulation(
         self,
