@@ -8,6 +8,7 @@ from pathlib import Path
 
 from eleusis.game import GameEngine, GameState, GuessRuleAction, Rule, RuleFactory, RuleValidator
 from eleusis.llm import LLMScientist, create_client, create_client_from_config
+from eleusis.normalization import compute_schema_compliance_rate, normalize_action_response
 from eleusis.utils import model_spec_to_display_name
 
 __all__ = ["play_round", "_handle_action_error"]
@@ -290,6 +291,9 @@ def play_round(
             logger.info(f"Will guess: {guess_rule}")
             logger.info("")
 
+        # Normalize response fields (confidence, schema validation)
+        norm = normalize_action_response(scientist.last_action_response)
+
         will_guess = (
             scientist.last_action_response
             and scientist.last_action_response.get("guess_rule", False)
@@ -318,6 +322,9 @@ def play_round(
             "mainline_state": mainline_before,
             "hand": hand_before,
             "llm_response": scientist.last_action_response.copy() if scientist.last_action_response else {},
+            "confidence_level_raw": norm["confidence_level_raw"],
+            "confidence_level": norm["confidence_level"],
+            "schema_errors": norm["schema_errors"],
             "action_result": {
                 "action": play_result.get("action"),
                 "card": play_result.get("card"),
@@ -357,12 +364,9 @@ def play_round(
             result = play_result
 
             # Shadow evaluation: if player didn't guess but has high confidence, evaluate anyway
-            conf_level = (
-                scientist.last_action_response.get("confidence_level", 0)
-                if scientist.last_action_response else 0
-            )
+            conf_level = norm["confidence_level"]
             MIN_CONFIDENCE_FOR_SHADOW = 5
-            if isinstance(conf_level, int) and conf_level >= MIN_CONFIDENCE_FOR_SHADOW and guess_text:
+            if conf_level is not None and conf_level >= MIN_CONFIDENCE_FOR_SHADOW and guess_text:
                 logger.info("")
                 logger.info(f"Shadow evaluation for tentative rule (confidence={conf_level})...")
                 is_correct, reasoning, metadata = engine.evaluate_rule(guess_text)
@@ -454,6 +458,7 @@ def play_round(
         'first_shadow_correct_turn': first_shadow_correct_turn,
         'failed_guesses': engine.failed_guess_count,
         'game_over_reason': game_over_reason,
+        'schema_compliance_rate': compute_schema_compliance_rate(turn_data_list),
         'llm_usage': llm_usage,
         'turns': turn_data_list,
         'wall_clock_seconds': round(time.time() - round_start_time, 2),
