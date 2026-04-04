@@ -6,6 +6,7 @@ Verifies:
 """
 
 from __future__ import annotations
+from unittest.mock import patch
 
 from eleusis.llm.base import BaseLLMClient
 from tests.conftest import FakeLLMClient
@@ -32,12 +33,12 @@ class FakeCompilerClient(FakeLLMClient):
         )
 
 
+@patch("time.sleep")
 class TestCompilerTotalAttemptCap:
     """convert_rule_to_code must stop after max_total_attempts."""
 
-    def test_returns_failure_on_exhaustion(self):
+    def test_returns_failure_on_exhaustion(self, mock_sleep):
         """When all attempts produce invalid code, returns failure status."""
-        # 5 attempts of bad code (syntax errors)
         bad_code = "this is not valid python!!!"
         client = FakeCompilerClient([bad_code] * 10)
 
@@ -50,7 +51,7 @@ class TestCompilerTotalAttemptCap:
         assert result["status"] == "exhausted"
         assert result["code"] is None
 
-    def test_total_attempts_bounded(self):
+    def test_total_attempts_bounded(self, mock_sleep):
         """Number of generate() calls must not exceed max_total_attempts."""
         bad_code = "not valid python :-("
         client = FakeCompilerClient([bad_code] * 20)
@@ -61,11 +62,10 @@ class TestCompilerTotalAttemptCap:
             max_total_attempts=3,
         )
 
-        # Should have made at most 3 generate() calls total
         assert client._call_count <= 3
         assert result["status"] == "exhausted"
 
-    def test_success_within_cap(self):
+    def test_success_within_cap(self, mock_sleep):
         """If valid code is produced within the cap, returns success."""
         valid_code = "return card.rank % 2 == 0"
         client = FakeCompilerClient([valid_code])
@@ -79,12 +79,11 @@ class TestCompilerTotalAttemptCap:
         assert result["status"] == "success"
         assert result["code"] == valid_code
 
-    def test_no_sleep_on_exhaustion(self):
-        """Exhaustion should NOT enter the infinite sleep loop."""
+    def test_no_sleep_on_exhaustion(self, mock_sleep):
+        """Exhaustion should NOT enter the sleep loop."""
         bad_code = "invalid code!!!"
         client = FakeCompilerClient([bad_code] * 10)
 
-        # If this hangs, the test framework will time it out
         result = client.convert_rule_to_code(
             "Only even ranks",
             max_retries=0,
@@ -93,7 +92,7 @@ class TestCompilerTotalAttemptCap:
 
         assert result["status"] == "exhausted"
 
-    def test_default_max_total_attempts(self):
+    def test_default_max_total_attempts(self, mock_sleep):
         """Default max_total_attempts should be 5."""
         bad_code = "invalid!!!"
         client = FakeCompilerClient([bad_code] * 20)
@@ -103,7 +102,5 @@ class TestCompilerTotalAttemptCap:
             max_retries=0,
         )
 
-        # Default cap is 5, with max_retries=0 that means 5 iterations of the
-        # outer loop (1 attempt per client per iteration)
         assert client._call_count <= 5
         assert result["status"] == "exhausted"
