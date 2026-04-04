@@ -68,7 +68,12 @@ def build_rounds_dataframe(results: list[dict], rules_lib: dict) -> pd.DataFrame
 
             # Compute counting cutoff (turn where score becomes guaranteed <= 0)
             turns = round_data.get("turns", [])
-            cutoff_turn = compute_counting_cutoff(turns, max_turns)
+            penalty = (
+                result["config"]["game"]["wrong_guess_penalty"]
+                if "game" in result["config"]
+                else result["config"].get("wrong_guess_penalty", 2)
+            )
+            cutoff_turn = compute_counting_cutoff(turns, max_turns, penalty=penalty)
 
             # Compute counting metrics (before cutoff)
             counting_failed_guesses = 0
@@ -138,7 +143,12 @@ def build_turns_dataframe(results: list[dict]) -> pd.DataFrame:
                 else result["config"].get("max_turns", 30)
             )
             turns = round_data.get("turns", [])
-            cutoff_turn = compute_counting_cutoff(turns, max_turns)
+            penalty = (
+                result["config"]["game"]["wrong_guess_penalty"]
+                if "game" in result["config"]
+                else result["config"].get("wrong_guess_penalty", 2)
+            )
+            cutoff_turn = compute_counting_cutoff(turns, max_turns, penalty=penalty)
 
             for turn in turns:
                 llm_resp = turn.get("llm_response", {})

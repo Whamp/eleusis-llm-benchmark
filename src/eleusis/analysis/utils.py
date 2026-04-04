@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 logger = logging.getLogger(__name__)
 
 
-def compute_counting_cutoff(turns: list[dict], max_turns: int, penalty: int = 2) -> int | None:
+def compute_counting_cutoff(turns: list[dict], max_turns: int, penalty: int) -> int | None:
     """Compute turn number where score becomes guaranteed <= 0.
 
     After turn n with k cumulative failed guesses, best possible score is:
@@ -19,7 +19,7 @@ def compute_counting_cutoff(turns: list[dict], max_turns: int, penalty: int = 2)
     Args:
         turns: List of turn dicts from results.json (with turn_number, guess_attempt)
         max_turns: Maximum turns allowed in the game
-        penalty: Points lost per failed guess (default 2)
+        penalty: Points lost per failed guess
 
     Returns:
         Turn number where score became guaranteed <= 0, or None if never hit.

@@ -4,25 +4,57 @@ import pandas as pd
 
 
 def compute_first_correct_turn(df_turns: pd.DataFrame) -> pd.DataFrame:
-    """Find first turn with correct guess (shadow or official) per round.
+    """Find first turn with correct guess per round, split by formal vs shadow.
 
-    Returns DataFrame with columns: model, round_number, first_correct_turn
+    Returns DataFrame with columns: model, round_number,
+        first_correct_turn, first_formal_correct_turn, first_shadow_correct_turn
     """
-    # Filter to only turns with a correct guess
     correct_guesses = df_turns[df_turns["guess_correct"] == True].copy()  # noqa: E712
 
     if correct_guesses.empty:
-        return pd.DataFrame(columns=["model", "round_number", "first_correct_turn"])
+        return pd.DataFrame(columns=[
+            "model", "round_number",
+            "first_correct_turn", "first_formal_correct_turn", "first_shadow_correct_turn",
+        ])
 
-    # Find minimum turn number per (model, round_number)
-    first_correct = (
+    # Split by shadow vs formal
+    shadow = correct_guesses[correct_guesses["is_shadow"] == True]  # noqa: E712
+    formal = correct_guesses[correct_guesses["is_shadow"] != True]  # noqa: E712
+
+    # First correct of any kind
+    first_any = (
         correct_guesses.groupby(["model", "round_number"])["turn_number"]
         .min()
         .reset_index()
+        .rename(columns={"turn_number": "first_correct_turn"})
     )
-    first_correct.columns = ["model", "round_number", "first_correct_turn"]
 
-    return first_correct
+    # First formal correct
+    first_formal = (
+        formal.groupby(["model", "round_number"])["turn_number"]
+        .min()
+        .reset_index()
+        .rename(columns={"turn_number": "first_formal_correct_turn"})
+    ) if not formal.empty else pd.DataFrame(
+        columns=["model", "round_number", "first_formal_correct_turn"]
+    )
+
+    # First shadow correct
+    first_shadow = (
+        shadow.groupby(["model", "round_number"])["turn_number"]
+        .min()
+        .reset_index()
+        .rename(columns={"turn_number": "first_shadow_correct_turn"})
+    ) if not shadow.empty else pd.DataFrame(
+        columns=["model", "round_number", "first_shadow_correct_turn"]
+    )
+
+    # Merge all three
+    result = first_any
+    result = result.merge(first_formal, on=["model", "round_number"], how="left")
+    result = result.merge(first_shadow, on=["model", "round_number"], how="left")
+
+    return result
 
 
 def compute_no_stakes_scores(

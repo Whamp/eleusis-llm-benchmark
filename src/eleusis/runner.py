@@ -407,13 +407,24 @@ def play_round(
     score = engine.calculate_score(max_turns_limit, turn_count)
     success = engine.rule_guessed
 
-    # Find first turn where a guess (formal or shadow) was correct
-    first_correct_turn = None
+    # Find first turn where a formal (non-shadow) guess was correct
+    first_formal_correct_turn = None
+    first_shadow_correct_turn = None
     for turn in turn_data_list:
         guess_attempt = turn.get("guess_attempt")
         if guess_attempt and guess_attempt.get("correct"):
-            first_correct_turn = turn["turn_number"]
-            break
+            if guess_attempt.get("shadow", False):
+                if first_shadow_correct_turn is None:
+                    first_shadow_correct_turn = turn["turn_number"]
+            else:
+                if first_formal_correct_turn is None:
+                    first_formal_correct_turn = turn["turn_number"]
+
+    # first_correct_turn: earliest correct guess of any kind (backward compat)
+    first_correct_turn = min(
+        t for t in [first_formal_correct_turn, first_shadow_correct_turn]
+        if t is not None
+    ) if first_formal_correct_turn is not None or first_shadow_correct_turn is not None else None
 
     # no_stakes_score: hypothetical score if all guesses were penalty-free
     # Formula: max_turns - first_correct_turn + 1 (finding on turn N gives 31-N points)
@@ -439,6 +450,8 @@ def play_round(
         'floored_score': max(0, score),
         'no_stakes_score': no_stakes_score,
         'first_correct_turn': first_correct_turn,
+        'first_formal_correct_turn': first_formal_correct_turn,
+        'first_shadow_correct_turn': first_shadow_correct_turn,
         'failed_guesses': engine.failed_guess_count,
         'game_over_reason': game_over_reason,
         'llm_usage': llm_usage,
