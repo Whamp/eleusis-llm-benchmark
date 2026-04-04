@@ -24,7 +24,10 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Run parallel benchmark evaluations")
     parser.add_argument("--model", required=True, help="Model key from models.yaml")
     parser.add_argument("--config", default="config.yaml", help="Config file (default: config.yaml)")
-    parser.add_argument("--workers", type=int, default=3, help="Number of parallel workers (default: 3)")
+    parser.add_argument("--workers", type=int, default=None,
+                        help="Number of parallel workers (default: auto from suite batch indices)")
+    parser.add_argument("--suite", type=str, default=None,
+                        help="Named benchmark suite from suites.yaml")
     parser.add_argument("--dry-run", action="store_true", help="Print commands without executing")
     return parser.parse_args()
 
@@ -41,47 +44,94 @@ def main():
     with open(config_path) as f:
         config = yaml.safe_load(f)
 
-    rules_path = config["rules"]["library_path"]
-    if not Path(rules_path).is_absolute():
-        rules_path = Path(__file__).parent.parent / rules_path
+    # Resolve suite: from --suite CLI flag, or suite: key in config
+    suite_name = args.suite or config.get('suite')
 
-    with open(rules_path) as f:
-        rules_data = json.load(f)
+    if suite_name:
+        # Suite-aware mode
+        from eleusis.suites import resolve_suite
+        suite_cases = resolve_suite(suite_name)
+        batch_indices = sorted(set(idx for _, idx in suite_cases))
+        unique_rules = list(dict.fromkeys(name for name, _ in suite_cases))
+        total_rules = len(unique_rules)
+        total_rounds = len(suite_cases)
+        rounds_per_batch = total_rules  # each batch index sees all rules in the suite
 
-    total_rules = len(rules_data.get("rules", []))
-    rounds_per_rule = config["game"].get("num_rounds_per_rule", 3)
+        if args.workers is not None and args.workers > len(batch_indices):
+            print(f"WARNING: {args.workers} workers requested but suite '{suite_name}' "
+                  f"has {len(batch_indices)} batch indices.")
+            print(f"Capping workers to {len(batch_indices)}.")
+            args.workers = len(batch_indices)
 
-    if args.workers > rounds_per_rule:
-        print(f"WARNING: {args.workers} workers requested but only {rounds_per_rule} rounds per rule.")
-        print(f"Capping workers to {rounds_per_rule}.")
-        args.workers = rounds_per_rule
+        num_workers = args.workers if args.workers is not None else len(batch_indices)
+        worker_offsets = batch_indices[:num_workers]
 
-    print("=" * 70)
-    print(f"PARALLEL BENCHMARK - {args.model}")
-    print("=" * 70)
-    print(f"Total rules: {total_rules}")
-    print(f"Rounds per rule: {rounds_per_rule}")
-    print(f"Total rounds: {total_rules * rounds_per_rule}")
-    print(f"Workers: {args.workers}")
-    print(f"Rounds per worker: {total_rules} (all rules, 1 round each)")
-    print(f"Config: {args.config}")
-    print()
+        print("=" * 70)
+        print(f"PARALLEL BENCHMARK - {args.model} (suite: {suite_name})")
+        print("=" * 70)
+        print(f"Suite: {suite_name}")
+        print(f"Total rules: {total_rules}")
+        print(f"Batch indices: {batch_indices}")
+        print(f"Total rounds: {total_rounds}")
+        print(f"Workers: {num_workers}")
+        print(f"Rounds per worker: {rounds_per_batch}")
+        print(f"Config: {args.config}")
+        print()
+    else:
+        # Legacy mode: rounds_per_rule-based splitting
+        suite_cases = None
+        worker_offsets = None
+
+        rules_path = config["rules"]["library_path"]
+        if not Path(rules_path).is_absolute():
+            rules_path = Path(__file__).parent.parent / rules_path
+
+        with open(rules_path) as f:
+            rules_data = json.load(f)
+
+        total_rules = len(rules_data.get("rules", []))
+        rounds_per_rule = config["game"].get("num_rounds_per_rule", 3)
+        total_rounds = total_rules * rounds_per_rule
+        num_workers = args.workers if args.workers is not None else 3
+
+        if num_workers > rounds_per_rule:
+            print(f"WARNING: {num_workers} workers requested but only "
+                  f"{rounds_per_rule} rounds per rule.")
+            print(f"Capping workers to {rounds_per_rule}.")
+            num_workers = rounds_per_rule
+
+        print("=" * 70)
+        print(f"PARALLEL BENCHMARK - {args.model}")
+        print("=" * 70)
+        print(f"Total rules: {total_rules}")
+        print(f"Rounds per rule: {rounds_per_rule}")
+        print(f"Total rounds: {total_rounds}")
+        print(f"Workers: {num_workers}")
+        print(f"Rounds per worker: {total_rules} (all rules, 1 round each)")
+        print(f"Config: {args.config}")
+        print()
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     processes = []
 
-    for worker_id in range(args.workers):
+    for worker_id in range(num_workers):
+        if worker_offsets:
+            offset = worker_offsets[worker_id]
+        else:
+            offset = worker_id
         tag = f"w{worker_id}_{args.model}"
 
         cmd = [
             "uv", "run", "python", "scripts/evaluate_single.py",
             "--config", str(args.config),
             "--model", args.model,
-            "--batch-round-offset", str(worker_id),
+            "--batch-round-offset", str(offset),
             "--tag", tag,
         ]
+        if suite_name:
+            cmd.extend(["--suite", suite_name])
 
-        print(f"Worker {worker_id}: all {total_rules} rules, batch_round_offset={worker_id}")
+        print(f"Worker {worker_id}: batch_round_offset={offset}")
         print(f"  cmd: {' '.join(cmd)}")
 
         if not args.dry_run:

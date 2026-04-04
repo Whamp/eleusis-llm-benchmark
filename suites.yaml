@@ -1,0 +1,32 @@
+# Named benchmark suites
+#
+# Each suite defines which rules to run and with which batch_round_indices.
+# Rules listed under "rules: all" use the full rules.json library in order.
+# Rules listed explicitly use only those rules in the given order.
+
+full_26x3:
+  description: "Publishable run — all 26 rules, 3 deck shuffles each"
+  rules: all
+  batch_round_indices: [0, 1, 2]
+
+screen_26x1:
+  description: "Dev iteration — all 26 rules, best single shuffle"
+  rules: all
+  batch_round_indices: [1]
+
+stress_12x1:
+  description: "Metacognition stress test — 6 fast discriminators + 6 hard stressors"
+  rules:
+    - only_aces
+    - face_cards_only
+    - different_suit
+    - prime_ranks_only
+    - no_spades
+    - ranks_one_to_seven
+    - red_up_black_down
+    - paired_ranks_distinct
+    - alternating_groups
+    - face_card_imposes_suit
+    - face_cards_red_number_cards_black
+    - rank_non_decreasing_start_ace
+  batch_round_indices: [1]

@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 from eleusis.game import Rule
 from eleusis.llm import create_client
 from eleusis.runner import play_round
+from eleusis.suites import resolve_suite
 from eleusis.utils import model_spec_to_display_name, setup_logging
 
 # Load environment variables
@@ -63,6 +64,10 @@ Examples:
                         help='Run only 1 round per rule using this batch index for seeding. '
                              'Use with parallel workers: worker 0 gets offset 0, worker 1 gets 1, etc. '
                              'Each offset produces a different deck shuffle for the same rule.')
+    parser.add_argument('--suite', type=str, default=None,
+                        help='Named benchmark suite from suites.yaml '
+                             '(e.g. full_26x3, screen_26x1, stress_12x1). '
+                             'Overrides num_rules/num_rounds_per_rule/batch_round_offset.')
     return parser.parse_args()
 
 
@@ -322,6 +327,19 @@ def main():
         rule_compiler_display_name = model_spec_to_display_name(config["rule_compiler"]["model_id"])
         num_rounds_per_rule = config["game"].get("num_rounds_per_rule", 1)
 
+    # Resolve suite (from --suite CLI flag, or suite: key in config)
+    suite_name = getattr(args, 'suite', None) if not checkpoint else None
+    if not suite_name and not checkpoint:
+        suite_name = config.get('suite')
+    suite_cases = None
+    if suite_name:
+        suite_cases = resolve_suite(suite_name)
+        # When batch_round_offset is set (parallel worker), filter to matching cases
+        if hasattr(args, 'batch_round_offset') and args.batch_round_offset is not None:
+            offset = args.batch_round_offset
+            suite_cases = [(name, idx) for name, idx in suite_cases if idx == offset]
+        temp_logger.info(f"Suite '{suite_name}': {len(suite_cases)} rounds")
+
     # Load config sections
     game_config = config["game"]
     rules_cfg = config["rules"]
@@ -356,6 +374,12 @@ def main():
     if checkpoint:
         num_rounds = checkpoint['checkpoint']['total_rounds']
         num_rules = config['game']['num_rules']  # From reconstruct_config_from_checkpoint
+    elif suite_cases:
+        # Suite mode: total rounds = number of suite cases
+        num_rounds = len(suite_cases)
+        unique_rules = list(dict.fromkeys(name for name, _ in suite_cases))
+        num_rules = len(unique_rules)
+        game_config["num_rounds"] = num_rounds
     else:
         num_rules = game_config.get("num_rules", 10)
         # Handle num_rules=0: use entire rule library
@@ -446,11 +470,17 @@ def main():
         checkpoint_rules_library = None  # Will load from file
 
         logger.info("=" * 80)
-        logger.info(f"SOLO MODE EVALUATION - {num_rounds} ROUNDS")
+        if suite_name:
+            logger.info(f"SOLO MODE EVALUATION - {num_rounds} ROUNDS (suite: {suite_name})")
+        else:
+            logger.info(f"SOLO MODE EVALUATION - {num_rounds} ROUNDS")
         logger.info("=" * 80)
         logger.info(f"Log file: {log_file}")
         logger.info(f"Output folder: results/{folder_name}")
-        logger.info(f"Rounds per rule: {num_rounds_per_rule}")
+        if suite_name:
+            logger.info(f"Suite: {suite_name}")
+        else:
+            logger.info(f"Rounds per rule: {num_rounds_per_rule}")
         logger.info(f"  - Rule Compiler: {rule_compiler_display_name}")
         logger.info(f"  - Player: {player_display_name}")
         logger.info("")
@@ -460,6 +490,11 @@ def main():
         all_rules_library = load_rules_from_library(config)
         logger.info(f"Stored {len(all_rules_library)} rules in checkpoint for resume support")
         logger.info("")
+
+        # Build name→index mapping for suite mode
+        rule_name_to_index = {
+            r.get('name', ''): i for i, r in enumerate(all_rules_library)
+        }
 
         # Initialize evaluation tracking
         evaluation_results = {
@@ -489,6 +524,7 @@ def main():
                 'llm_seed': config['llm'].get('seed'),
                 'llm_max_retries': config['llm'].get('max_llm_retries', 3),
                 'batch_round_offset': game_config.get('batch_round_offset'),
+                'suite': suite_name,
             },
             'rounds': [],
             'statistics': {
@@ -525,8 +561,16 @@ def main():
         logger.info("")
 
         # Determine if new rule needed and batch round index
-        batch_round_offset = game_config.get('batch_round_offset')
-        if batch_round_offset is not None:
+        if suite_cases:
+            # Suite mode: each round has a predetermined rule and batch index
+            suite_rule_name, batch_round_index = suite_cases[round_num - 1]
+            need_new_rule = (current_rule_name != suite_rule_name)
+            if need_new_rule:
+                logger.info(f"Suite rule: {suite_rule_name} (batch index {batch_round_index})")
+                current_rule = None
+            else:
+                logger.info(f"Reusing rule: {suite_rule_name} (batch index {batch_round_index})")
+        elif (batch_round_offset := game_config.get('batch_round_offset')) is not None:
             # Parallel mode: 1 round per rule, use offset for seed variation
             batch_round_index = batch_round_offset
             need_new_rule = True
@@ -545,15 +589,28 @@ def main():
         generated_new_rule = current_rule is None
 
         # Play round with rule_factory_index and batch_round_index (for unique seeding)
-        result = play_round(
-            config=config,
-            round_number=round_num,
-            rule=current_rule,
-            start_rule_index=rule_factory_index if need_new_rule else None,
-            rules_list=checkpoint_rules_library,
-            batch_round_index=batch_round_index,
-            results_folder=f"results/{folder_name}",
-        )
+        if suite_cases and need_new_rule:
+            # Suite mode: look up rule by name
+            suite_rule_index = rule_name_to_index[suite_rule_name]
+            result = play_round(
+                config=config,
+                round_number=round_num,
+                rule=current_rule,
+                start_rule_index=suite_rule_index,
+                rules_list=checkpoint_rules_library or all_rules_library,
+                batch_round_index=batch_round_index,
+                results_folder=f"results/{folder_name}",
+            )
+        else:
+            result = play_round(
+                config=config,
+                round_number=round_num,
+                rule=current_rule,
+                start_rule_index=rule_factory_index if need_new_rule else None,
+                rules_list=checkpoint_rules_library,
+                batch_round_index=batch_round_index,
+                results_folder=f"results/{folder_name}",
+            )
 
         # Update current rule for reuse and track consumption
         if generated_new_rule:

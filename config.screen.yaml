@@ -1,0 +1,33 @@
+# Eleusis LLM Benchmark — Screen Suite (screen_26x1)
+# All 26 rules × 1 deck shuffle (batch index 1) = 26 rounds. Dev iteration.
+
+suite: screen_26x1
+
+game:
+  max_turns: 30
+  hand_size: 12
+  wrong_guess_penalty: 2
+  seed: 42
+  shadow_mode: offline
+
+rule_compiler:
+  provider: huggingface
+  model_id: openai/gpt-oss-120b
+  hf_provider: together
+  reasoning_format: separate_field
+  temperature: 0.7
+  max_retries: 10
+  num_simulations: 100
+  turns_per_simulation: 40
+  simulation_seed: 42
+
+rules:
+  library_path: "rules.json"
+  selection: "sequential"
+  index: 0
+
+llm:
+  max_tokens: 16384
+  max_llm_retries: 3
+  temperature: 0.7
+  seed: 42
