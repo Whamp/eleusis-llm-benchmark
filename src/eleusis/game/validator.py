@@ -130,6 +130,8 @@ class RuleValidator:
         num_simulations, turns_per_simulation, simulation_seed) so identical
         shadow evaluations within or across rounds are not re-simulated.
         """
+        # current_mainline excluded: simulation-based comparison generates
+        # independent random card sequences, so the mainline does not affect results.
         cache_key = (
             actual_rule.get_code(),
             guessed_rule_desc,
