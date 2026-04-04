@@ -11,7 +11,7 @@ from eleusis.llm import LLMScientist, create_client, create_client_from_config
 from eleusis.normalization import compute_schema_compliance_rate, normalize_action_response
 from eleusis.utils import model_spec_to_display_name
 
-__all__ = ["play_round", "_handle_action_error"]
+__all__ = ["play_round"]
 
 logger = logging.getLogger(__name__)
 
