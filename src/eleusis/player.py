@@ -29,6 +29,7 @@ class LLMScientist:
         max_retries: int = 3,
         engine: GameEngine | None = None,
         max_turns: int = 40,
+        rng: random.Random | None = None,
     ) -> None:
         """Initialize scientist with name and LLM client."""
         self.name = name
@@ -36,6 +37,7 @@ class LLMScientist:
         self.max_retries = max_retries
         self.engine = engine
         self.max_turns = max_turns
+        self.rng = rng or random.Random()
         self.play_history: list[dict] = []
         self.last_action_response: dict | None = None
         self.last_prompt: str | None = None
@@ -52,7 +54,8 @@ class LLMScientist:
         from eleusis.game.engine import PlayCardAction
         from eleusis.prompts import get_action_prompt
 
-        # Reset retry tracking for this turn
+        # Reset turn state
+        self.last_action_response = None
         self.last_retry_count = 0
         self.last_retry_causes = []
 
@@ -63,7 +66,7 @@ class LLMScientist:
 
         if not hand_cards:
             logger.error("Empty hand - should not happen!")
-            return PlayCardAction(random.choice(hand_cards)) if hand_cards else None
+            return PlayCardAction(self.rng.choice(hand_cards)) if hand_cards else None
 
         hand_dicts = [c.to_dict() for c in hand_cards]
         compact_board = game_state.to_compact_string()
@@ -130,7 +133,7 @@ class LLMScientist:
         logger.warning(
             f"{self.name} using random fallback after {self.max_retries} failed attempts"
         )
-        return PlayCardAction(random.choice(hand_cards))
+        return PlayCardAction(self.rng.choice(hand_cards))
 
     def record_action_result(self, result: dict) -> None:
         """Record the result of an action in play history."""

@@ -2,6 +2,7 @@
 
 import hashlib
 import logging
+import random
 import time
 from pathlib import Path
 
@@ -9,9 +10,42 @@ from eleusis.game import GameEngine, GameState, GuessRuleAction, Rule, RuleFacto
 from eleusis.llm import LLMScientist, create_client, create_client_from_config
 from eleusis.utils import model_spec_to_display_name
 
-__all__ = ["play_round"]
+__all__ = ["play_round", "_handle_action_error"]
 
 logger = logging.getLogger(__name__)
+
+
+def _handle_action_error(
+    error: Exception,
+    scientist: LLMScientist,
+    game_state: GameState,
+) -> tuple:
+    """Handle an error during get_action by producing a deterministic fallback.
+
+    Returns:
+        (PlayCardAction, error_info_dict) — a fallback play action and metadata
+    """
+    from eleusis.game.engine import PlayCardAction
+
+    hand_cards = game_state.player.hand.get_all_cards()
+    fallback_card = scientist.rng.choice(hand_cards) if hand_cards else None
+
+    logger.error(
+        f"Error getting action from {scientist.name}: {type(error).__name__}: {error}",
+        exc_info=True,
+    )
+    logger.warning(
+        f"{scientist.name} using deterministic fallback after unhandled error: "
+        f"{fallback_card}"
+    )
+
+    error_info = {
+        "error_type": type(error).__name__,
+        "error_message": str(error),
+        "fallback_card": str(fallback_card) if fallback_card else None,
+    }
+
+    return PlayCardAction(fallback_card), error_info
 
 
 def play_round(
@@ -187,12 +221,14 @@ def play_round(
     max_turns_limit = max_turns or game_config.get("max_turns", 40)
 
     max_llm_retries = llm_config["max_llm_retries"]
+    player_rng = random.Random(round_seed) if round_seed is not None else random.Random()
     scientist = LLMScientist(
         player_name,
         scientist_client,
         max_retries=max_llm_retries,
         engine=engine,
         max_turns=max_turns_limit,
+        rng=player_rng,
     )
     logger.info(f"✓ Player initialized: {scientist.name}")
     logger.info("")
@@ -230,12 +266,11 @@ def play_round(
         # Track generate_metrics count before LLM call for per-turn token tracking
         gen_metrics_before = len(scientist_client.generate_metrics)
 
+        error_info = None
         try:
             action = scientist.get_action(game_state)
         except Exception as e:
-            logger.error(f"Error getting action: {e}", exc_info=True)
-            turn_count += 1
-            continue
+            action, error_info = _handle_action_error(e, scientist, game_state)
 
         # Save last prompt to file for live inspection
         if results_folder and scientist.last_prompt:
@@ -293,6 +328,7 @@ def play_round(
             "tokens": turn_tokens,
             "retry_count": scientist.last_retry_count,
             "retry_causes": scientist.last_retry_causes.copy(),
+            "error": error_info,
         }
 
         logger.info(f"Action: {play_result['action']}")

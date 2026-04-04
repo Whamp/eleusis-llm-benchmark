@@ -1,0 +1,26 @@
+{
+  "rules": [
+    {
+      "name": "even_ranks_only",
+      "description": "Only cards with an even rank (2,4,6,8,10,12).",
+      "code": "return card.rank % 2 == 0",
+      "avg_acceptance_rate": 0.47,
+      "node_count": 12,
+      "cyclomatic_complexity": 1
+    },
+    {
+      "name": "only_red_cards",
+      "description": "Only red cards (hearts or diamonds).",
+      "code": "return card.color == \"red\"",
+      "avg_acceptance_rate": 0.49,
+      "node_count": 9,
+      "cyclomatic_complexity": 1
+    }
+  ],
+  "metadata": {
+    "generated_at": "2026-04-04T00:00:00",
+    "total_compiled": 2,
+    "valid_count": 2,
+    "invalid_count": 0
+  }
+}
