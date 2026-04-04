@@ -422,7 +422,7 @@ def main():
         # The checkpoint's current_index tracks the next rule index to use.
         # Filtering + resetting to 0 would restart from the beginning of the
         # library, replaying rules from other workers' partitions.
-        rule_factory_index = chk['rule_factory_state']['current_index']
+        rule_factory_index = checkpoint['checkpoint']['rule_factory_state']['current_index']
 
         logger.info("=" * 80)
         logger.info(f"RESUMING SOLO MODE EVALUATION")
