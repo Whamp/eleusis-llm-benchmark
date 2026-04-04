@@ -220,6 +220,7 @@ def play_round(
     logger.info("")
 
     max_turns_limit = max_turns or game_config.get("max_turns", 40)
+    shadow_mode = game_config.get("shadow_mode", "offline")
 
     max_llm_retries = llm_config["max_llm_retries"]
     player_rng = random.Random(round_seed) if round_seed is not None else random.Random()
@@ -363,26 +364,33 @@ def play_round(
         else:
             result = play_result
 
-            # Shadow evaluation: if player didn't guess but has high confidence, evaluate anyway
+            # Shadow evaluation: if player didn't guess but has high confidence
             conf_level = norm["confidence_level"]
             MIN_CONFIDENCE_FOR_SHADOW = 5
             if conf_level is not None and conf_level >= MIN_CONFIDENCE_FOR_SHADOW and guess_text:
-                logger.info("")
-                logger.info(f"Shadow evaluation for tentative rule (confidence={conf_level})...")
-                is_correct, reasoning, metadata = engine.evaluate_rule(guess_text)
-                verdict = "CORRECT ✅" if is_correct else "INCORRECT ❌"
-                logger.info(f"Shadow evaluation result: {verdict}")
+                if shadow_mode == "online":
+                    logger.info("")
+                    logger.info(f"Shadow evaluation for tentative rule (confidence={conf_level})...")
+                    is_correct, reasoning, metadata = engine.evaluate_rule(guess_text)
+                    verdict = "CORRECT ✅" if is_correct else "INCORRECT ❌"
+                    logger.info(f"Shadow evaluation result: {verdict}")
 
-                complexity = metadata.get("complexity_metrics") or {}
-                turn_data["guess_attempt"] = {
-                    "guess": guess_text,
-                    "correct": is_correct,
-                    "reasoning": reasoning,
-                    "guessed_code": metadata.get("guessed_code"),
-                    "node_count": complexity.get("node_count"),
-                    "cyclomatic_complexity": complexity.get("cyclomatic"),
-                    "shadow": True,
-                }
+                    complexity = metadata.get("complexity_metrics") or {}
+                    turn_data["guess_attempt"] = {
+                        "guess": guess_text,
+                        "correct": is_correct,
+                        "reasoning": reasoning,
+                        "guessed_code": metadata.get("guessed_code"),
+                        "node_count": complexity.get("node_count"),
+                        "cyclomatic_complexity": complexity.get("cyclomatic"),
+                        "shadow": True,
+                    }
+                elif shadow_mode == "offline":
+                    turn_data["guess_attempt"] = {
+                        "guess": guess_text,
+                        "shadow": True,
+                        "evaluated": False,
+                    }
 
         turn_data_list.append(turn_data)
 

@@ -9,6 +9,7 @@ game:
   hand_size: 12
   wrong_guess_penalty: 2
   seed: 42  # Seed for reproducibility (same rule -> same initial hand/deck)
+  shadow_mode: offline  # Shadow evaluation mode: offline (default), online, disabled
 
 
 # Rule compiler model configuration (converts natural language rules to code)
