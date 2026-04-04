@@ -20,9 +20,6 @@ import logging
 import sys
 from pathlib import Path
 
-# Add project root to sys.path for script imports
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
 from eleusis.game.cards import Card, Suit
 from eleusis.game.engine import Rule
 from eleusis.game.validator import RuleValidator
@@ -32,10 +29,10 @@ logger = logging.getLogger(__name__)
 
 # Map string suit names to Suit enum
 _SUIT_MAP = {
-    "hearts": Suit.HEARTS, "h": Suit.HEARTS,
-    "diamonds": Suit.DIAMONDS, "d": Suit.DIAMONDS,
-    "clubs": Suit.CLUBS, "c": Suit.CLUBS,
-    "spades": Suit.SPADES, "s": Suit.SPADES,
+    "hearts": Suit.HEARTS, "h": Suit.HEARTS, "♥": Suit.HEARTS,
+    "diamonds": Suit.DIAMONDS, "d": Suit.DIAMONDS, "♦": Suit.DIAMONDS,
+    "clubs": Suit.CLUBS, "c": Suit.CLUBS, "♣": Suit.CLUBS,
+    "spades": Suit.SPADES, "s": Suit.SPADES, "♠": Suit.SPADES,
 }
 
 
