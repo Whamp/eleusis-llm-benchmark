@@ -39,13 +39,14 @@ class LLMResponseEnvelope(Protocol):
 
 
 class RuleCompileResult(TypedDict):
-    """Outcome of compiling a natural-language rule to executable code."""
+    """Outcome and reusable-artifact provenance for one rule compilation."""
 
     code: str | None
     status: str
     attempts: int
     sleep_cycles: int
     provider_used: str | None
+    cache_hit: bool
 
 
 @dataclass

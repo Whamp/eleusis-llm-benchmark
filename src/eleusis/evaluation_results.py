@@ -66,14 +66,18 @@ class EvaluationStatistics(TypedDict):
 
 
 class GuessAttempt(TypedDict, total=False):
-    """Formal or shadow rule guess attached to one turn."""
+    """Formal or shadow rule guess attached to one Turn."""
 
+    version: Literal[1]
+    kind: Literal["formal"]
     guess: str
     correct: bool
     reasoning: str
     guessed_code: str | None
     node_count: int | None
     cyclomatic_complexity: int | None
+    compilation: dict[str, object]
+    equivalence: dict[str, object]
     shadow: bool
     evaluated: bool
 

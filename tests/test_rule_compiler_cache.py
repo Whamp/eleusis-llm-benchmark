@@ -136,8 +136,11 @@ class TestCompilerCache:
 
         assert client._call_count == 1
         assert result1["status"] == "success"
+        assert result1["cache_hit"] is False
         assert result2["status"] == "success"
         assert result2["code"] == valid_code
+        assert result2["cache_hit"] is True
+        assert result2["provider_used"] == result1["provider_used"]
 
     def test_cached_failure_reused(self, mock_sleep: MagicMock) -> None:
         """Failed compilations are also cached — no re-attempt on same text."""

@@ -553,17 +553,34 @@ class BenchmarkRunStore:
         turns = cast(list[Mapping[str, object]], record["turns"])
         outcome = cast(Mapping[str, object], record["terminal_outcome"])
         settings = cast(Mapping[str, object], record["settings"])
-        last_turn = turns[-1]
-        post_state = cast(Mapping[str, object], last_turn["post_card_state"])
-        failed_guesses = cast(list[object], post_state["failed_rule_guesses"])
+        failed_guesses: list[object] = []
+        if turns:
+            last_turn = turns[-1]
+            post_state = cast(Mapping[str, object], last_turn["post_card_state"])
+            failed_guesses = cast(list[object], post_state["failed_rule_guesses"])
+        max_turns = cast(int, settings["max_turns"])
         penalty = cast(int, settings["wrong_guess_penalty"]) * len(failed_guesses)
         score = -penalty
         if outcome["kind"] == "correct_formal_guess":
-            score = cast(int, settings["max_turns"]) - len(turns) + 1 - penalty
+            score = max_turns - len(turns) + 1 - penalty
+        correct_turns = [
+            cast(int, turn["turn_number"])
+            for turn in turns
+            if isinstance(turn.get("guess_attempt"), Mapping)
+            and cast(Mapping[str, object], turn["guess_attempt"]).get("correct") is True
+        ]
+        first_correct_turn = min(correct_turns) if correct_turns else None
+        no_stakes_score = (
+            max_turns - first_correct_turn + 1 if first_correct_turn is not None else 0
+        )
         return {
             "round_number": cast(int, record["scheduled_round_number"]),
             "turn_count": len(turns),
             "score": score,
+            "floored_score": max(0, score),
+            "no_stakes_score": no_stakes_score,
+            "first_correct_turn": first_correct_turn,
+            "failed_guesses": len(failed_guesses),
             "usage": BenchmarkRunStore._derived_model_usage(record),
         }
 

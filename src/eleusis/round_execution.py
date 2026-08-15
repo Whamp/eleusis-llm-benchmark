@@ -7,7 +7,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from eleusis.evaluation_results import TurnRecord
 from eleusis.game import GameEngine, GameState, GuessRuleAction, Rule
@@ -22,6 +22,7 @@ from eleusis.normalization import (
 from eleusis.player import LLMScientist
 
 if TYPE_CHECKING:
+    from eleusis.game.validator import RuleComparisonMetadata
     from eleusis.runner import RoundResult
 
 logger = logging.getLogger(__name__)
@@ -156,18 +157,33 @@ def _apply_formal_guess(
     if not isinstance(guess_value, str):
         return result
     reasoning = result.get("reasoning", "")
-    guessed_code = result.get("guessed_code")
-    complexity_value = result.get("complexity_metrics")
-    complexity = complexity_value if isinstance(complexity_value, dict) else {}
-    node_count = complexity.get("node_count")
-    cyclomatic = complexity.get("cyclomatic")
+    metadata = cast("RuleComparisonMetadata", result)
+    complexity = metadata["complexity_metrics"] or {}
     turn_record["guess_attempt"] = {
+        "version": 1,
+        "kind": "formal",
         "guess": guess_value,
         "correct": result.get("correct") is True,
         "reasoning": reasoning if isinstance(reasoning, str) else "",
-        "guessed_code": guessed_code if isinstance(guessed_code, str) else None,
-        "node_count": node_count if isinstance(node_count, int) else None,
-        "cyclomatic_complexity": (cyclomatic if isinstance(cyclomatic, int) else None),
+        "guessed_code": metadata["guessed_code"],
+        "node_count": complexity.get("node_count"),
+        "cyclomatic_complexity": complexity.get("cyclomatic"),
+        "compilation": {
+            "status": metadata["compilation_status"],
+            "attempt_count": metadata["compilation_attempts"],
+            "cache_hit": metadata["compilation_cache_hit"],
+            "artifact_provider": metadata["compilation_provider"],
+            "rule_compilation_attempts": None,
+        },
+        "equivalence": {
+            "num_simulations": runtime.engine.num_simulations,
+            "turns_per_simulation": runtime.engine.turns_per_simulation,
+            "simulation_seed": runtime.engine.simulation_seed,
+            "cache_hit": metadata["equivalence_cache_hit"],
+            "comparisons": metadata["simulation_comparisons"],
+            "mismatches": metadata["simulation_mismatches"],
+            "duration_seconds": metadata["simulation_duration_seconds"],
+        },
     }
     return result
 
@@ -292,8 +308,9 @@ def execute_round_turns(
             "Round execution resume invalid: next Turn index does not match "
             "completed Turn records"
         )
-    turn_count = next_turn_index
-    game_over_reason = "max_turns"
+    resumed_correct_guess = runtime.engine.rule_guessed
+    turn_count = next_turn_index - 1 if resumed_correct_guess else next_turn_index
+    game_over_reason = "correct_guess" if resumed_correct_guess else "max_turns"
     while turn_count < runtime.max_turns and not runtime.engine.is_game_over():
         turn_record, result = execute_round_turn(runtime, turn_count)
         turns.append(turn_record)

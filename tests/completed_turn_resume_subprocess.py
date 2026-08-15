@@ -36,16 +36,23 @@ def main() -> None:
     )
 
     patch.object(evaluation_startup, "preflight_check", lambda _model: None).start()
+    action_responses = payload.get("action_responses")
+    scripted_actions = (
+        action_responses
+        if isinstance(action_responses, list)
+        else [make_action_response(card) for card in payload["selected_cards"]]
+    )
     scientist = FakeLLMClient(
         [TruncationError("truncated")] * payload.get("truncation_count", 0)
-        + [make_action_response(card) for card in payload["selected_cards"]]
+        + scripted_actions
     )
+    compiler = FakeLLMClient(payload.get("compiler_responses", []))
 
     def create_test_clients(
         _config: BenchmarkConfig,
         _name: str,
     ) -> tuple[BaseLLMClient, BaseLLMClient]:
-        return FakeLLMClient(), scientist
+        return compiler, scientist
 
     patch.object(runner, "_create_round_clients", create_test_clients).start()
     startup = resolve_evaluation_startup(args)
@@ -63,6 +70,8 @@ def main() -> None:
                 "prompts": scientist.prompts_seen,
                 "record": completed,
                 "derived": exported["derived"],
+                "compiler_prompts": compiler.prompts_seen,
+                "legacy_round": state.results["rounds"][-1],
             }
         )
     )

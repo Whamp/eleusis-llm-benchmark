@@ -51,7 +51,7 @@ class RuleCompilationCoordinator:
         cache_key = (rule_text, self.max_total_attempts)
         if cached := self.compile_cache.get(cache_key):
             logger.debug(f"Compile cache hit for rule: {rule_text[:60]}")
-            return cached
+            return {**cached, "cache_hit": True}
 
         prompt = get_rule_compile_prompt(rule_text)
         while True:
@@ -100,6 +100,7 @@ class RuleCompilationCoordinator:
                         "attempts": self.total_attempts,
                         "sleep_cycles": self.sleep_cycle,
                         "provider_used": client_label,
+                        "cache_hit": False,
                     },
                     cacheable=True,
                 )
@@ -139,6 +140,7 @@ class RuleCompilationCoordinator:
             "attempts": self.total_attempts,
             "sleep_cycles": self.sleep_cycle,
             "provider_used": None,
+            "cache_hit": False,
         }
 
     def _sleep_before_next_cycle(self) -> None:

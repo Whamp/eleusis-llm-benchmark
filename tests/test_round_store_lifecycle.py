@@ -154,6 +154,10 @@ def test_one_turn_round_uses_complete_authoritative_store_lifecycle(
             "round_number": 1,
             "turn_count": 1,
             "score": 0,
+            "floored_score": 0,
+            "no_stakes_score": 0,
+            "first_correct_turn": None,
+            "failed_guesses": 0,
             "usage": {
                 "model_attempt_count": 1,
                 "provider_call_count": 1,

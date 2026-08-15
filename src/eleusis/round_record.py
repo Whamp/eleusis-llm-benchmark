@@ -108,6 +108,67 @@ class _CardOutcomeRecord(_StrictRoundRecordModel):
     replacement_draw: _CardRecord | None
 
 
+class _FormalGuessCompilationRecord(_StrictRoundRecordModel):
+    status: str
+    attempt_count: int = Field(ge=0)
+    cache_hit: bool
+    artifact_provider: str | None
+    rule_compilation_attempts: None
+
+
+class _FormalGuessEquivalenceRecord(_StrictRoundRecordModel):
+    num_simulations: int = Field(ge=0)
+    turns_per_simulation: int = Field(ge=0)
+    simulation_seed: int
+    cache_hit: bool
+    comparisons: int = Field(ge=0)
+    mismatches: int = Field(ge=0)
+    duration_seconds: float = Field(ge=0)
+
+
+class _FormalGuessRecord(_StrictRoundRecordModel):
+    version: Literal[1]
+    kind: Literal["formal"]
+    guess: str
+    correct: bool
+    reasoning: str
+    guessed_code: str | None
+    node_count: int | None
+    cyclomatic_complexity: int | None
+    compilation: _FormalGuessCompilationRecord
+    equivalence: _FormalGuessEquivalenceRecord
+
+
+def _require_unchanged_failed_guesses(
+    before: list[dict[str, str]],
+    after: list[dict[str, str]],
+    *,
+    error_message: str,
+) -> None:
+    """Reject a Turn type that changed authoritative failed-guess state."""
+    if before != after:
+        raise ValueError(error_message)
+
+
+def _validate_formal_guess_failed_state(
+    formal_guess: _FormalGuessRecord,
+    before: list[dict[str, str]],
+    after: list[dict[str, str]],
+) -> None:
+    """Require one state update for a wrong guess and none for a correct guess."""
+    if formal_guess.correct:
+        _require_unchanged_failed_guesses(
+            before,
+            after,
+            error_message="Correct Formal Guess changed failed-guess state",
+        )
+        return
+    if len(after) != len(before) + 1 or after[:-1] != before:
+        raise ValueError("Wrong Formal Guess must update failed-guess state once")
+    if after[-1].get("guess") != formal_guess.guess:
+        raise ValueError("Wrong Formal Guess state has a different proposal")
+
+
 class _RoundTurnRecord(_StrictRoundRecordModel):
     turn_number: int = Field(ge=1)
     pre_decision_state: _VisibleStateRecord
@@ -146,6 +207,34 @@ class _RoundTurnRecord(_StrictRoundRecordModel):
             raise ValueError("Model Attempt Decision must identify the usable attempt")
         return self
 
+    @model_validator(mode="after")
+    def _validate_guess_attempt_lifecycle(self) -> _RoundTurnRecord:
+        guess = self.guess_attempt
+        before = self.pre_decision_state.failed_rule_guesses
+        after = self.post_card_state.failed_rule_guesses
+        if guess is None:
+            _require_unchanged_failed_guesses(
+                before,
+                after,
+                error_message="Turn without Formal Guess changed failed-guess state",
+            )
+            return self
+        if not isinstance(guess, dict):
+            raise TypeError("Guess Attempt must be an object")
+        if guess.get("shadow") is True:
+            _require_unchanged_failed_guesses(
+                before,
+                after,
+                error_message="Shadow Guess changed failed-guess state",
+            )
+            return self
+        try:
+            formal_guess = _FormalGuessRecord.model_validate(guess)
+        except ValidationError as error:
+            raise ValueError("Formal Guess evidence is invalid") from error
+        _validate_formal_guess_failed_state(formal_guess, before, after)
+        return self
+
 
 class _SecretRuleRecord(_StrictRoundRecordModel):
     name: str | None
@@ -164,7 +253,12 @@ class _RoundSettingsRecord(_StrictRoundRecordModel):
 
 
 class _TerminalOutcomeRecord(_StrictRoundRecordModel):
-    kind: Literal["turn_limit", "correct_formal_guess"]
+    kind: Literal[
+        "turn_limit",
+        "correct_formal_guess",
+        "abandoned",
+        "impossible_to_continue",
+    ]
 
 
 class _RoundRecordDocument(_StrictRoundRecordModel):
@@ -190,13 +284,26 @@ class _RoundRecordDocument(_StrictRoundRecordModel):
                 raise ValueError("Round Turn state continuity is broken")
         if self.terminal_outcome is None:
             return self
-        if not self.turns:
-            raise ValueError("Terminal Outcome requires at least one completed Turn")
-        if (
-            self.terminal_outcome.kind == "turn_limit"
-            and len(self.turns) != self.settings.max_turns
+        correct_formal_turns = [
+            turn
+            for turn in self.turns
+            if isinstance(turn.guess_attempt, dict)
+            and turn.guess_attempt.get("kind") == "formal"
+            and turn.guess_attempt.get("correct") is True
+        ]
+        if self.terminal_outcome.kind == "correct_formal_guess" and (
+            not self.turns or correct_formal_turns != [self.turns[-1]]
         ):
-            raise ValueError("Turn-limit outcome requires exactly max_turns Turns")
+            raise ValueError(
+                "Correct-Formal-Guess outcome requires a correct final Formal Guess"
+            )
+        if self.terminal_outcome.kind == "turn_limit":
+            if len(self.turns) != self.settings.max_turns:
+                raise ValueError("Turn-limit outcome requires exactly max_turns Turns")
+            if correct_formal_turns:
+                raise ValueError(
+                    "Turn-limit outcome cannot contain a correct Formal Guess"
+                )
         return self
 
 
@@ -530,6 +637,8 @@ def complete_round_record(
     outcome_by_reason = {
         "max_turns": "turn_limit",
         "correct_guess": "correct_formal_guess",
+        "abandoned": "abandoned",
+        "impossible_to_continue": "impossible_to_continue",
     }
     outcome = outcome_by_reason.get(game_over_reason)
     if outcome is None:
