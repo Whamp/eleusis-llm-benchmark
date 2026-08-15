@@ -48,3 +48,20 @@ checkpoints and results, then calls `src/eleusis/runner.py` for each round. The 
 - Each round creates fresh game state. Reusing a secret rule never reuses the preceding round’s
   deck, hand, mainline, or sidelines.
 - Keep provider credentials in the gitignored `.env`; use `.env.example` as the key template.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues at `Whamp/eleusis-llm-benchmark`. See
+`docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the five canonical triage labels without aliases. See
+`docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Use the single-context layout: root `CONTEXT.md` plus `docs/adr/`. See
+`docs/agents/domain.md`.
