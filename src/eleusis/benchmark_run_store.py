@@ -54,6 +54,19 @@ class ActiveStoredRound:
     continuation: dict[str, object]
 
 
+@dataclass(frozen=True)
+class BenchmarkRunProgress:
+    """Live schedule cursor derived from authoritative Round rows."""
+
+    run_id: str
+    total_rounds: int
+    completed_rounds: int
+    active_round_number: int | None
+    committed_turns: int
+    next_round_number: int | None
+    is_complete: bool
+
+
 class BenchmarkRunStore:
     """Own SQLite transactions and portable exports for one Benchmark Run."""
 
@@ -371,6 +384,74 @@ class BenchmarkRunStore:
                 "Benchmark Run resume invariant broken: multiple active Rounds"
             )
         return None if not rows else self._decode_active_round(rows[0])
+
+    def read_progress(self) -> BenchmarkRunProgress:
+        """Read and validate live completed-Round and committed-Turn progress."""
+        manifest = self.read_manifest()
+        schedule = cast(list[Mapping[str, object]], manifest["schedule"])
+        with closing(self._connect()) as connection:
+            rows = connection.execute(
+                """
+                SELECT round_number, status, record_version, checkpoint_version,
+                       record_document, continuation_document
+                FROM rounds
+                ORDER BY round_number
+                """
+            ).fetchall()
+        completed_numbers = [
+            cast(int, row["round_number"])
+            for row in rows
+            if row["status"] == "completed"
+        ]
+        expected_completed = list(range(1, len(completed_numbers) + 1))
+        if completed_numbers != expected_completed:
+            raise BenchmarkRunStoreError(
+                "Benchmark Run progress invariant broken: completed Rounds are not "
+                "a contiguous schedule prefix"
+            )
+        active_rows = [row for row in rows if row["status"] == "active"]
+        if len(active_rows) > 1:
+            raise BenchmarkRunStoreError(
+                "Benchmark Run progress invariant broken: multiple active Rounds"
+            )
+        active = self._decode_active_round(active_rows[0]) if active_rows else None
+        if active is not None and active.round_number != len(completed_numbers) + 1:
+            raise BenchmarkRunStoreError(
+                "Benchmark Run progress invariant broken: active Round does not "
+                "follow completed schedule prefix"
+            )
+        if len(completed_numbers) > len(schedule) or (
+            active is not None and active.round_number > len(schedule)
+        ):
+            raise BenchmarkRunStoreError(
+                "Benchmark Run progress invariant broken: Round exceeds stored schedule"
+            )
+        committed_turns = 0
+        if active is not None:
+            next_turn_index = active.continuation["next_turn_index"]
+            if not isinstance(next_turn_index, int):
+                raise BenchmarkRunStoreError(
+                    "Benchmark Run progress invariant broken: committed Turn cursor "
+                    "is malformed"
+                )
+            committed_turns = next_turn_index
+        is_complete = len(completed_numbers) == len(schedule) and active is None
+        next_round_number = None
+        if not is_complete:
+            next_round_number = (
+                active.round_number
+                if active is not None
+                else len(completed_numbers) + 1
+            )
+        return BenchmarkRunProgress(
+            run_id=cast(str, manifest["run_id"]),
+            total_rounds=len(schedule),
+            completed_rounds=len(completed_numbers),
+            active_round_number=(active.round_number if active is not None else None),
+            committed_turns=committed_turns,
+            next_round_number=next_round_number,
+            is_complete=is_complete,
+        )
 
     def commit_completed_turn(
         self,
@@ -715,16 +796,103 @@ class BenchmarkRunStore:
             "usage": BenchmarkRunStore._derived_model_usage(record),
         }
 
+    @staticmethod
+    def _derived_run_summary(
+        records: list[dict[str, object]],
+        rounds: list[dict[str, object]],
+    ) -> dict[str, object]:
+        """Derive aggregate progress, outcomes, scores, and usage from Round Records."""
+        completed_rounds = len(records)
+        successful_rounds = sum(
+            1
+            for record in records
+            if cast(Mapping[str, object], record["terminal_outcome"])["kind"]
+            == "correct_formal_guess"
+        )
+        total_score = sum(cast(int, round_values["score"]) for round_values in rounds)
+        total_turns = sum(
+            cast(int, round_values["turn_count"]) for round_values in rounds
+        )
+        total_failed_guesses = sum(
+            cast(int, round_values["failed_guesses"]) for round_values in rounds
+        )
+        successful_turns = sum(
+            cast(int, round_values["turn_count"])
+            for record, round_values in zip(records, rounds, strict=True)
+            if cast(Mapping[str, object], record["terminal_outcome"])["kind"]
+            == "correct_formal_guess"
+        )
+        usage_values = [
+            cast(Mapping[str, object], round_values["usage"]) for round_values in rounds
+        ]
+        usage_count_names = (
+            "model_attempt_count",
+            "provider_call_count",
+            "prompt_tokens",
+            "output_tokens",
+            "reasoning_tokens",
+            "answer_tokens",
+        )
+        usage_totals = {
+            name: sum(cast(int, usage[name]) for usage in usage_values)
+            for name in usage_count_names
+        }
+        duration_seconds = round(
+            sum(cast(float, usage["duration_seconds"]) for usage in usage_values),
+            6,
+        )
+        output_tokens = usage_totals["output_tokens"]
+        return {
+            "completed_rounds": completed_rounds,
+            "successful_rounds": successful_rounds,
+            "failed_rounds": completed_rounds - successful_rounds,
+            "success_rate": (
+                successful_rounds / completed_rounds * 100 if completed_rounds else 0.0
+            ),
+            "total_score": total_score,
+            "average_score": (
+                total_score / completed_rounds if completed_rounds else 0.0
+            ),
+            "total_turns": total_turns,
+            "average_turns": (
+                total_turns / completed_rounds if completed_rounds else 0.0
+            ),
+            "average_turns_when_successful": (
+                successful_turns / successful_rounds if successful_rounds else 0.0
+            ),
+            "total_failed_guesses": total_failed_guesses,
+            "average_failed_guesses": (
+                total_failed_guesses / completed_rounds if completed_rounds else 0.0
+            ),
+            "usage": {
+                **usage_totals,
+                "duration_seconds": duration_seconds,
+                "throughput_tokens_per_second": round(
+                    output_tokens / duration_seconds if duration_seconds else 0.0,
+                    2,
+                ),
+                "cost": {"usd": None, "pricing_version": None},
+            },
+        }
+
+    def read_derived_summary(self) -> dict[str, object]:
+        """Derive current aggregate statistics from immutable completed Rounds."""
+        records = self._completed_rounds()
+        rounds = [self._derived_round_values(record) for record in records]
+        return self._derived_run_summary(records, rounds)
+
     def _build_export(self, watermark: int) -> dict[str, object]:
         """Build the versioned portable snapshot from authoritative SQLite data."""
         records = self._completed_rounds()
+        rounds = [self._derived_round_values(record) for record in records]
         return {
             "version": BENCHMARK_RUN_EXPORT_VERSION,
             "run": self.read_manifest(),
             "completed_round_records": records,
             "shadow_verdicts": self.read_shadow_verdicts(),
             "derived": {
-                "rounds": [self._derived_round_values(record) for record in records]
+                "rounds": rounds,
+                "summary": self._derived_run_summary(records, rounds),
             },
             "watermark": watermark,
         }

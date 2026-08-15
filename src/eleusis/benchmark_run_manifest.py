@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import random
 import subprocess
 from collections.abc import Mapping
 from pathlib import Path
@@ -264,8 +265,21 @@ def _build_round_schedule(
 ) -> list[dict[str, object]]:
     """Build the immutable ordered Round schedule fixed at Run creation."""
     schedule: list[dict[str, object]] = []
+    game_seed = startup.game_config["seed"]
+    if game_seed is None:
+        raise ValueError("Benchmark Run schedule requires a concrete effective seed")
+    selection_rng = random.Random(game_seed)
+    random_rule: RuleLibraryEntry | None = None
     for round_number in range(1, startup.num_rounds + 1):
         rule, batch_index = _schedule_rule(startup, rules, round_number)
+        if startup.rules_config["selection"] == "random" and not startup.suite_cases:
+            starts_rule_batch = (
+                startup.game_config.get("batch_round_offset") is not None
+                or (round_number - 1) % startup.num_rounds_per_rule == 0
+            )
+            if starts_rule_batch or random_rule is None:
+                random_rule = selection_rng.choice(rules)
+            rule = random_rule
         schedule.append(
             {
                 "round_number": round_number,

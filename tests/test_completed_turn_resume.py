@@ -265,6 +265,11 @@ def test_resume_after_committed_turns_matches_uninterrupted_control(
     assert active is not None
     assert active.continuation["next_turn_index"] == committed_turns
     assert len(cast(list[object], active.record["turns"])) == committed_turns
+    progress = run_store.read_progress()
+    assert progress.completed_rounds == 0
+    assert progress.active_round_number == 1
+    assert progress.committed_turns == committed_turns
+    assert progress.next_round_number == 1
     assert len(interrupted_scientist.prompts_seen) == committed_turns
 
     resumed = _resume_in_fresh_process(
