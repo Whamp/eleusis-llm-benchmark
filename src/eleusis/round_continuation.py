@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import platform
+import random
+import sys
 import time
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -232,11 +235,18 @@ class _RoundSnapshot(_StrictContinuationModel):
     elapsed_seconds: float = Field(ge=0)
 
 
+class _RuntimeSnapshot(_StrictContinuationModel):
+    python_implementation: str
+    python_version: str
+    random_state_version: int
+
+
 class _RoundContinuationDocument(_StrictContinuationModel):
     version: Literal[1]
     next_turn_index: int = Field(ge=0)
     turn_records: list[TurnRecord]
     round: _RoundSnapshot
+    runtime: _RuntimeSnapshot
     rule: _RuleSnapshot
     game_state: _GameStateSnapshot
     engine: _EngineSnapshot
@@ -328,6 +338,11 @@ def capture_round_continuation(
             "shadow_mode": runtime.shadow_mode,
             "elapsed_seconds": elapsed_seconds,
         },
+        "runtime": {
+            "python_implementation": platform.python_implementation(),
+            "python_version": f"{sys.version_info.major}.{sys.version_info.minor}",
+            "random_state_version": random.Random().getstate()[0],
+        },
         "rule": {
             "description": runtime.rule.description(),
             "code": runtime.rule.get_code(),
@@ -381,6 +396,23 @@ def restore_round_continuation(
         RoundContinuationIncompatibilityError: If exact restoration is unsupported.
     """
     document = _validate_round_continuation(payload)
+    current_runtime = {
+        "python_implementation": platform.python_implementation(),
+        "python_version": f"{sys.version_info.major}.{sys.version_info.minor}",
+        "random_state_version": random.Random().getstate()[0],
+    }
+    stored_runtime = document.runtime.model_dump(mode="python")
+    if stored_runtime != current_runtime:
+        differing_field = next(
+            key
+            for key in current_runtime
+            if stored_runtime[key] != current_runtime[key]
+        )
+        raise RoundContinuationIncompatibilityError(
+            "Round continuation incompatible: runtime."
+            f"{differing_field} changed from {stored_runtime[differing_field]!r} "
+            f"to {current_runtime[differing_field]!r}"
+        )
     try:
         scientist_client.restore_client_continuation(
             document.clients.scientist.model_dump(mode="python")

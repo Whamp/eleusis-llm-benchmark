@@ -10,6 +10,16 @@ import yaml
 from pydantic import ValidationError
 
 from eleusis.benchmark_config import BenchmarkConfig, GameConfig, RulesConfig
+from eleusis.benchmark_run_manifest import (
+    BenchmarkRunManifestIncompatibilityError,
+    restore_benchmark_run_config,
+    verify_benchmark_run_resume_compatibility,
+)
+from eleusis.benchmark_run_store import (
+    BENCHMARK_RUN_DATABASE_NAME,
+    BenchmarkRunStore,
+    BenchmarkRunStoreError,
+)
 from eleusis.evaluation_results import EvaluationResults
 from eleusis.evaluation_support import (
     apply_cli_overrides,
@@ -46,6 +56,8 @@ class EvaluationStartup:
     log_file: str
     num_rounds: int
     num_rules: int
+    run_store: BenchmarkRunStore | None = None
+    run_manifest: dict[str, object] | None = None
 
 
 def _load_resume_startup(
@@ -82,6 +94,74 @@ def _load_resume_startup(
         checkpoint["config"]["player"],
         checkpoint["config"]["rule_compiler"],
         config["game"].get("num_rounds_per_rule", 1),
+    )
+
+
+def _load_sqlite_resume_startup(
+    args: argparse.Namespace,
+    run_store: BenchmarkRunStore,
+) -> tuple[
+    BenchmarkConfig,
+    dict[str, object],
+    str,
+    str,
+    str,
+    int,
+    str | None,
+    list[tuple[str, int]] | None,
+]:
+    """Validate and reconstruct startup values from an authoritative Run store."""
+    manifest = run_store.read_manifest()
+    model_identity = manifest["model_identity"]
+    compiler_identity = manifest["compiler_identity"]
+    if not isinstance(model_identity, dict) or not isinstance(compiler_identity, dict):
+        raise BenchmarkRunManifestIncompatibilityError(
+            "Benchmark Run resume incompatible: model identities are malformed"
+        )
+    stored_model = model_identity["model_key"]
+    if not isinstance(stored_model, str):
+        raise BenchmarkRunManifestIncompatibilityError(
+            "Benchmark Run resume incompatible: model_identity.model_key is malformed"
+        )
+    if args.model and args.model != stored_model:
+        raise BenchmarkRunManifestIncompatibilityError(
+            "Benchmark Run resume incompatible: scientific_config.model changed"
+        )
+    current_config = apply_cli_overrides(load_config(args.config), args)
+    current_config["model"] = stored_model
+    if args.suite is not None:
+        current_config["suite"] = args.suite
+    verify_benchmark_run_resume_compatibility(manifest, current_config)
+    config = restore_benchmark_run_config(manifest, current_config)
+    schedule = manifest["schedule"]
+    if not isinstance(schedule, list) or not schedule:
+        raise BenchmarkRunManifestIncompatibilityError(
+            "Benchmark Run resume incompatible: schedule is empty"
+        )
+    cases: list[tuple[str, int]] = []
+    for scheduled in schedule:
+        if not isinstance(scheduled, dict):
+            raise BenchmarkRunManifestIncompatibilityError(
+                "Benchmark Run resume incompatible: schedule entry is malformed"
+            )
+        name = scheduled["rule_name"]
+        batch_index = scheduled["batch_round_index"]
+        if not isinstance(name, str) or not isinstance(batch_index, int):
+            cases = []
+            break
+        cases.append((name, batch_index))
+    suite_value = config.get("suite")
+    suite_name = suite_value if isinstance(suite_value, str) else None
+    rounds_per_rule = config["game"].get("num_rounds_per_rule", 1)
+    return (
+        config,
+        manifest,
+        stored_model,
+        str(model_identity["display_name"]),
+        str(compiler_identity["display_name"]),
+        rounds_per_rule,
+        suite_name,
+        cases or None,
     )
 
 
@@ -171,17 +251,50 @@ def resolve_evaluation_startup(args: argparse.Namespace) -> EvaluationStartup | 
     if not args.resume and not args.model:
         logger.error("--model is required (unless using --resume)")
         return None
-    checkpoint = load_checkpoint(args.resume) if args.resume else None
-    if args.resume and checkpoint is None:
+    run_store: BenchmarkRunStore | None = None
+    run_manifest: dict[str, object] | None = None
+    database_path = (
+        Path(args.resume) / BENCHMARK_RUN_DATABASE_NAME if args.resume else None
+    )
+    sqlite_resume = database_path is not None and database_path.is_file()
+    checkpoint = (
+        None
+        if sqlite_resume
+        else (load_checkpoint(args.resume) if args.resume else None)
+    )
+    if args.resume and not sqlite_resume and checkpoint is None:
         logger.error("Failed to load checkpoint")
         return None
-    if checkpoint:
+    if sqlite_resume:
+        try:
+            run_store = BenchmarkRunStore(Path(args.resume))
+            (
+                config,
+                run_manifest,
+                player_model,
+                player_name,
+                compiler_name,
+                rounds_per_rule,
+                suite_name,
+                suite_cases,
+            ) = _load_sqlite_resume_startup(args, run_store)
+        except (
+            BenchmarkRunManifestIncompatibilityError,
+            BenchmarkRunStoreError,
+            OSError,
+            ValidationError,
+            yaml.YAMLError,
+        ) as error:
+            logger.error("%s", error)
+            return None
+    elif checkpoint:
         resume_values = _load_resume_startup(args, checkpoint)
         if resume_values is None:
             return None
         config, player_model, player_name, compiler_name, rounds_per_rule = (
             resume_values
         )
+        suite_name, suite_cases = _resolve_suite_cases(args, config, checkpoint)
     else:
         config = apply_cli_overrides(load_config(args.config), args)
         config["model"] = args.model
@@ -189,7 +302,7 @@ def resolve_evaluation_startup(args: argparse.Namespace) -> EvaluationStartup | 
         player_name = model_spec_to_display_name(player_model)
         compiler_name = model_spec_to_display_name(config["rule_compiler"]["model_id"])
         rounds_per_rule = config["game"].get("num_rounds_per_rule", 1)
-    suite_name, suite_cases = _resolve_suite_cases(args, config, checkpoint)
+        suite_name, suite_cases = _resolve_suite_cases(args, config, checkpoint)
     output_tag, timestamp, log_file = _configure_evaluation_logging(
         args, checkpoint, player_name
     )
@@ -198,10 +311,22 @@ def resolve_evaluation_startup(args: argparse.Namespace) -> EvaluationStartup | 
     logger.info("=" * 80)
     preflight_check(player_model)
     logger.info("Pre-flight check passed!\n")
-    counts = _resolve_round_counts(config, checkpoint, suite_cases, rounds_per_rule)
-    if counts is None:
-        return None
-    num_rules, num_rounds = counts
+    if run_manifest is not None:
+        schedule = run_manifest["schedule"]
+        assert isinstance(schedule, list)
+        num_rounds = len(schedule)
+        num_rules = len(
+            {
+                scheduled["rule_name"]
+                for scheduled in schedule
+                if isinstance(scheduled, dict)
+            }
+        )
+    else:
+        counts = _resolve_round_counts(config, checkpoint, suite_cases, rounds_per_rule)
+        if counts is None:
+            return None
+        num_rules, num_rounds = counts
     return EvaluationStartup(
         args=args,
         checkpoint=checkpoint,
@@ -219,4 +344,6 @@ def resolve_evaluation_startup(args: argparse.Namespace) -> EvaluationStartup | 
         log_file=log_file,
         num_rounds=num_rounds,
         num_rules=num_rules,
+        run_store=run_store,
+        run_manifest=run_manifest,
     )

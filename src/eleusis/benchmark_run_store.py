@@ -15,9 +15,12 @@ from typing import TYPE_CHECKING, cast
 from eleusis.benchmark_run_manifest import (
     BENCHMARK_RUN_DATABASE_VERSION,
     BENCHMARK_RUN_EXPORT_VERSION,
+    ROUND_RECORD_VERSION,
+    validate_benchmark_run_manifest_document,
 )
 from eleusis.evaluation_results import TurnRecord
 from eleusis.round_continuation import (
+    ROUND_CONTINUATION_VERSION,
     capture_round_continuation,
     validate_round_continuation_document,
 )
@@ -42,6 +45,7 @@ class BenchmarkRunStoreError(RuntimeError):
 class ActiveStoredRound:
     """Validated active Round Record and its hidden continuation checkpoint."""
 
+    round_number: int
     record: dict[str, object]
     continuation: dict[str, object]
 
@@ -221,11 +225,7 @@ class BenchmarkRunStore:
                 "Benchmark Run store invariant broken: manifest row is missing"
             )
         document = self._decode_document(cast(str, row["manifest_document"]))
-        if not isinstance(document, dict):
-            raise BenchmarkRunStoreError(
-                "Benchmark Run store manifest invalid: document must be an object"
-            )
-        return cast(dict[str, object], document)
+        return validate_benchmark_run_manifest_document(document)
 
     def start_round(
         self,
@@ -283,20 +283,28 @@ class BenchmarkRunStore:
                     f"Round {runtime.round_number} already exists"
                 ) from error
 
-    def read_active_round(self, round_number: int) -> ActiveStoredRound | None:
-        """Read and validate the active Round Record and continuation checkpoint."""
-        with closing(self._connect()) as connection:
-            row = connection.execute(
-                """
-                SELECT record_document, continuation_document
-                FROM rounds
-                WHERE round_number = ? AND status = 'active'
-                """,
-                (round_number,),
-            ).fetchone()
-        if row is None:
-            return None
+    @staticmethod
+    def _validate_active_round_versions(row: sqlite3.Row) -> None:
+        """Fail closed on SQL versions before decoding active domain documents."""
+        record_version = cast(int, row["record_version"])
+        if record_version != ROUND_RECORD_VERSION:
+            raise BenchmarkRunStoreError(
+                "Benchmark Run active Round Record incompatible: "
+                f"found version {record_version}, expected {ROUND_RECORD_VERSION}"
+            )
+        checkpoint_version = cast(int, row["checkpoint_version"])
+        if checkpoint_version != ROUND_CONTINUATION_VERSION:
+            raise BenchmarkRunStoreError(
+                "Benchmark Run active checkpoint incompatible: "
+                f"found version {checkpoint_version}, "
+                f"expected {ROUND_CONTINUATION_VERSION}"
+            )
+
+    def _decode_active_round(self, row: sqlite3.Row) -> ActiveStoredRound:
+        """Validate one active SQL row and both versioned domain documents."""
+        self._validate_active_round_versions(row)
         return ActiveStoredRound(
+            round_number=cast(int, row["round_number"]),
             record=validate_round_record_document(
                 self._decode_document(cast(str, row["record_document"]))
             ),
@@ -304,6 +312,38 @@ class BenchmarkRunStore:
                 self._decode_document(cast(str, row["continuation_document"]))
             ),
         )
+
+    def read_active_round(self, round_number: int) -> ActiveStoredRound | None:
+        """Read and validate one active Round Record and continuation checkpoint."""
+        with closing(self._connect()) as connection:
+            row = connection.execute(
+                """
+                SELECT round_number, record_version, checkpoint_version,
+                       record_document, continuation_document
+                FROM rounds
+                WHERE round_number = ? AND status = 'active'
+                """,
+                (round_number,),
+            ).fetchone()
+        return None if row is None else self._decode_active_round(row)
+
+    def read_resumable_round(self) -> ActiveStoredRound | None:
+        """Read the sole active Round available for Benchmark Run resume."""
+        with closing(self._connect()) as connection:
+            rows = connection.execute(
+                """
+                SELECT round_number, record_version, checkpoint_version,
+                       record_document, continuation_document
+                FROM rounds
+                WHERE status = 'active'
+                ORDER BY round_number
+                """
+            ).fetchall()
+        if len(rows) > 1:
+            raise BenchmarkRunStoreError(
+                "Benchmark Run resume invariant broken: multiple active Rounds"
+            )
+        return None if not rows else self._decode_active_round(rows[0])
 
     def commit_completed_turn(
         self,

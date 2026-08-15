@@ -22,6 +22,7 @@ from eleusis.game import (
 from eleusis.game.rule_library import RuleLibraryEntry, RuleMetadata
 from eleusis.llm import LLMScientist, create_client, create_client_from_config
 from eleusis.llm.base import BaseLLMClient
+from eleusis.round_continuation import restore_round_continuation
 from eleusis.round_execution import (
     RoundRuntime,
     build_round_result,
@@ -313,18 +314,41 @@ def play_round(
         batch_round_index=batch_round_index,
         results_folder=results_folder,
     )
-    runtime = _prepare_round_runtime(request)
-    if run_store is not None:
-        round_seed, _rule_hash = _derive_round_seed(
+    active = (
+        run_store.read_active_round(round_number) if run_store is not None else None
+    )
+    if active is not None:
+        compiler, scientist_client = _create_round_clients(
             config,
-            runtime.rule,
-            batch_round_index,
+            model_spec_to_display_name(config["model"]),
         )
-        run_store.start_round(
-            runtime,
-            effective_round_seed=round_seed,
-            batch_round_index=batch_round_index,
+        restored = restore_round_continuation(
+            active.continuation,
+            scientist_client=scientist_client,
+            rule_compiler_client=compiler,
+            handle_action_error=_handle_action_error,
+            pause_after_turn=config["game"].get("pause_after_turn", False),
+            results_folder=results_folder,
         )
+        if restored.next_turn_index != 0 or restored.turn_records:
+            raise RuntimeError(
+                "Benchmark Run initial resume requires a zero-Turn checkpoint"
+            )
+        runtime = restored.runtime
+    else:
+        runtime = _prepare_round_runtime(request)
+        if run_store is not None:
+            round_seed, _rule_hash = _derive_round_seed(
+                config,
+                runtime.rule,
+                batch_round_index,
+            )
+            run_store.start_round(
+                runtime,
+                effective_round_seed=round_seed,
+                batch_round_index=batch_round_index,
+            )
+    if run_store is not None:
         runtime.completed_turn_committer = run_store.commit_completed_turn
     turn_count, game_over_reason, turns = execute_round_turns(runtime)
     result = build_round_result(runtime, turn_count, game_over_reason, turns)
