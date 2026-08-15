@@ -1,6 +1,6 @@
 """Validated persisted-result types for evaluation checkpoints and reports."""
 
-from typing import NotRequired
+from typing import Literal, NotRequired
 
 from pydantic import TypeAdapter
 from typing_extensions import TypedDict
@@ -78,6 +78,53 @@ class GuessAttempt(TypedDict, total=False):
     evaluated: bool
 
 
+class ModelAttemptTokenMetrics(TypedDict):
+    """Provider-neutral token facts observed for one Model Attempt."""
+
+    prompt_tokens: int
+    output_tokens: int
+    reasoning_tokens: int
+    answer_tokens: int
+
+
+class ProviderCallRecord(TypedDict):
+    """One observable provider call nested within a Model Attempt."""
+
+    call_number: int
+    provider: str
+    model: str
+    timestamp: float
+    duration_seconds: float
+    finish_reason: str
+    is_continuation: bool
+    continuation_depth: int
+    token_metrics: ModelAttemptTokenMetrics
+
+
+class ModelAttemptRecord(TypedDict):
+    """One prompt submission and its provider-neutral interpretation evidence."""
+
+    attempt_number: int
+    prompt: str
+    raw_completion: str | None
+    structured_completion: dict[str, object] | None
+    interpretation: Literal[
+        "usable_action",
+        "card_parse_error",
+        "truncated",
+        "structured_response_parse_error",
+        "provider_error",
+    ]
+    retry_cause: str | None
+    started_at: float
+    duration_seconds: float
+    provider: str
+    model: str
+    finish_reason: str | None
+    token_metrics: ModelAttemptTokenMetrics
+    provider_calls: list[ProviderCallRecord]
+
+
 class TurnRecord(TypedDict):
     """Serializable player state, action, and metrics for one turn."""
 
@@ -86,6 +133,7 @@ class TurnRecord(TypedDict):
     mainline_state: str
     hand: list[str]
     llm_response: dict[str, object]
+    model_attempts: NotRequired[list[ModelAttemptRecord]]
     confidence_level_raw: object
     confidence_level: int | None
     schema_errors: list[str]

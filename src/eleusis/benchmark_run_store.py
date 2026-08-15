@@ -495,8 +495,61 @@ class BenchmarkRunStore:
         )
 
     @staticmethod
-    def _derived_round_values(record: Mapping[str, object]) -> dict[str, int]:
-        """Recompute simple tracer metrics from authoritative terminal facts."""
+    def _derived_model_usage(record: Mapping[str, object]) -> dict[str, object]:
+        """Derive aggregate usage and throughput from immutable Model Attempts."""
+        turns = cast(list[Mapping[str, object]], record["turns"])
+        attempts = [
+            attempt
+            for turn in turns
+            for attempt in cast(list[Mapping[str, object]], turn["model_attempts"])
+        ]
+        token_names = (
+            "prompt_tokens",
+            "output_tokens",
+            "reasoning_tokens",
+            "answer_tokens",
+        )
+        token_totals = {
+            name: sum(
+                cast(
+                    int,
+                    cast(Mapping[str, object], attempt["token_metrics"])[name],
+                )
+                for attempt in attempts
+            )
+            for name in token_names
+        }
+        provider_calls = [
+            provider_call
+            for attempt in attempts
+            for provider_call in cast(
+                list[Mapping[str, object]],
+                attempt["provider_calls"],
+            )
+        ]
+        duration_seconds = sum(
+            cast(float, provider_call["duration_seconds"])
+            for provider_call in provider_calls
+        )
+        output_tokens = token_totals["output_tokens"]
+        return {
+            "model_attempt_count": len(attempts),
+            "provider_call_count": len(provider_calls),
+            **token_totals,
+            "duration_seconds": round(duration_seconds, 6),
+            "throughput_tokens_per_second": round(
+                output_tokens / duration_seconds if duration_seconds else 0.0,
+                2,
+            ),
+            "cost": {
+                "usd": None,
+                "pricing_version": None,
+            },
+        }
+
+    @staticmethod
+    def _derived_round_values(record: Mapping[str, object]) -> dict[str, object]:
+        """Recompute score and usage from authoritative terminal facts."""
         turns = cast(list[Mapping[str, object]], record["turns"])
         outcome = cast(Mapping[str, object], record["terminal_outcome"])
         settings = cast(Mapping[str, object], record["settings"])
@@ -511,6 +564,7 @@ class BenchmarkRunStore:
             "round_number": cast(int, record["scheduled_round_number"]),
             "turn_count": len(turns),
             "score": score,
+            "usage": BenchmarkRunStore._derived_model_usage(record),
         }
 
     def _build_export(self, watermark: int) -> dict[str, object]:

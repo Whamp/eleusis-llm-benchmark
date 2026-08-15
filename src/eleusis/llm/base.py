@@ -179,6 +179,7 @@ class BaseLLMClient(ABC):
         self.seed = seed
         self.call_metrics: list[LLMCallMetrics] = []
         self.generate_metrics: list[GenerateMetrics] = []
+        self.last_raw_completion: str | None = None
         self.fallback_clients: list[BaseLLMClient] = []
         self._compile_cache: dict[tuple[str, int], RuleCompileResult] = {}
 
@@ -219,6 +220,7 @@ class BaseLLMClient(ABC):
         """Generate text or a parsed JSON object from one provider response."""
         start_time = time.time()
         calls_in_generate = []
+        self.last_raw_completion = None
 
         messages: list[LLMMessage] = [{"role": "user", "content": prompt}]
         response, metrics = self._call_api(messages)
@@ -226,14 +228,14 @@ class BaseLLMClient(ABC):
         self.call_metrics.append(metrics)
 
         logger.info(f"Finish reason: {metrics.finish_reason}")
+        content = response.message.content
+        self.last_raw_completion = content
 
         if metrics.finish_reason == "length":
             logger.warning(f"{self.model_name} Response truncated (max tokens reached)")
             raise TruncationError(
                 f"Response truncated after {metrics.output_tokens} tokens"
             )
-
-        content = response.message.content
 
         if xml_tag:
             content = self._extract_content_from_response(

@@ -7,12 +7,14 @@ Verifies:
 
 from __future__ import annotations
 
+import copy
 import json
 from pathlib import Path
-from typing import Literal
+from typing import Literal, cast
 from unittest.mock import patch
 
 from eleusis.benchmark_config import BenchmarkConfig
+from eleusis.evaluation_results import TurnRecord
 from eleusis.llm.base import TruncationError
 from eleusis.runner import RoundResult, play_round
 from tests.conftest import FakeLLMClient, make_action_response
@@ -74,9 +76,19 @@ def _stable_client(n_turns: int) -> FakeLLMClient:
 
 
 def _normalize_result(result: RoundResult) -> dict[str, object]:
-    """Strip non-deterministic fields (wall_clock_seconds) for comparison."""
-    normalized_result: dict[str, object] = dict(result)
+    """Strip Round and Model Attempt wall-clock timing for comparison."""
+    normalized_result = copy.deepcopy(dict(result))
     normalized_result.pop("wall_clock_seconds", None)
+    turns = cast(list[TurnRecord], normalized_result["turns"])
+    for turn in turns:
+        for attempt in turn.get("model_attempts", []):
+            attempt_payload = cast(dict[str, object], attempt)
+            attempt_payload.pop("started_at", None)
+            attempt_payload.pop("duration_seconds", None)
+            for provider_call in attempt["provider_calls"]:
+                provider_call_payload = cast(dict[str, object], provider_call)
+                provider_call_payload.pop("timestamp", None)
+                provider_call_payload.pop("duration_seconds", None)
     return normalized_result
 
 

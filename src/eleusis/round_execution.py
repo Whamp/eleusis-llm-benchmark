@@ -125,6 +125,7 @@ def _build_turn_record(
             if scientist.last_action_response
             else {}
         ),
+        "model_attempts": list(scientist.last_model_attempts),
         "confidence_level_raw": turn_input.normalized["confidence_level_raw"],
         "confidence_level": turn_input.normalized["confidence_level"],
         "schema_errors": turn_input.normalized["schema_errors"],

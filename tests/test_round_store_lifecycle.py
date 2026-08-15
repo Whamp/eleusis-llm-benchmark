@@ -150,7 +150,22 @@ def test_one_turn_round_uses_complete_authoritative_store_lifecycle(
     assert exported["watermark"] > 0
     assert exported["completed_round_records"] == [completed]
     assert exported["derived"]["rounds"] == [
-        {"round_number": 1, "turn_count": 1, "score": 0}
+        {
+            "round_number": 1,
+            "turn_count": 1,
+            "score": 0,
+            "usage": {
+                "model_attempt_count": 1,
+                "provider_call_count": 1,
+                "prompt_tokens": 100,
+                "output_tokens": 50,
+                "reasoning_tokens": 30,
+                "answer_tokens": 20,
+                "duration_seconds": 0.1,
+                "throughput_tokens_per_second": 500.0,
+                "cost": {"usd": None, "pricing_version": None},
+            },
+        }
     ]
     assert "continuation" not in exported
     assert "continuation" not in completed
