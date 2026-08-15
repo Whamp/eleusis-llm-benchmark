@@ -3,7 +3,9 @@
 import logging
 import random
 import time
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from typing import cast
 
 from typing_extensions import TypedDict
 
@@ -84,6 +86,49 @@ class RuleValidator:
     def clear_shadow_cache(self) -> None:
         """Clear the shadow evaluation cache, forcing re-simulation on next call."""
         self._shadow_cache.clear()
+
+    def snapshot_validator_cache(self) -> list[dict[str, object]]:
+        """Capture reusable simulation verdicts without provider-specific state."""
+        return [
+            {
+                "key": {
+                    "actual_rule_code": key[0],
+                    "guessed_rule_description": key[1],
+                    "num_simulations": key[2],
+                    "turns_per_simulation": key[3],
+                    "simulation_seed": key[4],
+                },
+                "correct": value[0],
+                "reasoning": value[1],
+                "metadata": dict(value[2]),
+            }
+            for key, value in sorted(self._shadow_cache.items())
+        ]
+
+    def restore_validator_cache(
+        self,
+        payloads: Sequence[Mapping[str, object]],
+    ) -> None:
+        """Restore validated reusable simulation verdicts into this validator."""
+        restored: dict[ShadowCacheKey, ShadowCacheValue] = {}
+        for payload in payloads:
+            key_payload = cast(Mapping[str, object], payload["key"])
+            key: ShadowCacheKey = (
+                cast(str, key_payload["actual_rule_code"]),
+                cast(str, key_payload["guessed_rule_description"]),
+                cast(int, key_payload["num_simulations"]),
+                cast(int, key_payload["turns_per_simulation"]),
+                cast(int, key_payload["simulation_seed"]),
+            )
+            restored[key] = (
+                cast(bool, payload["correct"]),
+                cast(str, payload["reasoning"]),
+                cast(
+                    RuleComparisonMetadata,
+                    dict(cast(Mapping[str, object], payload["metadata"])),
+                ),
+            )
+        self._shadow_cache = restored
 
     def validate_rule(self, rule: Rule, num_test_cases: int = 3) -> ValidationResult:
         """Validate that a rule meets requirements."""

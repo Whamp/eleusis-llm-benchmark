@@ -1,7 +1,10 @@
 """Card system for Eleusis: Card, Deck, and Hand classes."""
 
+from __future__ import annotations
+
 import random
 from collections import deque
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
 
@@ -51,13 +54,38 @@ class Card:
         return f"{self.rank_name}{self.suit.symbol}"
 
     def to_dict(self) -> dict[str, int | str]:
-        """Convert card to dictionary for JSON serialization."""
+        """Convert card to dictionary for presentation-oriented JSON."""
         return {
             "rank": self.rank,
             "suit": self.suit.suit_name,
             "color": self.color,
             "symbol": str(self),
         }
+
+    def to_canonical_card_data(self) -> dict[str, int | str]:
+        """Encode the authoritative rank and suit without presentation fields."""
+        return {"rank": self.rank, "suit": self.suit.suit_name}
+
+    @classmethod
+    def from_canonical_card_data(cls, payload: Mapping[str, object]) -> Card:
+        """Decode one strictly canonical rank-and-suit Card."""
+        if set(payload) != {"rank", "suit"}:
+            raise ValueError("Canonical Card data requires only rank and suit")
+        rank = payload["rank"]
+        suit_name = payload["suit"]
+        if type(rank) is not int:
+            raise TypeError("Canonical Card rank must be an integer")
+        if not 1 <= rank <= NUM_CARDS:
+            raise ValueError("Canonical Card rank must be from 1 through 13")
+        if not isinstance(suit_name, str):
+            raise TypeError("Canonical Card suit must be a suit name")
+        suit = next(
+            (candidate for candidate in Suit if candidate.suit_name == suit_name),
+            None,
+        )
+        if suit is None:
+            raise ValueError(f"Canonical Card suit is unknown: {suit_name}")
+        return cls(rank=rank, suit=suit)
 
 
 NUM_DECKS = 2
@@ -111,6 +139,17 @@ class Deck:
         """Add cards back to the deck (for reshuffling discarded cards)."""
         self._cards.extend(cards)
 
+    def snapshot_deck_cards(self) -> list[dict[str, int | str]]:
+        """Capture the remaining deck in exact draw order using canonical Cards."""
+        return [card.to_canonical_card_data() for card in self._cards]
+
+    @classmethod
+    def restore_deck_cards(cls, payloads: Sequence[Mapping[str, object]]) -> Deck:
+        """Restore a remaining deck without initializing or shuffling it again."""
+        deck = cls()
+        deck._cards = deque(Card.from_canonical_card_data(item) for item in payloads)
+        return deck
+
 
 class Hand:
     """Player's hand of cards."""
@@ -146,5 +185,16 @@ class Hand:
         self._cards.clear()
 
     def to_dict(self) -> list[dict[str, int | str]]:
-        """Convert hand to list of card dictionaries for JSON serialization."""
+        """Convert hand to presentation-oriented card dictionaries."""
         return [card.to_dict() for card in self._cards]
+
+    def snapshot_hand_cards(self) -> list[dict[str, int | str]]:
+        """Capture the hand in exact order using canonical Cards."""
+        return [card.to_canonical_card_data() for card in self._cards]
+
+    @classmethod
+    def restore_hand_cards(cls, payloads: Sequence[Mapping[str, object]]) -> Hand:
+        """Restore hand order and duplicate-card multiplicity."""
+        hand = cls()
+        hand._cards = [Card.from_canonical_card_data(item) for item in payloads]
+        return hand

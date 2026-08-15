@@ -267,13 +267,21 @@ def _execute_turn(
     return turn_record, result
 
 
+def execute_round_turn(
+    runtime: RoundRuntime,
+    turn_index: int,
+) -> tuple[TurnRecord, dict[str, object]]:
+    """Execute one complete Turn through the Round orchestration path."""
+    return _execute_turn(runtime, turn_index)
+
+
 def execute_round_turns(runtime: RoundRuntime) -> tuple[int, str, list[TurnRecord]]:
     """Run turns until a correct guess, game-over state, or turn limit."""
     turn_count = 0
     game_over_reason = "max_turns"
     turns: list[TurnRecord] = []
     while turn_count < runtime.max_turns and not runtime.engine.is_game_over():
-        turn_record, result = _execute_turn(runtime, turn_count)
+        turn_record, result = execute_round_turn(runtime, turn_count)
         turns.append(turn_record)
         if result.get("correct") and "guess" in result:
             logger.info("\nRULE GUESS!")

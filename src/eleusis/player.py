@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import random
 from collections.abc import Mapping
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from typing_extensions import TypedDict
 
@@ -29,6 +29,20 @@ _CARD_PARSE_RETRY_HINT = (
     "\n\nThe card value could not be parsed. Use exact symbol format: 5♥, K♠, A♦, etc."
 )
 _GENERIC_RETRY_HINT = "\n\nIMPORTANT: DO NOT REASON TOO LONG ABOUT THIS."
+
+
+def _random_state_to_json(value: object) -> object:
+    """Convert nested RNG-state tuples into JSON-compatible arrays."""
+    if isinstance(value, tuple):
+        return [_random_state_to_json(item) for item in value]
+    return value
+
+
+def _random_state_from_json(value: object) -> object:
+    """Convert nested JSON arrays back into tuples accepted by random.Random."""
+    if isinstance(value, list):
+        return tuple(_random_state_from_json(item) for item in value)
+    return value
 
 
 class PlayHistoryEntry(TypedDict):
@@ -71,6 +85,46 @@ class LLMScientist:
         # Retry tracking (reset each turn)
         self.last_retry_count: int = 0
         self.last_retry_causes: list[RetryCause] = []
+
+    def snapshot_scientist_continuation(self) -> dict[str, object]:
+        """Capture prompt history and deterministic fallback RNG continuation."""
+        return {
+            "name": self.name,
+            "max_retries": self.max_retries,
+            "max_turns": self.max_turns,
+            "play_history": [dict(entry) for entry in self.play_history],
+            "rng_state": _random_state_to_json(self.rng.getstate()),
+        }
+
+    @classmethod
+    def restore_scientist_continuation(
+        cls,
+        payload: Mapping[str, object],
+        *,
+        llm_client: BaseLLMClient,
+        engine: GameEngine,
+    ) -> LLMScientist:
+        """Build a fresh scientist with restored prompt history and RNG state."""
+        rng = random.Random()
+        rng.setstate(
+            cast(
+                tuple[int, tuple[int, ...], float | None],
+                _random_state_from_json(payload["rng_state"]),
+            )
+        )
+        scientist = cls(
+            cast(str, payload["name"]),
+            llm_client,
+            max_retries=cast(int, payload["max_retries"]),
+            engine=engine,
+            max_turns=cast(int, payload["max_turns"]),
+            rng=rng,
+        )
+        scientist.play_history = [
+            cast(PlayHistoryEntry, dict(entry))
+            for entry in cast(list[Mapping[str, object]], payload["play_history"])
+        ]
+        return scientist
 
     def get_action(self, game_state: GameState) -> Action:
         """Get an action for the current game state."""

@@ -6,8 +6,9 @@ import re
 import textwrap
 import time
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Literal, Protocol, TypedDict, overload
+from collections.abc import Mapping, Sequence
+from dataclasses import asdict, dataclass
+from typing import Literal, Protocol, TypedDict, cast, overload
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +89,44 @@ class GenerateMetrics:
     total_answer_tokens: int
     total_duration_seconds: float
     success: bool
+
+
+def _restore_call_metrics(payload: Mapping[str, object]) -> LLMCallMetrics:
+    """Build one call metric from validated provider-neutral data."""
+    return LLMCallMetrics(
+        model_name=cast(str, payload["model_name"]),
+        role=cast(str, payload["role"]),
+        prompt_tokens=cast(int, payload["prompt_tokens"]),
+        output_tokens=cast(int, payload["output_tokens"]),
+        reasoning_tokens=cast(int, payload["reasoning_tokens"]),
+        answer_tokens=cast(int, payload["answer_tokens"]),
+        duration_seconds=cast(float, payload["duration_seconds"]),
+        throughput_tokens_per_sec=cast(
+            float,
+            payload["throughput_tokens_per_sec"],
+        ),
+        finish_reason=cast(str, payload["finish_reason"]),
+        has_reasoning=cast(bool, payload["has_reasoning"]),
+        timestamp=cast(float, payload["timestamp"]),
+        is_continuation=cast(bool, payload["is_continuation"]),
+        continuation_depth=cast(int, payload["continuation_depth"]),
+        provider=cast(str, payload["provider"]),
+        cost_usd=cast(float | None, payload["cost_usd"]),
+    )
+
+
+def _restore_generate_metrics(payload: Mapping[str, object]) -> GenerateMetrics:
+    """Build one generate metric from validated provider-neutral data."""
+    return GenerateMetrics(
+        total_calls=cast(int, payload["total_calls"]),
+        continuation_count=cast(int, payload["continuation_count"]),
+        total_prompt_tokens=cast(int, payload["total_prompt_tokens"]),
+        total_output_tokens=cast(int, payload["total_output_tokens"]),
+        total_reasoning_tokens=cast(int, payload["total_reasoning_tokens"]),
+        total_answer_tokens=cast(int, payload["total_answer_tokens"]),
+        total_duration_seconds=cast(float, payload["total_duration_seconds"]),
+        success=cast(bool, payload["success"]),
+    )
 
 
 def estimate_reasoning_tokens(content: str) -> int | None:
@@ -394,6 +433,79 @@ class BaseLLMClient(ABC):
                 for g in self.generate_metrics
             ],
         }
+
+    def snapshot_client_continuation(self) -> dict[str, object]:
+        """Capture provider-neutral usage and reusable rule compilations."""
+        return {
+            "call_metrics": [asdict(metric) for metric in self.call_metrics],
+            "generate_metrics": [asdict(metric) for metric in self.generate_metrics],
+            "compile_cache": [
+                {
+                    "key": {
+                        "rule_text": rule_text,
+                        "max_total_attempts": max_total_attempts,
+                    },
+                    "value": dict(value),
+                }
+                for (rule_text, max_total_attempts), value in sorted(
+                    self._compile_cache.items()
+                )
+            ],
+            "fallback_clients": [
+                client.snapshot_client_continuation()
+                for client in self.fallback_clients
+            ],
+        }
+
+    def restore_client_continuation(
+        self,
+        payload: Mapping[str, object],
+    ) -> None:
+        """Restore provider-neutral accounting and cache state on a fresh client."""
+        call_payloads = cast(
+            Sequence[Mapping[str, object]],
+            payload["call_metrics"],
+        )
+        generate_payloads = cast(
+            Sequence[Mapping[str, object]],
+            payload["generate_metrics"],
+        )
+        self.call_metrics = [_restore_call_metrics(metric) for metric in call_payloads]
+        self.generate_metrics = [
+            _restore_generate_metrics(metric) for metric in generate_payloads
+        ]
+        restored_cache: dict[tuple[str, int], RuleCompileResult] = {}
+        cache_payloads = cast(
+            Sequence[Mapping[str, object]],
+            payload["compile_cache"],
+        )
+        for entry in cache_payloads:
+            key = cast(Mapping[str, object], entry["key"])
+            restored_cache[
+                cast(str, key["rule_text"]),
+                cast(int, key["max_total_attempts"]),
+            ] = cast(
+                RuleCompileResult,
+                dict(cast(Mapping[str, object], entry["value"])),
+            )
+        self._compile_cache = restored_cache
+
+        fallback_payloads = cast(
+            Sequence[Mapping[str, object]],
+            payload["fallback_clients"],
+        )
+        if len(fallback_payloads) != len(self.fallback_clients):
+            raise ValueError(
+                "Client continuation fallback count mismatch: "
+                f"snapshot has {len(fallback_payloads)}, "
+                f"fresh client has {len(self.fallback_clients)}"
+            )
+        for client, fallback_payload in zip(
+            self.fallback_clients,
+            fallback_payloads,
+            strict=True,
+        ):
+            client.restore_client_continuation(fallback_payload)
 
     def clear_compile_cache(self) -> None:
         """Clear the compile cache, forcing re-compilation on next call."""
