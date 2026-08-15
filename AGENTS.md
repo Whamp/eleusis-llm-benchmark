@@ -1,54 +1,50 @@
-# Agent Instructions
+# Eleusis LLM Benchmark
 
-## Project Overview
+This benchmark tests inductive reasoning through Eleusis: a secret rule accepts or rejects
+played cards, and the benchmark model tries to infer that rule from observed outcomes.
 
-Eleusis LLM Benchmark — evaluates LLMs on inductive reasoning via a card game.
-A secret rule governs which cards are accepted. The model discovers the rule by
-playing cards and observing outcomes.
+## Working in This Repository
 
-## Build & Run
+- Use `uv`, including for dependency changes. Install with `uv sync`.
+- Target `Whamp/eleusis-llm-benchmark` for pushes, issues, and pull requests. Treat
+  `scienceetonnante/eleusis-llm-benchmark` as fetch-only upstream.
+- Run tests with `uv run pytest` and lint with `uv run ruff check`.
+- Smoke-test a model before a full run:
+  `uv run python scripts/evaluate_single.py --config config.smoke.yaml --model <key> --tag smoke`.
+- Run the default full benchmark with
+  `uv run python scripts/evaluate_single.py --model <key>`.
+- Use `--suite <name>` for a named case set from `suites.yaml`; a suite selects rule names and
+  `batch_round_index` values.
+- Read `README.md` when running, parallelizing, resuming, monitoring, or analyzing benchmarks.
 
-- **Package manager:** `uv` (never `pip`)
-- **Install:** `uv sync`
-- **Lint:** `uv run ruff check`
-- **Tests:** `uv run pytest`
-- **Smoke test:** `uv run python scripts/evaluate_single.py --config config.smoke.yaml --model <key> --tag smoke`
-- **Full benchmark:** `uv run python scripts/evaluate_single.py --model <key>`
+## Domain Vocabulary and Flow
 
-## Architecture
+- **Rule compiler:** the model configured under `rule_compiler` in the run config. It converts
+  natural-language rules—including benchmark-model guesses—into executable Python.
+- **Benchmark model:** the model under evaluation, selected by `--model <key>` from `models.yaml`.
+  `src/eleusis/player.py` implements its `LLMScientist` player.
+- **Secret rule:** the compiled `Rule` that decides whether a card joins the mainline or a
+  sideline.
+- **Shadow guess:** a tentative rule evaluated without changing gameplay or score. The default
+  `shadow_mode: offline` records it for later processing by `scripts/evaluate_shadows.py`.
 
-Two separate model roles:
+`scripts/evaluate_single.py` resolves the run config, benchmark model, and optional suite, writes
+checkpoints and results, then calls `src/eleusis/runner.py` for each round. The runner coordinates
+`LLMScientist`, the game engine, and rule validation. Provider adapters live under
+`src/eleusis/llm/`; post-hoc reporting lives under `src/eleusis/analysis/`.
 
-1. **Rule compiler** — converts natural-language rules to Python. Configured in `config.yaml`.
-2. **Benchmark model** — plays the game. Selected via `--model <key>` from `models.yaml`.
+## Behavioral Invariants and Risk Boundaries
 
-Core modules:
-
-- `src/eleusis/game/` — cards, game state, engine, rule validation
-- `src/eleusis/llm/` — provider clients (Anthropic, OpenAI, Google, xAI, HuggingFace, OpenAI-compat)
-- `src/eleusis/prompts/` — prompt templates
-- `src/eleusis/analysis/` — results analysis and visualization
-- `src/eleusis/runner.py` — round orchestration
-- `src/eleusis/player.py` — LLMScientist player logic
-
-Entry points:
-
-- `scripts/evaluate_single.py` — main evaluation script
-- `scripts/run_parallel_benchmark.py` — parallel multi-worker evaluation
-- `scripts/run_parallel_eval.sh` — parallel multi-model evaluation
-- `scripts/analyze_results.py` — post-hoc analysis
-- `scripts/generate_rule_library.py` — compile rules.txt to rules.json
-
-## Code Style
-
-- Ruff for linting (line length 100, Python 3.11+)
-- `snake_case` for functions/variables, `PascalCase` for classes
-
-## Key Design Decisions
-
-- Rule code runs in a restricted `exec()` sandbox (`engine.py`). Changes to `safe_globals` require careful review.
-- Simulation-based rule comparison — guesses are validated by running simulations, not string matching.
-- Double deck (104 cards). Hand size stays constant (draw after each play).
-- Round seeds are deterministic: `base_seed + rule_hash + batch_round_index`.
-- Each round of the same rule is independent — different `batch_round_index` values produce different deck shuffles.
-- API keys go in `.env` (gitignored). Reference `.env.example` for the template.
+- `src/eleusis/game/engine.py` executes generated rule bodies with `exec()` and an allowlisted
+  namespace. Treat the rule-compilation path and `safe_globals` as security-sensitive; this is
+  restricted execution, not a security boundary for hostile code.
+- Rule guesses are compiled and compared with finite, seeded simulations. Comparison is neither
+  string matching nor a proof of logical equivalence.
+- The game uses two standard decks (104 cards). A normal card play draws a replacement, keeping
+  the configured hand size constant while cards remain in the deck.
+- A seeded round uses
+  `(base_seed + low_32_bits(md5(rule_code)) + batch_round_index) & 0xffffffff`.
+  The same rule and batch index reproduce a shuffle; different batch indices vary it.
+- Each round creates fresh game state. Reusing a secret rule never reuses the preceding round’s
+  deck, hand, mainline, or sidelines.
+- Keep provider credentials in the gitignored `.env`; use `.env.example` as the key template.
