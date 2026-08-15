@@ -228,6 +228,7 @@ class TestOnlineMode:
                 "attempts": 1,
                 "sleep_cycles": 0,
                 "provider_used": "fake/fake-model",
+                "cache_hit": False,
             }
         )
 
@@ -294,6 +295,7 @@ class TestOfflineAnalysisScript:
                     "attempts": 1,
                     "sleep_cycles": 0,
                     "provider_used": "fake/fake-model",
+                    "cache_hit": False,
                 },
                 {
                     "code": 'return card.color == "red"',
@@ -301,6 +303,7 @@ class TestOfflineAnalysisScript:
                     "attempts": 1,
                     "sleep_cycles": 0,
                     "provider_used": "fake/fake-model",
+                    "cache_hit": False,
                 },
             ]
         )

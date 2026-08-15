@@ -118,6 +118,9 @@ class _RuleComparisonSnapshot(_StrictContinuationModel):
     complexity_metrics: _CodeComplexitySnapshot | None
     compilation_status: str
     compilation_attempts: int = Field(ge=0)
+    compilation_cache_hit: bool
+    compilation_provider: str | None
+    equivalence_cache_hit: bool
 
 
 class _ValidatorCacheKeySnapshot(_StrictContinuationModel):
@@ -208,6 +211,7 @@ class _CompileResultSnapshot(_StrictContinuationModel):
     attempts: int = Field(ge=0)
     sleep_cycles: int = Field(ge=0)
     provider_used: str | None
+    cache_hit: bool
 
 
 class _CompileCacheEntrySnapshot(_StrictContinuationModel):

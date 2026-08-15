@@ -249,6 +249,7 @@ def test_round_continuation_preserves_hidden_runtime_state() -> None:
                         "attempts": 1,
                         "sleep_cycles": 0,
                         "provider_used": "fake/fake-model",
+                        "cache_hit": False,
                     },
                 }
             ],
@@ -277,6 +278,9 @@ def test_round_continuation_preserves_hidden_runtime_state() -> None:
                     "complexity_metrics": None,
                     "compilation_status": "success",
                     "compilation_attempts": 1,
+                    "compilation_cache_hit": False,
+                    "compilation_provider": "fake/fake-model",
+                    "equivalence_cache_hit": False,
                 },
             }
         ]

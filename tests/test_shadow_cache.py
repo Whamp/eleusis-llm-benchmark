@@ -42,6 +42,7 @@ class FakeShadowCompiler(FakeLLMClient):
                 "attempts": 1,
                 "sleep_cycles": 0,
                 "provider_used": None,
+                "cache_hit": False,
             }
         return {
             "code": code,
@@ -49,6 +50,7 @@ class FakeShadowCompiler(FakeLLMClient):
             "attempts": 1,
             "sleep_cycles": 0,
             "provider_used": "fake/fake-model",
+            "cache_hit": False,
         }
 
 

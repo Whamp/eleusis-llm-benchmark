@@ -51,7 +51,7 @@ class SimulationTurnResult:
 
 
 class RuleComparisonMetadata(TypedDict):
-    """Compilation and simulation evidence for one guessed rule."""
+    """Compilation provenance and simulation evidence for one guessed rule."""
 
     simulation_comparisons: int
     simulation_mismatches: int
@@ -60,6 +60,9 @@ class RuleComparisonMetadata(TypedDict):
     complexity_metrics: CodeComplexity | None
     compilation_status: str
     compilation_attempts: int
+    compilation_cache_hit: bool
+    compilation_provider: str | None
+    equivalence_cache_hit: bool
 
 
 ShadowCacheKey = tuple[str, str, int, int, int]
@@ -240,7 +243,12 @@ class RuleValidator:
             logger.debug(
                 f"Shadow cache hit for tentative rule: {guessed_rule_desc[:60]}"
             )
-            return self._shadow_cache[cache_key]
+            correct, reasoning, cached_metadata = self._shadow_cache[cache_key]
+            metadata: RuleComparisonMetadata = {
+                **cached_metadata,
+                "equivalence_cache_hit": True,
+            }
+            return correct, reasoning, metadata
 
         compile_result = rule_compiler_client.convert_rule_to_code(
             guessed_rule_desc,
@@ -250,6 +258,8 @@ class RuleValidator:
         guessed_code = compile_result["code"]
         compilation_status = compile_result["status"]
         compilation_attempts = compile_result["attempts"]
+        compilation_cache_hit = compile_result["cache_hit"]
+        compilation_provider = compile_result["provider_used"]
 
         sim_start = time.perf_counter()
         sim_equivalent, sim_reasoning, comparisons, mismatches = (
@@ -283,6 +293,9 @@ class RuleValidator:
                 "complexity_metrics": complexity_metrics,
                 "compilation_status": compilation_status,
                 "compilation_attempts": compilation_attempts,
+                "compilation_cache_hit": compilation_cache_hit,
+                "compilation_provider": compilation_provider,
+                "equivalence_cache_hit": False,
             },
         )
         self._shadow_cache[cache_key] = result

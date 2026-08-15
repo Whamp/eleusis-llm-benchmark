@@ -12,7 +12,9 @@ from eleusis.round_execution import RoundRuntime, execute_round_turn
 from eleusis.round_record import (
     RoundRecordValidationError,
     append_round_record_turn,
+    complete_round_record,
     create_active_round_record,
+    validate_round_record_document,
 )
 from tests.conftest import FakeLLMClient, make_action_response
 from tests.test_round_continuation import _build_round_runtime
@@ -159,6 +161,147 @@ def test_round_record_represents_unavailable_raw_completion_explicitly() -> None
     assert attempt["interpretation"] == "usable_action"
     assert attempt["raw_completion"] is None
     assert attempt["structured_completion"] == make_action_response(str(selected))
+
+
+def test_round_record_preserves_formal_guess_evaluator_evidence() -> None:
+    """A Formal Guess retains compiler provenance and equivalence evidence."""
+    runtime = _build_round_runtime()
+    compiler = runtime.rule_compiler_client
+    scientist = runtime.scientist_client
+    assert isinstance(compiler, FakeLLMClient)
+    assert isinstance(scientist, FakeLLMClient)
+    selected = runtime.game_state.player.hand.get_all_cards()[0]
+    compiler.responses.append("return card.rank % 2 == 0")
+    precompiled = compiler.convert_rule_to_code("Only even ranks.", max_retries=2)
+    assert precompiled["cache_hit"] is False
+    scientist.responses.append(
+        make_action_response(
+            str(selected),
+            tentative_rule="Only even ranks.",
+            confidence_level=5,
+            guess_rule=True,
+        )
+    )
+    before = capture_round_continuation(runtime, [], next_turn_index=0)
+
+    turn_record, result = execute_round_turn(runtime, 0)
+    after = capture_round_continuation(runtime, [turn_record], next_turn_index=1)
+    active = create_active_round_record(
+        _manifest(runtime),
+        runtime,
+        effective_round_seed=8675309,
+        batch_round_index=0,
+    )
+    with_turn = append_round_record_turn(
+        active,
+        before,
+        after,
+        turn_record,
+        runtime,
+    )
+
+    assert result["correct"] is True
+    assert len(compiler.prompts_seen) == 1
+    turn = cast(list[dict[str, object]], with_turn["turns"])[0]
+    formal_guess = cast(dict[str, object], turn["guess_attempt"])
+    equivalence = cast(dict[str, object], formal_guess["equivalence"])
+    assert formal_guess == {
+        "version": 1,
+        "kind": "formal",
+        "guess": "Only even ranks.",
+        "correct": True,
+        "reasoning": "Rules appear equivalent: 3276 comparisons, all matched",
+        "guessed_code": "return card.rank % 2 == 0",
+        "node_count": 12,
+        "cyclomatic_complexity": 1,
+        "compilation": {
+            "status": "success",
+            "attempt_count": 1,
+            "cache_hit": True,
+            "artifact_provider": "fake/fake-model",
+            "rule_compilation_attempts": None,
+        },
+        "equivalence": {
+            "num_simulations": 7,
+            "turns_per_simulation": 9,
+            "simulation_seed": 41,
+            "cache_hit": False,
+            "comparisons": 3276,
+            "mismatches": 0,
+            "duration_seconds": equivalence["duration_seconds"],
+        },
+    }
+
+
+def test_round_record_rejects_incomplete_formal_guess_evidence() -> None:
+    """A Formal Guess cannot omit required equivalence evidence."""
+    runtime = _build_round_runtime()
+    compiler = runtime.rule_compiler_client
+    scientist = runtime.scientist_client
+    assert isinstance(compiler, FakeLLMClient)
+    assert isinstance(scientist, FakeLLMClient)
+    selected = runtime.game_state.player.hand.get_all_cards()[0]
+    compiler.responses.append("return card.rank % 2 == 0")
+    scientist.responses.append(
+        make_action_response(
+            str(selected),
+            tentative_rule="Only even ranks.",
+            confidence_level=5,
+            guess_rule=True,
+        )
+    )
+    before = capture_round_continuation(runtime, [], next_turn_index=0)
+    turn_record, _result = execute_round_turn(runtime, 0)
+    after = capture_round_continuation(runtime, [turn_record], next_turn_index=1)
+    active = create_active_round_record(
+        _manifest(runtime),
+        runtime,
+        effective_round_seed=8675309,
+        batch_round_index=0,
+    )
+    with_turn = append_round_record_turn(
+        active,
+        before,
+        after,
+        turn_record,
+        runtime,
+    )
+    invalid = copy.deepcopy(with_turn)
+    turn = cast(list[dict[str, object]], invalid["turns"])[0]
+    formal_guess = cast(dict[str, object], turn["guess_attempt"])
+    formal_guess.pop("equivalence")
+
+    with pytest.raises(
+        RoundRecordValidationError,
+        match="Formal Guess evidence is invalid",
+    ):
+        validate_round_record_document(invalid)
+
+
+@pytest.mark.parametrize(
+    ("game_over_reason", "outcome_kind"),
+    [
+        ("abandoned", "abandoned"),
+        ("impossible_to_continue", "impossible_to_continue"),
+    ],
+)
+def test_round_record_distinguishes_explicit_non_gameplay_outcomes(
+    game_over_reason: str,
+    outcome_kind: str,
+) -> None:
+    """Explicit stop decisions are terminal but process interruption is not."""
+    runtime = _build_round_runtime()
+    active = create_active_round_record(
+        _manifest(runtime),
+        runtime,
+        effective_round_seed=8675309,
+        batch_round_index=0,
+    )
+
+    completed = complete_round_record(active, game_over_reason=game_over_reason)
+
+    assert completed["terminal_outcome"] == {"kind": outcome_kind}
+    assert active["terminal_outcome"] is None
 
 
 def test_round_record_rejects_non_contiguous_turn_number() -> None:
