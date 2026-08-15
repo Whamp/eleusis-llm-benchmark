@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from typing_extensions import TypedDict
 
 from eleusis.benchmark_config import BenchmarkConfig
+from eleusis.benchmark_run_store import BenchmarkRunStore
 from eleusis.evaluation_results import TurnRecord
 from eleusis.game import (
     GameEngine,
@@ -174,20 +175,31 @@ def _load_round_rule(
     return rule, metadata, validator
 
 
+def _derive_round_seed(
+    config: BenchmarkConfig,
+    rule: Rule,
+    batch_round_index: int,
+) -> tuple[int | None, int]:
+    """Derive the effective Round seed and low 32-bit secret-rule hash."""
+    rule_hash = int(hashlib.md5(rule.get_code().encode()).hexdigest(), 16) & 0xFFFFFFFF
+    base_seed = config["game"]["seed"]
+    if base_seed is None:
+        return None, rule_hash
+    return (base_seed + rule_hash + batch_round_index) & 0xFFFFFFFF, rule_hash
+
+
 def _calculate_round_seed(
     config: BenchmarkConfig,
     rule: Rule,
     batch_round_index: int,
 ) -> int | None:
-    """Calculate the deterministic deck seed for one rule and batch index."""
-    base_seed = config["game"]["seed"]
-    if base_seed is None:
+    """Calculate and log the deterministic deck seed for one Round."""
+    round_seed, rule_hash = _derive_round_seed(config, rule, batch_round_index)
+    if round_seed is None:
         return None
-    rule_hash = int(hashlib.md5(rule.get_code().encode()).hexdigest(), 16) & 0xFFFFFFFF
-    round_seed = (base_seed + rule_hash + batch_round_index) & 0xFFFFFFFF
     logger.info(
-        f"Using round seed: {round_seed} (base={base_seed}, rule_hash={rule_hash}, "
-        f"batch_idx={batch_round_index})"
+        f"Using round seed: {round_seed} (base={config['game']['seed']}, "
+        f"rule_hash={rule_hash}, batch_idx={batch_round_index})"
     )
     return round_seed
 
@@ -258,7 +270,7 @@ def _prepare_round_runtime(request: RoundSetupRequest) -> RoundRuntime:
     logger.info("=" * 80)
     logger.info(f"[Round {request.round_number}] PHASE 3: GAME PLAY")
     logger.info("=" * 80 + "\n")
-    return RoundRuntime(
+    runtime = RoundRuntime(
         round_number=request.round_number,
         start_time=request.start_time,
         rule=rule,
@@ -275,6 +287,7 @@ def _prepare_round_runtime(request: RoundSetupRequest) -> RoundRuntime:
         results_folder=request.results_folder,
         handle_action_error=_handle_action_error,
     )
+    return runtime
 
 
 def play_round(
@@ -286,6 +299,7 @@ def play_round(
     rules_list: list[RuleLibraryEntry] | None = None,
     batch_round_index: int = 0,
     results_folder: str | None = None,
+    run_store: BenchmarkRunStore | None = None,
 ) -> RoundResult:
     """Set up and execute one reproducible pattern-discovery round."""
     request = RoundSetupRequest(
@@ -300,5 +314,23 @@ def play_round(
         results_folder=results_folder,
     )
     runtime = _prepare_round_runtime(request)
+    if run_store is not None:
+        round_seed, _rule_hash = _derive_round_seed(
+            config,
+            runtime.rule,
+            batch_round_index,
+        )
+        run_store.start_round(
+            runtime,
+            effective_round_seed=round_seed,
+            batch_round_index=batch_round_index,
+        )
+        runtime.completed_turn_committer = run_store.commit_completed_turn
     turn_count, game_over_reason, turns = execute_round_turns(runtime)
-    return build_round_result(runtime, turn_count, game_over_reason, turns)
+    result = build_round_result(runtime, turn_count, game_over_reason, turns)
+    if run_store is not None:
+        run_store.complete_round(
+            runtime.round_number,
+            game_over_reason=game_over_reason,
+        )
+    return result

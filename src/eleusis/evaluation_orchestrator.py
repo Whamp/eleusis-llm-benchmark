@@ -72,6 +72,7 @@ def _execute_round(
         rules_list=rules_list,
         batch_round_index=selection.batch_round_index,
         results_folder=f"results/{state.folder_name}",
+        run_store=state.run_store,
     )
     _update_current_rule(state, result, generated_new_rule)
     return result
@@ -199,7 +200,11 @@ def _run_evaluation_round(state: EvaluationState, round_number: int) -> None:
     _append_round_result(state, round_number, selection, result)
     _update_evaluation_statistics(state, result)
     _update_evaluation_checkpoint(state, round_number)
-    output_file = save_evaluation_results(state.results, state.folder_name)
+    output_file = (
+        state.run_store.ensure_current_export()
+        if state.run_store is not None
+        else save_evaluation_results(state.results, state.folder_name)
+    )
     logger.info("Progress saved to: %s", output_file)
     logger.info(
         "Round %s complete: turns=%s success=%s score=%s "
@@ -258,7 +263,11 @@ def _finalize_evaluation(state: EvaluationState) -> None:
         logger.info("Total LLM retries: %s", statistics["total_retries"])
         for cause, count in statistics["retry_by_cause"].items():
             logger.info("  - %s: %s", cause, count)
-    output_file = save_evaluation_results(state.results, state.folder_name)
+    output_file = (
+        state.run_store.ensure_current_export()
+        if state.run_store is not None
+        else save_evaluation_results(state.results, state.folder_name)
+    )
     logger.info("Results saved to: %s", output_file)
     logger.info("Log file: %s", state.startup.log_file)
 

@@ -32,6 +32,7 @@ __all__ = [
     "RoundContinuationIncompatibilityError",
     "capture_round_continuation",
     "restore_round_continuation",
+    "validate_round_continuation_document",
 ]
 
 ROUND_CONTINUATION_VERSION = 1
@@ -286,6 +287,14 @@ def _validate_round_continuation(
         raise RoundContinuationIncompatibilityError(
             f"Round continuation incompatible: malformed version {version}: {error}"
         ) from error
+
+
+def validate_round_continuation_document(payload: object) -> dict[str, object]:
+    """Validate and normalize one active Round continuation document."""
+    return cast(
+        dict[str, object],
+        _validate_round_continuation(payload).model_dump(mode="json"),
+    )
 
 
 def capture_round_continuation(
