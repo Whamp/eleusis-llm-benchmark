@@ -1,8 +1,13 @@
 """Fresh and resumed mutable state for a single-model evaluation."""
 
 import logging
+import secrets
+import uuid
 from dataclasses import dataclass
+from pathlib import Path
 
+from eleusis.benchmark_run_manifest import create_benchmark_run_manifest
+from eleusis.benchmark_run_store import BenchmarkRunStore
 from eleusis.evaluation_results import EvaluationResults
 from eleusis.evaluation_startup import EvaluationStartup
 from eleusis.evaluation_support import (
@@ -29,6 +34,7 @@ class EvaluationState:
     checkpoint_rules_library: list[RuleLibraryEntry] | None
     all_rules_library: list[RuleLibraryEntry]
     rule_name_to_index: dict[str, int]
+    run_store: BenchmarkRunStore | None = None
 
 
 def _ensure_resume_statistics(results: EvaluationResults) -> None:
@@ -184,8 +190,13 @@ def _new_evaluation_results(
 
 
 def _initialize_fresh_state(startup: EvaluationStartup) -> EvaluationState:
-    """Load the library and initialize a fresh evaluation checkpoint."""
+    """Load the library and initialize a fresh authoritative Benchmark Run."""
     folder_name = f"solo_evaluation_{startup.timestamp}_{startup.output_tag}"
+    if startup.game_config["seed"] is None:
+        effective_seed = secrets.randbits(32)
+        startup.game_config["seed"] = effective_seed
+        startup.config["game"]["seed"] = effective_seed
+        logger.info("Generated effective Benchmark Run game seed: %s", effective_seed)
     all_rules = load_rules_from_library(startup.config)
     name_to_index = {
         name: index
@@ -202,6 +213,15 @@ def _initialize_fresh_state(startup: EvaluationStartup) -> EvaluationState:
     logger.info("Log file: %s", startup.log_file)
     logger.info("Output folder: results/%s", folder_name)
     logger.info("Stored %s rules for resume support\n", len(all_rules))
+    manifest = create_benchmark_run_manifest(
+        startup,
+        all_rules,
+        run_id=str(uuid.uuid4()),
+    )
+    run_store = BenchmarkRunStore.create(
+        Path("results") / folder_name,
+        manifest,
+    )
     return EvaluationState(
         startup=startup,
         results=_new_evaluation_results(
@@ -218,6 +238,7 @@ def _initialize_fresh_state(startup: EvaluationStartup) -> EvaluationState:
         checkpoint_rules_library=None,
         all_rules_library=all_rules,
         rule_name_to_index=name_to_index,
+        run_store=run_store,
     )
 
 

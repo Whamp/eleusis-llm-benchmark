@@ -51,6 +51,9 @@ class RoundRuntime:
     pause_after_turn: bool
     results_folder: str | None
     handle_action_error: ActionErrorHandler
+    completed_turn_committer: (
+        Callable[[RoundRuntime, list[TurnRecord]], None] | None
+    ) = None
 
 
 @dataclass(frozen=True)
@@ -283,6 +286,8 @@ def execute_round_turns(runtime: RoundRuntime) -> tuple[int, str, list[TurnRecor
     while turn_count < runtime.max_turns and not runtime.engine.is_game_over():
         turn_record, result = execute_round_turn(runtime, turn_count)
         turns.append(turn_record)
+        if runtime.completed_turn_committer is not None:
+            runtime.completed_turn_committer(runtime, turns)
         if result.get("correct") and "guess" in result:
             logger.info("\nRULE GUESS!")
             logger.info(f"Guess: {result['guess']}")
