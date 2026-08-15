@@ -7,8 +7,44 @@ import textwrap
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Literal, Protocol, TypedDict, overload
 
 logger = logging.getLogger(__name__)
+
+
+class LLMMessage(TypedDict):
+    """Provider-neutral chat message passed into one LLM adapter call."""
+
+    role: Literal["assistant", "system", "user"]
+    content: str
+
+
+class ResponseMessage(Protocol):
+    """Text-bearing message returned by a provider response."""
+
+    @property
+    def content(self) -> str:
+        """Visible response text."""
+        ...
+
+
+class LLMResponseEnvelope(Protocol):
+    """Provider response containing one text-bearing message."""
+
+    @property
+    def message(self) -> ResponseMessage:
+        """Provider response message."""
+        ...
+
+
+class RuleCompileResult(TypedDict):
+    """Outcome of compiling a natural-language rule to executable code."""
+
+    code: str | None
+    status: str
+    attempts: int
+    sleep_cycles: int
+    provider_used: str | None
 
 
 @dataclass
@@ -22,12 +58,13 @@ class LLMCallMetrics:
 
     Invariant: output_tokens = reasoning_tokens + answer_tokens
     """
+
     model_name: str
     role: str
     prompt_tokens: int
-    output_tokens: int      # Total output (reasoning + answer)
-    reasoning_tokens: int   # CoT/thinking tokens (0 if none)
-    answer_tokens: int      # Non-reasoning output tokens
+    output_tokens: int  # Total output (reasoning + answer)
+    reasoning_tokens: int  # CoT/thinking tokens (0 if none)
+    answer_tokens: int  # Non-reasoning output tokens
     duration_seconds: float
     throughput_tokens_per_sec: float
     finish_reason: str
@@ -42,6 +79,7 @@ class LLMCallMetrics:
 @dataclass
 class GenerateMetrics:
     """Metrics for a single generate() call (may include multiple API calls)."""
+
     total_calls: int
     continuation_count: int
     total_prompt_tokens: int
@@ -58,7 +96,7 @@ def estimate_reasoning_tokens(content: str) -> int | None:
         return None
 
     # Try standard <think>...</think> format first
-    match = re.search(r'<think>(.*?)</think>', content, re.DOTALL)
+    match = re.search(r"<think>(.*?)</think>", content, re.DOTALL)
     if match:
         thinking_text = match.group(1)
     elif "</think>" in content:
@@ -77,7 +115,6 @@ def estimate_reasoning_tokens(content: str) -> int | None:
 
 class TruncationError(Exception):
     """Raised when LLM response is truncated due to max tokens."""
-    pass
 
 
 class BaseLLMClient(ABC):
@@ -93,6 +130,7 @@ class BaseLLMClient(ABC):
         role: str = "unknown",
         seed: int | None = None,
     ) -> None:
+        """Initialize shared provider settings and metric stores."""
         self.model_name = model_name
         self.api_key = api_key
         self.temperature = temperature
@@ -102,37 +140,48 @@ class BaseLLMClient(ABC):
         self.seed = seed
         self.call_metrics: list[LLMCallMetrics] = []
         self.generate_metrics: list[GenerateMetrics] = []
-        self.fallback_clients: list["BaseLLMClient"] = []
-        self._compile_cache: dict[str, dict] = {}
+        self.fallback_clients: list[BaseLLMClient] = []
+        self._compile_cache: dict[tuple[str, int], RuleCompileResult] = {}
 
     @property
     @abstractmethod
     def provider_name(self) -> str:
-        """Return the provider name."""
-        pass
+        """Provider name."""
 
     @abstractmethod
     def _call_api(
         self,
-        messages: list[dict],
+        messages: list[LLMMessage],
         is_continuation: bool = False,
         continuation_depth: int = 0,
         disable_thinking: bool = False,
-    ) -> tuple[object, LLMCallMetrics]:
+    ) -> tuple[LLMResponseEnvelope, LLMCallMetrics]:
         """Make a single API call and return response + metrics."""
-        pass
 
+    @overload
     def generate(
         self,
         prompt: str,
         xml_tag: str | None = None,
-        return_dict: bool = False
-    ) -> str | dict:
-        """Generate text or structured response with single force-answer attempt on truncation."""
+        return_dict: Literal[False] = False,
+    ) -> str: ...
+
+    @overload
+    def generate(
+        self,
+        prompt: str,
+        xml_tag: str | None = None,
+        return_dict: Literal[True] = True,
+    ) -> dict[str, object]: ...
+
+    def generate(
+        self, prompt: str, xml_tag: str | None = None, return_dict: bool = False
+    ) -> str | dict[str, object]:
+        """Generate text or a parsed JSON object from one provider response."""
         start_time = time.time()
         calls_in_generate = []
 
-        messages = [{"role": "user", "content": prompt}]
+        messages: list[LLMMessage] = [{"role": "user", "content": prompt}]
         response, metrics = self._call_api(messages)
         calls_in_generate.append(metrics)
         self.call_metrics.append(metrics)
@@ -141,16 +190,24 @@ class BaseLLMClient(ABC):
 
         if metrics.finish_reason == "length":
             logger.warning(f"{self.model_name} Response truncated (max tokens reached)")
-            raise TruncationError(f"Response truncated after {metrics.output_tokens} tokens")
+            raise TruncationError(
+                f"Response truncated after {metrics.output_tokens} tokens"
+            )
 
         content = response.message.content
 
         if xml_tag:
-            content = self._extract_content_from_response(content, [xml_tag], try_code_blocks=True)
+            content = self._extract_content_from_response(
+                content, [xml_tag], try_code_blocks=True
+            )
 
+        structured_content: dict[str, object] | None = None
         if return_dict:
             logger.debug(f"Parsing JSON from extracted content:\n{content[:500]}")
-            content = json.loads(content)
+            parsed_content = json.loads(content)
+            if not isinstance(parsed_content, dict):
+                raise TypeError("LLM structured response must decode to a JSON object")
+            structured_content = parsed_content
 
         total_duration = time.time() - start_time
         gen_metrics = GenerateMetrics(
@@ -165,7 +222,11 @@ class BaseLLMClient(ABC):
         )
         self.generate_metrics.append(gen_metrics)
 
-        return content
+        return (
+            structured_content
+            if return_dict and structured_content is not None
+            else content
+        )
 
     def _extract_content_from_response(
         self,
@@ -182,7 +243,10 @@ class BaseLLMClient(ABC):
         extracted = None
 
         if xml_tags:
-            logger.debug(f"Response text length: {len(response_text)}, contains '<ACTION>': {'<ACTION>' in response_text}")
+            logger.debug(
+                f"Response text length: {len(response_text)}, contains '<ACTION>':"
+                f" {'<ACTION>' in response_text}"
+            )
             for tag in xml_tags:
                 pattern = f"<{tag}>(.*?)</{tag}>"
                 # Use findall and take the last match - avoids false matches when
@@ -191,7 +255,10 @@ class BaseLLMClient(ABC):
                 logger.debug(f"Searching for <{tag}>: found {len(matches)} match(es)")
                 if matches:
                     extracted = matches[-1].strip()
-                    logger.debug(f"Extracted {len(extracted)} chars from <{tag}> (using last match)")
+                    logger.debug(
+                        f"Extracted {len(extracted)} chars from <{tag}> (using last"
+                        " match)"
+                    )
                     break
 
         if not extracted and try_code_blocks:
@@ -212,118 +279,28 @@ class BaseLLMClient(ABC):
         max_retries: int = 1,
         fallback_clients: list["BaseLLMClient"] | None = None,
         max_total_attempts: int = 5,
-    ) -> dict:
-        """Convert natural language rule to Python code with fallback and exponential backoff.
+    ) -> RuleCompileResult:
+        """Convert a natural-language rule using retries and fallback providers."""
+        from eleusis.llm.rule_compilation import RuleCompilationCoordinator
 
-        Tries this client first, then each fallback client in order.
-        If all clients fail, sleeps with exponential backoff (1m -> 2m -> 4m -> ...
-        capped at 15m) before retrying the full sequence.
-
-        Stops after max_total_attempts total generate() calls across all clients
-        and sleep cycles. Returns status="exhausted" if the cap is reached.
-
-        Returns dict with:
-        - code: The generated code (None on failure)
-        - status: "success", "retry_success", "exhausted", "no_code_returned", or "syntax_error"
-        - attempts: Number of attempts made
-        - sleep_cycles: Number of sleep cycles before success
-        - provider_used: Which provider ultimately succeeded (None on exhaustion)
-        """
-        from eleusis.prompts import get_rule_compile_prompt
-
-        # Cache key includes max_total_attempts so a small-budget exhaustion
-        # doesn't prevent a later larger-budget call from retrying.
-        cache_key = (rule_text, max_total_attempts)
-        if cache_key in self._compile_cache:
-            logger.debug(f"Compile cache hit for rule: {rule_text[:60]}")
-            return self._compile_cache[cache_key]
-
-        prompt = get_rule_compile_prompt(rule_text)
-        all_clients = [self] + (fallback_clients if fallback_clients is not None else self.fallback_clients)
-        sleep_cycle = 0
-        total_attempts = 0
-        base_sleep = 60  # 1 minute initial
-        max_sleep = 15 * 60  # 15 minute cap
-
-        while True:
-            for client_idx, client in enumerate(all_clients):
-                client_label = f"{client.provider_name}/{client.model_name}"
-                if client_idx > 0:
-                    logger.info(f"Trying fallback provider: {client_label}")
-
-                code = None
-                for attempt in range(max_retries + 1):
-                    if total_attempts >= max_total_attempts:
-                        logger.warning(
-                            f"Rule compiler exhausted after {total_attempts} total attempts"
-                        )
-                        return {
-                            "code": None,
-                            "status": "exhausted",
-                            "attempts": total_attempts,
-                            "sleep_cycles": sleep_cycle,
-                            "provider_used": None,
-                        }
-
-                    try:
-                        code = client.generate(prompt, xml_tag="CODE")
-                        total_attempts += 1
-                    except Exception as e:
-                        total_attempts += 1
-                        logger.warning(f"[{client_label}] Code generation attempt {attempt + 1} failed: {e}")
-                        code = None
-
-                    if code and self._validate_code_syntax(code):
-                        status = "success" if attempt == 0 and sleep_cycle == 0 and client_idx == 0 else "retry_success"
-                        result = {
-                            "code": code,
-                            "status": status,
-                            "attempts": total_attempts,
-                            "sleep_cycles": sleep_cycle,
-                            "provider_used": client_label,
-                        }
-                        self._compile_cache[cache_key] = result
-                        return result
-
-                    if attempt < max_retries:
-                        logger.info(f"[{client_label}] Compilation attempt {attempt + 1} failed, retrying...")
-
-                logger.warning(f"[{client_label}] All {max_retries + 1} attempts failed.")
-
-            # All clients exhausted — check total attempt cap before sleeping
-            if total_attempts >= max_total_attempts:
-                logger.warning(
-                    f"Rule compiler exhausted after {total_attempts} total attempts"
-                )
-                result = {
-                    "code": None,
-                    "status": "exhausted",
-                    "attempts": total_attempts,
-                    "sleep_cycles": sleep_cycle,
-                    "provider_used": None,
-                }
-                self._compile_cache[cache_key] = result
-                return result
-
-            # All clients exhausted — exponential backoff
-            sleep_cycle += 1
-            sleep_secs = min(base_sleep * (2 ** (sleep_cycle - 1)), max_sleep)
-            sleep_mins = sleep_secs / 60
-            logger.warning(
-                f"All providers failed. Sleeping {sleep_mins:.0f}m before retry "
-                f"(cycle {sleep_cycle})..."
-            )
-            print(
-                f"[Rule Compiler] All providers failed. "
-                f"Sleeping {sleep_mins:.0f}m before retry (cycle {sleep_cycle})..."
-            )
-            time.sleep(sleep_secs)
+        fallbacks = (
+            fallback_clients if fallback_clients is not None else self.fallback_clients
+        )
+        coordinator = RuleCompilationCoordinator(
+            primary_client=self,
+            fallback_clients=fallbacks,
+            compile_cache=self._compile_cache,
+            validate_code_syntax=self._validate_code_syntax,
+            max_retries=max_retries,
+            max_total_attempts=max_total_attempts,
+        )
+        return coordinator.compile(rule_text)
 
     def _validate_code_syntax(self, code: str) -> bool:
         """Check if code compiles without syntax errors.
 
-        The code is a function body (not a full function definition), so we wrap
-        it in a function before compiling to allow return statements.
+        The code is a function body (not a full function definition), so we wrap it in a
+        function before compiling to allow return statements.
         """
         # Wrap in function definition like Rule._compile_code() does
         full_code = f"def _validate(card, mainline):\n{textwrap.indent(code, '    ')}"
@@ -334,7 +311,7 @@ class BaseLLMClient(ABC):
             logger.warning(f"Syntax error in generated code: {e}")
             return False
 
-    def get_usage_stats(self) -> dict:
+    def get_usage_stats(self) -> dict[str, object]:
         """Get aggregated usage statistics for this client.
 
         Returns normalized token fields:
@@ -361,7 +338,9 @@ class BaseLLMClient(ABC):
         total_output = sum(m.output_tokens for m in self.call_metrics)
         total_reasoning = sum(m.reasoning_tokens for m in self.call_metrics)
         total_answer = sum(m.answer_tokens for m in self.call_metrics)
-        total_cost = sum(m.cost_usd for m in self.call_metrics if m.cost_usd is not None)
+        total_cost = sum(
+            m.cost_usd for m in self.call_metrics if m.cost_usd is not None
+        )
         total_duration = sum(m.duration_seconds for m in self.call_metrics)
         continuation_calls = sum(1 for m in self.call_metrics if m.is_continuation)
         calls_requiring_continuation = sum(
@@ -375,14 +354,16 @@ class BaseLLMClient(ABC):
             "answer_tokens": total_answer,
             "cost_usd": round(total_cost, 6) if total_cost > 0 else None,
             "duration_seconds": round(total_duration, 2),
-            "throughput_tokens_per_sec": round(total_output / total_duration if total_duration > 0 else 0, 2),
+            "throughput_tokens_per_sec": round(
+                total_output / total_duration if total_duration > 0 else 0, 2
+            ),
             "call_count": len(self.call_metrics),
             "continuation_calls": continuation_calls,
             "calls_requiring_continuation": calls_requiring_continuation,
             "provider": self.provider_name,
         }
 
-    def get_detailed_metrics(self) -> dict:
+    def get_detailed_metrics(self) -> dict[str, object]:
         """Get detailed per-call metrics for analysis."""
         return {
             "calls": [

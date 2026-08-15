@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+import sys
 from pathlib import Path
 
 from eleusis.analysis import analyze_folder
@@ -9,7 +10,8 @@ from eleusis.analysis import analyze_folder
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 
-def main():
+def main() -> int:
+    """Parse CLI options and run analysis for one results folder."""
     parser = argparse.ArgumentParser(
         description="Analyze Eleusis evaluation results",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -48,4 +50,4 @@ Outputs (saved in the input folder):
 
 
 if __name__ == "__main__":
-    exit(main())
+    sys.exit(main())

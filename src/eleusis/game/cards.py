@@ -5,7 +5,7 @@ from collections import deque
 from dataclasses import dataclass
 from enum import Enum
 
-__all__ = ["Suit", "Card", "Deck", "Hand"]
+__all__ = ["Card", "Deck", "Hand", "Suit"]
 
 
 class Suit(Enum):
@@ -16,7 +16,8 @@ class Suit(Enum):
     CLUBS = ("clubs", "♣", "black")
     SPADES = ("spades", "♠", "black")
 
-    def __init__(self, name: str, symbol: str, color: str):
+    def __init__(self, name: str, symbol: str, color: str) -> None:
+        """Initialize a suit's machine name, display symbol, and color."""
         self.suit_name = name
         self.symbol = symbol
         self.color = color
@@ -58,12 +59,16 @@ class Card:
             "symbol": str(self),
         }
 
+
 NUM_DECKS = 2
 NUM_CARDS = 13
+
+
 class Deck:
     """Double deck of 104 cards (2 standard 52-card decks)."""
 
     def __init__(self) -> None:
+        """Initialize a complete ordered double deck before shuffling."""
         self._cards: deque[Card] = deque()
         self._initialize()
 
@@ -111,6 +116,7 @@ class Hand:
     """Player's hand of cards."""
 
     def __init__(self) -> None:
+        """Initialize an empty player hand."""
         self._cards: list[Card] = []
 
     def add_card(self, card: Card) -> None:

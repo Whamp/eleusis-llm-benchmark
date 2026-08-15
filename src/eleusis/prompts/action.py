@@ -1,28 +1,48 @@
 """Action selection prompt for Eleusis."""
 
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+
 from eleusis.prompts.game_rules import get_game_rules
 
-__all__ = ["get_action_prompt"]
+__all__ = ["ActionPromptContext", "get_action_prompt"]
 
 
-def get_action_prompt(
-    compact_board: str,
-    hand_cards: list[dict],
-    play_history: list[dict],
-    failed_guesses: list[dict] | None,
-    current_turn: int,
-    max_turns: int,
-    failed_guess_count: int,
-    hand_size: int,
-    wrong_guess_penalty: int,
-) -> str:
-    """Generate prompt for LLM to select a move."""
-    hand_str = ", ".join([c["symbol"] for c in hand_cards])
+@dataclass(frozen=True)
+class ActionPromptContext:
+    """Game and scoring state needed to build one action-selection prompt."""
+
+    compact_board: str
+    hand_cards: Sequence[Mapping[str, int | str]]
+    play_history: Sequence[Mapping[str, object]]
+    failed_guesses: Sequence[Mapping[str, str]] | None
+    current_turn: int
+    max_turns: int
+    failed_guess_count: int
+    hand_size: int
+    wrong_guess_penalty: int
+
+
+def get_action_prompt(context: ActionPromptContext) -> str:
+    """Generate a model prompt from one action-selection context."""
+    compact_board = context.compact_board
+    hand_cards = context.hand_cards
+    play_history = context.play_history
+    failed_guesses = context.failed_guesses
+    current_turn = context.current_turn
+    max_turns = context.max_turns
+    failed_guess_count = context.failed_guess_count
+    hand_size = context.hand_size
+    wrong_guess_penalty = context.wrong_guess_penalty
+    hand_str = ", ".join(str(card["symbol"]) for card in hand_cards)
 
     # Format play history
     history_str = ""
     if play_history:
-        history_str = "Your last 3 turns (the card you played, the outcome and your reasoning summary):\n"
+        history_str = (
+            "Your last 3 turns (the card you played, the outcome and your reasoning"
+            " summary):\n"
+        )
         for entry in play_history[-3:]:
             card = entry.get("card", "N/A")
             reasoning_summary = entry.get("reasoning_summary", "")
@@ -40,7 +60,7 @@ def get_action_prompt(
         failed_guesses_str = "\n"
         for entry in failed_guesses:
             guess = entry.get("guess", "")
-            failed_guesses_str += f"- \"{guess}\"\n"
+            failed_guesses_str += f'- "{guess}"\n'
         failed_guesses_str += "\nAll these guesses were incorrect.\n"
 
     return f"""# PATTERN DISCOVERY CARD GAME
@@ -103,7 +123,7 @@ Format your response as follows:
 }}
 </ACTION>
 
-Always provide your current best hypothesis as a tentative rule, even if you're uncertain. 
+Always provide your current best hypothesis as a tentative rule, even if you're uncertain.
 If you set guess_rule to false, this tentative rule will not be evaluated, it's just for your own tracking.
 Set "guess_rule" to true only when you want to officially try to guess the rule.
    - If correct, you score and the round ends immediately.

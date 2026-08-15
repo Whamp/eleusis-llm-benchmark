@@ -11,7 +11,7 @@ from __future__ import annotations
 import random
 
 from eleusis.game.cards import Card
-from eleusis.game.engine import GameEngine, Rule
+from eleusis.game.engine import GameEngine, PlayCardAction, Rule
 from eleusis.game.state import GameState
 from eleusis.llm.base import TruncationError
 from eleusis.player import LLMScientist
@@ -53,15 +53,18 @@ def _make_scientist(
 class TestStaleActionResponse:
     """last_action_response must be None after failed retries."""
 
-    def test_cleared_on_entry(self, sample_hand):
+    def test_cleared_on_entry(self, sample_hand: list[Card]) -> None:
         """After all retries fail, last_action_response should be None."""
         # All attempts raise TruncationError
         errors = [TruncationError("truncated")] * 3
         client = FakeLLMClient(errors)
 
         rng = random.Random(42)
-        scientist, engine, state = _make_scientist(
-            client, sample_hand, max_retries=3, rng=rng,
+        scientist, _engine, state = _make_scientist(
+            client,
+            sample_hand,
+            max_retries=3,
+            rng=rng,
         )
 
         # Seed a stale value
@@ -72,7 +75,7 @@ class TestStaleActionResponse:
         # Should be cleared, not stale
         assert scientist.last_action_response is None
 
-    def test_set_on_success(self, sample_hand):
+    def test_set_on_success(self, sample_hand: list[Card]) -> None:
         """On a successful parse, last_action_response is the new response."""
         resp = make_action_response("2♥")
         client = FakeLLMClient([resp])
@@ -90,7 +93,7 @@ class TestStaleActionResponse:
 class TestSeededFallback:
     """Fallback card must come from a seeded RNG, not global random."""
 
-    def test_deterministic_fallback(self, sample_hand):
+    def test_deterministic_fallback(self, sample_hand: list[Card]) -> None:
         """Two runs with same seed must pick the same fallback card."""
         errors = [TruncationError("truncated")] * 3
 
@@ -99,18 +102,22 @@ class TestSeededFallback:
             client = FakeLLMClient(list(errors))
             rng = random.Random(99)
             scientist, _, state = _make_scientist(
-                client, sample_hand, max_retries=3, rng=rng,
+                client,
+                sample_hand,
+                max_retries=3,
+                rng=rng,
             )
             action = scientist.get_action(state)
+            assert isinstance(action, PlayCardAction)
             results.append(action.card)
 
         assert results[0] == results[1], "Same seed must produce same fallback"
 
-    def test_different_seeds_can_differ(self, sample_hand):
+    def test_different_seeds_can_differ(self, sample_hand: list[Card]) -> None:
         """Different seeds should (generally) produce different fallback cards.
 
-        With 4 cards in hand, probability of same card with different seeds is 1/4.
-        We try a few seed pairs to find one that differs.
+        With 4 cards in hand, probability of same card with different seeds is 1/4. We
+        try a few seed pairs to find one that differs.
         """
         errors = [TruncationError("truncated")] * 3
 
@@ -121,9 +128,13 @@ class TestSeededFallback:
                 client = FakeLLMClient(list(errors))
                 rng = random.Random(seed)
                 scientist, _, state = _make_scientist(
-                    client, sample_hand, max_retries=3, rng=rng,
+                    client,
+                    sample_hand,
+                    max_retries=3,
+                    rng=rng,
                 )
                 action = scientist.get_action(state)
+                assert isinstance(action, PlayCardAction)
                 cards.append(action.card)
             if cards[0] != cards[1]:
                 found_difference = True

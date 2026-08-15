@@ -1,13 +1,22 @@
 """OpenAI-compatible API client for self-hosted models (SGLang, vLLM, etc.)."""
 
 import logging
-import os
+import sys
 import time
+from collections.abc import Iterable
 from dataclasses import dataclass
 
-from openai import OpenAI
+from openai import APIError, OpenAI
+from openai.types.chat import ChatCompletionChunk
+from openai.types.completion_usage import CompletionUsage
 
-from eleusis.llm.base import BaseLLMClient, LLMCallMetrics, estimate_reasoning_tokens
+from eleusis.llm.base import (
+    BaseLLMClient,
+    LLMCallMetrics,
+    LLMMessage,
+    estimate_reasoning_tokens,
+)
+from eleusis.llm.openai_messages import build_openai_chat_messages
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +24,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CompatMessage:
     """Message wrapper for OpenAI-compat responses."""
+
     content: str
     reasoning: str | None = None
 
@@ -22,15 +32,26 @@ class CompatMessage:
 @dataclass
 class CompatChoice:
     """Choice wrapper for OpenAI-compat responses."""
+
     message: CompatMessage
     finish_reason: str
+
+
+@dataclass
+class CompatStreamResult:
+    """Content, reasoning, finish state, and usage consumed from one stream."""
+
+    content: str
+    reasoning: str
+    finish_reason: str
+    usage: CompletionUsage | None
 
 
 class OpenAICompatClient(BaseLLMClient):
     """Client for OpenAI-compatible APIs (SGLang, vLLM, etc.).
 
-    Supports models that use reasoning_content field (Qwen3 thinking)
-    or <think> tags in content (DeepSeek R1 style).
+    Supports models that use reasoning_content field (Qwen3 thinking) or <think> tags in
+    content (DeepSeek R1 style).
     """
 
     def __init__(
@@ -52,6 +73,11 @@ class OpenAICompatClient(BaseLLMClient):
             model_name: Model ID as served by the endpoint.
             base_url: Base URL of the OpenAI-compatible API (e.g. http://host:30000/v1).
             api_key: API key (most self-hosted servers accept any string).
+            temperature: Sampling temperature.
+            max_retries: Maximum endpoint call attempts.
+            max_tokens: Maximum generated tokens.
+            role: Metrics label for this client.
+            seed: Optional generation seed.
             reasoning_format: How reasoning appears in responses:
                 "reasoning_content" - separate reasoning_content field (Qwen3)
                 "think_tags" - <think>...</think> in content (DeepSeek R1)
@@ -80,108 +106,123 @@ class OpenAICompatClient(BaseLLMClient):
 
     @property
     def provider_name(self) -> str:
+        """Provider name used in metrics and logs."""
         return "openai_compat"
 
     def _call_api(
         self,
-        messages: list[dict],
+        messages: list[LLMMessage],
         is_continuation: bool = False,
         continuation_depth: int = 0,
         disable_thinking: bool = False,
     ) -> tuple[CompatChoice, LLMCallMetrics]:
         """Make a single API call with retry logic."""
         logger.debug(
-            f"Calling OpenAI-compat API at {self.base_url} with {self.max_tokens} tokens"
+            f"Calling OpenAI-compat API at {self.base_url} with {self.max_tokens}"
+            " tokens"
         )
 
         for attempt in range(self.max_retries):
             try:
                 start_time = time.time()
 
-                api_kwargs = {
-                    "model": self.model_name,
-                    "messages": messages,
-                    "max_tokens": self.max_tokens,
-                    "temperature": self.temperature,
-                    "stream": True,
-                    "stream_options": {"include_usage": True},
-                }
-
-                if self.seed is not None:
-                    api_kwargs["seed"] = self.seed
-
-                stream = self.client.chat.completions.create(**api_kwargs)
-
-                content = ""
-                reasoning = ""
-                finish_reason = "stop"
-                usage = None
-                chars_since_dot = 0
-                dots_printed = 0
-
-                for chunk in stream:
-                    # Capture usage from final chunk
-                    if hasattr(chunk, "usage") and chunk.usage:
-                        usage = chunk.usage
-
-                    if chunk.choices and chunk.choices[0].delta:
-                        delta = chunk.choices[0].delta
-
-                        if delta.content:
-                            content += delta.content
-                            chars_since_dot += len(delta.content)
-                            if chars_since_dot >= 400:
-                                print(".", end="", flush=True)
-                                dots_printed += 1
-                                chars_since_dot = 0
-
-                        # Qwen3 thinking: reasoning_content field
-                        if hasattr(delta, "reasoning_content") and delta.reasoning_content:
-                            reasoning += delta.reasoning_content
-
-                        # Also check 'reasoning' field (some servers)
-                        if hasattr(delta, "reasoning") and delta.reasoning:
-                            reasoning += delta.reasoning
-
-                        if chunk.choices[0].finish_reason:
-                            finish_reason = chunk.choices[0].finish_reason
-
-                if dots_printed > 0:
-                    print()  # Newline after dots
-
-                end_time = time.time()
-
-                choice = CompatChoice(
-                    message=CompatMessage(
-                        content=content,
-                        reasoning=reasoning if reasoning else None,
-                    ),
-                    finish_reason=finish_reason,
+                chat_messages = build_openai_chat_messages(messages)
+                stream = self.client.chat.completions.create(
+                    model=self.model_name,
+                    messages=chat_messages,
+                    max_tokens=self.max_tokens,
+                    temperature=self.temperature,
+                    stream=True,
+                    stream_options={"include_usage": True},
+                    seed=self.seed,
                 )
 
-                if reasoning:
-                    logger.debug(
-                        f"[compat] Reasoning captured ({len(reasoning)} chars): "
-                        f"{reasoning[:200]}..."
-                    )
+                stream_result = self._consume_completion_stream(stream)
+                end_time = time.time()
+                choice = CompatChoice(
+                    message=CompatMessage(
+                        content=stream_result.content,
+                        reasoning=stream_result.reasoning or None,
+                    ),
+                    finish_reason=stream_result.finish_reason,
+                )
 
                 metrics = self._extract_metrics(
-                    content, choice, start_time, end_time,
-                    is_continuation, continuation_depth, usage,
+                    stream_result.content,
+                    choice,
+                    start_time,
+                    end_time,
+                    is_continuation,
+                    continuation_depth,
+                    stream_result.usage,
                 )
 
                 return choice, metrics
 
-            except Exception as e:
+            except APIError as e:
                 logger.warning(
-                    f"{self.model_name} Attempt {attempt + 1}/{self.max_retries} failed: {e}"
+                    f"{self.model_name} Attempt {attempt + 1}/{self.max_retries}"
+                    f" failed: {e}"
                 )
                 if attempt < self.max_retries - 1:
-                    time.sleep(2 ** attempt)
+                    time.sleep(2**attempt)
                 else:
                     raise
 
         raise RuntimeError("Max retries exceeded")
+
+    @staticmethod
+    def _consume_completion_stream(
+        stream: Iterable[ChatCompletionChunk],
+    ) -> CompatStreamResult:
+        """Consume one completion stream while preserving progress output."""
+        content_parts: list[str] = []
+        reasoning_parts: list[str] = []
+        finish_reason = "stop"
+        usage = None
+        chars_since_dot = 0
+        dots_printed = 0
+        for chunk in stream:
+            if chunk.usage:
+                usage = chunk.usage
+            if not chunk.choices:
+                continue
+            choice = chunk.choices[0]
+            delta = choice.delta
+            if delta.content:
+                content_parts.append(delta.content)
+                chars_since_dot += len(delta.content)
+                if chars_since_dot >= 400:
+                    sys.stdout.write(".")
+                    sys.stdout.flush()
+                    dots_printed += 1
+                    chars_since_dot = 0
+            reasoning_parts.extend(OpenAICompatClient._extract_delta_reasoning(delta))
+            if choice.finish_reason:
+                finish_reason = choice.finish_reason
+        if dots_printed:
+            sys.stdout.write("\n")
+        reasoning = "".join(reasoning_parts)
+        if reasoning:
+            logger.debug(
+                f"[compat] Reasoning captured ({len(reasoning)} chars): "
+                f"{reasoning[:200]}..."
+            )
+        return CompatStreamResult(
+            content="".join(content_parts),
+            reasoning=reasoning,
+            finish_reason=finish_reason,
+            usage=usage,
+        )
+
+    @staticmethod
+    def _extract_delta_reasoning(delta: object) -> list[str]:
+        """Return nonstandard reasoning text exposed by compatible servers."""
+        values = [
+            getattr(delta, "reasoning_content", None),
+            getattr(delta, "reasoning", None),
+        ]
+        return [value for value in values if isinstance(value, str)]
 
     def _extract_metrics(
         self,
@@ -196,7 +237,6 @@ class OpenAICompatClient(BaseLLMClient):
         """Extract metrics from streaming response with normalized token fields."""
         duration = end_time - start_time
 
-        # --- RAW API VALUES ---
         if usage:
             prompt_tokens = getattr(usage, "prompt_tokens", 0) or 0
             api_completion_tokens = getattr(usage, "completion_tokens", 0) or 0
@@ -208,9 +248,10 @@ class OpenAICompatClient(BaseLLMClient):
             prompt_tokens = 0
             content_word_count = len(content.split())
             api_completion_tokens = int(content_word_count * 1.3)
-            logger.debug(f"[compat] Estimating tokens from content: {api_completion_tokens}")
+            logger.debug(
+                f"[compat] Estimating tokens from content: {api_completion_tokens}"
+            )
 
-        # --- REASONING ---
         has_reasoning = False
         reasoning_tokens = 0
         output_tokens = api_completion_tokens

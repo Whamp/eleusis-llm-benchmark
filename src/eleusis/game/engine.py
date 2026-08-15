@@ -1,13 +1,22 @@
 """Game engine for pattern discovery card game."""
 
+from __future__ import annotations
+
 import logging
 import textwrap
+from collections.abc import Callable
 from dataclasses import dataclass
+from types import CodeType, FunctionType
+from typing import TYPE_CHECKING, cast
 
 from eleusis.game.cards import Card
 from eleusis.game.state import GameState, PlayerState
 
-__all__ = ["PlayCardAction", "GuessRuleAction", "Action", "Rule", "GameEngine"]
+if TYPE_CHECKING:
+    from eleusis.game.validator import RuleComparisonMetadata, RuleValidator
+    from eleusis.llm.base import BaseLLMClient
+
+__all__ = ["Action", "GameEngine", "GuessRuleAction", "PlayCardAction", "Rule"]
 
 logger = logging.getLogger(__name__)
 
@@ -15,12 +24,14 @@ logger = logging.getLogger(__name__)
 @dataclass
 class PlayCardAction:
     """Action to play a card from hand."""
+
     card: Card
 
 
 @dataclass
 class GuessRuleAction:
     """Action to guess the secret rule."""
+
     guess_text: str
 
 
@@ -30,31 +41,30 @@ Action = PlayCardAction | GuessRuleAction
 class Rule:
     """A game rule with description and executable Python code."""
 
-    def __init__(self, description: str, code: str):
+    def __init__(self, description: str, code: str) -> None:
         """Initialize rule and compile code."""
         self.description_text = description
         self.code = code
         self._eval_function = self._compile_code(code)
 
-    def _compile_code(self, code: str):
+    def _compile_code(self, code: str) -> Callable[[Card, list[Card]], object]:
         """Compile Python code into executable function."""
-        # Validate code structure
-        first_line = code.strip().split('\n')[0].strip() if code.strip() else ""
-        if first_line.startswith('def '):
+        first_line = code.strip().split("\n")[0].strip() if code.strip() else ""
+        if first_line.startswith("def "):
             logger.error("Generated code appears to be a complete function definition!")
             logger.error(f"First line: {first_line}")
             logger.error("Expected function body only, not 'def ...'.")
 
-        if 'return' not in code:
+        if "return" not in code:
             logger.warning("Generated code has no 'return' statement")
 
-        def debug_print(*args):
+        def debug_print(*args: object) -> None:
             """Print function for debugging rule execution."""
             logger.debug(f"  [Rule Debug] {' '.join(str(arg) for arg in args)}")
 
         # Safe execution environment - restricted sandbox for rule code
         # No __import__ to prevent arbitrary imports
-        safe_globals = {
+        safe_globals: dict[str, object] = {
             "__builtins__": {
                 # Types
                 "bool": bool,
@@ -89,11 +99,22 @@ class Rule:
 
         full_code = f"""
 def evaluate_rule(card, mainline):
-{textwrap.indent(code, '    ')}
+{textwrap.indent(code, "    ")}
 """
-        local_namespace = {}
-        exec(full_code, safe_globals, local_namespace)
-        return local_namespace["evaluate_rule"]
+        module_code = compile(full_code, "<eleusis-rule>", "exec")
+        function_code = next(
+            (
+                constant
+                for constant in module_code.co_consts
+                if isinstance(constant, CodeType)
+                and constant.co_name == "evaluate_rule"
+            ),
+            None,
+        )
+        if function_code is None:
+            raise TypeError("Compiled rule did not contain evaluate_rule code")
+        evaluate_rule = FunctionType(function_code, safe_globals, "evaluate_rule")
+        return cast(Callable[[Card, list[Card]], object], evaluate_rule)
 
     def evaluate(self, card: Card, mainline: list[Card]) -> bool:
         """Evaluate if card is accepted according to rule."""
@@ -116,8 +137,8 @@ class GameEngine:
         self,
         game_state: GameState,
         rule: Rule,
-        rule_compiler_client,
-        rule_validator=None,
+        rule_compiler_client: BaseLLMClient,
+        rule_validator: RuleValidator | None = None,
         hand_size: int = 12,
         wrong_guess_penalty: int = 3,
         num_simulations: int = 10,
@@ -163,7 +184,7 @@ class GameEngine:
         mainline_cards = self.state.mainline.get_all()
         return self.rule.evaluate(card, mainline_cards)
 
-    def play_turn(self, action: Action) -> dict:
+    def play_turn(self, action: Action) -> dict[str, object]:
         """Process a player's action and update game state."""
         player = self.state.player
         result = {"player": player.name, "action": type(action).__name__}
@@ -173,11 +194,13 @@ class GameEngine:
         elif isinstance(action, GuessRuleAction):
             result.update(self._process_guess(player, action))
         else:
-            raise ValueError(f"Unknown action type: {type(action)}")
+            raise TypeError(f"Unknown action type: {type(action)}")
 
         return result
 
-    def _process_play_card(self, player: PlayerState, action: PlayCardAction) -> dict:
+    def _process_play_card(
+        self, player: PlayerState, action: PlayCardAction
+    ) -> dict[str, object]:
         """Process a card play action with constant hand size."""
         card = action.card
 
@@ -208,11 +231,13 @@ class GameEngine:
             "card": str(card),
         }
 
-    def evaluate_rule(self, rule_text: str) -> tuple[bool, str, dict]:
+    def evaluate_rule(self, rule_text: str) -> tuple[bool, str, RuleComparisonMetadata]:
         """Evaluate a rule against the secret rule without game consequences.
 
         Returns (is_correct, reasoning, metadata_dict)
         """
+        if self.rule_validator is None:
+            raise RuntimeError("Rule evaluation requires a configured RuleValidator")
         return self.rule_validator.compare_rules(
             actual_rule=self.rule,
             guessed_rule_desc=rule_text,
@@ -224,13 +249,14 @@ class GameEngine:
             compiler_max_retries=self.compiler_max_retries,
         )
 
-    def _process_guess(self, player: PlayerState, action: GuessRuleAction) -> dict:
+    def _process_guess(
+        self, player: PlayerState, action: GuessRuleAction
+    ) -> dict[str, object]:
         """Process rule guess with simulation-based comparison."""
         logger.info(f"{player.name} guessed: {action.guess_text}")
 
         is_correct, reasoning, metadata = self.evaluate_rule(action.guess_text)
 
-        # Log both rules with same format for comparison
         logger.info("-" * 60)
         logger.info("ACTUAL RULE:")
         logger.info(f"Description: {self.rule.description()}")
@@ -241,7 +267,7 @@ class GameEngine:
         guessed_code = metadata.get("guessed_code")
         if guessed_code:
             logger.info(f"Python code:\n{guessed_code}")
-            complexity = metadata.get("complexity_metrics")
+            complexity = metadata["complexity_metrics"]
             if complexity:
                 logger.info(
                     f"Complexity: nodes={complexity['node_count']}, "
@@ -289,17 +315,22 @@ class GameEngine:
         Score = -(penalty * failed_guesses) if no correct guess
         """
         if self.rule_guessed:
-            score = max_turns - current_turn - (self.wrong_guess_penalty * self.failed_guess_count)
+            score = (
+                max_turns
+                - current_turn
+                - (self.wrong_guess_penalty * self.failed_guess_count)
+            )
             logger.info(
-                f"Score: {score} "
-                f"(max_turns={max_turns}, current_turn={current_turn}, "
-                f"failed_guesses={self.failed_guess_count}, penalty={self.wrong_guess_penalty})"
+                f"Score: {score} (max_turns={max_turns}, current_turn={current_turn},"
+                f" failed_guesses={self.failed_guess_count},"
+                f" penalty={self.wrong_guess_penalty})"
             )
         else:
             score = -(self.wrong_guess_penalty * self.failed_guess_count)
             logger.info(
-                f"Score: {score} (no correct guess, "
-                f"failed_guesses={self.failed_guess_count}, penalty={self.wrong_guess_penalty})"
+                f"Score: {score} (no correct guess,"
+                f" failed_guesses={self.failed_guess_count},"
+                f" penalty={self.wrong_guess_penalty})"
             )
 
         return score

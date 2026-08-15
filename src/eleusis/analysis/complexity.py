@@ -41,8 +41,10 @@ def find_optimal_k(df_rules: pd.DataFrame) -> tuple[float, float]:
     return best_k, best_corr
 
 
-def compute_complexity_metrics(df_rounds: pd.DataFrame) -> tuple[pd.DataFrame, float, float]:
-    """Compute complexity metrics including per-rule success rate and aggregated complexity.
+def compute_complexity_metrics(
+    df_rounds: pd.DataFrame,
+) -> tuple[pd.DataFrame, float, float]:
+    """Compute per-rule and aggregate complexity metrics.
 
     Returns (df_with_metrics, optimal_k, correlation).
     """
@@ -50,12 +52,16 @@ def compute_complexity_metrics(df_rounds: pd.DataFrame) -> tuple[pd.DataFrame, f
 
     # Compute per-rule success rate (times found / times played, across all models)
     # Use counting_success (only successes before score was guaranteed <= 0)
-    rule_stats = df.groupby("rule_description").agg(
-        times_played=("counting_success", "count"),
-        times_found=("counting_success", "sum"),
-        cyclomatic_complexity=("cyclomatic_complexity", "first"),
-        node_count=("node_count", "first"),
-    ).reset_index()
+    rule_stats = (
+        df.groupby("rule_description")
+        .agg(
+            times_played=("counting_success", "count"),
+            times_found=("counting_success", "sum"),
+            cyclomatic_complexity=("cyclomatic_complexity", "first"),
+            node_count=("node_count", "first"),
+        )
+        .reset_index()
+    )
     rule_stats["success_rate"] = rule_stats["times_found"] / rule_stats["times_played"]
 
     # Find optimal K using per-rule data
@@ -65,7 +71,7 @@ def compute_complexity_metrics(df_rounds: pd.DataFrame) -> tuple[pd.DataFrame, f
     df = df.merge(
         rule_stats[["rule_description", "success_rate"]],
         on="rule_description",
-        how="left"
+        how="left",
     )
 
     # Compute aggregated complexity
@@ -82,19 +88,23 @@ def compute_complexity_metrics(df_rounds: pd.DataFrame) -> tuple[pd.DataFrame, f
     if len(rule_valid) > 0:
         try:
             rule_stats.loc[rule_valid.index, "complexity_bin"] = pd.qcut(
-                rule_valid["aggregated_complexity"], q=4, labels=["Q1", "Q2", "Q3", "Q4"],
-                duplicates="drop"
+                rule_valid["aggregated_complexity"],
+                q=4,
+                labels=["Q1", "Q2", "Q3", "Q4"],
+                duplicates="drop",
             )
         except ValueError:
             rule_stats["complexity_bin"] = pd.cut(
-                rule_stats["aggregated_complexity"], bins=4, labels=["Q1", "Q2", "Q3", "Q4"]
+                rule_stats["aggregated_complexity"],
+                bins=4,
+                labels=["Q1", "Q2", "Q3", "Q4"],
             )
         # Merge bins back to rounds
         df = df.merge(
             rule_stats[["rule_description", "complexity_bin"]],
             on="rule_description",
             how="left",
-            suffixes=("_old", "")
+            suffixes=("_old", ""),
         )
         if "complexity_bin_old" in df.columns:
             df = df.drop(columns=["complexity_bin_old"])
@@ -123,8 +133,10 @@ def plot_complexity_analysis(
             "optimal_k": optimal_k,
             "complexity_formula": f"cyclomatic + {optimal_k:.2f} * node_count",
             "value": "success_rate",
-            "description": "Success rate = per-model success rate for rules in each quartile.",
-        }
+            "description": (
+                "Success rate = per-model success rate for rules in each quartile."
+            ),
+        },
     }
 
     if len(df_binned) == 0:
@@ -145,12 +157,14 @@ def plot_complexity_analysis(
         index="model",
         columns="complexity_bin",
         aggfunc="mean",
-        observed=True
+        observed=True,
     )
 
     # Order models by average floored score (best on top)
     df_binned["floored_score"] = df_binned["score"].clip(lower=0)
-    model_avg_scores = df_binned.groupby("model")["floored_score"].mean().sort_values(ascending=False)
+    model_avg_scores = (
+        df_binned.groupby("model")["floored_score"].mean().sort_values(ascending=False)
+    )
     heatmap = heatmap.reindex(model_avg_scores.index)
 
     if heatmap.empty:
@@ -165,9 +179,10 @@ def plot_complexity_analysis(
 
     # Ensure quartile columns are in order
     quartile_order = ["Q1", "Q2", "Q3", "Q4"]
-    heatmap = heatmap.reindex(columns=[q for q in quartile_order if q in heatmap.columns])
+    heatmap = heatmap.reindex(
+        columns=[q for q in quartile_order if q in heatmap.columns]
+    )
 
-    # Create figure
     fig_height = max(4, len(heatmap.index) * 0.5)
     fig, ax = plt.subplots(figsize=(8, fig_height))
 
@@ -177,31 +192,36 @@ def plot_complexity_analysis(
     ax.set_yticks(range(len(heatmap.index)))
     ax.set_yticklabels(heatmap.index, fontsize=10)
     ax.set_xlabel("Complexity Quartile (Q1 = easiest)", fontsize=11)
-    ax.set_title("Model Success Rate by Rule Complexity", fontsize=12, fontweight="bold")
+    ax.set_title(
+        "Model Success Rate by Rule Complexity", fontsize=12, fontweight="bold"
+    )
     plt.colorbar(im, ax=ax, label="Success Rate", shrink=0.8)
 
     # Annotate cells with values
-    for i in range(len(heatmap.index)):
-        for j in range(len(heatmap.columns)):
+    for i, _model in enumerate(heatmap.index):
+        for j, _quartile in enumerate(heatmap.columns):
             val = heatmap.values[i, j]
             if not np.isnan(val):
                 # Choose text color based on value
                 text_color = "white" if val < 0.3 or val > 0.7 else "black"
-                ax.text(j, i, f"{val:.0%}", ha="center", va="center",
-                        fontsize=10, fontweight="bold", color=text_color)
+                ax.text(
+                    j,
+                    i,
+                    f"{val:.0%}",
+                    ha="center",
+                    va="center",
+                    fontsize=10,
+                    fontweight="bold",
+                    color=text_color,
+                )
 
-    # Build JSON data
     for model in heatmap.index:
-        model_data = {
-            "name": model,
-            "quartile_scores": {}
-        }
+        model_data = {"name": model, "quartile_scores": {}}
         for q in heatmap.columns:
             val = heatmap.loc[model, q]
             model_data["quartile_scores"][q] = float(val) if not np.isnan(val) else None
         plot_data["models"].append(model_data)
 
-    # Save outputs
     png_path = output_folder / "complexity_analysis.png"
     json_path = output_folder / "complexity_analysis.json"
 
@@ -219,7 +239,7 @@ def analyze_complexity(
     model_colors: dict[str, str],
     output_folder: Path,
     tee: TeeWriter,
-):
+) -> pd.DataFrame:
     """Run complexity analysis and save outputs."""
     tee.write("\n" + "=" * 60 + "\n")
     tee.write("COMPLEXITY ANALYSIS\n")
@@ -235,11 +255,15 @@ def analyze_complexity(
     df_binned = df.dropna(subset=["complexity_bin"])
     if len(df_binned) > 0:
         df_binned["floored_score"] = df_binned["score"].clip(lower=0)
-        bin_stats = df_binned.groupby("complexity_bin", observed=True).agg(
-            count=("floored_score", "count"),
-            avg_floored_score=("floored_score", "mean"),
-            success_rate=("counting_success", "mean"),
-        ).reset_index()
+        bin_stats = (
+            df_binned.groupby("complexity_bin", observed=True)
+            .agg(
+                count=("floored_score", "count"),
+                avg_floored_score=("floored_score", "mean"),
+                success_rate=("counting_success", "mean"),
+            )
+            .reset_index()
+        )
         tee.write("Stats by complexity quartile:\n")
         tee.write(bin_stats.to_string(index=False) + "\n\n")
 

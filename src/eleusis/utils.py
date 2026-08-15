@@ -3,9 +3,12 @@
 import logging
 import re
 import sys
+from collections.abc import Mapping
 from pathlib import Path
+from types import MappingProxyType
+from typing import ClassVar
 
-__all__ = ["model_spec_to_display_name", "ColoredFormatter", "setup_logging"]
+__all__ = ["ColoredFormatter", "model_spec_to_display_name", "setup_logging"]
 
 
 def model_spec_to_display_name(model_spec: str) -> str:
@@ -22,20 +25,22 @@ def model_spec_to_display_name(model_spec: str) -> str:
         model_name = model_name.split("/")[-1]
 
     model_name = model_name.replace("-", " ").replace("_", " ")
-    model_name = re.sub(r'\s+', ' ', model_name).strip()
+    model_name = re.sub(r"\s+", " ", model_name).strip()
     return model_name.title()
 
 
 class ColoredFormatter(logging.Formatter):
     """Formatter that adds ANSI color codes to log messages for terminal output."""
 
-    COLORS = {
-        "DEBUG": "\033[90m",
-        "INFO": "\033[97m",
-        "WARNING": "\033[93m",
-        "ERROR": "\033[91m",
-        "CRITICAL": "\033[91m\033[1m",
-    }
+    COLORS: ClassVar[Mapping[str, str]] = MappingProxyType(
+        {
+            "DEBUG": "\033[90m",
+            "INFO": "\033[97m",
+            "WARNING": "\033[93m",
+            "ERROR": "\033[91m",
+            "CRITICAL": "\033[91m\033[1m",
+        }
+    )
     RESET = "\033[0m"
 
     def format(self, record: logging.LogRecord) -> str:
@@ -50,7 +55,9 @@ def setup_logging(
     log_file: str | Path,
     console_level: int = logging.INFO,
     file_level: int = logging.DEBUG,
-    file_format: str = "%(asctime)s - %(name)s:%(lineno)d - %(levelname)s - %(message)s",
+    file_format: str = (
+        "%(asctime)s - %(name)s:%(lineno)d - %(levelname)s - %(message)s"
+    ),
     console_format: str = "%(message)s",
     colored: bool = True,
 ) -> None:

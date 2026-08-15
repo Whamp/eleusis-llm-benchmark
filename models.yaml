@@ -68,11 +68,13 @@ gemini-3-flash-preview-high:
 grok-4-1-fast-reasoning:
   provider: xai
   model_id: grok-4-1-fast-reasoning
+  base_url: https://api.x.ai/v1
   color: "#1A1A1A"  # xAI black
 
 grok-4:
   provider: xai
   model_id: grok-4
+  base_url: https://api.x.ai/v1
   color: "#333333"  # xAI dark gray
 
 # ============================================================================

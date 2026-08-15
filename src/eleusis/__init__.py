@@ -21,23 +21,23 @@ from eleusis.player import LLMScientist
 from eleusis.runner import play_round
 
 __all__ = [
-    # Version
-    "__version__",
     # Game
     "Card",
     "Deck",
-    "Hand",
-    "Suit",
-    "GameState",
     "GameEngine",
-    "Rule",
-    "PlayCardAction",
+    "GameState",
     "GuessRuleAction",
+    "Hand",
+    "LLMScientist",
+    "PlayCardAction",
+    "Rule",
     "RuleFactory",
     "RuleValidator",
+    "Suit",
+    # Version
+    "__version__",
     # LLM
     "create_client",
-    "LLMScientist",
     # Runner
     "play_round",
 ]

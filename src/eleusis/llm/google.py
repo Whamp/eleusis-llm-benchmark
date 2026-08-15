@@ -6,9 +6,9 @@ import time
 from dataclasses import dataclass
 
 from google import genai
-from google.genai import types
+from google.genai import errors, types
 
-from eleusis.llm.base import BaseLLMClient, LLMCallMetrics
+from eleusis.llm.base import BaseLLMClient, LLMCallMetrics, LLMMessage
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class GeminiMessage:
     """Message wrapper for Gemini responses."""
+
     content: str
     reasoning: str | None = None
 
@@ -23,6 +24,7 @@ class GeminiMessage:
 @dataclass
 class GeminiChoice:
     """Choice wrapper for Gemini responses."""
+
     message: GeminiMessage
     finish_reason: str
 
@@ -60,11 +62,12 @@ class GoogleClient(BaseLLMClient):
 
     @property
     def provider_name(self) -> str:
+        """Provider name used in metrics and logs."""
         return "google"
 
     def _call_api(
         self,
-        messages: list[dict],
+        messages: list[LLMMessage],
         is_continuation: bool = False,
         continuation_depth: int = 0,
         disable_thinking: bool = False,
@@ -78,40 +81,9 @@ class GoogleClient(BaseLLMClient):
             try:
                 start_time = time.time()
 
-                # Build content from messages
-                # Gemini uses a different format - convert from OpenAI-style messages
-                contents = []
-                system_instruction = None
-                for msg in messages:
-                    if msg["role"] == "system":
-                        system_instruction = msg["content"]
-                    elif msg["role"] == "user":
-                        contents.append(types.Content(
-                            role="user",
-                            parts=[types.Part(text=msg["content"])]
-                        ))
-                    elif msg["role"] == "assistant":
-                        contents.append(types.Content(
-                            role="model",
-                            parts=[types.Part(text=msg["content"])]
-                        ))
-
-                # Thinking level: low for force-answer, otherwise configured level
-                # Note: Gemini 3 Pro cannot fully disable thinking
-                level = "low" if disable_thinking else self.thinking_level
-
-                config_kwargs = {
-                    "thinking_config": types.ThinkingConfig(thinking_level=level),
-                    "max_output_tokens": self.max_tokens,
-                    "temperature": self.temperature,
-                }
-                if self.seed is not None:
-                    config_kwargs["seed"] = self.seed
-
-                config = types.GenerateContentConfig(**config_kwargs)
-
-                if system_instruction:
-                    config.system_instruction = system_instruction
+                contents, config = self._build_generation_request(
+                    messages, disable_thinking
+                )
 
                 response = self.client.models.generate_content(
                     model=self.model_name,
@@ -121,47 +93,25 @@ class GoogleClient(BaseLLMClient):
 
                 end_time = time.time()
 
-                # Extract content and reasoning
-                text_content = response.text if hasattr(response, "text") else ""
-                reasoning_content = None
-
-                # Check for thinking content in candidates
-                if hasattr(response, "candidates") and response.candidates:
-                    candidate = response.candidates[0]
-                    if hasattr(candidate, "content") and candidate.content:
-                        for part in candidate.content.parts:
-                            if hasattr(part, "thought") and part.thought:
-                                reasoning_content = part.text
-
-                # Determine finish reason
-                finish_reason = "stop"
-                if hasattr(response, "candidates") and response.candidates:
-                    candidate = response.candidates[0]
-                    if hasattr(candidate, "finish_reason"):
-                        fr = candidate.finish_reason
-                        if fr == "MAX_TOKENS":
-                            finish_reason = "length"
-                        elif fr == "STOP":
-                            finish_reason = "stop"
-
-                choice = GeminiChoice(
-                    message=GeminiMessage(
-                        content=text_content,
-                        reasoning=reasoning_content,
-                    ),
-                    finish_reason=finish_reason,
-                )
+                choice = self._parse_generation_choice(response)
 
                 metrics = self._extract_metrics(
-                    response, choice, start_time, end_time,
-                    is_continuation, continuation_depth
+                    response,
+                    choice,
+                    start_time,
+                    end_time,
+                    is_continuation,
+                    continuation_depth,
                 )
 
                 logger.debug(f"LLM response:\n{choice}")
                 return choice, metrics
 
-            except Exception as e:
-                logger.warning(f"{self.model_name} Attempt {attempt + 1}/{self.max_retries} failed: {e}")
+            except errors.APIError as e:
+                logger.warning(
+                    f"{self.model_name} Attempt {attempt + 1}/{self.max_retries}"
+                    f" failed: {e}"
+                )
                 if attempt < self.max_retries - 1:
                     time.sleep(2**attempt)
                 else:
@@ -169,9 +119,67 @@ class GoogleClient(BaseLLMClient):
 
         raise RuntimeError("Max retries exceeded")
 
+    def _build_generation_request(
+        self,
+        messages: list[LLMMessage],
+        disable_thinking: bool,
+    ) -> tuple[list[types.ContentUnionDict], types.GenerateContentConfig]:
+        """Convert neutral messages and settings to a Gemini request."""
+        contents: list[types.ContentUnionDict] = []
+        system_instruction: str | None = None
+        for message in messages:
+            role = message["role"]
+            if role == "system":
+                system_instruction = message["content"]
+                continue
+            gemini_role = "model" if role == "assistant" else "user"
+            contents.append(
+                types.Content(
+                    role=gemini_role,
+                    parts=[types.Part(text=message["content"])],
+                )
+            )
+        level = "low" if disable_thinking else self.thinking_level
+        config = types.GenerateContentConfig(
+            thinking_config=types.ThinkingConfig(thinking_level=level),
+            max_output_tokens=self.max_tokens,
+            temperature=self.temperature,
+            seed=self.seed,
+            system_instruction=system_instruction,
+        )
+        return contents, config
+
+    @staticmethod
+    def _parse_generation_choice(
+        response: types.GenerateContentResponse,
+    ) -> GeminiChoice:
+        """Convert one Gemini response to the provider-neutral choice shape."""
+        reasoning_content = None
+        finish_reason = "stop"
+        if response.candidates:
+            candidate = response.candidates[0]
+            if candidate.content:
+                reasoning_content = next(
+                    (
+                        part.text
+                        for part in candidate.content.parts or []
+                        if part.thought and part.text
+                    ),
+                    None,
+                )
+            if candidate.finish_reason == "MAX_TOKENS":
+                finish_reason = "length"
+        return GeminiChoice(
+            message=GeminiMessage(
+                content=response.text or "",
+                reasoning=reasoning_content,
+            ),
+            finish_reason=finish_reason,
+        )
+
     def _extract_metrics(
         self,
-        response,
+        response: types.GenerateContentResponse,
         choice: GeminiChoice,
         start_time: float,
         end_time: float,
@@ -187,7 +195,6 @@ class GoogleClient(BaseLLMClient):
         """
         duration = end_time - start_time
 
-        # --- RAW API VALUES ---
         api_prompt_tokens = 0
         api_candidates_tokens = 0
         api_thoughts_tokens = None
@@ -198,24 +205,31 @@ class GoogleClient(BaseLLMClient):
             api_candidates_tokens = getattr(metadata, "candidates_token_count", 0) or 0
             api_thoughts_tokens = getattr(metadata, "thoughts_token_count", None)
 
-            logger.debug(f"[Google] RAW API usage_metadata: prompt_token_count={api_prompt_tokens}, "
-                        f"candidates_token_count={api_candidates_tokens}, thoughts_token_count={api_thoughts_tokens}")
+            logger.debug(
+                "[Google] RAW API usage_metadata:"
+                f" prompt_token_count={api_prompt_tokens},"
+                f" candidates_token_count={api_candidates_tokens},"
+                f" thoughts_token_count={api_thoughts_tokens}"
+            )
 
-            # Log any other metadata fields
-            for attr in ['total_token_count', 'cached_content_token_count']:
+            for attr in ["total_token_count", "cached_content_token_count"]:
                 if hasattr(metadata, attr):
-                    logger.debug(f"[Google] Additional metadata: {attr}={getattr(metadata, attr)}")
+                    logger.debug(
+                        "[Google] Additional metadata:"
+                        f" {attr}={getattr(metadata, attr)}"
+                    )
         else:
             logger.debug("[Google] No usage_metadata in response")
 
-        # --- REASONING CONTENT ---
         reasoning_text = choice.message.reasoning
         reasoning_word_count = len(reasoning_text.split()) if reasoning_text else 0
-        logger.debug(f"[Google] Reasoning content present: {reasoning_text is not None}, word_count={reasoning_word_count}")
+        logger.debug(
+            f"[Google] Reasoning content present: {reasoning_text is not None},"
+            f" word_count={reasoning_word_count}"
+        )
         if reasoning_text:
             logger.debug(f"[Google] Reasoning preview: {reasoning_text[:200]}...")
 
-        # --- COMPUTED VALUES ---
         prompt_tokens = api_prompt_tokens
         answer_tokens = api_candidates_tokens
         reasoning_tokens = api_thoughts_tokens or 0
@@ -225,14 +239,23 @@ class GoogleClient(BaseLLMClient):
         if not has_reasoning and reasoning_text:
             has_reasoning = True
             reasoning_tokens = int(reasoning_word_count * 1.3)
-            logger.debug(f"[Google] ESTIMATED reasoning_tokens: {reasoning_word_count} words × 1.3 = {reasoning_tokens}")
+            logger.debug(
+                f"[Google] ESTIMATED reasoning_tokens: {reasoning_word_count} words x"
+                f" 1.3 = {reasoning_tokens}"
+            )
         elif api_thoughts_tokens:
-            logger.debug(f"[Google] Using NATIVE thoughts_token_count from API: {api_thoughts_tokens}")
+            logger.debug(
+                "[Google] Using NATIVE thoughts_token_count from API:"
+                f" {api_thoughts_tokens}"
+            )
 
         output_tokens = answer_tokens + reasoning_tokens
 
-        logger.debug(f"[Google] FINAL token counts: prompt={prompt_tokens}, "
-                    f"output={output_tokens} (answer={answer_tokens} + reasoning={reasoning_tokens})")
+        logger.debug(
+            f"[Google] FINAL token counts: prompt={prompt_tokens},"
+            f" output={output_tokens} (answer={answer_tokens} +"
+            f" reasoning={reasoning_tokens})"
+        )
 
         metrics = LLMCallMetrics(
             model_name=self.model_name,
@@ -252,8 +275,8 @@ class GoogleClient(BaseLLMClient):
         )
 
         logger.debug(
-            f"[Google] Metrics summary: {output_tokens} output tokens in {duration:.2f}s "
-            f"({metrics.throughput_tokens_per_sec:.2f} tok/s)"
+            f"[Google] Metrics summary: {output_tokens} output tokens in"
+            f" {duration:.2f}s ({metrics.throughput_tokens_per_sec:.2f} tok/s)"
         )
 
         return metrics

@@ -11,12 +11,12 @@ def get_game_rules(
     """Generate rules for pattern discovery game."""
     return f"""## RULES OF THE GAME
 ### Overview
-This is a single-player game. 
-A hidden rule created by the game master determines which cards are accepted or rejected. 
+This is a single-player game.
+A hidden rule created by the game master determines which cards are accepted or rejected.
 Your goal is to play cards and discover the rule as efficiently as possible.
 
 The game uses 2 standard 52-card decks shuffled together (104 cards total):
-- Ranks: Ace = 1 (low), 2–10, Jack = 11, Queen = 12, King = 13. Number cards are 1-10, face cards are 11-13.
+- Ranks: Ace = 1 (low), 2-10, Jack = 11, Queen = 12, King = 13. Number cards are 1-10, face cards are 11-13.
 - Suits: Hearts ♥️ (red), Diamonds ♦️ (red), Clubs ♣️ (black), Spades ♠️ (black)
 
 The playing area consists of:
@@ -28,7 +28,7 @@ The playing area consists of:
 
 #### Secret Rule
 
-A deterministic secret rule is chosen by the game master. 
+A deterministic secret rule is chosen by the game master.
 The rule decides unambiguously whether a newly played card is **accepted** or **rejected**, for every possible card in every possible mainline state.
 The rule is simple enough to be described in a single sentence.
 The rule depends only on information visible in the mainline: the candidate card and/or any previously accepted mainline cards and their properties (their suits, colors, ranks, parity, positions, etc.)
@@ -42,7 +42,7 @@ Examples of rules:
 
 #### Initial Deal
 
-You start with **{hand_size} cards** in your hand. 
+You start with **{hand_size} cards** in your hand.
 This hand size remains constant throughout the game, you always draw 1 card after playing.
 A starter card that satisfies the rule is placed on the mainline to begin the game.
 
@@ -62,7 +62,7 @@ Once you played a card from your hand to play, you will receive the feedback fro
 ### Guessing the Rule
 
 When playing a card, you may attempt to state the rule you believe governs acceptance/rejection.
-The game master judges whether your stated rule is **equivalent** to the secret rule. 
+The game master judges whether your stated rule is **equivalent** to the secret rule.
 The wording does not need to match exactly. Only logical equivalence matters.
 - **Incorrect guess:** The guess is recorded as wrong and **penalty of {wrong_guess_penalty} points** will later be applied to your final score. Play continues.
 - **Correct guess:** The game ends immediately, you score based on the number of turns taken and wrong guesses.
@@ -73,8 +73,8 @@ The game ends when:
 1. You **correctly guess the rule**, or
 2. You reach the maximum of {max_turns} turns without guessing correctly
 
-Your score is calculated as follows: 
-Score = ({max_turns} - current_turn) - ({wrong_guess_penalty} × number_of_failed_guesses)
+Your score is calculated as follows:
+Score = ({max_turns} - current_turn) - ({wrong_guess_penalty} x number_of_failed_guesses)
 
 Score can be negative. **Higher scores are better**. The goal is to discover the rule quickly with few failed guesses.
 ---

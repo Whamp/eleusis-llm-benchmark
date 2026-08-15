@@ -20,19 +20,33 @@ import logging
 import sys
 from pathlib import Path
 
+from eleusis.benchmark_config import BenchmarkConfig, parse_benchmark_config
+from eleusis.evaluation_results import (
+    SavedRound,
+    TurnRecord,
+    parse_evaluation_results,
+)
 from eleusis.game.cards import Card, Suit
 from eleusis.game.engine import Rule
 from eleusis.game.validator import RuleValidator
-from eleusis.llm import create_client_from_config
+from eleusis.llm import BaseLLMClient, create_client_from_config
 
 logger = logging.getLogger(__name__)
 
 # Map string suit names to Suit enum
 _SUIT_MAP = {
-    "hearts": Suit.HEARTS, "h": Suit.HEARTS, "♥": Suit.HEARTS,
-    "diamonds": Suit.DIAMONDS, "d": Suit.DIAMONDS, "♦": Suit.DIAMONDS,
-    "clubs": Suit.CLUBS, "c": Suit.CLUBS, "♣": Suit.CLUBS,
-    "spades": Suit.SPADES, "s": Suit.SPADES, "♠": Suit.SPADES,
+    "hearts": Suit.HEARTS,
+    "h": Suit.HEARTS,
+    "♥": Suit.HEARTS,
+    "diamonds": Suit.DIAMONDS,
+    "d": Suit.DIAMONDS,
+    "♦": Suit.DIAMONDS,
+    "clubs": Suit.CLUBS,
+    "c": Suit.CLUBS,
+    "♣": Suit.CLUBS,
+    "spades": Suit.SPADES,
+    "s": Suit.SPADES,
+    "♠": Suit.SPADES,
 }
 
 
@@ -49,25 +63,22 @@ def _parse_card(card_str: str) -> Card:
     else:
         raise ValueError(f"Cannot parse card: {card_str}")
 
-    if rank_part in rank_map:
-        rank = rank_map[rank_part]
-    else:
-        rank = int(rank_part)
+    rank = rank_map[rank_part] if rank_part in rank_map else int(rank_part)
 
     suit = _SUIT_MAP[suit_part.lower()]
     return Card(rank, suit)
 
 
 def evaluate_shadow_turns(
-    turns: list[dict],
+    turns: list[TurnRecord],
     actual_rule: Rule,
     mainline: list[Card],
-    rule_compiler_client,
+    rule_compiler_client: BaseLLMClient,
     num_simulations: int = 100,
     turns_per_simulation: int = 40,
     simulation_seed: int = 42,
     compiler_max_retries: int | None = None,
-) -> list[dict]:
+) -> list[TurnRecord]:
     """Evaluate unevaluated shadow entries in a list of turn dicts.
 
     Args:
@@ -102,21 +113,27 @@ def evaluate_shadow_turns(
             num_simulations=num_simulations,
             turns_per_simulation=turns_per_simulation,
             simulation_seed=simulation_seed,
-            compiler_max_retries=compiler_max_retries,
+            compiler_max_retries=(
+                compiler_max_retries if compiler_max_retries is not None else 2
+            ),
         )
 
-        complexity = metadata.get("complexity_metrics") or {}
+        complexity = metadata["complexity_metrics"]
         ga["correct"] = is_correct
         ga["reasoning"] = reasoning
-        ga["guessed_code"] = metadata.get("guessed_code")
-        ga["node_count"] = complexity.get("node_count")
-        ga["cyclomatic_complexity"] = complexity.get("cyclomatic")
+        ga["guessed_code"] = metadata["guessed_code"]
+        ga["node_count"] = complexity["node_count"] if complexity else None
+        ga["cyclomatic_complexity"] = complexity["cyclomatic"] if complexity else None
         ga["evaluated"] = True
 
     return augmented
 
 
-def _evaluate_round(round_data: dict, rule_compiler_client, config: dict) -> dict:
+def _evaluate_round(
+    round_data: SavedRound,
+    rule_compiler_client: BaseLLMClient,
+    config: BenchmarkConfig,
+) -> SavedRound:
     """Evaluate shadow entries for a single round."""
     actual_rule = Rule(
         description=round_data["rule_description"],
@@ -143,7 +160,9 @@ def _evaluate_round(round_data: dict, rule_compiler_client, config: dict) -> dic
     rule_compiler_cfg = config.get("rule_compiler", {})
     num_simulations = rule_compiler_cfg.get("num_simulations", 100)
     turns_per_simulation = rule_compiler_cfg.get("turns_per_simulation", 40)
-    simulation_seed = rule_compiler_cfg.get("simulation_seed", 42)
+    simulation_seed = rule_compiler_cfg.get("simulation_seed")
+    if simulation_seed is None:
+        simulation_seed = 42
     compiler_max_retries = rule_compiler_cfg.get("max_retries")
 
     augmented_turns = evaluate_shadow_turns(
@@ -157,31 +176,38 @@ def _evaluate_round(round_data: dict, rule_compiler_client, config: dict) -> dic
         compiler_max_retries=compiler_max_retries,
     )
 
-    result = copy.deepcopy(round_data)
+    result: SavedRound = copy.deepcopy(round_data)
     result["turns"] = augmented_turns
 
     # Recompute first_shadow_correct_turn
     first_shadow_correct = None
     for turn in augmented_turns:
         ga = turn.get("guess_attempt")
-        if ga and ga.get("shadow") and ga.get("correct"):
-            if first_shadow_correct is None:
-                first_shadow_correct = turn["turn_number"]
+        if (
+            ga
+            and ga.get("shadow")
+            and ga.get("correct")
+            and first_shadow_correct is None
+        ):
+            first_shadow_correct = turn["turn_number"]
     result["first_shadow_correct_turn"] = first_shadow_correct
 
     return result
 
 
-def main():
+def main() -> None:
+    """Evaluate offline shadow guesses and write augmented results."""
     parser = argparse.ArgumentParser(
         description="Evaluate shadow guesses offline from saved benchmark results."
     )
     parser.add_argument(
-        "--results", required=True,
+        "--results",
+        required=True,
         help="Path to results.json from an offline shadow run",
     )
     parser.add_argument(
-        "--config", default="config.yaml",
+        "--config",
+        default="config.yaml",
         help="Config file for rule compiler settings (default: config.yaml)",
     )
     parser.add_argument(
@@ -197,22 +223,23 @@ def main():
         logger.error(f"Results file not found: {results_path}")
         sys.exit(1)
 
-    with open(results_path) as f:
-        results = json.load(f)
+    with results_path.open() as results_file:
+        results = parse_evaluation_results(json.load(results_file))
 
     # Load config for rule compiler settings
     import yaml
+
     config_path = Path(args.config)
-    if config_path.exists():
-        with open(config_path) as f:
-            config = yaml.safe_load(f)
-    else:
-        config = {}
+    if not config_path.exists():
+        logger.error(f"Config file not found: {config_path}")
+        sys.exit(1)
+    with config_path.open() as config_file:
+        config = parse_benchmark_config(yaml.safe_load(config_file))
 
     # Create rule compiler client
-    rule_compiler_cfg = config.get("rule_compiler", {})
-    max_tokens = config.get("llm", {}).get("max_tokens", 16384)
-    llm_seed = config.get("llm", {}).get("seed")
+    rule_compiler_cfg = config["rule_compiler"]
+    max_tokens = config["llm"]["max_tokens"]
+    llm_seed = config["llm"]["seed"]
 
     rule_compiler_client = create_client_from_config(
         rule_compiler_cfg,
@@ -225,10 +252,8 @@ def main():
     rounds = results.get("rounds", [])
     augmented_rounds = []
     for i, round_data in enumerate(rounds):
-        rule_desc = round_data.get('rule_description', 'unknown')
-        logger.info(
-            f"Processing round {i + 1}/{len(rounds)}: {rule_desc}"
-        )
+        rule_desc = round_data.get("rule_description", "unknown")
+        logger.info(f"Processing round {i + 1}/{len(rounds)}: {rule_desc}")
         augmented = _evaluate_round(round_data, rule_compiler_client, config)
         augmented_rounds.append(augmented)
 
@@ -241,8 +266,8 @@ def main():
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(output_path, "w") as f:
-        json.dump(results, f, indent=2)
+    with output_path.open("w") as output_file:
+        json.dump(results, output_file, indent=2)
 
     logger.info(f"Augmented results written to: {output_path}")
 

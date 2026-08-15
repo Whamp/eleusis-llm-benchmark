@@ -3,11 +3,10 @@
 
 import glob
 import json
-import sys
-from datetime import datetime
 
 
-def main():
+def main() -> None:
+    """Print progress summaries for matching Qwen evaluation runs."""
     results = sorted(glob.glob("results/solo_evaluation_*w*qwen*/results.json"))
 
     if not results:
@@ -48,7 +47,7 @@ def main():
         if completed > 0 and completed < total:
             per_round = wall / completed
             remaining = (total - completed) * per_round
-            eta = f"~{remaining/3600:.1f}h remaining"
+            eta = f"~{remaining / 3600:.1f}h remaining"
         elif completed >= total:
             eta = "DONE"
         else:
@@ -59,18 +58,28 @@ def main():
         bar = "█" * filled + "░" * (bar_len - filled)
 
         print(f"  {folder}")
-        print(f"    [{bar}] {completed}/{total} ({pct:.0f}%) | {success} wins | score {score} | {eta}")
+        print(
+            f"    [{bar}] {completed}/{total} ({pct:.0f}%) | {success} wins | score"
+            f" {score} | {eta}"
+        )
         print()
 
     if total_rounds > 0:
         overall_pct = total_completed / total_rounds * 100
-        success_rate = (total_successful / total_completed * 100) if total_completed > 0 else 0
+        success_rate = (
+            (total_successful / total_completed * 100) if total_completed > 0 else 0
+        )
         avg_score = total_score / total_completed if total_completed > 0 else 0
 
         print("-" * 70)
-        print(f"  OVERALL: {total_completed}/{total_rounds} rounds ({overall_pct:.0f}%)")
+        print(
+            f"  OVERALL: {total_completed}/{total_rounds} rounds ({overall_pct:.0f}%)"
+        )
         if total_completed > 0:
-            print(f"  Success rate: {success_rate:.1f}% ({total_successful}/{total_completed})")
+            print(
+                f"  Success rate: {success_rate:.1f}%"
+                f" ({total_successful}/{total_completed})"
+            )
             print(f"  Avg score: {avg_score:.1f}")
         print()
 

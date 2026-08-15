@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from unittest.mock import patch
+
+from eleusis.evaluation_results import EvaluationResults
 
 # We test the functions from evaluate_single.py directly
 from scripts.evaluate_single import (
@@ -23,7 +26,7 @@ def _make_checkpoint(
     selection: str = "sequential",
     player_model: str = "test/model-1",
     batch_round_offset: int | None = None,
-) -> dict:
+) -> EvaluationResults:
     """Build a minimal but valid checkpoint dict matching evaluate_single's schema."""
     return {
         "timestamp": "20260404_120000",
@@ -51,6 +54,7 @@ def _make_checkpoint(
             "llm_seed": None,
             "llm_max_retries": 3,
             "batch_round_offset": batch_round_offset,
+            "suite": None,
         },
         "rounds": [],
         "statistics": {
@@ -81,14 +85,17 @@ def _make_checkpoint(
             },
             "rules_consumed": [
                 {
-                    "name": f"rule_{i}", "description": f"Rule {i}",
-                    "code": "return True", "rounds_completed": 1,
+                    "name": f"rule_{i}",
+                    "description": f"Rule {i}",
+                    "code": "return True",
+                    "rounds_completed": 1,
                 }
                 for i in range(completed_rounds)
             ],
             "rules_library": [
                 {
-                    "name": f"rule_{i}", "description": f"Rule {i}",
+                    "name": f"rule_{i}",
+                    "description": f"Rule {i}",
                     "code": "return True",
                 }
                 for i in range(num_rules)
@@ -100,15 +107,15 @@ def _make_checkpoint(
 class TestReconstructConfigFromCheckpoint:
     """reconstruct_config_from_checkpoint should produce a valid config dict."""
 
-    def test_preserves_rule_factory_state(self):
-        """Config reconstructed from checkpoint must include rule selection and current index."""
+    def test_preserves_rule_factory_state(self) -> None:
+        """Preserve rule selection and index in reconstructed configuration."""
         checkpoint = _make_checkpoint(rule_factory_index=7, selection="sequential")
         config = reconstruct_config_from_checkpoint(checkpoint)
 
         assert config["rules"]["selection"] == "sequential"
         assert config["rules"]["index"] == 7
 
-    def test_preserves_game_settings(self):
+    def test_preserves_game_settings(self) -> None:
         """Game settings (turns, hand size, penalty) round-trip through checkpoint."""
         checkpoint = _make_checkpoint()
         config = reconstruct_config_from_checkpoint(checkpoint)
@@ -118,7 +125,7 @@ class TestReconstructConfigFromCheckpoint:
         assert config["game"]["wrong_guess_penalty"] == 3
         assert config["game"]["num_rounds_per_rule"] == 1
 
-    def test_preserves_batch_round_offset(self):
+    def test_preserves_batch_round_offset(self) -> None:
         """batch_round_offset must survive checkpoint/resume cycle."""
         checkpoint = _make_checkpoint(batch_round_offset=2)
         config = reconstruct_config_from_checkpoint(checkpoint)
@@ -132,7 +139,7 @@ class TestResumeRuleFactoryIndex:
     Bug: line 425 used undefined `chk` instead of `checkpoint['checkpoint']`.
     """
 
-    def test_rule_factory_index_from_checkpoint(self):
+    def test_rule_factory_index_from_checkpoint(self) -> None:
         """rule_factory_index must use checkpoint['checkpoint'], not undefined chk."""
         checkpoint = _make_checkpoint(rule_factory_index=13)
         chk_data = checkpoint["checkpoint"]
@@ -141,8 +148,8 @@ class TestResumeRuleFactoryIndex:
         rule_factory_index = chk_data["rule_factory_state"]["current_index"]
         assert rule_factory_index == 13
 
-    def test_chk_not_in_main_scope(self):
-        """Verify that reconstruct_config_from_checkpoint does NOT leak `chk` into caller scope.
+    def test_chk_not_in_main_scope(self) -> None:
+        """Keep the checkpoint helper's local names out of caller scope.
 
         The function defines `chk` internally. The resume branch of main() must use
         checkpoint['checkpoint'] instead.
@@ -164,25 +171,31 @@ class TestResumeRuleFactoryIndex:
 class TestRestoreRuleFromCheckpoint:
     """restore_rule_from_checkpoint handles valid and missing data."""
 
-    def test_valid_rule_data(self):
-        rule = restore_rule_from_checkpoint({
-            "description": "Only hearts.",
-            "code": 'return card.suit.name == "HEARTS"',
-        })
+    def test_valid_rule_data(self) -> None:
+        """Verify valid rule data."""
+        rule = restore_rule_from_checkpoint(
+            {
+                "description": "Only hearts.",
+                "code": 'return card.suit.name == "HEARTS"',
+            }
+        )
         assert rule is not None
         assert rule.description() == "Only hearts."
 
-    def test_none_input(self):
+    def test_none_input(self) -> None:
+        """Verify none input."""
         assert restore_rule_from_checkpoint(None) is None
 
-    def test_missing_code(self):
+    def test_missing_code(self) -> None:
+        """Verify missing code."""
         assert restore_rule_from_checkpoint({"description": "Only hearts."}) is None
 
 
 class TestLoadCheckpoint:
     """load_checkpoint validates JSON structure."""
 
-    def test_valid_checkpoint(self, tmp_path):
+    def test_valid_checkpoint(self, tmp_path: Path) -> None:
+        """Verify valid checkpoint."""
         checkpoint = _make_checkpoint()
         results_path = tmp_path / "results.json"
         results_path.write_text(json.dumps(checkpoint))
@@ -193,12 +206,14 @@ class TestLoadCheckpoint:
         assert result is not None
         assert result["checkpoint"]["completed_rounds"] == 5
 
-    def test_missing_file(self, tmp_path):
+    def test_missing_file(self, tmp_path: Path) -> None:
+        """Verify missing file."""
         with patch("scripts.evaluate_single.logger"):
             result = load_checkpoint(str(tmp_path))
         assert result is None
 
-    def test_missing_checkpoint_field(self, tmp_path):
+    def test_missing_checkpoint_field(self, tmp_path: Path) -> None:
+        """Verify missing checkpoint field."""
         results_path = tmp_path / "results.json"
         results_path.write_text(json.dumps({"config": {}}))
 
@@ -210,8 +225,8 @@ class TestLoadCheckpoint:
 class TestResultsMetadataSelfDescribing:
     """Results metadata must be self-describing for both fresh and resumed runs."""
 
-    def test_checkpoint_contains_rule_factory_state(self):
-        """Checkpoint must contain rule_factory_state with selection and current_index."""
+    def test_checkpoint_contains_rule_factory_state(self) -> None:
+        """Store rule-factory selection and index in checkpoints."""
         checkpoint = _make_checkpoint(selection="sequential", rule_factory_index=3)
         state = checkpoint["checkpoint"]["rule_factory_state"]
 
@@ -220,7 +235,7 @@ class TestResultsMetadataSelfDescribing:
         assert state["selection"] == "sequential"
         assert state["current_index"] == 3
 
-    def test_checkpoint_contains_rules_consumed(self):
+    def test_checkpoint_contains_rules_consumed(self) -> None:
         """Checkpoint tracks which rules have been consumed with metadata."""
         checkpoint = _make_checkpoint(completed_rounds=3)
         consumed = checkpoint["checkpoint"]["rules_consumed"]
@@ -232,20 +247,21 @@ class TestResultsMetadataSelfDescribing:
             assert "code" in rule
             assert "rounds_completed" in rule
 
-    def test_checkpoint_contains_current_rule(self):
+    def test_checkpoint_contains_current_rule(self) -> None:
         """Checkpoint stores the current rule for mid-batch resume."""
         checkpoint = _make_checkpoint()
         current = checkpoint["checkpoint"]["current_rule"]
 
+        assert current is not None
         assert "description" in current
         assert "code" in current
 
-    def test_config_contains_batch_round_offset(self):
-        """Config section stores batch_round_offset for parallel worker identification."""
+    def test_config_contains_batch_round_offset(self) -> None:
+        """Store the parallel worker's batch offset in configuration."""
         checkpoint = _make_checkpoint(batch_round_offset=1)
         assert checkpoint["config"]["batch_round_offset"] == 1
 
-    def test_fresh_run_metadata_shape(self):
+    def test_fresh_run_metadata_shape(self) -> None:
         """A fresh evaluation_results dict has all required metadata keys."""
         # Simulate what main() creates for a fresh run
         fresh_results = {

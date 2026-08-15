@@ -4,16 +4,31 @@ import argparse
 import json
 import logging
 import re
-from datetime import datetime
+import sys
+from datetime import UTC, datetime
 from pathlib import Path
+from typing import NotRequired
 
 from dotenv import load_dotenv
+from typing_extensions import TypedDict
 
 from eleusis.game import Rule, RuleEvaluator, RuleValidator
 from eleusis.llm import HuggingFaceClient
 from eleusis.prompts import get_rule_compile_prompt
 
 logger = logging.getLogger(__name__)
+
+
+class CompiledRule(TypedDict):
+    """Compiled rule plus optional validation and evaluation metadata."""
+
+    name: str
+    description: str
+    code: str
+    avg_acceptance_rate: NotRequired[float]
+    node_count: NotRequired[int]
+    cyclomatic_complexity: NotRequired[int]
+    issues: NotRequired[list[str]]
 
 
 def parse_rules_file(filepath: Path) -> list[str]:
@@ -48,7 +63,7 @@ def extract_name_and_code(response: str) -> tuple[str, str] | None:
 def compile_rule(
     description: str,
     llm_client: HuggingFaceClient,
-) -> dict | None:
+) -> CompiledRule | None:
     """Compile a single rule description into name and code.
 
     Returns:
@@ -59,13 +74,16 @@ def compile_rule(
     try:
         response = llm_client.generate(prompt)
         logger.debug(f"LLM response:\n{response}")
-    except Exception as e:
-        logger.error(f"LLM call failed: {e}")
+    # Compilation isolates arbitrary provider failures for per-rule reporting.
+    except Exception as error:  # ruff: ignore[blind-except]
+        logger.error(f"LLM call failed: {error}")
         return None
 
     extracted = extract_name_and_code(response)
     if not extracted:
-        logger.warning(f"Failed to extract name/code from response for: {description[:50]}...")
+        logger.warning(
+            f"Failed to extract name/code from response for: {description[:50]}..."
+        )
         return None
 
     name, code = extracted
@@ -77,15 +95,15 @@ def compile_rule(
 
 
 def validate_and_save_rules(
-    rules: list[dict],
+    rules: list[CompiledRule],
     output_path: Path,
     validator: RuleValidator,
     evaluator: RuleEvaluator,
     num_test_cases: int = 5,
 ) -> None:
     """Validate and evaluate rules, save results to JSON."""
-    valid_rules = []
-    invalid_rules = []
+    valid_rules: list[CompiledRule] = []
+    invalid_rules: list[CompiledRule] = []
 
     for rule_dict in rules:
         name = rule_dict["name"]
@@ -104,19 +122,22 @@ def validate_and_save_rules(
                 logger.info("  Valid - evaluating...")
                 eval_results = evaluator.evaluate(rule)
                 rule_dict.update(eval_results)
-                logger.info(f"  Acceptance rate: {eval_results['avg_acceptance_rate']:.1%}")
+                logger.info(
+                    f"  Acceptance rate: {eval_results['avg_acceptance_rate']:.1%}"
+                )
                 valid_rules.append(rule_dict)
             else:
                 logger.warning(f"  Invalid - {', '.join(validation.issues)}")
                 invalid_rules.append({**rule_dict, "issues": validation.issues})
-        except Exception as e:
-            logger.error(f"  Exception during validation - {e}")
-            invalid_rules.append({**rule_dict, "issues": [str(e)]})
+        # Generated rule bodies can raise arbitrary exceptions during validation.
+        except Exception as error:  # ruff: ignore[blind-except]
+            logger.error(f"  Exception during validation - {error}")
+            invalid_rules.append({**rule_dict, "issues": [str(error)]})
 
-    output = {
+    output: dict[str, object] = {
         "rules": valid_rules,
         "metadata": {
-            "generated_at": datetime.now().isoformat(),
+            "generated_at": datetime.now(UTC).isoformat(),
             "total_compiled": len(rules),
             "valid_count": len(valid_rules),
             "invalid_count": len(invalid_rules),
@@ -130,16 +151,18 @@ def validate_and_save_rules(
     if invalid_rules:
         output["invalid_rules"] = invalid_rules
 
-    with open(output_path, "w") as f:
-        json.dump(output, f, indent=2)
+    with output_path.open("w") as output_file:
+        json.dump(output, output_file, indent=2)
 
     logger.info(f"Saved {len(valid_rules)} valid rules to {output_path}")
     logger.info(f"Summary: {len(valid_rules)}/{len(rules)} rules valid")
 
 
-def main():
-    """Main entry point for rule library compilation."""
-    parser = argparse.ArgumentParser(description="Compile human-written rules into JSON")
+def parse_args() -> argparse.Namespace:
+    """Parse rule-library compilation options."""
+    parser = argparse.ArgumentParser(
+        description="Compile human-written rules into JSON"
+    )
     parser.add_argument(
         "--input",
         type=Path,
@@ -190,8 +213,31 @@ def main():
         help="Logging level (default: INFO)",
     )
 
-    args = parser.parse_args()
+    return parser.parse_args()
 
+
+def compile_rule_descriptions(
+    rule_descriptions: list[str],
+    llm_client: HuggingFaceClient,
+) -> list[CompiledRule]:
+    """Compile rule descriptions and retain successful results."""
+    compiled_rules: list[CompiledRule] = []
+    for index, description in enumerate(rule_descriptions, 1):
+        logger.info(
+            f"[{index}/{len(rule_descriptions)}] Compiling: {description[:60]}..."
+        )
+        result = compile_rule(description, llm_client)
+        if result:
+            compiled_rules.append(result)
+            logger.info(f"  -> {result['name']}")
+        else:
+            logger.warning("  -> Failed to compile")
+    return compiled_rules
+
+
+def main() -> int:
+    """Compile, validate, evaluate, and save a rule library."""
+    args = parse_args()
     load_dotenv()
 
     logging.basicConfig(
@@ -217,18 +263,11 @@ def main():
         plays_per_simulation=args.plays_per_simulation,
     )
 
-    # Compile each rule
-    compiled_rules = []
-    for i, description in enumerate(rule_descriptions, 1):
-        logger.info(f"[{i}/{len(rule_descriptions)}] Compiling: {description[:60]}...")
-        result = compile_rule(description, llm_client)
-        if result:
-            compiled_rules.append(result)
-            logger.info(f"  -> {result['name']}")
-        else:
-            logger.warning("  -> Failed to compile")
+    compiled_rules = compile_rule_descriptions(rule_descriptions, llm_client)
 
-    logger.info(f"Successfully compiled {len(compiled_rules)}/{len(rule_descriptions)} rules")
+    logger.info(
+        f"Successfully compiled {len(compiled_rules)}/{len(rule_descriptions)} rules"
+    )
 
     if not compiled_rules:
         logger.error("No rules were successfully compiled")
@@ -236,11 +275,13 @@ def main():
 
     # Validate, evaluate, and save
     logger.info("Validating and evaluating rules...")
-    validate_and_save_rules(compiled_rules, args.output, validator, evaluator, args.test_cases)
+    validate_and_save_rules(
+        compiled_rules, args.output, validator, evaluator, args.test_cases
+    )
 
     logger.info("Done!")
     return 0
 
 
 if __name__ == "__main__":
-    exit(main())
+    sys.exit(main())

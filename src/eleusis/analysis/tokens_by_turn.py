@@ -7,7 +7,11 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from .colors import get_model_color, load_model_metadata, normalize_model_name
+from .colors import (
+    get_model_color,
+    load_model_metadata,
+    resolve_model_metadata,
+)
 from .utils import TeeWriter, save_figure, setup_matplotlib_style
 
 logger = logging.getLogger(__name__)
@@ -23,7 +27,6 @@ def plot_tokens_by_turn(
     setup_matplotlib_style()
     fig, ax = plt.subplots(figsize=(12, 7))
 
-    # Load metadata for open/closed distinction
     model_metadata = load_model_metadata()
 
     # Prepare data for JSON export
@@ -42,9 +45,11 @@ def plot_tokens_by_turn(
         model_turns = df_turns[df_turns["model"] == model_name]
 
         # Group by turn number and compute mean output tokens
-        tokens_by_turn = model_turns.groupby("turn_number")["output_tokens"].agg(
-            ["mean", "count"]
-        ).reset_index()
+        tokens_by_turn = (
+            model_turns.groupby("turn_number")["output_tokens"]
+            .agg(["mean", "count"])
+            .reset_index()
+        )
         tokens_by_turn.columns = ["turn_number", "avg_tokens", "sample_count"]
 
         if len(tokens_by_turn) == 0:
@@ -52,18 +57,9 @@ def plot_tokens_by_turn(
 
         color = get_model_color(model_name, model_colors)
 
-        # Determine if open model
-        is_open = False
-        provider = "unknown"
-        normalized_name = normalize_model_name(model_name)
-        for key, meta in model_metadata.items():
-            norm_key = normalize_model_name(key)
-            match = (norm_key == normalized_name or norm_key in normalized_name
-                     or normalized_name in norm_key)
-            if match:
-                is_open = meta["is_open"]
-                provider = meta["provider"]
-                break
+        metadata = resolve_model_metadata(model_name, model_metadata)
+        is_open = metadata["is_open"]
+        provider = metadata["provider"]
 
         # Line style: dashed for open models, solid for closed
         linestyle = "--" if is_open else "-"
@@ -82,20 +78,22 @@ def plot_tokens_by_turn(
         )
 
         # Store data for JSON
-        plot_data["models"].append({
-            "name": model_name,
-            "color": color,
-            "is_open": is_open,
-            "provider": provider,
-            "tokens_by_turn": [
-                {
-                    "turn_number": int(row["turn_number"]),
-                    "avg_output_tokens": float(row["avg_tokens"]),
-                    "sample_count": int(row["sample_count"]),
-                }
-                for _, row in tokens_by_turn.iterrows()
-            ],
-        })
+        plot_data["models"].append(
+            {
+                "name": model_name,
+                "color": color,
+                "is_open": is_open,
+                "provider": provider,
+                "tokens_by_turn": [
+                    {
+                        "turn_number": int(row["turn_number"]),
+                        "avg_output_tokens": float(row["avg_tokens"]),
+                        "sample_count": int(row["sample_count"]),
+                    }
+                    for _, row in tokens_by_turn.iterrows()
+                ],
+            }
+        )
 
     ax.set_xlabel("Turn Number", fontsize=11)
     ax.set_ylabel("Average Output Tokens", fontsize=11)
@@ -106,12 +104,17 @@ def plot_tokens_by_turn(
 
     # Add note about line styles
     ax.text(
-        0.98, 0.98, "Solid = Closed model, Dashed = Open model",
-        transform=ax.transAxes, fontsize=8, ha="right", va="top",
-        style="italic", color="gray",
+        0.98,
+        0.98,
+        "Solid = Closed model, Dashed = Open model",
+        transform=ax.transAxes,
+        fontsize=8,
+        ha="right",
+        va="top",
+        style="italic",
+        color="gray",
     )
 
-    # Save outputs
     png_path = output_folder / "tokens_by_turn.png"
     json_path = output_folder / "tokens_by_turn.json"
 
@@ -129,7 +132,7 @@ def analyze_tokens_by_turn(
     model_colors: dict[str, str],
     output_folder: Path,
     tee: TeeWriter,
-):
+) -> None:
     """Run tokens by turn analysis and save outputs."""
     tee.write("\n" + "=" * 60 + "\n")
     tee.write("OUTPUT TOKENS BY TURN\n")
@@ -140,7 +143,6 @@ def analyze_tokens_by_turn(
     tee.write(f"Saved: {png_path}\n")
     tee.write(f"Saved: {json_path}\n")
 
-    # Print summary statistics
     models = sorted(df_turns["model"].unique())
     tee.write("\nTokens trend summary (early vs late turns):\n")
 
@@ -151,8 +153,13 @@ def analyze_tokens_by_turn(
         # Compare early turns (1-5) vs late turns (last 5)
         early = model_turns[model_turns["turn_number"] <= 5]["output_tokens"].mean()
         late_start = max(6, max_turn - 4)
-        late = model_turns[model_turns["turn_number"] >= late_start]["output_tokens"].mean()
+        late = model_turns[model_turns["turn_number"] >= late_start][
+            "output_tokens"
+        ].mean()
 
         if pd.notna(early) and pd.notna(late) and early > 0:
             change_pct = ((late - early) / early) * 100
-            tee.write(f"  {model_name}: early={early:.0f}, late={late:.0f} ({change_pct:+.1f}%)\n")
+            tee.write(
+                f"  {model_name}: early={early:.0f}, late={late:.0f}"
+                f" ({change_pct:+.1f}%)\n"
+            )

@@ -1,0 +1,222 @@
+"""Configuration, suite, logging, and round-count startup for one evaluation."""
+
+import argparse
+import logging
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from pathlib import Path
+
+import yaml
+from pydantic import ValidationError
+
+from eleusis.benchmark_config import BenchmarkConfig, GameConfig, RulesConfig
+from eleusis.evaluation_results import EvaluationResults
+from eleusis.evaluation_support import (
+    apply_cli_overrides,
+    generate_output_tag,
+    load_checkpoint,
+    load_config,
+    load_rules_from_library,
+    preflight_check,
+    reconstruct_config_from_checkpoint,
+)
+from eleusis.suites import resolve_suite
+from eleusis.utils import model_spec_to_display_name, setup_logging
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class EvaluationStartup:
+    """Resolved inputs and display metadata for one evaluation session."""
+
+    args: argparse.Namespace
+    checkpoint: EvaluationResults | None
+    config: BenchmarkConfig
+    player_model: str
+    player_display_name: str
+    rule_compiler_display_name: str
+    num_rounds_per_rule: int
+    suite_name: str | None
+    suite_cases: list[tuple[str, int]] | None
+    game_config: GameConfig
+    rules_config: RulesConfig
+    output_tag: str
+    timestamp: str
+    log_file: str
+    num_rounds: int
+    num_rules: int
+
+
+def _load_resume_startup(
+    args: argparse.Namespace,
+    checkpoint: EvaluationResults,
+) -> tuple[BenchmarkConfig, str, str, str, int] | None:
+    """Validate a checkpoint and recover its model/configuration display values."""
+    config = reconstruct_config_from_checkpoint(checkpoint)
+    try:
+        backup_providers = load_config(args.config)["rule_compiler"].get(
+            "backup_providers"
+        )
+        if backup_providers:
+            config["rule_compiler"]["backup_providers"] = backup_providers
+    except (OSError, ValidationError, yaml.YAMLError) as error:
+        logger.debug("Optional resume config unavailable: %s", error)
+    if args.model and args.model != checkpoint["config"]["player_model"]:
+        logger.error("Cannot resume with different model: %s", args.model)
+        return None
+    selection = checkpoint["checkpoint"]["rule_factory_state"]["selection"]
+    if selection != "sequential":
+        logger.error(
+            "Resume only supports sequential rule selection, not %s", selection
+        )
+        return None
+    completed = checkpoint["checkpoint"]["completed_rounds"]
+    total = checkpoint["checkpoint"]["total_rounds"]
+    if completed >= total:
+        logger.info("Evaluation already complete (%s/%s rounds)", completed, total)
+        return None
+    return (
+        config,
+        config["model"],
+        checkpoint["config"]["player"],
+        checkpoint["config"]["rule_compiler"],
+        config["game"].get("num_rounds_per_rule", 1),
+    )
+
+
+def _resolve_suite_cases(
+    args: argparse.Namespace,
+    config: BenchmarkConfig,
+    checkpoint: EvaluationResults | None,
+) -> tuple[str | None, list[tuple[str, int]] | None]:
+    """Resolve and optionally partition a named suite for this worker."""
+    if checkpoint:
+        return None, None
+    suite_name = args.suite or config.get("suite")
+    if not suite_name:
+        return None, None
+    cases = resolve_suite(suite_name)
+    if args.batch_round_offset is not None:
+        cases = [case for case in cases if case[1] == args.batch_round_offset]
+    logger.info("Suite %r: %s rounds", suite_name, len(cases))
+    return suite_name, cases
+
+
+def _configure_evaluation_logging(
+    args: argparse.Namespace,
+    checkpoint: EvaluationResults | None,
+    player_display_name: str,
+) -> tuple[str, str, str]:
+    """Resolve output tag and configure timestamped console/file logging."""
+    if checkpoint:
+        checkpoint_folder = checkpoint.get(
+            "folder_name", f"solo_evaluation_{checkpoint['timestamp']}"
+        )
+        output_tag = checkpoint_folder.replace(
+            f"solo_evaluation_{checkpoint['timestamp']}_", ""
+        )
+        if output_tag == checkpoint_folder:
+            output_tag = player_display_name.lower().replace(" ", "_")[:30]
+    else:
+        output_tag = generate_output_tag(args, player_display_name)
+    timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
+    Path("logs").mkdir(exist_ok=True)
+    log_file = f"logs/solo_evaluation_{timestamp}_{output_tag}.txt"
+    setup_logging(
+        log_file=log_file,
+        console_level=logging.INFO,
+        file_level=logging.DEBUG,
+    )
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    return output_tag, timestamp, log_file
+
+
+def _resolve_round_counts(
+    config: BenchmarkConfig,
+    checkpoint: EvaluationResults | None,
+    suite_cases: list[tuple[str, int]] | None,
+    num_rounds_per_rule: int,
+) -> tuple[int, int] | None:
+    """Resolve and validate rule and round counts for the selected mode."""
+    game_config = config["game"]
+    if checkpoint:
+        return game_config.get("num_rules", 10), checkpoint["checkpoint"][
+            "total_rounds"
+        ]
+    if suite_cases:
+        num_rounds = len(suite_cases)
+        num_rules = len(dict.fromkeys(name for name, _index in suite_cases))
+        game_config["num_rounds"] = num_rounds
+        return num_rules, num_rounds
+    all_rules = load_rules_from_library(config)
+    num_rules = game_config.get("num_rules", 10)
+    if num_rules == 0:
+        num_rules = len(all_rules)
+        game_config["num_rules"] = num_rules
+        logger.info("num_rules=0: using entire library (%s rules)", num_rules)
+    elif len(all_rules) < num_rules:
+        logger.error(
+            "Not enough rules: %s available, %s requested", len(all_rules), num_rules
+        )
+        return None
+    num_rounds = num_rules * num_rounds_per_rule
+    game_config["num_rounds"] = num_rounds
+    return num_rules, num_rounds
+
+
+def resolve_evaluation_startup(args: argparse.Namespace) -> EvaluationStartup | None:
+    """Resolve all startup inputs and fail fast before evaluation state mutation."""
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    if not args.resume and not args.model:
+        logger.error("--model is required (unless using --resume)")
+        return None
+    checkpoint = load_checkpoint(args.resume) if args.resume else None
+    if args.resume and checkpoint is None:
+        logger.error("Failed to load checkpoint")
+        return None
+    if checkpoint:
+        resume_values = _load_resume_startup(args, checkpoint)
+        if resume_values is None:
+            return None
+        config, player_model, player_name, compiler_name, rounds_per_rule = (
+            resume_values
+        )
+    else:
+        config = apply_cli_overrides(load_config(args.config), args)
+        config["model"] = args.model
+        player_model = args.model
+        player_name = model_spec_to_display_name(player_model)
+        compiler_name = model_spec_to_display_name(config["rule_compiler"]["model_id"])
+        rounds_per_rule = config["game"].get("num_rounds_per_rule", 1)
+    suite_name, suite_cases = _resolve_suite_cases(args, config, checkpoint)
+    output_tag, timestamp, log_file = _configure_evaluation_logging(
+        args, checkpoint, player_name
+    )
+    logger.info("=" * 80)
+    logger.info("PRE-FLIGHT MODEL CHECK")
+    logger.info("=" * 80)
+    preflight_check(player_model)
+    logger.info("Pre-flight check passed!\n")
+    counts = _resolve_round_counts(config, checkpoint, suite_cases, rounds_per_rule)
+    if counts is None:
+        return None
+    num_rules, num_rounds = counts
+    return EvaluationStartup(
+        args=args,
+        checkpoint=checkpoint,
+        config=config,
+        player_model=player_model,
+        player_display_name=player_name,
+        rule_compiler_display_name=compiler_name,
+        num_rounds_per_rule=rounds_per_rule,
+        suite_name=suite_name,
+        suite_cases=suite_cases,
+        game_config=config["game"],
+        rules_config=config["rules"],
+        output_tag=output_tag,
+        timestamp=timestamp,
+        log_file=log_file,
+        num_rounds=num_rounds,
+        num_rules=num_rules,
+    )

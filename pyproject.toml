@@ -14,12 +14,15 @@ dependencies = [
     "openai>=1.0.0",
     "anthropic>=0.50.0",
     "google-genai>=1.51.0",
+    "typing-extensions>=4.15.0",
+    "numpy>=2.3.5",
+    "httpx>=0.28.1",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7.4.0",
-    "ruff>=0.1.0",
+    "ruff==0.16.0",
 ]
 viz = [
     "matplotlib>=3.8.0",
@@ -31,12 +34,56 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.ruff]
-line-length = 100
+required-version = "==0.16.0"
+line-length = 88
 target-version = "py311"
+extend-exclude = [".venv"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I"]
-ignore = []
+extend-select = [
+    "E",
+    "W",
+    "F",
+    "I",
+    "B",
+    "C4",
+    "C90",
+    "SIM",
+    "ASYNC",
+    "N",
+    "D",
+    "ERA",
+    "PGH",
+    "RUF",
+    "UP",
+    "ANN",
+    "PYI",
+]
+preview = true
+ignore = [
+    "undocumented-public-module",
+    "undocumented-public-package",
+    "incorrect-blank-line-before-class",
+    "multi-line-summary-first-line",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["assert"]
+"**/__init__.py" = ["unused-import"]
+"src/eleusis/prompts/*.py" = ["line-too-long"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ty.environment]
+python-version = "3.11"
+
+[tool.ty.rules]
+missing-type-argument = "error"
+possibly-unresolved-reference = "warn"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -46,5 +93,6 @@ python_functions = ["test_*"]
 [dependency-groups]
 dev = [
     "pytest>=9.0.1",
-    "ruff>=0.14.7",
+    "ruff==0.16.0",
+    "ty>=0.0.72",
 ]

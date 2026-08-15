@@ -2,14 +2,20 @@
 
 import io
 import logging
+import sys
+from contextlib import ExitStack
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 
+from .legacy_records import LegacyRecord
+
 logger = logging.getLogger(__name__)
 
 
-def compute_counting_cutoff(turns: list[dict], max_turns: int, penalty: int) -> int | None:
+def compute_counting_cutoff(
+    turns: list[LegacyRecord], max_turns: int, penalty: int
+) -> int | None:
     """Compute turn number where score becomes guaranteed <= 0.
 
     After turn n with k cumulative failed guesses, best possible score is:
@@ -27,14 +33,17 @@ def compute_counting_cutoff(turns: list[dict], max_turns: int, penalty: int) -> 
     cumulative_failed = 0
     for turn in turns:
         turn_num = turn["turn_number"]  # 1-indexed
-        turn_idx = turn_num - 1  # 0-indexed for scoring
 
         guess_attempt = turn.get("guess_attempt")
-        if guess_attempt and not guess_attempt.get("shadow", False):
-            if guess_attempt.get("correct") is False:
-                cumulative_failed += 1
+        if (
+            guess_attempt
+            and not guess_attempt.get("shadow", False)
+            and guess_attempt.get("correct") is False
+        ):
+            cumulative_failed += 1
 
-        # Best possible score after this turn: max_turns - (turn_idx + 1) - penalty*cumulative_failed
+        # Best possible score after this turn: max_turns - (turn_idx + 1) -
+        # penalty*cumulative_failed
         # Which equals: max_turns - turn_num - penalty*cumulative_failed
         # Score guaranteed <= 0 when: penalty*cumulative_failed >= max_turns - turn_num
         if penalty * cumulative_failed >= max_turns - turn_num:
@@ -46,36 +55,42 @@ def compute_counting_cutoff(turns: list[dict], max_turns: int, penalty: int) -> 
 class TeeWriter:
     """Write to both a file and stdout."""
 
-    def __init__(self, file_path: Path):
-        self.file = open(file_path, "w")
+    def __init__(self, file_path: Path) -> None:
+        """Open the report output and initialize an in-memory copy."""
+        self._resources = ExitStack()
+        self.file = self._resources.enter_context(file_path.open("w"))
         self.buffer = io.StringIO()
 
-    def write(self, text: str):
+    def write(self, text: str) -> None:
+        """Write text to the report file, memory buffer, and standard output."""
         self.file.write(text)
         self.buffer.write(text)
-        print(text, end="")
+        sys.stdout.write(text)
 
-    def close(self):
-        self.file.close()
+    def close(self) -> None:
+        """Close the report output file and release owned resources."""
+        self._resources.close()
 
 
-def setup_matplotlib_style():
+def setup_matplotlib_style() -> None:
     """Configure consistent matplotlib style for all plots."""
     plt.style.use("seaborn-v0_8-whitegrid")
-    plt.rcParams.update({
-        "figure.facecolor": "white",
-        "axes.facecolor": "white",
-        "font.size": 10,
-        "axes.titlesize": 12,
-        "axes.labelsize": 10,
-        "xtick.labelsize": 9,
-        "ytick.labelsize": 9,
-        "legend.fontsize": 9,
-        "figure.titlesize": 14,
-    })
+    plt.rcParams.update(
+        {
+            "figure.facecolor": "white",
+            "axes.facecolor": "white",
+            "font.size": 10,
+            "axes.titlesize": 12,
+            "axes.labelsize": 10,
+            "xtick.labelsize": 9,
+            "ytick.labelsize": 9,
+            "legend.fontsize": 9,
+            "figure.titlesize": 14,
+        }
+    )
 
 
-def save_figure(fig: plt.Figure, path: Path, dpi: int = 150):
+def save_figure(fig: plt.Figure, path: Path, dpi: int = 150) -> None:
     """Save figure with consistent settings."""
     fig.tight_layout()
     fig.savefig(path, dpi=dpi, bbox_inches="tight", facecolor="white")

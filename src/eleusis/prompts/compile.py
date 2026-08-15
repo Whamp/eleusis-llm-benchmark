@@ -10,16 +10,16 @@ def get_rule_compile_prompt(rule_text: str) -> str:
 # YOUR TASK: CONVERT A RULE INTO PYTHON CODE AND GIVE IT A NICKNAME
 
 You are given a natural language description of a rule for the card game "Eleusis".
- 
+
 Your task is to:
 1. Create a short snake_case nickname for the rule (e.g., "alternating_colors", "even_ranks_only")
 2. Convert the rule into Python code for automatic evaluation.
 
 ## Game summary
-The game Eleusis involves playing cards from a standard deck. 
+The game Eleusis involves playing cards from a standard deck.
 
 The game uses 2 standard 52-card decks shuffled together (104 cards total):
-- Ranks: Ace = 1 (low), 2–10, Jack = 11, Queen = 12, King = 13. Number cards are 1-10, face cards are 11-13.
+- Ranks: Ace = 1 (low), 2-10, Jack = 11, Queen = 12, King = 13. Number cards are 1-10, face cards are 11-13.
 - Suits: Hearts ♥️ (red), Diamonds ♦️ (red), Clubs ♣️ (black), Spades ♠️ (black)
 
 The dealer has created a hidden rule that determines whether played cards are accepted or rejected.
@@ -31,7 +31,7 @@ The players have to discover the hidden rule by playing cards and observing whic
 When evaluating a new card, only the properties of the card and the mainline are relevant.
 
 ## YOUR TASK : converting a rule into Python code for automatic evaluation
- 
+
 ### Rule to convert
 
 The rule to convert is provided below.

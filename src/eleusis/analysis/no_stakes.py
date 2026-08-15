@@ -9,17 +9,24 @@ def compute_first_correct_turn(df_turns: pd.DataFrame) -> pd.DataFrame:
     Returns DataFrame with columns: model, round_number,
         first_correct_turn, first_formal_correct_turn, first_shadow_correct_turn
     """
-    correct_guesses = df_turns[df_turns["guess_correct"] == True].copy()  # noqa: E712
+    correct_guesses = df_turns[df_turns["guess_correct"] == True].copy()  # ruff: ignore[true-false-comparison]
 
     if correct_guesses.empty:
-        return pd.DataFrame(columns=[
-            "model", "round_number",
-            "first_correct_turn", "first_formal_correct_turn", "first_shadow_correct_turn",
-        ])
+        return pd.DataFrame(
+            columns=pd.Index(
+                [
+                    "model",
+                    "round_number",
+                    "first_correct_turn",
+                    "first_formal_correct_turn",
+                    "first_shadow_correct_turn",
+                ]
+            )
+        )
 
     # Split by shadow vs formal
-    shadow = correct_guesses[correct_guesses["is_shadow"] == True]  # noqa: E712
-    formal = correct_guesses[correct_guesses["is_shadow"] != True]  # noqa: E712
+    shadow = correct_guesses[correct_guesses["is_shadow"] == True]  # ruff: ignore[true-false-comparison]
+    formal = correct_guesses[correct_guesses["is_shadow"] != True]  # ruff: ignore[true-false-comparison]
 
     # First correct of any kind
     first_any = (
@@ -31,22 +38,30 @@ def compute_first_correct_turn(df_turns: pd.DataFrame) -> pd.DataFrame:
 
     # First formal correct
     first_formal = (
-        formal.groupby(["model", "round_number"])["turn_number"]
-        .min()
-        .reset_index()
-        .rename(columns={"turn_number": "first_formal_correct_turn"})
-    ) if not formal.empty else pd.DataFrame(
-        columns=["model", "round_number", "first_formal_correct_turn"]
+        (
+            formal.groupby(["model", "round_number"])["turn_number"]
+            .min()
+            .reset_index()
+            .rename(columns={"turn_number": "first_formal_correct_turn"})
+        )
+        if not formal.empty
+        else pd.DataFrame(
+            columns=pd.Index(["model", "round_number", "first_formal_correct_turn"])
+        )
     )
 
     # First shadow correct
     first_shadow = (
-        shadow.groupby(["model", "round_number"])["turn_number"]
-        .min()
-        .reset_index()
-        .rename(columns={"turn_number": "first_shadow_correct_turn"})
-    ) if not shadow.empty else pd.DataFrame(
-        columns=["model", "round_number", "first_shadow_correct_turn"]
+        (
+            shadow.groupby(["model", "round_number"])["turn_number"]
+            .min()
+            .reset_index()
+            .rename(columns={"turn_number": "first_shadow_correct_turn"})
+        )
+        if not shadow.empty
+        else pd.DataFrame(
+            columns=pd.Index(["model", "round_number", "first_shadow_correct_turn"])
+        )
     )
 
     # Merge all three
@@ -63,22 +78,24 @@ def compute_no_stakes_scores(
     """Compute no-stakes score for each round.
 
     no_stakes = max_turns - (first_correct_turn - 1)
-    The -1 accounts for turn_number being 1-indexed while scoring uses 0-indexed turn_count.
-    This makes: no_stakes = score + 2*failed_guesses + early_correct_turns (for successful rounds)
+    The -1 converts the 1-indexed turn number to the scoring turn count.
+    For successful rounds, no-stakes score equals the score plus twice the failed
+    guesses plus the early correct turns.
     """
     # Merge rounds with first correct turn
-    df = df_rounds.merge(
-        df_first_correct, on=["model", "round_number"], how="left"
-    )
+    df = df_rounds.merge(df_first_correct, on=["model", "round_number"], how="left")
 
     # Compute no-stakes score
     # turn_number is 1-indexed, but scoring uses turn_count which is turn_number-1
-    # So: no_stakes = max_turns - (first_correct_turn - 1) = max_turns - first_correct_turn + 1
+    # So: no_stakes = max_turns - (first_correct_turn - 1) = max_turns -
+    # first_correct_turn + 1
     # If no correct turn found, no_stakes = 0
     df["no_stakes_score"] = df.apply(
-        lambda row: row["max_turns"] - row["first_correct_turn"] + 1
-        if pd.notna(row["first_correct_turn"])
-        else 0,
+        lambda row: (
+            row["max_turns"] - row["first_correct_turn"] + 1
+            if pd.notna(row["first_correct_turn"])
+            else 0
+        ),
         axis=1,
     )
 

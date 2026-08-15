@@ -1,25 +1,41 @@
 """Named benchmark suite resolution.
 
-Loads suite definitions from suites.yaml and expands them into
-(rule_name, batch_round_index) pairs for the runner.
+Loads suite definitions from suites.yaml and expands them into (rule_name,
+batch_round_index) pairs for the runner.
 """
 
 import json
 from pathlib import Path
 
 import yaml
+from pydantic import TypeAdapter
+from typing_extensions import TypedDict
+
+from eleusis.game.validator import parse_rule_library_entries
 
 _DEFAULT_SUITES_PATH = Path(__file__).parent.parent.parent / "suites.yaml"
 _DEFAULT_RULES_PATH = Path(__file__).parent.parent.parent / "rules.json"
 
 
-def load_suites(suites_path: Path = _DEFAULT_SUITES_PATH) -> dict:
+class SuiteDefinition(TypedDict):
+    """Rule names and batch indices selected by one benchmark suite."""
+
+    rules: str | list[str]
+    batch_round_indices: list[int]
+
+
+_SUITE_REGISTRY_ADAPTER = TypeAdapter(dict[str, SuiteDefinition])
+
+
+def load_suites(
+    suites_path: Path = _DEFAULT_SUITES_PATH,
+) -> dict[str, SuiteDefinition]:
     """Load suite definitions from YAML file.
 
     Returns dict mapping suite name to its definition.
     """
-    with open(suites_path) as f:
-        return yaml.safe_load(f)
+    with suites_path.open() as suites_file:
+        return _SUITE_REGISTRY_ADAPTER.validate_python(yaml.safe_load(suites_file))
 
 
 def resolve_suite(
@@ -52,9 +68,12 @@ def resolve_suite(
     # Resolve rule list
     rules_spec = suite_def["rules"]
     if rules_spec == "all":
-        with open(rules_path) as f:
-            library = json.load(f)
-        rule_names = [r["name"] for r in library["rules"]]
+        with rules_path.open() as rules_file:
+            library = json.load(rules_file)
+        if not isinstance(library, dict):
+            raise TypeError("Rule library must contain a JSON object")
+        rules = parse_rule_library_entries(library.get("rules", []))
+        rule_names = [rule["name"] for rule in rules if "name" in rule]
     else:
         rule_names = list(rules_spec)
 

@@ -1,24 +1,73 @@
 """Rule validation and factory for Eleusis."""
 
-import json
 import logging
 import random
 import time
 from dataclasses import dataclass
-from pathlib import Path
+
+from typing_extensions import TypedDict
 
 from eleusis.game.cards import Card, Suit
 from eleusis.game.engine import Rule
-from eleusis.game.metrics import code_complexity
+from eleusis.game.metrics import CodeComplexity, code_complexity
+from eleusis.game.rule_library import (
+    RuleLibraryEntry,
+    parse_rule_library_entries,
+)
+from eleusis.llm.base import BaseLLMClient
 
-__all__ = ["ValidationResult", "RuleValidator", "RuleFactory"]
+__all__ = [
+    "RuleLibraryEntry",
+    "RuleValidator",
+    "ValidationResult",
+    "parse_rule_library_entries",
+]
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class SimulationTurnRequest:
+    """Rules, cards, and location for one simulated comparison turn."""
+
+    actual_rule: Rule
+    guessed_rule: Rule
+    mainline: list[Card]
+    all_cards: list[Card]
+    simulation_number: int
+    turn_number: int
+
+
+@dataclass(frozen=True)
+class SimulationTurnResult:
+    """Accepted cards and comparison outcome from one simulation turn."""
+
+    accepted_cards: list[Card]
+    comparisons: int
+    mismatches: int
+    mismatch_message: str | None
+
+
+class RuleComparisonMetadata(TypedDict):
+    """Compilation and simulation evidence for one guessed rule."""
+
+    simulation_comparisons: int
+    simulation_mismatches: int
+    simulation_duration_seconds: float
+    guessed_code: str | None
+    complexity_metrics: CodeComplexity | None
+    compilation_status: str
+    compilation_attempts: int
+
+
+ShadowCacheKey = tuple[str, str, int, int, int]
+ShadowCacheValue = tuple[bool, str, RuleComparisonMetadata]
 
 
 @dataclass
 class ValidationResult:
     """Result of rule validation."""
+
     valid: bool
     deterministic: bool
     works_with_empty_mainline: bool
@@ -28,8 +77,9 @@ class ValidationResult:
 class RuleValidator:
     """Validates rules and compares guessed rules to actual rules."""
 
-    def __init__(self):
-        self._shadow_cache: dict[tuple, tuple[bool, str, dict]] = {}
+    def __init__(self) -> None:
+        """Initialize an empty cache for deterministic shadow comparisons."""
+        self._shadow_cache: dict[ShadowCacheKey, ShadowCacheValue] = {}
 
     def clear_shadow_cache(self) -> None:
         """Clear the shadow evaluation cache, forcing re-simulation on next call."""
@@ -72,7 +122,9 @@ class RuleValidator:
                 results.append(result)
 
             if len(set(results)) > 1:
-                logger.warning(f"Non-deterministic results for {card} with mainline {mainline}")
+                logger.warning(
+                    f"Non-deterministic results for {card} with mainline {mainline}"
+                )
                 return False
 
         return True
@@ -88,7 +140,7 @@ class RuleValidator:
             for card in test_cards:
                 rule.evaluate(card, [])
             return True
-        except Exception as e:
+        except Exception as e:  # ruff: ignore[blind-except]
             logger.error(f"Rule failed with empty mainline: {e}")
             return False
 
@@ -107,7 +159,7 @@ class RuleValidator:
 
             try:
                 rule.evaluate(test_card, mainline)
-            except Exception as e:
+            except Exception as e:  # ruff: ignore[blind-except]
                 issues.append(f"Rule evaluation failed on random scenario: {e}")
                 break
 
@@ -115,20 +167,20 @@ class RuleValidator:
 
     def compare_rules(
         self,
-        actual_rule,
+        actual_rule: Rule,
         guessed_rule_desc: str,
         current_mainline: list[Card],
-        rule_compiler_client,
+        rule_compiler_client: BaseLLMClient,
         num_simulations: int = 10,
         turns_per_simulation: int = 20,
         simulation_seed: int = 42,
         compiler_max_retries: int = 2,
-    ) -> tuple[bool, str, dict]:
+    ) -> tuple[bool, str, RuleComparisonMetadata]:
         """Compare rules using simulation-based comparison.
 
-        Results are cached by (actual_rule_code, guessed_rule_desc,
-        num_simulations, turns_per_simulation, simulation_seed) so identical
-        shadow evaluations within or across rounds are not re-simulated.
+        Results are cached by (actual_rule_code, guessed_rule_desc, num_simulations,
+        turns_per_simulation, simulation_seed) so identical shadow evaluations within or
+        across rounds are not re-simulated.
         """
         # current_mainline excluded: simulation-based comparison generates
         # independent random card sequences, so the mainline does not affect results.
@@ -140,7 +192,9 @@ class RuleValidator:
             simulation_seed,
         )
         if cache_key in self._shadow_cache:
-            logger.debug(f"Shadow cache hit for tentative rule: {guessed_rule_desc[:60]}")
+            logger.debug(
+                f"Shadow cache hit for tentative rule: {guessed_rule_desc[:60]}"
+            )
             return self._shadow_cache[cache_key]
 
         compile_result = rule_compiler_client.convert_rule_to_code(
@@ -166,24 +220,60 @@ class RuleValidator:
         )
         sim_duration = time.perf_counter() - sim_start
         logger.info(
-            f"Rule comparison: {num_simulations} sims × {turns_per_simulation} turns, "
+            f"Rule comparison: {num_simulations} sims x {turns_per_simulation} turns, "
             f"{comparisons} comparisons in {sim_duration:.3f}s"
         )
 
         # Compute complexity metrics for guessed rule code
         complexity_metrics = code_complexity(guessed_code) if guessed_code else None
 
-        result = (sim_equivalent, sim_reasoning, {
-            "simulation_comparisons": comparisons,
-            "simulation_mismatches": mismatches,
-            "simulation_duration_seconds": round(sim_duration, 3),
-            "guessed_code": guessed_code,
-            "complexity_metrics": complexity_metrics,
-            "compilation_status": compilation_status,
-            "compilation_attempts": compilation_attempts,
-        })
+        result: ShadowCacheValue = (
+            sim_equivalent,
+            sim_reasoning,
+            {
+                "simulation_comparisons": comparisons,
+                "simulation_mismatches": mismatches,
+                "simulation_duration_seconds": round(sim_duration, 3),
+                "guessed_code": guessed_code,
+                "complexity_metrics": complexity_metrics,
+                "compilation_status": compilation_status,
+                "compilation_attempts": compilation_attempts,
+            },
+        )
         self._shadow_cache[cache_key] = result
         return result
+
+    @staticmethod
+    def _compare_simulation_turn(
+        request: SimulationTurnRequest,
+    ) -> SimulationTurnResult:
+        """Compare both rules against every card for one simulated turn."""
+        accepted_cards: list[Card] = []
+        comparisons = 0
+        mismatches = 0
+        for card in request.all_cards:
+            try:
+                actual_result = request.actual_rule.evaluate(card, request.mainline)
+                guessed_result = request.guessed_rule.evaluate(card, request.mainline)
+                comparisons += 1
+                if actual_result != guessed_result:
+                    message = (
+                        f"Mismatch at sim {request.simulation_number + 1}, "
+                        f"turn {request.turn_number + 1}: card={card}, "
+                        f"actual={actual_result}, guessed={guessed_result}"
+                    )
+                    logger.info(message)
+                    return SimulationTurnResult(
+                        accepted_cards, comparisons, mismatches + 1, message
+                    )
+                if actual_result:
+                    accepted_cards.append(card)
+            # Generated rule bodies can raise arbitrary exceptions.
+            except Exception as error:  # ruff: ignore[blind-except]
+                logger.error(f"Evaluation error for {card}: {error}")
+                comparisons += 1
+                mismatches += 1
+        return SimulationTurnResult(accepted_cards, comparisons, mismatches, None)
 
     def check_equivalence_by_simulation(
         self,
@@ -201,7 +291,7 @@ class RuleValidator:
 
         try:
             guessed_rule = Rule(guessed_rule_text, preconverted_code)
-        except Exception as e:
+        except Exception as e:  # ruff: ignore[blind-except]
             logger.error(f"Failed to create Rule from guessed code: {e}")
             return False, f"Guessed rule code has syntax errors: {e}", 0, 0
 
@@ -217,129 +307,44 @@ class RuleValidator:
             simulated_mainline = list(current_mainline)
 
             for turn_num in range(turns_per_simulation):
-                accepted_cards_actual = []
-
-                for card in all_cards:
-                    try:
-                        actual_result = actual_rule.evaluate(card, simulated_mainline)
-                        guessed_result = guessed_rule.evaluate(card, simulated_mainline)
-
-                        total_comparisons += 1
-
-                        if actual_result != guessed_result:
-                            mismatches += 1
-                            logger.info(
-                                f"Mismatch at sim {sim_num+1}, turn {turn_num+1}: "
-                                f"card={card}, actual={actual_result}, guessed={guessed_result}"
-                            )
-                            mismatch_msg = (
-                                f"Mismatch at sim {sim_num+1}, turn {turn_num+1}: "
-                                f"card={card}, actual={actual_result}, guessed={guessed_result}"
-                            )
-                            return False, mismatch_msg, total_comparisons, mismatches
-
-                        if actual_result:
-                            accepted_cards_actual.append(card)
-
-                    except Exception as e:
-                        logger.error(f"Evaluation error for {card}: {e}")
-                        mismatches += 1
-                        total_comparisons += 1
-
+                turn_result = self._compare_simulation_turn(
+                    SimulationTurnRequest(
+                        actual_rule=actual_rule,
+                        guessed_rule=guessed_rule,
+                        mainline=simulated_mainline,
+                        all_cards=all_cards,
+                        simulation_number=sim_num,
+                        turn_number=turn_num,
+                    )
+                )
+                total_comparisons += turn_result.comparisons
+                mismatches += turn_result.mismatches
+                if turn_result.mismatch_message:
+                    return (
+                        False,
+                        turn_result.mismatch_message,
+                        total_comparisons,
+                        mismatches,
+                    )
                 if mismatches > 0:
                     reasoning = (
-                        f"Rules differ: {mismatches}/{total_comparisons} comparisons mismatched. "
-                        f"Stopped at simulation {sim_num+1}, turn {turn_num+1}."
+                        f"Rules differ: {mismatches}/{total_comparisons} comparisons"
+                        f" mismatched. Stopped at simulation {sim_num + 1}, turn"
+                        f" {turn_num + 1}."
                     )
                     return False, reasoning, total_comparisons, mismatches
 
-                if not accepted_cards_actual:
+                if not turn_result.accepted_cards:
                     logger.debug(
-                        f"No cards accepted at sim {sim_num+1}, turn {turn_num+1}, "
-                        f"ending simulation"
+                        f"No cards accepted at sim {sim_num + 1}, turn {turn_num + 1}, "
+                        "ending simulation"
                     )
                     break
 
-                chosen_card = rng.choice(accepted_cards_actual)
+                chosen_card = rng.choice(turn_result.accepted_cards)
                 simulated_mainline.append(chosen_card)
 
-        if mismatches == 0:
-            reasoning = f"Rules appear equivalent: {total_comparisons} comparisons, all matched"
-            return True, reasoning, total_comparisons, mismatches
-        else:
-            reasoning = f"Rules differ: {mismatches}/{total_comparisons} comparisons mismatched"
-            return False, reasoning, total_comparisons, mismatches
-
-
-class RuleFactory:
-    """Factory for creating rules from pre-generated library."""
-
-    def __init__(
-        self,
-        library_path: str | None = None,
-        selection: str = "random",
-        start_index: int = 0,
-        rules_list: list[dict] | None = None,
-    ) -> None:
-        """Initialize rule factory."""
-        self.library_path = library_path
-        self.selection = selection
-        self._library_index = start_index
-        self._library_rules: list[dict] | None = None
-
-        if rules_list is not None:
-            self._library_rules = rules_list
-            logger.info(f"Using pre-loaded rules list ({len(rules_list)} rules)")
-        elif library_path is not None:
-            self._load_library()
-        else:
-            raise ValueError("Either library_path or rules_list must be provided")
-
-        if self._library_index >= len(self._library_rules):
-            raise IndexError(
-                f"Rule index {self._library_index} out of bounds. "
-                f"Library has {len(self._library_rules)} rules (indices 0-{len(self._library_rules)-1})."
-            )
-
-    def _load_library(self) -> None:
-        """Load rule library from JSON file."""
-        path = Path(self.library_path)
-        if not path.exists():
-            raise FileNotFoundError(f"Rule library not found: {path}")
-
-        with open(path) as f:
-            data = json.load(f)
-
-        self._library_rules = data.get("rules", [])
-        if not self._library_rules:
-            raise ValueError(f"No rules found in library: {path}")
-
-        logger.info(f"Loaded {len(self._library_rules)} rules from {path}")
-
-    def create_rule_with_metadata(self) -> tuple[Rule, dict]:
-        """Create rule and return with full metadata from library."""
-        if self.selection == "random":
-            rule_dict = random.choice(self._library_rules)
-        else:  # sequential
-            rule_dict = self._library_rules[self._library_index]
-            self._library_index = (self._library_index + 1) % len(self._library_rules)
-
-        description = rule_dict["description"]
-        code = rule_dict["code"]
-        name = rule_dict.get("name", "library_rule")
-
-        logger.info(f"Using library rule: {name}")
-        logger.info(f"Description: {description}")
-
-        if "avg_acceptance_rate" in rule_dict:
-            rate = rule_dict["avg_acceptance_rate"]
-            logger.info(f"Pre-evaluated acceptance rate: {rate:.2%}")
-
-        logger.debug(f"Code:\n{code}")
-
-        metadata = {
-            "name": rule_dict.get("name"),
-            "description": description,
-            "code": code,
-        }
-        return Rule(description, code), metadata
+        reasoning = (
+            f"Rules appear equivalent: {total_comparisons} comparisons, all matched"
+        )
+        return True, reasoning, total_comparisons, mismatches

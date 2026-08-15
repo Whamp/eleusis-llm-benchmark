@@ -4,15 +4,41 @@ import ast
 import logging
 import random
 
+from typing_extensions import TypedDict
+
 from eleusis.game.cards import Card, Suit
 from eleusis.game.engine import Rule
 
-__all__ = ["code_complexity", "RuleEvaluator"]
+__all__ = ["RuleEvaluator", "code_complexity"]
 
 logger = logging.getLogger(__name__)
 
 
-def code_complexity(code: str) -> dict:
+class CodeComplexity(TypedDict):
+    """Static node-count and cyclomatic-complexity metrics."""
+
+    node_count: int
+    cyclomatic: int
+
+
+class RuleSimulationMetrics(TypedDict):
+    """Metrics from one random rule simulation."""
+
+    total_plays: int
+    total_accepted: int
+    acceptance_rate: float
+    mainline_length: int
+
+
+class RuleEvaluationMetrics(TypedDict):
+    """Aggregated acceptance and code-complexity metrics for one rule."""
+
+    avg_acceptance_rate: float
+    node_count: int
+    cyclomatic_complexity: int
+
+
+def code_complexity(code: str) -> CodeComplexity:
     """Return AST node count and cyclomatic complexity for Python code."""
     tree = ast.parse(code)
 
@@ -47,7 +73,7 @@ class RuleEvaluator:
         self.plays_per_simulation = plays_per_simulation
         self._all_cards = [Card(rank, suit) for rank in range(1, 14) for suit in Suit]
 
-    def _simulate_random_plays(self, rule: Rule) -> dict:
+    def _simulate_random_plays(self, rule: Rule) -> RuleSimulationMetrics:
         """Simulate random card plays and return statistics."""
         total_plays = 0
         total_accepted = 0
@@ -71,13 +97,12 @@ class RuleEvaluator:
             "mainline_length": len(mainline),
         }
 
-    def evaluate(self, rule: Rule) -> dict:
+    def evaluate(self, rule: Rule) -> RuleEvaluationMetrics:
         """Evaluate a rule and return acceptance rate and complexity metrics.
 
         Returns:
             Dict with avg_acceptance_rate, node_count, cyclomatic_complexity
         """
-        # Run multiple simulations
         sim_results = []
         for sim_num in range(self.num_simulations):
             logger.debug(f"  Simulation {sim_num + 1}/{self.num_simulations}")

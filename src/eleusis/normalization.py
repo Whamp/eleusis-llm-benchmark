@@ -3,9 +3,20 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Mapping, Sequence
+
+from typing_extensions import TypedDict
 
 
-def normalize_confidence(raw_value) -> tuple[int | None, str | None]:
+class NormalizedActionResponse(TypedDict):
+    """Normalized confidence fields and action-schema error tags."""
+
+    confidence_level_raw: object
+    confidence_level: int | None
+    schema_errors: list[str]
+
+
+def normalize_confidence(raw_value: object) -> tuple[int | None, str | None]:
     """Normalize a confidence_level value to the 0-10 integer scale.
 
     Rules:
@@ -39,10 +50,12 @@ def normalize_confidence(raw_value) -> tuple[int | None, str | None]:
 
 def _round_half_up(x: float) -> int:
     """Round to nearest int, with halves rounding up (0.5 -> 1, 7.5 -> 8)."""
-    return int(math.floor(x + 0.5))
+    return math.floor(x + 0.5)
 
 
-def normalize_action_response(response: dict | None) -> dict:
+def normalize_action_response(
+    response: Mapping[str, object] | None,
+) -> NormalizedActionResponse:
     """Normalize an LLM action response, preserving raw values and tracking errors.
 
     Returns a dict with:
@@ -50,7 +63,7 @@ def normalize_action_response(response: dict | None) -> dict:
       - confidence_level: the normalized 0-10 int (or None on error)
       - schema_errors: list of error tags (e.g. ["confidence_range", "guess_rule_type"])
     """
-    result = {
+    result: NormalizedActionResponse = {
         "confidence_level_raw": None,
         "confidence_level": None,
         "schema_errors": [],
@@ -77,7 +90,9 @@ def normalize_action_response(response: dict | None) -> dict:
     return result
 
 
-def compute_schema_compliance_rate(turns: list[dict]) -> float | None:
+def compute_schema_compliance_rate(
+    turns: Sequence[Mapping[str, object]],
+) -> float | None:
     """Compute fraction of turns with no schema errors.
 
     Args:
@@ -88,7 +103,5 @@ def compute_schema_compliance_rate(turns: list[dict]) -> float | None:
     """
     if not turns:
         return None
-    compliant = sum(
-        1 for t in turns if not t.get("schema_errors")
-    )
+    compliant = sum(1 for t in turns if not t.get("schema_errors"))
     return compliant / len(turns)

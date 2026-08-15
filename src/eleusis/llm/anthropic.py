@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 import anthropic
 
-from eleusis.llm.base import BaseLLMClient, LLMCallMetrics
+from eleusis.llm.base import BaseLLMClient, LLMCallMetrics, LLMMessage
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class AnthropicMessage:
     """Message wrapper for Anthropic responses."""
+
     content: str
     reasoning: str | None = None
 
@@ -22,6 +23,7 @@ class AnthropicMessage:
 @dataclass
 class AnthropicChoice:
     """Choice wrapper for Anthropic responses."""
+
     message: AnthropicMessage
     finish_reason: str
 
@@ -61,52 +63,61 @@ class AnthropicClient(BaseLLMClient):
 
     @property
     def provider_name(self) -> str:
+        """Provider name used in metrics and logs."""
         return "anthropic"
 
     def _call_api(
         self,
-        messages: list[dict],
+        messages: list[LLMMessage],
         is_continuation: bool = False,
         continuation_depth: int = 0,
         disable_thinking: bool = False,
     ) -> tuple[AnthropicChoice, LLMCallMetrics]:
         """Make a single API call with retry logic."""
         logger.debug(
-            f"Calling Anthropic API with {self.max_tokens} tokens, messages:\n{messages}"
+            f"Calling Anthropic API with {self.max_tokens} tokens,"
+            f" messages:\n{messages}"
         )
 
         for attempt in range(self.max_retries):
             try:
                 start_time = time.time()
 
-                # Build thinking config
+                api_messages: list[anthropic.types.MessageParam] = []
+                system_messages: list[str] = []
+                for message in messages:
+                    if message["role"] == "system":
+                        system_messages.append(message["content"])
+                    else:
+                        api_messages.append(
+                            {"role": message["role"], "content": message["content"]}
+                        )
+                system_prompt = "\n".join(system_messages)
+
                 if disable_thinking:
-                    thinking_config = {"type": "disabled"}
+                    response = self.client.messages.create(
+                        model=self.model_name,
+                        max_tokens=self.max_tokens,
+                        messages=api_messages,
+                        system=system_prompt if system_prompt else anthropic.omit,
+                        thinking={"type": "disabled"},
+                        temperature=self.temperature,
+                    )
                 else:
-                    thinking_config = {
-                        "type": "enabled",
-                        "budget_tokens": self.reasoning_budget,
-                    }
-
-                # Anthropic uses temperature 1.0 for thinking models
-                api_kwargs = {
-                    "model": self.model_name,
-                    "max_tokens": self.max_tokens,
-                    "messages": messages,
-                    "thinking": thinking_config,
-                }
-
-                # Temperature must be 1.0 when thinking is enabled
-                if not disable_thinking:
-                    api_kwargs["temperature"] = 1.0
-                else:
-                    api_kwargs["temperature"] = self.temperature
-
-                response = self.client.messages.create(**api_kwargs)
+                    response = self.client.messages.create(
+                        model=self.model_name,
+                        max_tokens=self.max_tokens,
+                        messages=api_messages,
+                        system=system_prompt if system_prompt else anthropic.omit,
+                        thinking={
+                            "type": "enabled",
+                            "budget_tokens": self.reasoning_budget,
+                        },
+                        temperature=1.0,
+                    )
 
                 end_time = time.time()
 
-                # Extract content and reasoning from response
                 text_content = ""
                 reasoning_content = ""
                 for block in response.content:
@@ -124,15 +135,22 @@ class AnthropicClient(BaseLLMClient):
                 )
 
                 metrics = self._extract_metrics(
-                    response, choice, start_time, end_time,
-                    is_continuation, continuation_depth
+                    response,
+                    choice,
+                    start_time,
+                    end_time,
+                    is_continuation,
+                    continuation_depth,
                 )
 
                 logger.debug(f"LLM response:\n{choice}")
                 return choice, metrics
 
             except anthropic.APIError as e:
-                logger.warning(f"{self.model_name} Attempt {attempt + 1}/{self.max_retries} failed: {e}")
+                logger.warning(
+                    f"{self.model_name} Attempt {attempt + 1}/{self.max_retries}"
+                    f" failed: {e}"
+                )
                 if attempt < self.max_retries - 1:
                     time.sleep(2**attempt)
                 else:
@@ -142,7 +160,7 @@ class AnthropicClient(BaseLLMClient):
 
     def _extract_metrics(
         self,
-        response,
+        response: anthropic.types.Message,
         choice: AnthropicChoice,
         start_time: float,
         end_time: float,
@@ -159,21 +177,27 @@ class AnthropicClient(BaseLLMClient):
         """
         duration = end_time - start_time
 
-        # --- RAW API VALUES ---
         api_input_tokens = response.usage.input_tokens
         api_output_tokens = response.usage.output_tokens
-        logger.debug(f"[Anthropic] RAW API usage: input_tokens={api_input_tokens}, output_tokens={api_output_tokens}")
+        logger.debug(
+            f"[Anthropic] RAW API usage: input_tokens={api_input_tokens},"
+            f" output_tokens={api_output_tokens}"
+        )
 
-        # Check for any additional usage fields
-        if hasattr(response.usage, 'cache_read_input_tokens'):
-            logger.debug(f"[Anthropic] Cache tokens: read={getattr(response.usage, 'cache_read_input_tokens', None)}, "
-                        f"creation={getattr(response.usage, 'cache_creation_input_tokens', None)}")
+        if hasattr(response.usage, "cache_read_input_tokens"):
+            logger.debug(
+                "[Anthropic] Cache tokens: read=%s, creation=%s",
+                getattr(response.usage, "cache_read_input_tokens", None),
+                getattr(response.usage, "cache_creation_input_tokens", None),
+            )
 
-        # --- CONTENT ANALYSIS ---
         has_reasoning = choice.message.reasoning is not None
         reasoning_text = choice.message.reasoning if has_reasoning else None
         reasoning_word_count = len(reasoning_text.split()) if reasoning_text else 0
-        logger.debug(f"[Anthropic] Reasoning block present: {has_reasoning}, word_count={reasoning_word_count} (may be summarized)")
+        logger.debug(
+            f"[Anthropic] Reasoning block present: {has_reasoning},"
+            f" word_count={reasoning_word_count} (may be summarized)"
+        )
         if reasoning_text:
             logger.debug(f"[Anthropic] Reasoning preview: {reasoning_text[:200]}...")
 
@@ -181,21 +205,28 @@ class AnthropicClient(BaseLLMClient):
         content_word_count = len(content_text.split())
         logger.debug(f"[Anthropic] Content text: {content_word_count} words")
 
-        # --- COMPUTED VALUES ---
-        # output_tokens from API is the ground truth (includes both thinking + answer)
         prompt_tokens = api_input_tokens
         output_tokens = api_output_tokens
 
         # Estimate answer tokens from visible content
         answer_tokens = int(content_word_count * 1.3)
-        logger.debug(f"[Anthropic] ESTIMATED answer_tokens: {content_word_count} words × 1.3 = {answer_tokens}")
+        logger.debug(
+            f"[Anthropic] ESTIMATED answer_tokens: {content_word_count} words x 1.3 ="
+            f" {answer_tokens}"
+        )
 
         # Reasoning tokens = total - answer (clamped to 0)
         reasoning_tokens = max(0, output_tokens - answer_tokens)
-        logger.debug(f"[Anthropic] COMPUTED reasoning_tokens: {output_tokens} - {answer_tokens} = {reasoning_tokens}")
+        logger.debug(
+            f"[Anthropic] COMPUTED reasoning_tokens: {output_tokens} - {answer_tokens}"
+            f" = {reasoning_tokens}"
+        )
 
-        logger.debug(f"[Anthropic] FINAL token counts: prompt={prompt_tokens}, "
-                    f"output={output_tokens} (answer={answer_tokens} + reasoning={reasoning_tokens})")
+        logger.debug(
+            f"[Anthropic] FINAL token counts: prompt={prompt_tokens},"
+            f" output={output_tokens} (answer={answer_tokens} +"
+            f" reasoning={reasoning_tokens})"
+        )
 
         # Map Anthropic stop reasons to standard finish reasons
         finish_reason = choice.finish_reason
@@ -222,8 +253,8 @@ class AnthropicClient(BaseLLMClient):
         )
 
         logger.debug(
-            f"[Anthropic] Metrics summary: {output_tokens} output tokens in {duration:.2f}s "
-            f"({metrics.throughput_tokens_per_sec:.2f} tok/s)"
+            f"[Anthropic] Metrics summary: {output_tokens} output tokens in"
+            f" {duration:.2f}s ({metrics.throughput_tokens_per_sec:.2f} tok/s)"
         )
 
         return metrics

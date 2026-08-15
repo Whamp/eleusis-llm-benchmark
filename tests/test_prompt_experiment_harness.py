@@ -3,58 +3,67 @@
 from __future__ import annotations
 
 from eleusis.experiment import (
+    ExperimentResults,
     TurnState,
     extract_turn_states,
     run_prompt_experiment,
 )
 
 
-def _make_results_data(num_turns: int = 3) -> dict:
+def _make_results_data(num_turns: int = 3) -> ExperimentResults:
     """Build a minimal results structure matching the real format."""
     turns = []
     mainline = "4♠"
     hand = ["2♥", "5♠", "7♦", "10♣"]
     for i in range(num_turns):
-        turns.append({
-            "turn_number": i + 1,
-            "player": "test-model",
-            "mainline_state": mainline,
-            "hand": hand.copy(),
-            "llm_response": {
-                "card": hand[0],
-                "reasoning_summary": f"reasoning {i}",
-                "tentative_rule": "even ranks",
+        turns.append(
+            {
+                "turn_number": i + 1,
+                "player": "test-model",
+                "mainline_state": mainline,
+                "hand": hand.copy(),
+                "llm_response": {
+                    "card": hand[0],
+                    "reasoning_summary": f"reasoning {i}",
+                    "tentative_rule": "even ranks",
+                    "confidence_level": 3,
+                    "guess_rule": False,
+                },
+                "action_result": {
+                    "action": "play_card",
+                    "card": hand[0],
+                    "accepted": True,
+                    "success": True,
+                },
+                "guess_attempt": None,
+                "confidence_level_raw": 3,
                 "confidence_level": 3,
-                "guess_rule": False,
-            },
-            "action_result": {
-                "action": "play_card",
-                "card": hand[0],
-                "accepted": True,
-                "success": True,
-            },
-            "guess_attempt": None,
-            "confidence_level_raw": 3,
-            "confidence_level": 3,
-            "schema_errors": [],
-            "tokens": {"output_tokens": 50, "reasoning_tokens": 30, "answer_tokens": 20},
-            "retry_count": 0,
-            "retry_causes": [],
-            "error": None,
-        })
+                "schema_errors": [],
+                "tokens": {
+                    "output_tokens": 50,
+                    "reasoning_tokens": 30,
+                    "answer_tokens": 20,
+                },
+                "retry_count": 0,
+                "retry_causes": [],
+                "error": None,
+            }
+        )
         # Extend mainline for next turn
         mainline = f"{mainline} → {hand[0]}"
     return {
-        "rounds": [{
-            "round_number": 1,
-            "rule_description": "Only even ranks",
-            "rule_code": "return card.rank % 2 == 0",
-            "turns": turns,
-            "turn_count": num_turns,
-            "success": False,
-            "score": 10,
-            "game_over_reason": "max_turns",
-        }],
+        "rounds": [
+            {
+                "round_number": 1,
+                "rule_description": "Only even ranks",
+                "rule_code": "return card.rank % 2 == 0",
+                "turns": turns,
+                "turn_count": num_turns,
+                "success": False,
+                "score": 10,
+                "game_over_reason": "max_turns",
+            }
+        ],
         "config": {
             "game": {"max_turns": 40, "hand_size": 12, "wrong_guess_penalty": 2},
         },
@@ -64,12 +73,14 @@ def _make_results_data(num_turns: int = 3) -> dict:
 class TestExtractTurnStates:
     """Turn-prefix states are extracted from results data."""
 
-    def test_extracts_correct_number_of_states(self):
+    def test_extracts_correct_number_of_states(self) -> None:
+        """Verify extracts correct number of states."""
         data = _make_results_data(num_turns=3)
         states = extract_turn_states(data, round_index=0)
         assert len(states) == 3
 
-    def test_turn_state_has_required_fields(self):
+    def test_turn_state_has_required_fields(self) -> None:
+        """Verify turn state has required fields."""
         data = _make_results_data(num_turns=1)
         states = extract_turn_states(data, round_index=0)
         state = states[0]
@@ -81,7 +92,8 @@ class TestExtractTurnStates:
         assert state.hand_size == 12
         assert state.wrong_guess_penalty == 2
 
-    def test_play_history_builds_from_prior_turns(self):
+    def test_play_history_builds_from_prior_turns(self) -> None:
+        """Verify play history builds from prior turns."""
         data = _make_results_data(num_turns=3)
         states = extract_turn_states(data, round_index=0)
         # First turn has no prior history
@@ -96,7 +108,8 @@ class TestExtractTurnStates:
 class TestRunPromptExperiment:
     """Harness records prompt-variant outputs for comparison."""
 
-    def test_runs_variants_against_turn_states(self):
+    def test_runs_variants_against_turn_states(self) -> None:
+        """Verify runs variants against turn states."""
         data = _make_results_data(num_turns=2)
         states = extract_turn_states(data, round_index=0)
 
@@ -108,7 +121,7 @@ class TestRunPromptExperiment:
         def variant_b(state: TurnState) -> str:
             return f"variant_b turn {state.turn_number}"
 
-        def fake_generate(prompt: str) -> dict:
+        def fake_generate(prompt: str) -> dict[str, object]:
             call_log.append(prompt)
             return {
                 "card": "2♥",
@@ -130,16 +143,19 @@ class TestRunPromptExperiment:
         for turn_result in results:
             assert "a" in turn_result["variant_outputs"]
             assert "b" in turn_result["variant_outputs"]
-            assert turn_result["variant_outputs"]["a"]["response"]["card"] == "2♥"
+            response = turn_result["variant_outputs"]["a"]["response"]
+            assert response is not None
+            assert response["card"] == "2♥"
 
-    def test_records_prompts_alongside_responses(self):
+    def test_records_prompts_alongside_responses(self) -> None:
+        """Verify records prompts alongside responses."""
         data = _make_results_data(num_turns=1)
         states = extract_turn_states(data, round_index=0)
 
         def my_variant(state: TurnState) -> str:
             return "my custom prompt"
 
-        def fake_generate(prompt: str) -> dict:
+        def fake_generate(prompt: str) -> dict[str, object]:
             return {
                 "card": "5♠",
                 "reasoning_summary": "test",
@@ -156,18 +172,25 @@ class TestRunPromptExperiment:
 
         output = results[0]["variant_outputs"]["custom"]
         assert output["prompt"] == "my custom prompt"
+        assert output["response"] is not None
         assert output["response"]["card"] == "5♠"
 
-    def test_output_includes_turn_metadata(self):
+    def test_output_includes_turn_metadata(self) -> None:
+        """Verify output includes turn metadata."""
         data = _make_results_data(num_turns=1)
         states = extract_turn_states(data, round_index=0)
 
         def variant(state: TurnState) -> str:
             return "prompt"
 
-        def fake_generate(prompt: str) -> dict:
-            return {"card": "2♥", "reasoning_summary": "", "tentative_rule": "",
-                    "confidence_level": 0, "guess_rule": False}
+        def fake_generate(prompt: str) -> dict[str, object]:
+            return {
+                "card": "2♥",
+                "reasoning_summary": "",
+                "tentative_rule": "",
+                "confidence_level": 0,
+                "guess_rule": False,
+            }
 
         results = run_prompt_experiment(
             turn_states=states,
@@ -178,14 +201,15 @@ class TestRunPromptExperiment:
         assert results[0]["turn_number"] == 1
         assert results[0]["mainline_state"] == "4♠"
 
-    def test_handles_generate_errors_gracefully(self):
+    def test_handles_generate_errors_gracefully(self) -> None:
+        """Verify handles generate errors gracefully."""
         data = _make_results_data(num_turns=1)
         states = extract_turn_states(data, round_index=0)
 
         def variant(state: TurnState) -> str:
             return "prompt"
 
-        def failing_generate(prompt: str) -> dict:
+        def failing_generate(prompt: str) -> dict[str, object]:
             raise RuntimeError("API error")
 
         results = run_prompt_experiment(

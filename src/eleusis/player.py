@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import logging
 import random
+from collections.abc import Mapping
 from typing import TYPE_CHECKING
+
+from typing_extensions import TypedDict
 
 from eleusis.game.cards import Card, Suit
 from eleusis.llm.base import TruncationError
@@ -17,6 +20,30 @@ if TYPE_CHECKING:
     from eleusis.llm.base import BaseLLMClient
 
 logger = logging.getLogger(__name__)
+
+_TRUNCATION_RETRY_HINT = (
+    "\n\nYour last response hit the output token limit. "
+    "Output ONLY the <ACTION> XML block with no reasoning."
+)
+_CARD_PARSE_RETRY_HINT = (
+    "\n\nThe card value could not be parsed. Use exact symbol format: 5♥, K♠, A♦, etc."
+)
+_GENERIC_RETRY_HINT = "\n\nIMPORTANT: DO NOT REASON TOO LONG ABOUT THIS."
+
+
+class PlayHistoryEntry(TypedDict):
+    """Card outcome and reasoning summary retained for future prompts."""
+
+    card: str
+    accepted: bool
+    reasoning_summary: str
+
+
+class RetryCause(TypedDict):
+    """Cause associated with one failed model action attempt."""
+
+    attempt: int
+    cause: str
 
 
 class LLMScientist:
@@ -38,131 +65,137 @@ class LLMScientist:
         self.engine = engine
         self.max_turns = max_turns
         self.rng = rng or random.Random()
-        self.play_history: list[dict] = []
-        self.last_action_response: dict | None = None
+        self.play_history: list[PlayHistoryEntry] = []
+        self.last_action_response: dict[str, object] | None = None
         self.last_prompt: str | None = None
         # Retry tracking (reset each turn)
         self.last_retry_count: int = 0
-        self.last_retry_causes: list[dict] = []
+        self.last_retry_causes: list[RetryCause] = []
 
     def get_action(self, game_state: GameState) -> Action:
         """Get an action for the current game state."""
         return self._select_move(game_state)
 
     def _select_move(self, game_state: GameState) -> Action:
-        """Select a card to play using LLM."""
+        """Select a card to play using LLM retries and a random fallback."""
         from eleusis.game.engine import PlayCardAction
-        from eleusis.prompts import get_action_prompt
 
-        # Reset turn state
         self.last_action_response = None
         self.last_retry_count = 0
         self.last_retry_causes = []
+        if self.engine is None:
+            raise RuntimeError(
+                "LLMScientist requires a GameEngine before selecting a move"
+            )
 
-        TRUNCATION_HINT = (
-            "\n\nYour last response hit the output token limit. "
-            "Output ONLY the <ACTION> XML block with no reasoning."
-        )
-        PARSE_ERROR_HINT = (
-            "\n\nThe card value could not be parsed. "
-            "Use exact symbol format: 5♥, K♠, A♦, etc."
-        )
-        GENERIC_RETRY_HINT = "\n\nIMPORTANT: DO NOT REASON TOO LONG ABOUT THIS."
-
-        player = game_state.player
-        hand_cards = player.hand.get_all_cards()
-
+        hand_cards = game_state.player.hand.get_all_cards()
         if not hand_cards:
-            logger.error("Empty hand - should not happen!")
-            return PlayCardAction(self.rng.choice(hand_cards)) if hand_cards else None
+            raise RuntimeError("LLMScientist cannot select a move from an empty hand")
+        base_prompt = self._build_action_prompt(game_state, hand_cards)
 
-        hand_dicts = [c.to_dict() for c in hand_cards]
-        compact_board = game_state.to_compact_string()
-        deck_remaining = game_state.deck.remaining_count()
-        failed_guesses = game_state.failed_rule_guesses
-        current_turn = game_state.turn_number
-        failed_guess_count = self.engine.failed_guess_count if self.engine else 0
-
-        # Get game config from engine
-        hand_size = self.engine.hand_size
-        wrong_guess_penalty = self.engine.wrong_guess_penalty
-
-        base_prompt = get_action_prompt(
-            compact_board=compact_board,
-            hand_cards=hand_dicts,
-            play_history=self.play_history,
-            failed_guesses=failed_guesses,
-            current_turn=current_turn,
-            max_turns=self.max_turns,
-            failed_guess_count=failed_guess_count,
-            hand_size=hand_size,
-            wrong_guess_penalty=wrong_guess_penalty,
-        )
-
-        last_cause = None
+        last_cause: str | None = None
         for attempt in range(self.max_retries):
-            cause = None
+            prompt = self._retry_prompt(base_prompt, attempt, last_cause)
+            self.last_prompt = prompt
             try:
-                # Add cause-specific hint on retries
-                if attempt == 0:
-                    prompt = base_prompt
-                elif last_cause == "max_token_reached":
-                    prompt = base_prompt + TRUNCATION_HINT
-                elif last_cause == "card_parse_error":
-                    prompt = base_prompt + PARSE_ERROR_HINT
-                else:
-                    prompt = base_prompt + GENERIC_RETRY_HINT
-                self.last_prompt = prompt
-
-                response = self.llm_client.generate(prompt, xml_tag="ACTION", return_dict=True)
-                self.last_action_response = response
-
-                card_value = response.get("card", "").strip()
-                card = self._parse_card(card_value, hand_cards)
-
+                card, card_value = self._request_action_card(prompt, hand_cards)
                 if card:
-                    logger.info(f"{self.name} plays {card}")
-                    tentative = response.get("tentative_rule", "")
-                    if tentative:
-                        logger.debug(f"{self.name}'s tentative rule: {tentative}")
                     return PlayCardAction(card)
-
-                # Card parsing failed
                 cause = "card_parse_error"
-                logger.warning(f"{self.name} attempt {attempt + 1}: {cause} - card='{card_value}'")
-
-            except TruncationError as e:
+                logger.warning(
+                    f"{self.name} attempt {attempt + 1}: {cause} - card='{card_value}'"
+                )
+            except TruncationError as error:
                 cause = "max_token_reached"
-                logger.warning(f"{self.name} attempt {attempt + 1}: {cause} - {e}")
-
-            except Exception as e:
+                logger.warning(f"{self.name} attempt {attempt + 1}: {cause} - {error}")
+            # The player retry boundary records arbitrary provider/parser failures.
+            except Exception as error:  # ruff: ignore[blind-except]
                 cause = "other_error"
                 logger.warning(
-                    f"{self.name} attempt {attempt + 1}: {cause} - {type(e).__name__}: {e}"
+                    f"{self.name} attempt {attempt + 1}: {cause} -"
+                    f" {type(error).__name__}: {error}"
                 )
-
-            # Track this failed attempt
-            if cause:
-                last_cause = cause
-                self.last_retry_count = attempt + 1
-                self.last_retry_causes.append({"attempt": attempt + 1, "cause": cause})
+            last_cause = cause
+            self.last_retry_count = attempt + 1
+            self.last_retry_causes.append({"attempt": attempt + 1, "cause": cause})
 
         logger.warning(
-            f"{self.name} using random fallback after {self.max_retries} failed attempts"
+            f"{self.name} using random fallback after {self.max_retries} failed"
+            " attempts"
         )
         return PlayCardAction(self.rng.choice(hand_cards))
 
-    def record_action_result(self, result: dict) -> None:
+    def _build_action_prompt(
+        self,
+        game_state: GameState,
+        hand_cards: list[Card],
+    ) -> str:
+        """Build the model prompt for the current game and scoring state."""
+        from eleusis.prompts.action import ActionPromptContext, get_action_prompt
+
+        if self.engine is None:
+            raise RuntimeError("Action prompt requires an attached GameEngine")
+        return get_action_prompt(
+            ActionPromptContext(
+                compact_board=game_state.to_compact_string(),
+                hand_cards=[card.to_dict() for card in hand_cards],
+                play_history=self.play_history,
+                failed_guesses=game_state.failed_rule_guesses,
+                current_turn=game_state.turn_number,
+                max_turns=self.max_turns,
+                failed_guess_count=self.engine.failed_guess_count,
+                hand_size=self.engine.hand_size,
+                wrong_guess_penalty=self.engine.wrong_guess_penalty,
+            )
+        )
+
+    @staticmethod
+    def _retry_prompt(base_prompt: str, attempt: int, last_cause: str | None) -> str:
+        """Append the retry guidance appropriate to the preceding failure."""
+        if attempt == 0:
+            return base_prompt
+        if last_cause == "max_token_reached":
+            return base_prompt + _TRUNCATION_RETRY_HINT
+        if last_cause == "card_parse_error":
+            return base_prompt + _CARD_PARSE_RETRY_HINT
+        return base_prompt + _GENERIC_RETRY_HINT
+
+    def _request_action_card(
+        self,
+        prompt: str,
+        hand_cards: list[Card],
+    ) -> tuple[Card | None, str]:
+        """Request one structured action and parse its card from the hand."""
+        response = self.llm_client.generate(prompt, xml_tag="ACTION", return_dict=True)
+        self.last_action_response = response
+        card_value_raw = response.get("card", "")
+        card_value = card_value_raw.strip() if isinstance(card_value_raw, str) else ""
+        card = self._parse_card(card_value, hand_cards)
+        if card:
+            logger.info(f"{self.name} plays {card}")
+            tentative = response.get("tentative_rule", "")
+            if isinstance(tentative, str) and tentative:
+                logger.debug(f"{self.name}'s tentative rule: {tentative}")
+        return card, card_value
+
+    def record_action_result(self, result: Mapping[str, object]) -> None:
         """Record the result of an action in play history."""
         if result.get("success") and "card" in result:
-            reasoning = ""
-            if self.last_action_response:
-                reasoning = self.last_action_response.get("reasoning_summary", "")
-            self.record_play(
-                card_str=result["card"],
-                accepted=result.get("accepted", False),
-                reasoning_summary=reasoning,
+            reasoning_value = (
+                self.last_action_response.get("reasoning_summary", "")
+                if self.last_action_response
+                else ""
             )
+            card_value = result["card"]
+            accepted_value = result.get("accepted", False)
+            if isinstance(card_value, str) and isinstance(accepted_value, bool):
+                self.record_play(
+                    card_str=card_value,
+                    accepted=accepted_value,
+                    reasoning_summary=(
+                        reasoning_value if isinstance(reasoning_value, str) else ""
+                    ),
+                )
 
     def _parse_card(self, card_value: str, hand_cards: list[Card]) -> Card | None:
         """Parse card value string to Card object from hand."""
@@ -210,10 +243,14 @@ class LLMScientist:
 
         return None
 
-    def record_play(self, card_str: str, accepted: bool, reasoning_summary: str = "") -> None:
+    def record_play(
+        self, card_str: str, accepted: bool, reasoning_summary: str = ""
+    ) -> None:
         """Record a play attempt in history."""
-        self.play_history.append({
-            "card": card_str,
-            "accepted": accepted,
-            "reasoning_summary": reasoning_summary,
-        })
+        self.play_history.append(
+            {
+                "card": card_str,
+                "accepted": accepted,
+                "reasoning_summary": reasoning_summary,
+            }
+        )

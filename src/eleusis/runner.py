@@ -1,473 +1,304 @@
-"""Game runner for pattern discovery mode."""
+"""Game runner setup and public round-execution entry point."""
 
 import hashlib
 import logging
 import random
 import time
-from pathlib import Path
+from dataclasses import dataclass
 
-from eleusis.game import GameEngine, GameState, GuessRuleAction, Rule, RuleFactory, RuleValidator
+from typing_extensions import TypedDict
+
+from eleusis.benchmark_config import BenchmarkConfig
+from eleusis.evaluation_results import TurnRecord
+from eleusis.game import (
+    GameEngine,
+    GameState,
+    PlayCardAction,
+    Rule,
+    RuleFactory,
+    RuleValidator,
+)
+from eleusis.game.rule_library import RuleLibraryEntry, RuleMetadata
 from eleusis.llm import LLMScientist, create_client, create_client_from_config
-from eleusis.normalization import compute_schema_compliance_rate, normalize_action_response
+from eleusis.llm.base import BaseLLMClient
+from eleusis.round_execution import (
+    RoundRuntime,
+    build_round_result,
+    execute_round_turns,
+)
 from eleusis.utils import model_spec_to_display_name
 
-__all__ = ["play_round"]
+__all__ = ["RoundResult", "play_round"]
 
 logger = logging.getLogger(__name__)
+
+
+class RoundResult(TypedDict):
+    """Serializable outcome and metrics for one benchmark round."""
+
+    round_number: int
+    turn_count: int
+    rule_description: str
+    rule_code: str
+    rule_metadata: RuleMetadata | None
+    success: bool
+    score: int
+    floored_score: int
+    no_stakes_score: int
+    first_correct_turn: int | None
+    first_formal_correct_turn: int | None
+    first_shadow_correct_turn: int | None
+    failed_guesses: int
+    game_over_reason: str
+    schema_compliance_rate: float | None
+    llm_usage: dict[str, dict[str, object]]
+    turns: list[TurnRecord]
+    wall_clock_seconds: float
+
+
+@dataclass(frozen=True)
+class RoundSetupRequest:
+    """Arguments controlling setup of one benchmark round."""
+
+    config: BenchmarkConfig
+    round_number: int
+    start_time: float
+    rule: Rule | None
+    max_turns: int | None
+    start_rule_index: int | None
+    rules_list: list[RuleLibraryEntry] | None
+    batch_round_index: int
+    results_folder: str | None
 
 
 def _handle_action_error(
     error: Exception,
     scientist: LLMScientist,
     game_state: GameState,
-) -> tuple:
-    """Handle an error during get_action by producing a deterministic fallback.
-
-    Returns:
-        (PlayCardAction, error_info_dict) — a fallback play action and metadata
-    """
-    from eleusis.game.engine import PlayCardAction
-
+) -> tuple[PlayCardAction, dict[str, str | None]]:
+    """Produce a deterministic fallback card and serializable error metadata."""
     hand_cards = game_state.player.hand.get_all_cards()
-    fallback_card = scientist.rng.choice(hand_cards) if hand_cards else None
-
+    if not hand_cards:
+        raise RuntimeError("Cannot recover from action error with an empty player hand")
+    fallback_card = scientist.rng.choice(hand_cards)
     logger.error(
-        f"Error getting action from {scientist.name}: {type(error).__name__}: {error}",
-        exc_info=True,
+        f"Error getting action from {scientist.name}: {type(error).__name__}: {error}"
     )
     logger.warning(
         f"{scientist.name} using deterministic fallback after unhandled error: "
         f"{fallback_card}"
     )
-
-    error_info = {
+    return PlayCardAction(fallback_card), {
         "error_type": type(error).__name__,
         "error_message": str(error),
-        "fallback_card": str(fallback_card) if fallback_card else None,
+        "fallback_card": str(fallback_card),
     }
 
-    return PlayCardAction(fallback_card), error_info
+
+def _create_round_clients(
+    config: BenchmarkConfig,
+    player_display_name: str,
+) -> tuple[BaseLLMClient, BaseLLMClient]:
+    """Create compiler, fallback, and scientist clients through patchable seams."""
+    llm_config = config["llm"]
+    compiler_config = config["rule_compiler"]
+    max_tokens = llm_config["max_tokens"]
+    seed = llm_config["seed"]
+    compiler = create_client_from_config(
+        compiler_config,
+        max_tokens=max_tokens,
+        role="rule_compiler",
+        seed=seed,
+    )
+    for fallback_config in compiler_config.get("backup_providers", []):
+        try:
+            fallback = create_client_from_config(
+                fallback_config,
+                max_tokens=max_tokens,
+                role="rule_compiler_fallback",
+                seed=seed,
+            )
+            compiler.fallback_clients.append(fallback)
+            logger.info(
+                "Registered fallback rule compiler: "
+                f"{fallback.provider_name}/{fallback.model_name}"
+            )
+        # Optional fallback failures must not prevent the primary compiler from running.
+        except Exception as error:  # ruff: ignore[blind-except]
+            logger.warning(f"Failed to create fallback provider: {error}")
+    scientist = create_client(
+        config["model"],
+        temperature=llm_config["temperature"],
+        max_tokens=max_tokens,
+        role=player_display_name,
+        seed=seed,
+    )
+    return compiler, scientist
+
+
+def _load_round_rule(
+    request: RoundSetupRequest,
+    compiler: BaseLLMClient,
+    scientist: BaseLLMClient,
+) -> tuple[Rule, RuleMetadata | None, RuleValidator]:
+    """Load a new library rule or retain the caller-provided rule."""
+    validator = RuleValidator()
+    if request.rule is not None:
+        logger.info(f"[Round {request.round_number}] Using provided rule")
+        return request.rule, None, validator
+
+    logger.info("=" * 80)
+    logger.info(f"[Round {request.round_number}] PHASE 1: RULE LOADING")
+    logger.info("=" * 80)
+    compiler.reset_usage_stats()
+    scientist.reset_usage_stats()
+    rules_config = request.config["rules"]
+    start_index = (
+        request.start_rule_index
+        if request.start_rule_index is not None
+        else rules_config["index"]
+    )
+    logger.info(f"Rule factory starting at index: {start_index}")
+    factory = RuleFactory(
+        library_path=(
+            rules_config["library_path"] if request.rules_list is None else None
+        ),
+        selection=rules_config["selection"],
+        start_index=start_index,
+        rules_list=request.rules_list,
+    )
+    rule, metadata = factory.create_rule_with_metadata()
+    logger.info("\n" + "=" * 80)
+    logger.info(f"SECRET RULE: {rule.description()}")
+    logger.info("=" * 80 + "\n")
+    return rule, metadata, validator
+
+
+def _calculate_round_seed(
+    config: BenchmarkConfig,
+    rule: Rule,
+    batch_round_index: int,
+) -> int | None:
+    """Calculate the deterministic deck seed for one rule and batch index."""
+    base_seed = config["game"]["seed"]
+    if base_seed is None:
+        return None
+    rule_hash = int(hashlib.md5(rule.get_code().encode()).hexdigest(), 16) & 0xFFFFFFFF
+    round_seed = (base_seed + rule_hash + batch_round_index) & 0xFFFFFFFF
+    logger.info(
+        f"Using round seed: {round_seed} (base={base_seed}, rule_hash={rule_hash}, "
+        f"batch_idx={batch_round_index})"
+    )
+    return round_seed
+
+
+def _create_round_engine(
+    config: BenchmarkConfig,
+    state: GameState,
+    rule: Rule,
+    compiler: BaseLLMClient,
+    validator: RuleValidator,
+    batch_round_index: int,
+) -> tuple[GameEngine, int | None]:
+    """Create and seed the game engine for one round."""
+    game_config = config["game"]
+    compiler_config = config["rule_compiler"]
+    simulation_seed = compiler_config.get("simulation_seed")
+    engine = GameEngine(
+        state,
+        rule,
+        rule_compiler_client=compiler,
+        rule_validator=validator,
+        hand_size=game_config["hand_size"],
+        wrong_guess_penalty=game_config["wrong_guess_penalty"],
+        num_simulations=compiler_config.get("num_simulations", 100),
+        turns_per_simulation=compiler_config.get("turns_per_simulation", 40),
+        simulation_seed=42 if simulation_seed is None else simulation_seed,
+        compiler_max_retries=compiler_config.get("max_retries", 10),
+    )
+    round_seed = _calculate_round_seed(config, rule, batch_round_index)
+    engine.setup_game(round_seed=round_seed)
+    return engine, round_seed
+
+
+def _prepare_round_runtime(request: RoundSetupRequest) -> RoundRuntime:
+    """Initialize all collaborators and immutable settings for one round."""
+    player_name = model_spec_to_display_name(request.config["model"])
+    compiler, scientist_client = _create_round_clients(request.config, player_name)
+    rule, metadata, validator = _load_round_rule(
+        request,
+        compiler,
+        scientist_client,
+    )
+    state = GameState(player_name)
+    engine, round_seed = _create_round_engine(
+        request.config,
+        state,
+        rule,
+        compiler,
+        validator,
+        request.batch_round_index,
+    )
+    game_config = request.config["game"]
+    max_turns = request.max_turns or game_config["max_turns"]
+    scientist = LLMScientist(
+        player_name,
+        scientist_client,
+        max_retries=request.config["llm"]["max_llm_retries"],
+        engine=engine,
+        max_turns=max_turns,
+        rng=(random.Random(round_seed) if round_seed is not None else random.Random()),
+    )
+    logger.info("=" * 80)
+    logger.info(f"[Round {request.round_number}] PHASE 2: GAME SETUP")
+    logger.info("=" * 80)
+    logger.info(f"✓ Starter card placed: {state.mainline.get_last()}")
+    logger.info(f"✓ Player has {game_config['hand_size']} cards (constant hand size)")
+    logger.info(f"✓ Deck has {state.deck.remaining_count()} cards remaining\n")
+    logger.info("=" * 80)
+    logger.info(f"[Round {request.round_number}] PHASE 3: GAME PLAY")
+    logger.info("=" * 80 + "\n")
+    return RoundRuntime(
+        round_number=request.round_number,
+        start_time=request.start_time,
+        rule=rule,
+        rule_metadata=metadata,
+        engine=engine,
+        game_state=state,
+        scientist=scientist,
+        scientist_client=scientist_client,
+        rule_compiler_client=compiler,
+        player_name=player_name,
+        max_turns=max_turns,
+        shadow_mode=game_config.get("shadow_mode", "offline"),
+        pause_after_turn=game_config.get("pause_after_turn", False),
+        results_folder=request.results_folder,
+        handle_action_error=_handle_action_error,
+    )
 
 
 def play_round(
-    config: dict,
+    config: BenchmarkConfig,
     round_number: int,
     rule: Rule | None = None,
     max_turns: int | None = None,
     start_rule_index: int | None = None,
-    rules_list: list[dict] | None = None,
+    rules_list: list[RuleLibraryEntry] | None = None,
     batch_round_index: int = 0,
     results_folder: str | None = None,
-) -> dict:
-    """Play a single round of pattern discovery.
-
-    Args:
-        config: Full game configuration dict
-        round_number: Current round number (for logging)
-        rule: Optional rule to reuse (if None, generate/load new rule)
-        max_turns: Optional override for max turns
-        start_rule_index: Starting index for RuleFactory (for resume support)
-        rules_list: Pre-loaded rules list (for resume, takes precedence over library file)
-        batch_round_index: Index within the current rule's batch (0 for first round with rule)
-            Used to ensure different deck shuffles when replaying same rule.
-
-    Returns:
-        dict with round_number, turn_count, rule_description, rule_code,
-        success, score, game_over_reason, wall_clock_seconds
-    """
-    round_start_time = time.time()
-
-    # --------------------
-    # (1) Client initialization
-    # --------------------
-
-    game_config = config["game"]
-    llm_config = config["llm"]
-    rule_compiler_cfg = config["rule_compiler"]
-
-    player_model = config["model"]
-    player_display_name = model_spec_to_display_name(player_model)
-
-    max_tokens = llm_config["max_tokens"]
-    llm_seed = llm_config.get("seed")
-
-    rule_compiler_client = create_client_from_config(
-        rule_compiler_cfg,
-        max_tokens=max_tokens,
-        role="rule_compiler",
-        seed=llm_seed,
+) -> RoundResult:
+    """Set up and execute one reproducible pattern-discovery round."""
+    request = RoundSetupRequest(
+        config=config,
+        round_number=round_number,
+        start_time=time.time(),
+        rule=rule,
+        max_turns=max_turns,
+        start_rule_index=start_rule_index,
+        rules_list=rules_list,
+        batch_round_index=batch_round_index,
+        results_folder=results_folder,
     )
-
-    # Set up fallback providers for rule compilation resilience
-    backup_providers = rule_compiler_cfg.get("backup_providers", [])
-    for bp_cfg in backup_providers:
-        try:
-            fallback = create_client_from_config(
-                bp_cfg,
-                max_tokens=max_tokens,
-                role="rule_compiler_fallback",
-                seed=llm_seed,
-            )
-            rule_compiler_client.fallback_clients.append(fallback)
-            logger.info(f"Registered fallback rule compiler: {fallback.provider_name}/{fallback.model_name}")
-        except Exception as e:
-            logger.warning(f"Failed to create fallback provider: {e}")
-
-    scientist_client = create_client(
-        player_model,
-        temperature=llm_config["temperature"],
-        max_tokens=max_tokens,
-        role=player_display_name,
-        seed=llm_seed,
-    )
-
-    # --------------------
-    # (2) Rule generation
-    # --------------------
-
-    rule_metadata = None
-
-    if rule is None:
-        logger.info("=" * 80)
-        logger.info(f"[Round {round_number}] PHASE 1: RULE LOADING")
-        logger.info("=" * 80)
-        logger.info("")
-
-        logger.info("✓ Rule compiler client initialized")
-
-        rule_compiler_client.reset_usage_stats()
-        scientist_client.reset_usage_stats()
-
-        validator = RuleValidator()
-
-        rules_cfg = config["rules"]
-
-        logger.info("Loading rule from library...")
-
-        start_index = start_rule_index if start_rule_index is not None else rules_cfg.get("index", 0)
-        logger.info(f"Rule factory starting at index: {start_index}")
-
-        rule_factory = RuleFactory(
-            library_path=rules_cfg["library_path"] if rules_list is None else None,
-            selection=rules_cfg["selection"],
-            start_index=start_index,
-            rules_list=rules_list,
-        )
-
-        rule, rule_metadata = rule_factory.create_rule_with_metadata()
-
-        logger.info("")
-        logger.info("=" * 80)
-        logger.info(f"SECRET RULE: {rule.description()}")
-        logger.info("=" * 80)
-        logger.info("")
-    else:
-        logger.info(f"[Round {round_number}] Using provided rule")
-        validator = RuleValidator()
-
-    # ---------------
-    # (3) Game setup
-    # ---------------
-
-    logger.info("=" * 80)
-    logger.info(f"[Round {round_number}] PHASE 2: GAME SETUP")
-    logger.info("=" * 80)
-    logger.info("")
-
-    player_name = player_display_name
-    game_state = GameState(player_name)
-
-    hand_size = game_config.get('hand_size')
-    wrong_guess_penalty = game_config.get('wrong_guess_penalty')
-
-    # Extract simulation params from rule_compiler config
-    num_simulations = rule_compiler_cfg.get('num_simulations')
-    turns_per_simulation = rule_compiler_cfg.get('turns_per_simulation')
-    simulation_seed = rule_compiler_cfg.get('simulation_seed')
-    compiler_max_retries = rule_compiler_cfg.get('max_retries')
-
-    engine = GameEngine(
-        game_state,
-        rule,
-        rule_compiler_client=rule_compiler_client,
-        rule_validator=validator,
-        hand_size=hand_size,
-        wrong_guess_penalty=wrong_guess_penalty,
-        num_simulations=num_simulations,
-        turns_per_simulation=turns_per_simulation,
-        simulation_seed=simulation_seed,
-        compiler_max_retries=compiler_max_retries,
-    )
-
-    # Compute round seed from rule code for reproducibility
-    # Use hashlib instead of hash() because Python's hash() is randomized per process
-    # Include batch_round_index so same rule gets different shuffles in each round
-    base_seed = config["game"].get("seed")
-    if base_seed is not None:
-        rule_hash = int(hashlib.md5(rule.get_code().encode()).hexdigest(), 16) & 0xFFFFFFFF
-        round_seed = (base_seed + rule_hash + batch_round_index) & 0xFFFFFFFF
-        logger.info(f"Using round seed: {round_seed} "
-                    f"(base={base_seed}, rule_hash={rule_hash}, batch_idx={batch_round_index})")
-    else:
-        round_seed = None
-
-    engine.setup_game(round_seed=round_seed)
-
-    logger.info("✓ Game setup complete")
-    logger.info(f"✓ Starter card placed: {game_state.mainline.get_last()}")
-    logger.info(f"✓ Player has {hand_size} cards (constant hand size)")
-    logger.info(f"✓ Deck has {game_state.deck.remaining_count()} cards remaining")
-    logger.info("")
-
-    max_turns_limit = max_turns or game_config.get("max_turns", 40)
-    shadow_mode = game_config.get("shadow_mode", "offline")
-
-    max_llm_retries = llm_config["max_llm_retries"]
-    player_rng = random.Random(round_seed) if round_seed is not None else random.Random()
-    scientist = LLMScientist(
-        player_name,
-        scientist_client,
-        max_retries=max_llm_retries,
-        engine=engine,
-        max_turns=max_turns_limit,
-        rng=player_rng,
-    )
-    logger.info(f"✓ Player initialized: {scientist.name}")
-    logger.info("")
-
-    # --------------
-    # (4) MAIN LOOP
-    # --------------
-
-    logger.info("=" * 80)
-    logger.info(f"[Round {round_number}] PHASE 3: GAME PLAY")
-    logger.info("=" * 80)
-    logger.info("")
-    turn_count = 0
-    game_over_reason = "max_turns"
-    turn_data_list = []
-
-    while turn_count < max_turns_limit and not engine.is_game_over():
-        player = game_state.player
-
-        mainline_before = game_state.to_compact_string()
-        hand_before = [str(c) for c in player.hand.get_all_cards()]
-
-        logger.info("=" * 80)
-        logger.info(f"[Round {round_number}] TURN {turn_count + 1}: {player_name}")
-        logger.info("=" * 80)
-        logger.info(f"Board: {game_state.to_compact_string()}")
-        logger.info(f"Deck remaining: {game_state.deck.remaining_count()} cards")
-        hand_cards = player.hand.get_all_cards()
-        hand_str = ", ".join([str(c) for c in hand_cards])
-        logger.info(f"Hand ({len(hand_cards)} cards): {hand_str}")
-        logger.info("")
-
-        game_state.turn_number = turn_count + 1
-
-        # Track generate_metrics count before LLM call for per-turn token tracking
-        gen_metrics_before = len(scientist_client.generate_metrics)
-
-        error_info = None
-        try:
-            action = scientist.get_action(game_state)
-        except Exception as e:
-            action, error_info = _handle_action_error(e, scientist, game_state)
-
-        # Save last prompt to file for live inspection
-        if results_folder and scientist.last_prompt:
-            prompt_file = Path(results_folder) / "last_prompt.md"
-            prompt_file.parent.mkdir(parents=True, exist_ok=True)
-            prompt_file.write_text(scientist.last_prompt)
-
-        if scientist.last_action_response:
-            reasoning_summary = scientist.last_action_response.get("reasoning_summary", "")
-            tentative_rule = scientist.last_action_response.get("tentative_rule", "")
-            confidence_level = scientist.last_action_response.get("confidence_level", "")
-            guess_rule = scientist.last_action_response.get("guess_rule", False)
-
-            logger.info(f"Reasoning: {reasoning_summary}")
-            logger.info(f"Tentative rule: {tentative_rule}")
-            logger.info(f"Confidence level: {confidence_level}")
-            logger.info(f"Will guess: {guess_rule}")
-            logger.info("")
-
-        # Normalize response fields (confidence, schema validation)
-        norm = normalize_action_response(scientist.last_action_response)
-
-        will_guess = (
-            scientist.last_action_response
-            and scientist.last_action_response.get("guess_rule", False)
-        )
-
-        guess_text = (
-            scientist.last_action_response.get("tentative_rule", "")
-            if scientist.last_action_response
-            else ""
-        )
-
-        play_result = engine.play_turn(action)
-
-        # Extract per-turn token metrics from any new generate_metrics
-        gen_metrics_after = len(scientist_client.generate_metrics)
-        turn_tokens = {"output_tokens": 0, "reasoning_tokens": 0, "answer_tokens": 0}
-        if gen_metrics_after > gen_metrics_before:
-            for gm in scientist_client.generate_metrics[gen_metrics_before:gen_metrics_after]:
-                turn_tokens["output_tokens"] += gm.total_output_tokens
-                turn_tokens["reasoning_tokens"] += gm.total_reasoning_tokens
-                turn_tokens["answer_tokens"] += gm.total_answer_tokens
-
-        turn_data = {
-            "turn_number": turn_count + 1,
-            "player": player_name,
-            "mainline_state": mainline_before,
-            "hand": hand_before,
-            "llm_response": scientist.last_action_response.copy() if scientist.last_action_response else {},
-            "confidence_level_raw": norm["confidence_level_raw"],
-            "confidence_level": norm["confidence_level"],
-            "schema_errors": norm["schema_errors"],
-            "action_result": {
-                "action": play_result.get("action"),
-                "card": play_result.get("card"),
-                "accepted": play_result.get("accepted"),
-                "success": play_result.get("success"),
-            },
-            "guess_attempt": None,
-            "tokens": turn_tokens,
-            "retry_count": scientist.last_retry_count,
-            "retry_causes": scientist.last_retry_causes.copy(),
-            "error": error_info,
-        }
-
-        logger.info(f"Action: {play_result['action']}")
-        if "card" in play_result:
-            logger.info(f"Card played: {play_result['card']}")
-            logger.info(f"Result: {'ACCEPTED ✓' if play_result.get('accepted') else 'REJECTED ✗'}")
-
-        scientist.record_action_result(play_result)
-
-        if will_guess and guess_text:
-            logger.info("")
-            logger.info(f"{player_name} is guessing the rule...")
-            result = engine.play_turn(GuessRuleAction(guess_text))
-
-            if "guess" in result:
-                complexity = result.get("complexity_metrics") or {}
-                turn_data["guess_attempt"] = {
-                    "guess": result["guess"],
-                    "correct": result.get("correct", False),
-                    "reasoning": result.get("reasoning", ""),
-                    "guessed_code": result.get("guessed_code"),
-                    "node_count": complexity.get("node_count"),
-                    "cyclomatic_complexity": complexity.get("cyclomatic"),
-                }
-        else:
-            result = play_result
-
-            # Shadow evaluation: if player didn't guess but has high confidence
-            conf_level = norm["confidence_level"]
-            MIN_CONFIDENCE_FOR_SHADOW = 5
-            if conf_level is not None and conf_level >= MIN_CONFIDENCE_FOR_SHADOW and guess_text:
-                if shadow_mode == "online":
-                    logger.info("")
-                    logger.info(f"Shadow evaluation for tentative rule (confidence={conf_level})...")
-                    is_correct, reasoning, metadata = engine.evaluate_rule(guess_text)
-                    verdict = "CORRECT ✅" if is_correct else "INCORRECT ❌"
-                    logger.info(f"Shadow evaluation result: {verdict}")
-
-                    complexity = metadata.get("complexity_metrics") or {}
-                    turn_data["guess_attempt"] = {
-                        "guess": guess_text,
-                        "correct": is_correct,
-                        "reasoning": reasoning,
-                        "guessed_code": metadata.get("guessed_code"),
-                        "node_count": complexity.get("node_count"),
-                        "cyclomatic_complexity": complexity.get("cyclomatic"),
-                        "shadow": True,
-                    }
-                elif shadow_mode == "offline":
-                    turn_data["guess_attempt"] = {
-                        "guess": guess_text,
-                        "shadow": True,
-                        "evaluated": False,
-                    }
-
-        turn_data_list.append(turn_data)
-
-        if "guess" in result:
-            logger.info("")
-            logger.info("RULE GUESS!")
-            logger.info(f"Guess: {result['guess']}")
-            logger.info(f"Verdict: {'CORRECT ✅✅✅' if result.get('correct') else 'INCORRECT ❌❌❌'}")
-            if result.get("correct"):
-                logger.info("=" * 80)
-                logger.info(f"{player_name} FOUND RULE ON TURN {turn_count + 1}!")
-                logger.info("=" * 80)
-                game_over_reason = "correct_guess"
-                break
-
-        logger.info("")
-        turn_count += 1
-
-        if game_config.get("pause_after_turn", False):
-            input(f"[Turn {turn_count} complete] Press Enter to continue...")
-
-    # -------------
-    # (5) Scoring
-    # -------------
-
-    score = engine.calculate_score(max_turns_limit, turn_count)
-    success = engine.rule_guessed
-
-    # Find first turn where a formal (non-shadow) guess was correct
-    first_formal_correct_turn = None
-    first_shadow_correct_turn = None
-    for turn in turn_data_list:
-        guess_attempt = turn.get("guess_attempt")
-        if guess_attempt and guess_attempt.get("correct"):
-            if guess_attempt.get("shadow", False):
-                if first_shadow_correct_turn is None:
-                    first_shadow_correct_turn = turn["turn_number"]
-            else:
-                if first_formal_correct_turn is None:
-                    first_formal_correct_turn = turn["turn_number"]
-
-    # first_correct_turn: earliest correct guess of any kind (backward compat)
-    first_correct_turn = min(
-        t for t in [first_formal_correct_turn, first_shadow_correct_turn]
-        if t is not None
-    ) if first_formal_correct_turn is not None or first_shadow_correct_turn is not None else None
-
-    # no_stakes_score: hypothetical score if all guesses were penalty-free
-    # Formula: max_turns - first_correct_turn + 1 (finding on turn N gives 31-N points)
-    no_stakes_score = (
-        max_turns_limit - first_correct_turn + 1
-        if first_correct_turn is not None
-        else 0
-    )
-
-    llm_usage = {
-        "rule_compiler": rule_compiler_client.get_usage_stats(),
-        "player": scientist_client.get_usage_stats(),
-    }
-
-    return {
-        'round_number': round_number,
-        'turn_count': turn_count + 1,  # 1-indexed: turn N means N turns were played
-        'rule_description': rule.description(),
-        'rule_code': rule.get_code(),
-        'rule_metadata': rule_metadata,
-        'success': success,
-        'score': score,
-        'floored_score': max(0, score),
-        'no_stakes_score': no_stakes_score,
-        'first_correct_turn': first_correct_turn,
-        'first_formal_correct_turn': first_formal_correct_turn,
-        'first_shadow_correct_turn': first_shadow_correct_turn,
-        'failed_guesses': engine.failed_guess_count,
-        'game_over_reason': game_over_reason,
-        'schema_compliance_rate': compute_schema_compliance_rate(turn_data_list),
-        'llm_usage': llm_usage,
-        'turns': turn_data_list,
-        'wall_clock_seconds': round(time.time() - round_start_time, 2),
-    }
+    runtime = _prepare_round_runtime(request)
+    turn_count, game_over_reason, turns = execute_round_turns(runtime)
+    return build_round_result(runtime, turn_count, game_over_reason, turns)

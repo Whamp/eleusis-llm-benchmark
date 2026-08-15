@@ -9,21 +9,28 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Literal
 from unittest.mock import patch
 
+from eleusis.benchmark_config import BenchmarkConfig
 from eleusis.llm.base import TruncationError
-from eleusis.runner import play_round
+from eleusis.runner import RoundResult, play_round
 from tests.conftest import FakeLLMClient, make_action_response
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 MINI_RULES_PATH = FIXTURES_DIR / "mini_rules.json"
 
 
-def _make_config(max_turns: int = 5, shadow_mode: str = "offline") -> dict:
+def _make_config(
+    max_turns: int = 5,
+    shadow_mode: Literal["disabled", "offline", "online"] = "offline",
+) -> BenchmarkConfig:
     """Build a minimal config for play_round testing."""
     return {
         "model": "fake-model",
         "game": {
+            "num_rules": 1,
+            "num_rounds_per_rule": 1,
             "max_turns": max_turns,
             "hand_size": 4,
             "wrong_guess_penalty": 2,
@@ -37,7 +44,7 @@ def _make_config(max_turns: int = 5, shadow_mode: str = "offline") -> dict:
             "seed": 42,
         },
         "rule_compiler": {
-            "provider": "fake",
+            "provider": "huggingface",
             "model_id": "fake-model",
             "max_retries": 1,
             "num_simulations": 5,
@@ -66,19 +73,21 @@ def _stable_client(n_turns: int) -> FakeLLMClient:
     return FakeLLMClient(responses)
 
 
-def _normalize_result(result: dict) -> dict:
+def _normalize_result(result: RoundResult) -> dict[str, object]:
     """Strip non-deterministic fields (wall_clock_seconds) for comparison."""
-    result = dict(result)
-    result.pop("wall_clock_seconds", None)
-    return result
+    normalized_result: dict[str, object] = dict(result)
+    normalized_result.pop("wall_clock_seconds", None)
+    return normalized_result
 
 
 class TestSeededReproducibility:
     """Two identical seeded runs produce byte-equivalent results."""
 
-    def test_identical_seeded_runs_match(self):
-        """Two play_round calls with same config + same fake responses
-        must produce identical result dicts (excluding wall_clock_seconds)."""
+    def test_identical_seeded_runs_match(self) -> None:
+        """Check two play_round calls with the same config and fake responses.
+
+        They must produce identical results after excluding wall-clock time.
+        """
         config = _make_config(max_turns=3)
 
         results = []
@@ -88,16 +97,20 @@ class TestSeededReproducibility:
 
             with (
                 patch("eleusis.runner.create_client", return_value=client),
-                patch("eleusis.runner.create_client_from_config", return_value=compiler),
+                patch(
+                    "eleusis.runner.create_client_from_config", return_value=compiler
+                ),
             ):
                 result = play_round(config, round_number=1)
 
             results.append(_normalize_result(result))
 
-        assert json.dumps(results[0], sort_keys=True) == json.dumps(results[1], sort_keys=True)
+        assert json.dumps(results[0], sort_keys=True) == json.dumps(
+            results[1], sort_keys=True
+        )
 
-    def test_different_batch_indices_differ(self):
-        """Same rule with different batch_round_index should produce different deck shuffles."""
+    def test_different_batch_indices_differ(self) -> None:
+        """Use different deck shuffles for different batch round indices."""
         config = _make_config(max_turns=3)
 
         round_results = []
@@ -107,18 +120,23 @@ class TestSeededReproducibility:
 
             with (
                 patch("eleusis.runner.create_client", return_value=client),
-                patch("eleusis.runner.create_client_from_config", return_value=compiler),
+                patch(
+                    "eleusis.runner.create_client_from_config", return_value=compiler
+                ),
             ):
                 result = play_round(config, round_number=1, batch_round_index=batch_idx)
 
             round_results.append(result)
 
-        # Different batch indices should produce different hands (different deck shuffle)
+        # Different batch indices should produce different hands (different deck
+        # shuffle)
         hands_0 = [t["hand"] for t in round_results[0]["turns"]]
         hands_1 = [t["hand"] for t in round_results[1]["turns"]]
-        assert hands_0 != hands_1, "Different batch_round_index must produce different shuffles"
+        assert hands_0 != hands_1, (
+            "Different batch_round_index must produce different shuffles"
+        )
 
-    def test_same_batch_index_same_shuffle(self):
+    def test_same_batch_index_same_shuffle(self) -> None:
         """Same rule + same batch_round_index = identical deck shuffle."""
         config = _make_config(max_turns=3)
 
@@ -129,7 +147,9 @@ class TestSeededReproducibility:
 
             with (
                 patch("eleusis.runner.create_client", return_value=client),
-                patch("eleusis.runner.create_client_from_config", return_value=compiler),
+                patch(
+                    "eleusis.runner.create_client_from_config", return_value=compiler
+                ),
             ):
                 result = play_round(config, round_number=1, batch_round_index=0)
 
@@ -143,9 +163,11 @@ class TestSeededReproducibility:
 class TestFallbackDeterminism:
     """Fallback-heavy runs (all retries exhausted) remain deterministic."""
 
-    def test_all_fallback_runs_match(self):
-        """When every turn exhausts retries and falls back, two runs
-        with the same seed must still produce identical results."""
+    def test_all_fallback_runs_match(self) -> None:
+        """Check deterministic runs when every turn exhausts retries.
+
+        Two runs with the same seed must still produce identical results.
+        """
         config = _make_config(max_turns=3)
         max_retries = config["llm"]["max_llm_retries"]
 
@@ -158,34 +180,54 @@ class TestFallbackDeterminism:
 
             with (
                 patch("eleusis.runner.create_client", return_value=client),
-                patch("eleusis.runner.create_client_from_config", return_value=compiler),
+                patch(
+                    "eleusis.runner.create_client_from_config", return_value=compiler
+                ),
             ):
                 result = play_round(config, round_number=1)
 
             results.append(_normalize_result(result))
 
-        assert json.dumps(results[0], sort_keys=True) == json.dumps(results[1], sort_keys=True)
+        assert json.dumps(results[0], sort_keys=True) == json.dumps(
+            results[1], sort_keys=True
+        )
 
-    def test_mixed_success_and_fallback_deterministic(self):
-        """Runs with a mix of successful LLM calls and fallbacks
-        must produce identical results when seeded identically."""
+    def test_mixed_success_and_fallback_deterministic(self) -> None:
+        """Check deterministic runs mixing successful calls and fallbacks.
+
+        The mixed runs must produce identical results when seeded identically.
+        """
         config = _make_config(max_turns=3)
         max_retries = config["llm"]["max_llm_retries"]
 
-        def _make_mixed_client():
+        def _make_mixed_client() -> FakeLLMClient:
             """Turn 1: success, Turn 2: all retries fail, Turn 3: success."""
             responses = []
             # Turn 1: success
-            responses.append(json.dumps(make_action_response(
-                "2H", tentative_rule="even ranks", confidence_level=5, guess_rule=False,
-            )))
+            responses.append(
+                json.dumps(
+                    make_action_response(
+                        "2H",
+                        tentative_rule="even ranks",
+                        confidence_level=5,
+                        guess_rule=False,
+                    )
+                )
+            )
             # Turn 2: all retries fail
             for _ in range(max_retries):
                 responses.append(TruncationError("truncated"))
             # Turn 3: success
-            responses.append(json.dumps(make_action_response(
-                "2H", tentative_rule="even ranks", confidence_level=3, guess_rule=False,
-            )))
+            responses.append(
+                json.dumps(
+                    make_action_response(
+                        "2H",
+                        tentative_rule="even ranks",
+                        confidence_level=3,
+                        guess_rule=False,
+                    )
+                )
+            )
             return FakeLLMClient(responses)
 
         results = []
@@ -195,15 +237,19 @@ class TestFallbackDeterminism:
 
             with (
                 patch("eleusis.runner.create_client", return_value=client),
-                patch("eleusis.runner.create_client_from_config", return_value=compiler),
+                patch(
+                    "eleusis.runner.create_client_from_config", return_value=compiler
+                ),
             ):
                 result = play_round(config, round_number=1)
 
             results.append(_normalize_result(result))
 
-        assert json.dumps(results[0], sort_keys=True) == json.dumps(results[1], sort_keys=True)
+        assert json.dumps(results[0], sort_keys=True) == json.dumps(
+            results[1], sort_keys=True
+        )
 
-    def test_fallback_cards_come_from_hand(self):
+    def test_fallback_cards_come_from_hand(self) -> None:
         """Fallback cards must be actual cards from the player's hand."""
         config = _make_config(max_turns=3)
         max_retries = config["llm"]["max_llm_retries"]
@@ -221,6 +267,4 @@ class TestFallbackDeterminism:
         for turn in result["turns"]:
             played = turn["action_result"]["card"]
             hand = turn["hand"]
-            assert played in hand, (
-                f"Fallback card {played} not in hand {hand}"
-            )
+            assert played in hand, f"Fallback card {played} not in hand {hand}"
