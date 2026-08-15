@@ -2,7 +2,9 @@
 
 import argparse
 import logging
+from collections.abc import Mapping
 from dataclasses import dataclass
+from typing import cast
 
 from eleusis.evaluation_startup import resolve_evaluation_startup
 from eleusis.evaluation_state import EvaluationState, initialize_evaluation_state
@@ -26,8 +28,42 @@ class RoundSelection:
 
 
 def _select_round_rule(state: EvaluationState, round_number: int) -> RoundSelection:
-    """Choose rule reuse/loading and batch index for the next round."""
+    """Choose the persisted or legacy rule and batch index for the next Round."""
     startup = state.startup
+    if state.run_store is not None and startup.run_manifest is not None:
+        schedule = startup.run_manifest["schedule"]
+        if not isinstance(schedule, list) or round_number > len(schedule):
+            raise RuntimeError(
+                f"Benchmark Run schedule unavailable for Round {round_number}"
+            )
+        scheduled = schedule[round_number - 1]
+        if (
+            not isinstance(scheduled, dict)
+            or scheduled.get("round_number") != round_number
+        ):
+            raise RuntimeError(
+                f"Benchmark Run schedule malformed at Round {round_number}"
+            )
+        description = scheduled.get("rule_description")
+        code = scheduled.get("rule_code")
+        batch_index = scheduled.get("batch_round_index")
+        if (
+            not isinstance(description, str)
+            or not isinstance(code, str)
+            or not isinstance(batch_index, int)
+        ):
+            raise RuntimeError(
+                f"Benchmark Run schedule incomplete at Round {round_number}"
+            )
+        rule_name = scheduled.get("rule_name")
+        state.current_rule = Rule(description, code)
+        state.current_rule_name = rule_name if isinstance(rule_name, str) else None
+        logger.info(
+            "Scheduled rule: %s (batch index %s)",
+            state.current_rule_name or description,
+            batch_index,
+        )
+        return RoundSelection(batch_index, False, state.current_rule_name)
     if startup.suite_cases:
         suite_rule_name, batch_index = startup.suite_cases[round_number - 1]
         need_new_rule = state.current_rule_name != suite_rule_name
@@ -78,7 +114,8 @@ def _execute_round(
         ),
         run_store=state.run_store,
     )
-    _update_current_rule(state, result, generated_new_rule)
+    if state.run_store is None:
+        _update_current_rule(state, result, generated_new_rule)
     return result
 
 
@@ -202,13 +239,12 @@ def _run_evaluation_round(state: EvaluationState, round_number: int) -> None:
     selection = _select_round_rule(state, round_number)
     result = _execute_round(state, round_number, selection)
     _append_round_result(state, round_number, selection, result)
-    _update_evaluation_statistics(state, result)
-    _update_evaluation_checkpoint(state, round_number)
-    output_file = (
-        state.run_store.ensure_current_export()
-        if state.run_store is not None
-        else save_evaluation_results(state.results, state.folder_name)
-    )
+    if state.run_store is not None:
+        output_file = state.run_store.ensure_current_export()
+    else:
+        _update_evaluation_statistics(state, result)
+        _update_evaluation_checkpoint(state, round_number)
+        output_file = save_evaluation_results(state.results, state.folder_name)
     logger.info("Progress saved to: %s", output_file)
     logger.info(
         "Round %s complete: turns=%s success=%s score=%s "
@@ -223,26 +259,57 @@ def _run_evaluation_round(state: EvaluationState, round_number: int) -> None:
 
 
 def _finalize_evaluation(state: EvaluationState) -> None:
-    """Compute final averages, save results, and log the evaluation summary."""
-    statistics = state.results["statistics"]
-    rounds = state.startup.num_rounds
-    success_rate = statistics["successful_rounds"] / rounds * 100
-    average_score = statistics["total_score"] / rounds
-    average_turns = statistics["total_turns"] / rounds
-    successful_turns = sum(
-        result["turn_count"] for result in state.results["rounds"] if result["success"]
-    )
-    average_success_turns = (
-        successful_turns / statistics["successful_rounds"]
-        if statistics["successful_rounds"]
-        else 0
-    )
-    average_failed = statistics["total_failed_guesses"] / rounds
-    statistics["success_rate"] = success_rate
-    statistics["average_score"] = average_score
-    statistics["average_turns"] = average_turns
-    statistics["average_turns_when_successful"] = average_success_turns
-    statistics["average_failed_guesses"] = average_failed
+    """Derive final statistics, save results, and log the Benchmark Run summary."""
+    if state.run_store is not None:
+        summary = state.run_store.read_derived_summary()
+        usage = cast(Mapping[str, object], summary["usage"])
+        rounds = cast(int, summary["completed_rounds"])
+        successful_rounds = cast(int, summary["successful_rounds"])
+        success_rate = cast(float, summary["success_rate"])
+        average_score = cast(float, summary["average_score"])
+        average_turns = cast(float, summary["average_turns"])
+        average_success_turns = cast(
+            float,
+            summary["average_turns_when_successful"],
+        )
+        average_failed = cast(float, summary["average_failed_guesses"])
+        total_score = cast(int, summary["total_score"])
+        total_output_tokens = cast(int, usage["output_tokens"])
+        total_reasoning_tokens = cast(int, usage["reasoning_tokens"])
+        total_answer_tokens = cast(int, usage["answer_tokens"])
+        total_duration_seconds = cast(float, usage["duration_seconds"])
+        duration_label = "Total model provider call time"
+        total_retries = 0
+        retry_by_cause: Mapping[str, int] = {}
+    else:
+        statistics = state.results["statistics"]
+        rounds = state.startup.num_rounds
+        successful_rounds = statistics["successful_rounds"]
+        success_rate = successful_rounds / rounds * 100
+        average_score = statistics["total_score"] / rounds
+        average_turns = statistics["total_turns"] / rounds
+        successful_turns = sum(
+            result["turn_count"]
+            for result in state.results["rounds"]
+            if result["success"]
+        )
+        average_success_turns = (
+            successful_turns / successful_rounds if successful_rounds else 0
+        )
+        average_failed = statistics["total_failed_guesses"] / rounds
+        statistics["success_rate"] = success_rate
+        statistics["average_score"] = average_score
+        statistics["average_turns"] = average_turns
+        statistics["average_turns_when_successful"] = average_success_turns
+        statistics["average_failed_guesses"] = average_failed
+        total_score = statistics["total_score"]
+        total_output_tokens = statistics["total_output_tokens"]
+        total_reasoning_tokens = statistics["total_reasoning_tokens"]
+        total_answer_tokens = statistics["total_answer_tokens"]
+        total_duration_seconds = statistics["total_wall_clock_seconds"]
+        duration_label = "Total wall clock time"
+        total_retries = statistics["total_retries"]
+        retry_by_cause = statistics["retry_by_cause"]
     logger.info("=" * 80)
     logger.info("EVALUATION SUMMARY")
     logger.info("=" * 80)
@@ -251,21 +318,21 @@ def _finalize_evaluation(state: EvaluationState) -> None:
     logger.info(
         "Success rate: %.1f%% (%s/%s)",
         success_rate,
-        statistics["successful_rounds"],
+        successful_rounds,
         rounds,
     )
     logger.info("Average score: %.1f", average_score)
     logger.info("Average turns: %.1f", average_turns)
     logger.info("Average turns (successful rounds only): %.1f", average_success_turns)
     logger.info("Average failed guesses per round: %.1f", average_failed)
-    logger.info("Total score: %s", statistics["total_score"])
-    logger.info("Total output tokens: %s", statistics["total_output_tokens"])
-    logger.info("Total reasoning tokens: %s", statistics["total_reasoning_tokens"])
-    logger.info("Total answer tokens: %s", statistics["total_answer_tokens"])
-    logger.info("Total wall clock time: %.1fs", statistics["total_wall_clock_seconds"])
-    if statistics["total_retries"]:
-        logger.info("Total LLM retries: %s", statistics["total_retries"])
-        for cause, count in statistics["retry_by_cause"].items():
+    logger.info("Total score: %s", total_score)
+    logger.info("Total output tokens: %s", total_output_tokens)
+    logger.info("Total reasoning tokens: %s", total_reasoning_tokens)
+    logger.info("Total answer tokens: %s", total_answer_tokens)
+    logger.info("%s: %.1fs", duration_label, total_duration_seconds)
+    if total_retries:
+        logger.info("Total LLM retries: %s", total_retries)
+        for cause, count in retry_by_cause.items():
             logger.info("  - %s: %s", cause, count)
     output_file = (
         state.run_store.ensure_current_export()

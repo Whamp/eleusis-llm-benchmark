@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from eleusis.benchmark_run_manifest import create_benchmark_run_manifest
-from eleusis.benchmark_run_store import BenchmarkRunStore
+from eleusis.benchmark_run_store import ActiveStoredRound, BenchmarkRunStore
 from eleusis.evaluation_results import EvaluationResults
 from eleusis.evaluation_startup import EvaluationStartup
 from eleusis.evaluation_support import (
@@ -110,18 +110,10 @@ def _rules_from_run_manifest(
     return rules
 
 
-def _initialize_sqlite_resume_state(
-    startup: EvaluationStartup,
-) -> EvaluationState | None:
-    """Restore orchestration state from the active SQLite Round Checkpoint."""
-    run_store = startup.run_store
-    manifest = startup.run_manifest
-    if run_store is None or manifest is None:
-        return None
-    active = run_store.read_resumable_round()
-    if active is None:
-        logger.error("Benchmark Run resume unavailable: no active Round checkpoint")
-        return None
+def _restore_active_round_cursor(
+    active: ActiveStoredRound,
+) -> tuple[Rule, str | None, int] | None:
+    """Validate and restore the orchestration cursor for one active Round."""
     turns = active.record["turns"]
     next_turn_index = active.continuation["next_turn_index"]
     if (
@@ -143,46 +135,80 @@ def _initialize_sqlite_resume_state(
     if not isinstance(description, str) or not isinstance(code, str):
         logger.error("Benchmark Run resume incompatible: active rule is malformed")
         return None
-    rules = _rules_from_run_manifest(manifest)
-    folder_name = run_store.run_folder.name
-    results = _new_evaluation_results(
-        startup,
-        folder_name,
-        rules,
-        startup.rules_config["index"] + 1,
-    )
     secret_rule = active.record["secret_rule"]
     current_rule_name = (
         secret_rule.get("name")
         if isinstance(secret_rule, dict) and isinstance(secret_rule.get("name"), str)
         else None
     )
-    results["checkpoint"]["rules_consumed"] = [
-        {
-            "name": current_rule_name,
-            "description": description,
-            "code": code,
-            "rounds_completed": 0,
-        }
-    ]
+    return Rule(description, code), current_rule_name, next_turn_index
+
+
+def _initialize_sqlite_resume_state(
+    startup: EvaluationStartup,
+) -> EvaluationState | None:
+    """Restore orchestration state from the active SQLite Round Checkpoint."""
+    run_store = startup.run_store
+    manifest = startup.run_manifest
+    if run_store is None or manifest is None:
+        return None
+    progress = run_store.read_progress()
+    active = run_store.read_resumable_round()
+    completed_rounds = run_store.read_completed_rounds()
+    if progress.is_complete:
+        logger.info(
+            "Benchmark Run already complete (%s/%s Rounds)",
+            progress.completed_rounds,
+            progress.total_rounds,
+        )
+        return None
+    if progress.next_round_number is None:
+        logger.error("Benchmark Run resume incompatible: next Round is unavailable")
+        return None
+    rules = _rules_from_run_manifest(manifest)
+    folder_name = run_store.run_folder.name
+    results = _new_evaluation_results(
+        startup,
+        folder_name,
+        rules,
+        startup.rules_config["index"] + len(completed_rounds),
+    )
+    start_round = progress.next_round_number
+    current_rule: Rule | None = None
+    current_rule_name: str | None = None
+    next_turn_index = 0
+    if active is not None:
+        restored_cursor = _restore_active_round_cursor(active)
+        if restored_cursor is None:
+            return None
+        current_rule, current_rule_name, next_turn_index = restored_cursor
+        start_round = active.round_number
     versions = manifest["versions"]
     logger.info("=" * 80)
     logger.info("RESUMING AUTHORITATIVE BENCHMARK RUN")
     logger.info("=" * 80)
-    logger.info(
-        "Active Round %s: %s committed Turns; schema versions %s",
-        active.round_number,
-        next_turn_index,
-        versions,
-    )
+    if active is None:
+        logger.info(
+            "Next scheduled Round %s after %s completed Rounds; schema versions %s",
+            start_round,
+            len(completed_rounds),
+            versions,
+        )
+    else:
+        logger.info(
+            "Active Round %s: %s committed Turns; schema versions %s",
+            active.round_number,
+            next_turn_index,
+            versions,
+        )
     return EvaluationState(
         startup=startup,
         results=results,
         folder_name=folder_name,
-        start_round=active.round_number,
-        current_rule=Rule(description, code),
+        start_round=start_round,
+        current_rule=current_rule,
         current_rule_name=current_rule_name,
-        rule_factory_index=startup.rules_config["index"] + 1,
+        rule_factory_index=startup.rules_config["index"] + len(completed_rounds),
         checkpoint_rules_library=rules,
         all_rules_library=rules,
         rule_name_to_index={
@@ -338,6 +364,8 @@ def _initialize_fresh_state(startup: EvaluationStartup) -> EvaluationState:
         Path("results") / folder_name,
         manifest,
     )
+    startup.run_store = run_store
+    startup.run_manifest = manifest
     return EvaluationState(
         startup=startup,
         results=_new_evaluation_results(
