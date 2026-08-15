@@ -13,7 +13,7 @@ from eleusis import evaluation_orchestrator, evaluation_startup, runner
 from eleusis.benchmark_config import BenchmarkConfig
 from eleusis.evaluation_startup import resolve_evaluation_startup
 from eleusis.evaluation_state import initialize_evaluation_state
-from eleusis.llm.base import BaseLLMClient
+from eleusis.llm.base import BaseLLMClient, TruncationError
 from tests.conftest import FakeLLMClient, make_action_response
 
 
@@ -37,7 +37,8 @@ def main() -> None:
 
     patch.object(evaluation_startup, "preflight_check", lambda _model: None).start()
     scientist = FakeLLMClient(
-        [make_action_response(card) for card in payload["selected_cards"]]
+        [TruncationError("truncated")] * payload.get("truncation_count", 0)
+        + [make_action_response(card) for card in payload["selected_cards"]]
     )
 
     def create_test_clients(

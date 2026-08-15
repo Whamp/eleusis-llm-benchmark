@@ -20,6 +20,7 @@ from eleusis.evaluation_results import TurnRecord
 from eleusis.evaluation_startup import EvaluationStartup
 from eleusis.evaluation_state import _initialize_fresh_state
 from eleusis.game.rule_library import RuleLibraryEntry
+from eleusis.llm.base import TruncationError
 from eleusis.round_execution import RoundRuntime
 from tests.conftest import FakeLLMClient, make_action_response
 from tests.test_evaluation_orchestrator import _startup
@@ -49,6 +50,19 @@ def _configure_three_turn_run(
     startup.rules_config["library_path"] = str(rules_path)
     config = copy.deepcopy(startup.config)
     config_path = root / "config.yaml"
+    config_path.write_text(yaml.safe_dump(config))
+    return startup, config, config_path
+
+
+def _configure_retry_exhaustion_run(
+    root: Path,
+) -> tuple[EvaluationStartup, BenchmarkConfig, Path]:
+    """Create a two-Turn Run whose model retries deterministically exhaust."""
+    startup, _config, config_path = _configure_three_turn_run(root)
+    startup.config["game"]["max_turns"] = 2
+    startup.game_config["max_turns"] = 2
+    startup.config["llm"]["max_llm_retries"] = 3
+    config = copy.deepcopy(startup.config)
     config_path.write_text(yaml.safe_dump(config))
     return startup, config, config_path
 
@@ -121,6 +135,8 @@ def _resume_in_fresh_process(
     run_folder: Path,
     config_path: Path,
     selected_cards: list[str],
+    *,
+    truncation_count: int = 0,
 ) -> dict[str, object]:
     """Resume an active Round using the production startup and runner path."""
     input_path = root / "resume-input.json"
@@ -132,6 +148,7 @@ def _resume_in_fresh_process(
                 "config_path": str(config_path),
                 "run_folder": str(run_folder),
                 "selected_cards": selected_cards,
+                "truncation_count": truncation_count,
             }
         )
     )
@@ -150,8 +167,23 @@ def _resume_in_fresh_process(
 
 
 def _scientific_round_facts(record: dict[str, object]) -> dict[str, object]:
-    """Exclude only the per-Run identity when comparing independent controls."""
-    return {key: value for key, value in record.items() if key != "run_id"}
+    """Exclude per-Run identity and nondeterministic attempt timing."""
+    facts = copy.deepcopy(record)
+    facts.pop("run_id", None)
+    turns = cast(list[dict[str, object]], facts["turns"])
+    for turn in turns:
+        attempts = cast(list[dict[str, object]], turn["model_attempts"])
+        for attempt in attempts:
+            attempt.pop("started_at", None)
+            attempt.pop("duration_seconds", None)
+            provider_calls = cast(
+                list[dict[str, object]],
+                attempt["provider_calls"],
+            )
+            for provider_call in provider_calls:
+                provider_call.pop("timestamp", None)
+                provider_call.pop("duration_seconds", None)
+    return facts
 
 
 @pytest.mark.parametrize("committed_turns", [1, 2])
@@ -199,6 +231,120 @@ def test_resume_after_committed_turns_matches_uninterrupted_control(
     assert len(cast(list[object], first_post["mainline"])) == 2
     second_mainline = cast(list[dict[str, object]], second_post["mainline"])
     assert second_mainline[-1]["rejected_cards"] == [{"rank": 13, "suit": "clubs"}]
+
+
+def test_retry_exhaustion_resume_preserves_fallback_and_attempt_accounting(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """A committed retry-exhaustion Turn resumes as the same terminal trajectory."""
+    control_root = tmp_path / "fallback-control"
+    control_root.mkdir()
+    monkeypatch.chdir(control_root)
+    control_startup, _control_config, _control_path = _configure_retry_exhaustion_run(
+        control_root
+    )
+    control_state = _initialize_fresh_state(control_startup)
+    assert control_state.run_store is not None
+    control_scientist = FakeLLMClient(
+        [TruncationError("truncated")] * 6,
+    )
+    monkeypatch.setattr(
+        runner,
+        "_create_round_clients",
+        lambda _config, _player_name: (FakeLLMClient(), control_scientist),
+    )
+    evaluation_orchestrator._run_evaluation_round(control_state, 1)
+    control_record = control_state.run_store.read_completed_round(1)
+    control_export = json.loads(control_state.run_store.export_path.read_text())
+    control_derived = cast(dict[str, object], control_export["derived"])
+    control_round_derived = cast(
+        list[dict[str, object]],
+        control_derived["rounds"],
+    )[0]
+    assert control_round_derived["usage"] == {
+        "model_attempt_count": 6,
+        "provider_call_count": 6,
+        "prompt_tokens": 600,
+        "output_tokens": 300,
+        "reasoning_tokens": 180,
+        "answer_tokens": 120,
+        "duration_seconds": pytest.approx(0.6),
+        "throughput_tokens_per_second": pytest.approx(500.0),
+        "cost": {"usd": None, "pricing_version": None},
+    }
+
+    interrupted_root = tmp_path / "fallback-interrupted"
+    interrupted_root.mkdir()
+    monkeypatch.chdir(interrupted_root)
+    interrupted_startup, _interrupted_config, interrupted_config_path = (
+        _configure_retry_exhaustion_run(interrupted_root)
+    )
+    interrupted_state = _initialize_fresh_state(interrupted_startup)
+    interrupted_store = interrupted_state.run_store
+    assert interrupted_store is not None
+    interrupted_scientist = FakeLLMClient(
+        [TruncationError("truncated")] * 3,
+    )
+    monkeypatch.setattr(
+        runner,
+        "_create_round_clients",
+        lambda _config, _player_name: (FakeLLMClient(), interrupted_scientist),
+    )
+    commit_completed_turn = interrupted_store.commit_completed_turn
+
+    def interrupt_after_fallback(
+        runtime: RoundRuntime,
+        turns: list[TurnRecord],
+    ) -> None:
+        commit_completed_turn(runtime, turns)
+        raise _TurnBoundaryInterruptionError("stopped after fallback Turn commit")
+
+    monkeypatch.setattr(
+        interrupted_store,
+        "commit_completed_turn",
+        interrupt_after_fallback,
+    )
+    with pytest.raises(
+        _TurnBoundaryInterruptionError,
+        match="stopped after fallback Turn commit",
+    ):
+        evaluation_orchestrator._run_evaluation_round(interrupted_state, 1)
+
+    active = interrupted_store.read_active_round(1)
+    assert active is not None
+    active_turns = cast(list[dict[str, object]], active.record["turns"])
+    attempts = cast(list[dict[str, object]], active_turns[0]["model_attempts"])
+    assert len(attempts) == 3
+    assert [attempt["attempt_number"] for attempt in attempts] == [1, 2, 3]
+    assert len({cast(str, attempt["prompt"]) for attempt in attempts}) == 2
+    decision = cast(dict[str, object], active_turns[0]["final_decision"])
+    assert decision["origin"] == "fallback"
+    assert decision["cause"] == "retry_exhausted"
+
+    resumed = _resume_in_fresh_process(
+        interrupted_root,
+        interrupted_store.run_folder,
+        interrupted_config_path,
+        [],
+        truncation_count=3,
+    )
+
+    resumed_record = cast(dict[str, object], resumed["record"])
+    assert _scientific_round_facts(resumed_record) == _scientific_round_facts(
+        control_record
+    )
+    resumed_turns = cast(list[dict[str, object]], resumed_record["turns"])
+    assert len(resumed_turns) == 2
+    second_attempts = cast(
+        list[dict[str, object]],
+        resumed_turns[1]["model_attempts"],
+    )
+    assert len(second_attempts) == 3
+    second_decision = cast(dict[str, object], resumed_turns[1]["final_decision"])
+    assert second_decision["origin"] == "fallback"
+    assert second_decision["cause"] == "retry_exhausted"
+    assert resumed["derived"] == control_derived
 
 
 def test_failure_before_turn_commit_repeats_turn_without_advancing_checkpoint(

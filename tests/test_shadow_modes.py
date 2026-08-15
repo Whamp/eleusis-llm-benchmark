@@ -64,19 +64,19 @@ def _make_config(
 
 
 def _fake_client_with_plays(n_turns: int, confidence: int = 8) -> FakeLLMClient:
-    """Create a FakeLLMClient that plays cards with high confidence, never guessing."""
-    # We'll generate enough responses. The actual card played doesn't matter
-    # since the game engine handles acceptance logic.
-    responses = []
-    for _ in range(n_turns):
-        # Use a placeholder card — LLMScientist.get_action will pick from hand
-        resp = make_action_response(
-            "2H",  # placeholder, will be adjusted by scientist
-            tentative_rule="Only even ranks",
-            confidence_level=confidence,
-            guess_rule=False,
+    """Create a client with valid cards from the fixed seeded hand sequence."""
+    scripted_cards = ["2♥", "8♦", "A♠"]
+    responses = [
+        json.dumps(
+            make_action_response(
+                card,
+                tentative_rule="Only even ranks",
+                confidence_level=confidence,
+                guess_rule=False,
+            )
         )
-        responses.append(json.dumps(resp))
+        for card in scripted_cards[:n_turns]
+    ]
     return FakeLLMClient(responses)
 
 

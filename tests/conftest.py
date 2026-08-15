@@ -17,6 +17,7 @@ from eleusis.llm.base import (
     LLMCallMetrics,
     LLMMessage,
     LLMResponseEnvelope,
+    TruncationError,
 )
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
@@ -38,6 +39,7 @@ class FakeLLMClient(BaseLLMClient):
         super().__init__(model_name="fake-model", role="test")
         self.responses = list(responses or [])
         self.prompts_seen: list[str] = []
+        self.raw_completion_available = True
         self._call_count = 0
 
     @property
@@ -75,18 +77,32 @@ class FakeLLMClient(BaseLLMClient):
     def generate(
         self, prompt: str, xml_tag: str | None = None, return_dict: bool = False
     ) -> ActionResponse:
-        """Return the next scripted response or raise the next scripted error."""
+        """Return the next scripted response while preserving observable call facts."""
+        del xml_tag
         self.prompts_seen.append(prompt)
+        self.last_raw_completion = None
         if not self.responses:
             raise RuntimeError("FakeLLMClient: no more scripted responses")
         resp = self.responses.pop(0)
         self._call_count += 1
 
-        # Allow raising exceptions from scripts
         if isinstance(resp, Exception):
+            if isinstance(resp, TruncationError):
+                self._append_call_metric("length")
             raise resp
 
-        # Record a minimal generate metric
+        if self.raw_completion_available:
+            self.last_raw_completion = (
+                resp if isinstance(resp, str) else json.dumps(resp, sort_keys=True)
+            )
+        self._append_call_metric("stop")
+        if return_dict and isinstance(resp, str):
+            parsed_response = json.loads(resp)
+            if not isinstance(parsed_response, dict):
+                raise TypeError("FakeLLMClient JSON response must decode to an object")
+            result: ActionResponse = parsed_response
+        else:
+            result = resp
         self.generate_metrics.append(
             GenerateMetrics(
                 total_calls=1,
@@ -99,13 +115,26 @@ class FakeLLMClient(BaseLLMClient):
                 success=True,
             )
         )
+        return result
 
-        if return_dict and isinstance(resp, str):
-            parsed_response = json.loads(resp)
-            if not isinstance(parsed_response, dict):
-                raise TypeError("FakeLLMClient JSON response must decode to an object")
-            return parsed_response
-        return resp
+    def _append_call_metric(self, finish_reason: str) -> None:
+        """Record one provider call exposed by the scripted client boundary."""
+        self.call_metrics.append(
+            LLMCallMetrics(
+                model_name=self.model_name,
+                role=self.role,
+                prompt_tokens=100,
+                output_tokens=50,
+                reasoning_tokens=30,
+                answer_tokens=20,
+                duration_seconds=0.1,
+                throughput_tokens_per_sec=500.0,
+                finish_reason=finish_reason,
+                has_reasoning=True,
+                timestamp=float(self._call_count),
+                provider=self.provider_name,
+            )
+        )
 
     def reset_usage_stats(self) -> None:
         """Verify reset usage stats."""
@@ -113,8 +142,8 @@ class FakeLLMClient(BaseLLMClient):
         self.generate_metrics.clear()
 
     def get_usage_stats(self) -> dict[str, object]:
-        """Return the number of scripted calls consumed."""
-        return {"total_calls": self._call_count}
+        """Return provider-neutral usage restored by production continuation code."""
+        return super().get_usage_stats()
 
 
 def make_action_response(card_str: str, **overrides: object) -> dict[str, object]:

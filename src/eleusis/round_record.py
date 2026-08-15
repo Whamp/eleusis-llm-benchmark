@@ -50,21 +50,57 @@ class _VisibleStateRecord(_StrictRoundRecordModel):
     failed_rule_guesses: list[dict[str, str]]
 
 
-class _ModelAttemptRecord(_StrictRoundRecordModel):
-    attempt_number: int = Field(ge=1)
-    prompt: str
-    structured_completion: dict[str, JsonValue]
-    interpretation: Literal["usable_action"]
-    provider: str
-    model: str
+class _TokenMetricsRecord(_StrictRoundRecordModel):
+    prompt_tokens: int = Field(ge=0)
     output_tokens: int = Field(ge=0)
     reasoning_tokens: int = Field(ge=0)
     answer_tokens: int = Field(ge=0)
 
 
-class _FinalDecisionRecord(_StrictRoundRecordModel):
-    origin: Literal["model_attempt", "fallback"]
+class _ProviderCallRecord(_StrictRoundRecordModel):
+    call_number: int = Field(ge=1)
+    provider: str
+    model: str
+    timestamp: float
+    duration_seconds: float = Field(ge=0)
+    finish_reason: str
+    is_continuation: bool
+    continuation_depth: int = Field(ge=0)
+    token_metrics: _TokenMetricsRecord
+
+
+class _ModelAttemptRecord(_StrictRoundRecordModel):
+    attempt_number: int = Field(ge=1)
+    prompt: str
+    raw_completion: str | None
+    structured_completion: dict[str, JsonValue] | None
+    interpretation: Literal[
+        "usable_action",
+        "card_parse_error",
+        "truncated",
+        "structured_response_parse_error",
+        "provider_error",
+    ]
+    retry_cause: str | None
+    started_at: float
+    duration_seconds: float = Field(ge=0)
+    provider: str
+    model: str
+    finish_reason: str | None
+    token_metrics: _TokenMetricsRecord
+    provider_calls: list[_ProviderCallRecord]
+
+
+class _ModelAttemptDecisionRecord(_StrictRoundRecordModel):
+    origin: Literal["model_attempt"]
     selected_card: _CardRecord
+    model_attempt_number: int = Field(ge=1)
+
+
+class _FallbackDecisionRecord(_StrictRoundRecordModel):
+    origin: Literal["fallback"]
+    selected_card: _CardRecord
+    cause: Literal["retry_exhausted", "action_error_boundary"]
 
 
 class _CardOutcomeRecord(_StrictRoundRecordModel):
@@ -76,10 +112,39 @@ class _RoundTurnRecord(_StrictRoundRecordModel):
     turn_number: int = Field(ge=1)
     pre_decision_state: _VisibleStateRecord
     model_attempts: list[_ModelAttemptRecord]
-    final_decision: _FinalDecisionRecord
+    final_decision: _ModelAttemptDecisionRecord | _FallbackDecisionRecord = Field(
+        discriminator="origin"
+    )
     card_outcome: _CardOutcomeRecord
     post_card_state: _VisibleStateRecord
     guess_attempt: JsonValue | None
+
+    @model_validator(mode="after")
+    def _validate_model_attempt_lifecycle(self) -> _RoundTurnRecord:
+        attempt_numbers = [attempt.attempt_number for attempt in self.model_attempts]
+        if attempt_numbers != list(range(1, len(self.model_attempts) + 1)):
+            raise ValueError("Model Attempt numbers must be contiguous from one")
+        for attempt in self.model_attempts:
+            call_numbers = [call.call_number for call in attempt.provider_calls]
+            if call_numbers != list(range(1, len(call_numbers) + 1)):
+                raise ValueError("Provider Call numbers must be contiguous from one")
+        usable_attempts = [
+            attempt
+            for attempt in self.model_attempts
+            if attempt.interpretation == "usable_action"
+        ]
+        if self.final_decision.origin == "fallback":
+            if usable_attempts:
+                raise ValueError(
+                    "Fallback Decision cannot follow a usable Model Attempt"
+                )
+            return self
+        if not usable_attempts or (
+            usable_attempts[-1].attempt_number
+            != self.final_decision.model_attempt_number
+        ):
+            raise ValueError("Model Attempt Decision must identify the usable attempt")
+        return self
 
 
 class _SecretRuleRecord(_StrictRoundRecordModel):
@@ -311,27 +376,31 @@ def _validate_board_transition(
         )
 
 
-def _model_attempt(
-    runtime: RoundRuntime,
+def _final_decision(
     turn_record: TurnRecord,
+    selected_card: Mapping[str, object],
 ) -> dict[str, object]:
-    """Build the successful model attempt visible at the current tracer seam."""
-    prompt = runtime.scientist.last_prompt
-    if prompt is None:
-        raise RoundRecordValidationError(
-            "Round Record transition invalid: successful Model Attempt has no prompt"
-        )
-    response = turn_record["llm_response"]
+    """Build an explicit model-backed or deterministic Fallback Decision."""
+    model_attempts = turn_record.get("model_attempts", [])
+    usable_attempts = [
+        attempt
+        for attempt in model_attempts
+        if attempt["interpretation"] == "usable_action"
+    ]
+    if usable_attempts:
+        return {
+            "origin": "model_attempt",
+            "selected_card": dict(selected_card),
+            "model_attempt_number": usable_attempts[-1]["attempt_number"],
+        }
     return {
-        "attempt_number": turn_record["retry_count"] + 1,
-        "prompt": prompt,
-        "structured_completion": dict(response),
-        "interpretation": "usable_action",
-        "provider": runtime.scientist_client.provider_name,
-        "model": runtime.scientist_client.model_name,
-        "output_tokens": turn_record["tokens"]["output_tokens"],
-        "reasoning_tokens": turn_record["tokens"]["reasoning_tokens"],
-        "answer_tokens": turn_record["tokens"]["answer_tokens"],
+        "origin": "fallback",
+        "selected_card": dict(selected_card),
+        "cause": (
+            "action_error_boundary"
+            if turn_record["error"] is not None
+            else "retry_exhausted"
+        ),
     }
 
 
@@ -431,16 +500,11 @@ def append_round_record_turn(
         {
             "turn_number": expected_turn,
             "pre_decision_state": pre_state,
-            "model_attempts": [_model_attempt(runtime, turn_record)],
-            "final_decision": {
-                "origin": (
-                    "model_attempt"
-                    if turn_record["error"] is None
-                    and bool(turn_record["llm_response"])
-                    else "fallback"
-                ),
-                "selected_card": selected,
-            },
+            "model_attempts": [
+                dict(model_attempt)
+                for model_attempt in turn_record.get("model_attempts", [])
+            ],
+            "final_decision": _final_decision(turn_record, selected),
             "card_outcome": {
                 "accepted": accepted_value,
                 "replacement_draw": replacement_draw,

@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import random
+import time
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, cast
 
@@ -15,9 +17,10 @@ from eleusis.llm.base import TruncationError
 __all__ = ["LLMScientist"]
 
 if TYPE_CHECKING:
+    from eleusis.evaluation_results import ModelAttemptRecord, ProviderCallRecord
     from eleusis.game.engine import Action, GameEngine
     from eleusis.game.state import GameState
-    from eleusis.llm.base import BaseLLMClient
+    from eleusis.llm.base import BaseLLMClient, LLMCallMetrics
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +88,7 @@ class LLMScientist:
         # Retry tracking (reset each turn)
         self.last_retry_count: int = 0
         self.last_retry_causes: list[RetryCause] = []
+        self.last_model_attempts: list[ModelAttemptRecord] = []
 
     def snapshot_scientist_continuation(self) -> dict[str, object]:
         """Capture prompt history and deterministic fallback RNG continuation."""
@@ -130,6 +134,83 @@ class LLMScientist:
         """Get an action for the current game state."""
         return self._select_move(game_state)
 
+    @staticmethod
+    def _provider_call_record(
+        metric: LLMCallMetrics,
+        call_number: int,
+    ) -> ProviderCallRecord:
+        """Project one observable client metric into Provider Call evidence."""
+        return {
+            "call_number": call_number,
+            "provider": metric.provider,
+            "model": metric.model_name,
+            "timestamp": metric.timestamp,
+            "duration_seconds": metric.duration_seconds,
+            "finish_reason": metric.finish_reason,
+            "is_continuation": metric.is_continuation,
+            "continuation_depth": metric.continuation_depth,
+            "token_metrics": {
+                "prompt_tokens": metric.prompt_tokens,
+                "output_tokens": metric.output_tokens,
+                "reasoning_tokens": metric.reasoning_tokens,
+                "answer_tokens": metric.answer_tokens,
+            },
+        }
+
+    def _record_model_attempt(
+        self,
+        *,
+        attempt_number: int,
+        prompt: str,
+        interpretation: str,
+        retry_cause: str | None,
+        started_at: float,
+        call_metrics_before: int,
+    ) -> None:
+        """Retain one complete prompt submission as Model Attempt evidence."""
+        provider_calls = [
+            self._provider_call_record(metric, call_number)
+            for call_number, metric in enumerate(
+                self.llm_client.call_metrics[call_metrics_before:],
+                start=1,
+            )
+        ]
+        token_metrics = {
+            name: sum(call["token_metrics"][name] for call in provider_calls)
+            for name in (
+                "prompt_tokens",
+                "output_tokens",
+                "reasoning_tokens",
+                "answer_tokens",
+            )
+        }
+        self.last_model_attempts.append(
+            cast(
+                "ModelAttemptRecord",
+                {
+                    "attempt_number": attempt_number,
+                    "prompt": prompt,
+                    "raw_completion": self.llm_client.last_raw_completion,
+                    "structured_completion": (
+                        dict(self.last_action_response)
+                        if self.last_action_response is not None
+                        else None
+                    ),
+                    "interpretation": interpretation,
+                    "retry_cause": retry_cause,
+                    "started_at": started_at,
+                    "duration_seconds": max(0.0, time.time() - started_at),
+                    "provider": self.llm_client.provider_name,
+                    "model": self.llm_client.model_name,
+                    "finish_reason": (
+                        provider_calls[-1]["finish_reason"] if provider_calls else None
+                    ),
+                    "token_metrics": token_metrics,
+                    "provider_calls": provider_calls,
+                },
+            )
+        )
+
     def _select_move(self, game_state: GameState) -> Action:
         """Select a card to play using LLM retries and a random fallback."""
         from eleusis.game.engine import PlayCardAction
@@ -137,6 +218,7 @@ class LLMScientist:
         self.last_action_response = None
         self.last_retry_count = 0
         self.last_retry_causes = []
+        self.last_model_attempts = []
         if self.engine is None:
             raise RuntimeError(
                 "LLMScientist requires a GameEngine before selecting a move"
@@ -149,34 +231,69 @@ class LLMScientist:
 
         last_cause: str | None = None
         for attempt in range(self.max_retries):
+            attempt_number = attempt + 1
             prompt = self._retry_prompt(base_prompt, attempt, last_cause)
             self.last_prompt = prompt
+            self.last_action_response = None
+            self.llm_client.last_raw_completion = None
+            started_at = time.time()
+            call_metrics_before = len(self.llm_client.call_metrics)
             try:
                 card, card_value = self._request_action_card(prompt, hand_cards)
                 if card:
+                    self._record_model_attempt(
+                        attempt_number=attempt_number,
+                        prompt=prompt,
+                        interpretation="usable_action",
+                        retry_cause=None,
+                        started_at=started_at,
+                        call_metrics_before=call_metrics_before,
+                    )
                     return PlayCardAction(card)
                 cause = "card_parse_error"
+                interpretation = "card_parse_error"
                 logger.warning(
-                    f"{self.name} attempt {attempt + 1}: {cause} - card='{card_value}'"
+                    f"{self.name} attempt {attempt_number}: {cause} - "
+                    f"card='{card_value}'"
                 )
             except TruncationError as error:
                 cause = "max_token_reached"
-                logger.warning(f"{self.name} attempt {attempt + 1}: {cause} - {error}")
-            # The player retry boundary records arbitrary provider/parser failures.
+                interpretation = "truncated"
+                logger.warning(
+                    f"{self.name} attempt {attempt_number}: {cause} - {error}"
+                )
+            except (json.JSONDecodeError, TypeError) as error:
+                cause = "structured_response_parse_error"
+                interpretation = "structured_response_parse_error"
+                logger.warning(
+                    f"{self.name} attempt {attempt_number}: {cause} - "
+                    f"{type(error).__name__}: {error}"
+                )
+            # The player retry boundary records arbitrary provider failures.
             except Exception as error:  # ruff: ignore[blind-except]
                 cause = "other_error"
+                interpretation = "provider_error"
                 logger.warning(
-                    f"{self.name} attempt {attempt + 1}: {cause} -"
+                    f"{self.name} attempt {attempt_number}: {cause} -"
                     f" {type(error).__name__}: {error}"
                 )
+            self._record_model_attempt(
+                attempt_number=attempt_number,
+                prompt=prompt,
+                interpretation=interpretation,
+                retry_cause=cause,
+                started_at=started_at,
+                call_metrics_before=call_metrics_before,
+            )
             last_cause = cause
-            self.last_retry_count = attempt + 1
-            self.last_retry_causes.append({"attempt": attempt + 1, "cause": cause})
+            self.last_retry_count = attempt_number
+            self.last_retry_causes.append({"attempt": attempt_number, "cause": cause})
 
         logger.warning(
             f"{self.name} using random fallback after {self.max_retries} failed"
             " attempts"
         )
+        self.last_action_response = None
         return PlayCardAction(self.rng.choice(hand_cards))
 
     def _build_action_prompt(
