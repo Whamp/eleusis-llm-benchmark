@@ -18,9 +18,15 @@ import copy
 import json
 import logging
 import sys
+from collections.abc import Mapping, Sequence
 from pathlib import Path
+from typing import cast
+
+from pydantic import JsonValue
 
 from eleusis.benchmark_config import BenchmarkConfig, parse_benchmark_config
+from eleusis.benchmark_run_manifest import capture_source_provenance
+from eleusis.benchmark_run_store import BenchmarkRunStore
 from eleusis.evaluation_results import (
     SavedRound,
     TurnRecord,
@@ -30,6 +36,7 @@ from eleusis.game.cards import Card, Suit
 from eleusis.game.engine import Rule
 from eleusis.game.validator import RuleValidator
 from eleusis.llm import BaseLLMClient, create_client_from_config
+from eleusis.shadow_verdict import evaluate_shadow_guess
 
 logger = logging.getLogger(__name__)
 
@@ -129,6 +136,74 @@ def evaluate_shadow_turns(
     return augmented
 
 
+def _has_matching_shadow_verdict(
+    verdicts: list[dict[str, object]],
+    *,
+    proposal_id: str,
+    judge_identity: Mapping[str, JsonValue],
+    behavior_fingerprint: str,
+    settings: Mapping[str, object],
+) -> bool:
+    """Check whether the same judge contract already evaluated one proposal."""
+    return any(
+        verdict["proposal_id"] == proposal_id
+        and verdict["judge_identity"] == dict(judge_identity)
+        and verdict["behavior_fingerprint"] == behavior_fingerprint
+        and verdict["settings"] == dict(settings)
+        for verdict in verdicts
+    )
+
+
+def evaluate_and_store_shadow_verdicts(
+    run_store: BenchmarkRunStore,
+    round_records: Sequence[Mapping[str, object]],
+    rule_compiler_client: BaseLLMClient,
+    *,
+    judge_identity: Mapping[str, JsonValue],
+    behavior_fingerprint: str,
+    settings: Mapping[str, object],
+) -> list[dict[str, object]]:
+    """Evaluate structured proposals and append only new Shadow Verdict sidecars."""
+    stored_verdicts = run_store.read_shadow_verdicts()
+    existing_verdict_ids = {
+        cast(str, verdict["verdict_id"]) for verdict in stored_verdicts
+    }
+    added_verdicts: list[dict[str, object]] = []
+    for record in round_records:
+        turns = cast(list[Mapping[str, object]], record["turns"])
+        for turn in turns:
+            proposal = turn.get("guess_attempt")
+            if not isinstance(proposal, Mapping) or proposal.get("kind") != "shadow":
+                continue
+            proposal_id = proposal.get("proposal_id")
+            if not isinstance(proposal_id, str):
+                continue
+            if _has_matching_shadow_verdict(
+                stored_verdicts,
+                proposal_id=proposal_id,
+                judge_identity=judge_identity,
+                behavior_fingerprint=behavior_fingerprint,
+                settings=settings,
+            ):
+                continue
+            verdict = evaluate_shadow_guess(
+                record,
+                proposal_id,
+                rule_compiler_client,
+                judge_identity=judge_identity,
+                behavior_fingerprint=behavior_fingerprint,
+                settings=settings,
+            )
+            verdict_id = cast(str, verdict["verdict_id"])
+            if verdict_id in existing_verdict_ids:
+                continue
+            run_store.add_shadow_verdict(verdict)
+            existing_verdict_ids.add(verdict_id)
+            stored_verdicts.append(verdict)
+            added_verdicts.append(verdict)
+    return added_verdicts
+
+
 def _evaluate_round(
     round_data: SavedRound,
     rule_compiler_client: BaseLLMClient,
@@ -195,8 +270,53 @@ def _evaluate_round(
     return result
 
 
+def _shadow_verdict_settings(config: BenchmarkConfig) -> dict[str, object]:
+    """Resolve the existing simulation settings for offline Shadow Verdicts."""
+    rule_compiler = config["rule_compiler"]
+    simulation_seed = rule_compiler.get("simulation_seed")
+    compiler_max_retries = rule_compiler.get("max_retries")
+    return {
+        "num_simulations": rule_compiler.get("num_simulations", 100),
+        "turns_per_simulation": rule_compiler.get("turns_per_simulation", 40),
+        "simulation_seed": 42 if simulation_seed is None else simulation_seed,
+        "compiler_max_retries": (
+            2 if compiler_max_retries is None else compiler_max_retries
+        ),
+    }
+
+
+def _evaluate_authoritative_results(
+    results_path: Path,
+    config: BenchmarkConfig,
+    rule_compiler_client: BaseLLMClient,
+) -> Path:
+    """Evaluate structured Round Records and update their authoritative sidecars."""
+    compiler = config["rule_compiler"]
+    provenance = capture_source_provenance()
+    fingerprint = provenance.get("fingerprint")
+    if not isinstance(fingerprint, str):
+        raise TypeError(
+            "Authoritative Shadow evaluation rejected: behavior fingerprint missing"
+        )
+    run_store = BenchmarkRunStore(results_path.parent)
+    run_store.ensure_current_export()
+    added = evaluate_and_store_shadow_verdicts(
+        run_store,
+        run_store.read_completed_rounds(),
+        rule_compiler_client,
+        judge_identity={
+            "provider": compiler["provider"],
+            "model_id": compiler["model_id"],
+        },
+        behavior_fingerprint=fingerprint,
+        settings=_shadow_verdict_settings(config),
+    )
+    logger.info("Stored %d new Shadow Verdict sidecar(s)", len(added))
+    return run_store.ensure_current_export()
+
+
 def main() -> None:
-    """Evaluate offline shadow guesses and write augmented results."""
+    """Evaluate offline Shadow Guesses as sidecars or legacy augmented JSON."""
     parser = argparse.ArgumentParser(
         description="Evaluate shadow guesses offline from saved benchmark results."
     )
@@ -224,7 +344,9 @@ def main() -> None:
         sys.exit(1)
 
     with results_path.open() as results_file:
-        results = parse_evaluation_results(json.load(results_file))
+        raw_results = json.load(results_file)
+    if not isinstance(raw_results, dict):
+        raise TypeError("Shadow evaluation results document must be an object")
 
     # Load config for rule compiler settings
     import yaml
@@ -247,6 +369,21 @@ def main() -> None:
         role="rule_compiler_shadow",
         seed=llm_seed,
     )
+
+    if "completed_round_records" in raw_results:
+        authoritative_export = _evaluate_authoritative_results(
+            results_path,
+            config,
+            rule_compiler_client,
+        )
+        output_path = Path(args.output) if args.output else authoritative_export
+        if output_path != authoritative_export:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text(authoritative_export.read_text())
+        logger.info(f"Shadow Verdict export written to: {output_path}")
+        return
+
+    results = parse_evaluation_results(raw_results)
 
     # Process each round
     rounds = results.get("rounds", [])
