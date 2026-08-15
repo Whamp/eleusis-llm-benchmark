@@ -62,6 +62,18 @@ def analyze_folder(folder: Path) -> None:
     out(f"Loaded {len(results)} evaluation runs:")
     for name in folder_names:
         out(f"  - {name}")
+    compatibility_views = [
+        result.get("_analysis_compatibility", {}) for result in results
+    ]
+    strict_count = sum(
+        view.get("source_format") == "strict_round_record_export"
+        for view in compatibility_views
+    )
+    partial_count = sum(view.get("partial") is True for view in compatibility_views)
+    out(
+        "Artifact formats: "
+        f"{strict_count} strict Round Record, {partial_count} partial historical"
+    )
 
     rules_lib = build_rules_lookup(results)
     out(f"\nExtracted {len(rules_lib)} unique rules from results files")

@@ -148,8 +148,9 @@ seed, then starts the exact next Turn without repeating completed work.
 **Resume:** Point `--resume` at each worker's result folder. When SQLite is
 present, resume uses it instead of `results.json` and verifies the stored model,
 compiler, prompts, settings, schedule, seeds, and source fingerprint. A changed
-scientific input requires a new Benchmark Run. Historical JSON-only folders keep
-the legacy completed-Round resume path.
+scientific input requires a new Benchmark Run. Historical JSON-only folders remain
+analysis-readable but cannot resume; start a new Run instead. The command never
+creates SQLite or silently imports historical JSON.
 
 ```bash
 # Find the result folders from the interrupted run
@@ -187,7 +188,11 @@ The models file contains one model key per line (lines starting with `#` are ign
 uv run python scripts/analyze_results.py results/<folder>
 ```
 
-Generates charts and tables: basic metrics comparison, complexity analysis, per-model reports, token usage, and more.
+Generates charts and tables: basic metrics comparison, complexity analysis,
+per-model reports, token usage, and more. Analysis prefers SQLite when a Run
+contains both artifacts. It reports strict Round Record inputs separately from
+partial historical JSON views and ignores stale imported aggregates when
+historical Turn facts allow recomputation.
 
 ### Status Reports (In-Progress Benchmarks)
 

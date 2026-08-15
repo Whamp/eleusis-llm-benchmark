@@ -1,0 +1,73 @@
+{
+  "timestamp": "20260403_070830",
+  "folder_name": "solo_evaluation_historical_complete",
+  "config": {
+    "player": "Historical Model",
+    "player_model": "historical-model",
+    "max_turns": 5,
+    "wrong_guess_penalty": 2,
+    "hand_size": 2,
+    "seed": 42
+  },
+  "rounds": [
+    {
+      "round_number": 1,
+      "rule_name": "even_ranks_only",
+      "batch_round_index": 0,
+      "rule_description": "Only even ranks.",
+      "rule_code": "return card.rank % 2 == 0",
+      "turn_count": 2,
+      "success": true,
+      "score": 4,
+      "floored_score": 4,
+      "no_stakes_score": 4,
+      "first_correct_turn": 2,
+      "failed_guesses": 0,
+      "game_over_reason": "correct_guess",
+      "wall_clock_seconds": 1.5,
+      "llm_usage": {
+        "player": {
+          "output_tokens": 12,
+          "reasoning_tokens": 5,
+          "answer_tokens": 7
+        }
+      },
+      "turns": [
+        {
+          "turn_number": 1,
+          "mainline_state": "4♠",
+          "hand": ["2♥", "3♣"],
+          "llm_response": {"confidence_level": 2, "guess_rule": false},
+          "action_result": {"accepted": true},
+          "guess_attempt": null,
+          "tokens": {"output_tokens": 5, "reasoning_tokens": 2, "answer_tokens": 3}
+        },
+        {
+          "turn_number": 2,
+          "mainline_state": "4♠ 2♥",
+          "hand": ["3♣", "6♦"],
+          "llm_response": {"confidence_level": 4, "guess_rule": true},
+          "action_result": {"accepted": false},
+          "guess_attempt": {"guess": "Only even ranks.", "correct": true, "shadow": false},
+          "tokens": {"output_tokens": 7, "reasoning_tokens": 3, "answer_tokens": 4}
+        }
+      ]
+    }
+  ],
+  "statistics": {
+    "total_score": 4,
+    "successful_rounds": 1,
+    "failed_rounds": 0,
+    "total_turns": 2,
+    "total_failed_guesses": 0
+  },
+  "checkpoint": {
+    "rules_library": [
+      {
+        "name": "even_ranks_only",
+        "description": "Only even ranks.",
+        "code": "return card.rank % 2 == 0"
+      }
+    ]
+  }
+}

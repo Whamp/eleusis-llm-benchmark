@@ -1,11 +1,14 @@
 """Data loading utilities for analysis module."""
 
-import json
 import logging
 from pathlib import Path
 
 import pandas as pd
 
+from .benchmark_run_artifact import (
+    HistoricalRunCompatibilityError,
+    read_analysis_run_artifact,
+)
 from .legacy_records import LegacyResults, RuleLookup
 from .utils import compute_counting_cutoff
 
@@ -21,14 +24,27 @@ def load_results(folder: Path) -> tuple[LegacyResults, list[str]]:
     folder_names = []
     for subfolder in sorted(folder.iterdir()):
         if subfolder.is_dir() and subfolder.name.startswith("solo_evaluation_"):
-            results_file = subfolder / "results.json"
-            if results_file.exists():
-                with open(results_file) as f:
-                    data = json.load(f)
-                    data["_folder"] = subfolder.name
-                    results.append(data)
-                    folder_names.append(subfolder.name)
-                    logger.info(f"Loaded: {subfolder.name}")
+            try:
+                artifact = read_analysis_run_artifact(subfolder)
+            except HistoricalRunCompatibilityError as error:
+                logger.warning("Skipped %s: %s", subfolder.name, error)
+                continue
+            data = artifact.analysis_document
+            if data is None:
+                logger.warning(
+                    "Skipped %s: compatibility policy produced no analysis view",
+                    subfolder.name,
+                )
+                continue
+            data["_folder"] = subfolder.name
+            results.append(data)
+            folder_names.append(subfolder.name)
+            logger.info(
+                "Loaded %s (%s%s)",
+                subfolder.name,
+                artifact.source_format,
+                ", partial" if artifact.is_partial else "",
+            )
     return results, folder_names
 
 

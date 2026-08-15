@@ -1,0 +1,315 @@
+"""Historical JSON compatibility and authoritative artifact selection."""
+
+from __future__ import annotations
+
+import json
+import logging
+import shutil
+from argparse import Namespace
+from pathlib import Path
+
+import pytest
+from pytest import LogCaptureFixture, MonkeyPatch
+
+from eleusis import evaluation_orchestrator, evaluation_startup, runner
+from eleusis.analysis.benchmark_run_artifact import read_analysis_run_artifact
+from eleusis.analysis.loader import load_results
+from eleusis.benchmark_run_store import (
+    BENCHMARK_RUN_DATABASE_NAME,
+    BenchmarkRunStore,
+)
+from eleusis.evaluation_startup import resolve_evaluation_startup
+from eleusis.evaluation_state import _initialize_fresh_state
+from scripts.status_report import load_worker_results
+from tests.conftest import FakeLLMClient, make_action_response
+from tests.test_benchmark_run_schedule import (
+    _configure_two_round_schedule,
+    _first_dealt_card,
+)
+from tests.test_resume import _make_checkpoint
+
+FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def _resume_args(run_folder: Path) -> Namespace:
+    """Build CLI arguments for one attempted historical Run resume."""
+    return Namespace(
+        config="config.yaml",
+        resume=str(run_folder),
+        model=None,
+        num_rules=None,
+        rule_index=None,
+        max_turns=None,
+        tag=None,
+        batch_round_offset=None,
+        suite=None,
+    )
+
+
+def test_json_only_run_resume_is_refused_without_creating_sqlite(
+    monkeypatch: MonkeyPatch,
+    caplog: LogCaptureFixture,
+    tmp_path: Path,
+) -> None:
+    """Refuse implicit legacy import before preflight or filesystem mutation."""
+    run_folder = tmp_path / "solo_evaluation_legacy"
+    run_folder.mkdir()
+    results_path = run_folder / "results.json"
+    results_path.write_text(json.dumps(_make_checkpoint()))
+    original_bytes = results_path.read_bytes()
+    preflight_models: list[str] = []
+    monkeypatch.setattr(
+        evaluation_startup,
+        "preflight_check",
+        lambda model: preflight_models.append(model),
+    )
+
+    with caplog.at_level(logging.ERROR):
+        startup = resolve_evaluation_startup(_resume_args(run_folder))
+
+    assert startup is None
+    assert preflight_models == []
+    assert results_path.read_bytes() == original_bytes
+    assert not (run_folder / BENCHMARK_RUN_DATABASE_NAME).exists()
+    assert "Historical JSON-only Benchmark Run cannot be resumed" in caplog.text
+    assert "Start a new Run; legacy import is not implemented" in caplog.text
+
+
+@pytest.mark.parametrize(
+    "fixture_name",
+    [
+        "historical_complete_results.json",
+        "historical_missing_optional_results.json",
+    ],
+)
+def test_historical_formats_load_as_explicit_partial_views_without_rewrite(
+    fixture_name: str,
+    tmp_path: Path,
+) -> None:
+    """Keep supported old result shapes readable without inventing strict facts."""
+    run_folder = tmp_path / "solo_evaluation_historical"
+    run_folder.mkdir()
+    results_path = run_folder / "results.json"
+    shutil.copyfile(FIXTURES / fixture_name, results_path)
+    original_bytes = results_path.read_bytes()
+
+    artifact = read_analysis_run_artifact(run_folder)
+
+    assert artifact.source_format == "historical_json"
+    assert artifact.artifact_source == "json"
+    assert artifact.is_partial is True
+    assert artifact.analysis_document is not None
+    assert "round_record.run_id" in artifact.unavailable_fields
+    assert "round_record.structured_states" in artifact.unavailable_fields
+    assert any(
+        diagnostic.code == "historical_round_record_partial"
+        for diagnostic in artifact.diagnostics
+    )
+    if fixture_name == "historical_missing_optional_results.json":
+        assert "rounds[0].wall_clock_seconds" in artifact.unavailable_fields
+        assert "rounds[0].turns[0].tokens" in artifact.unavailable_fields
+    assert results_path.read_bytes() == original_bytes
+    assert not (run_folder / BENCHMARK_RUN_DATABASE_NAME).exists()
+
+
+def test_invalid_historical_compact_state_is_diagnosed_without_reconstruction(
+    tmp_path: Path,
+) -> None:
+    """Expose malformed display state as unavailable instead of guessing a board."""
+    run_folder = tmp_path / "solo_evaluation_invalid"
+    run_folder.mkdir()
+    shutil.copyfile(
+        FIXTURES / "historical_invalid_compact_state_results.json",
+        run_folder / "results.json",
+    )
+
+    artifact = read_analysis_run_artifact(run_folder)
+
+    diagnostic = next(
+        item
+        for item in artifact.diagnostics
+        if item.code == "historical_compact_state_invalid"
+    )
+    assert diagnostic.path == "rounds[0].turns[0].mainline_state"
+    assert "rounds[0].turns[0].pre_decision_state" in artifact.unavailable_fields
+
+
+def test_historical_aggregates_are_recomputed_from_available_turn_facts(
+    tmp_path: Path,
+) -> None:
+    """Ignore stale imported scores and token totals when Turn facts suffice."""
+    run_folder = tmp_path / "solo_evaluation_stale"
+    run_folder.mkdir()
+    shutil.copyfile(
+        FIXTURES / "historical_stale_aggregates_results.json",
+        run_folder / "results.json",
+    )
+
+    artifact = read_analysis_run_artifact(run_folder)
+
+    assert artifact.analysis_document is not None
+    round_data = artifact.analysis_document["rounds"][0]
+    assert round_data["turn_count"] == 2
+    assert round_data["success"] is True
+    assert round_data["score"] == 4
+    assert round_data["floored_score"] == 4
+    assert round_data["first_correct_turn"] == 2
+    assert round_data["failed_guesses"] == 0
+    assert round_data["llm_usage"]["player"]["output_tokens"] == 12
+    assert artifact.analysis_document["statistics"]["total_score"] == 4
+    assert any(
+        diagnostic.code == "historical_derived_values_recomputed"
+        for diagnostic in artifact.diagnostics
+    )
+
+
+def test_existing_analysis_loader_marks_historical_views_as_partial(
+    tmp_path: Path,
+) -> None:
+    """Let current reports identify compatibility data without changing their API."""
+    run_folder = tmp_path / "solo_evaluation_historical_complete"
+    run_folder.mkdir()
+    shutil.copyfile(
+        FIXTURES / "historical_complete_results.json",
+        run_folder / "results.json",
+    )
+
+    results, folder_names = load_results(tmp_path)
+
+    assert folder_names == [run_folder.name]
+    assert len(results) == 1
+    compatibility = results[0]["_analysis_compatibility"]
+    assert compatibility["source_format"] == "historical_json"
+    assert compatibility["partial"] is True
+
+
+def _complete_one_strict_round(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> BenchmarkRunStore:
+    """Create one completed strict Round through production orchestration."""
+    monkeypatch.chdir(tmp_path)
+    startup, config, _config_path, rules = _configure_two_round_schedule(tmp_path)
+    startup.num_rules = 1
+    startup.num_rounds = 1
+    startup.config["game"].update({"num_rules": 1, "num_rounds": 1})
+    startup.game_config.update({"num_rules": 1, "num_rounds": 1})
+    state = _initialize_fresh_state(startup)
+    assert state.run_store is not None
+    scientist = FakeLLMClient(
+        [make_action_response(_first_dealt_card(config, rules[0]))]
+    )
+    monkeypatch.setattr(
+        runner,
+        "_create_round_clients",
+        lambda _config, _player_name: (FakeLLMClient(), scientist),
+    )
+    evaluation_orchestrator._run_evaluation_round(state, 1)
+    return state.run_store
+
+
+def test_sqlite_is_authoritative_when_the_coexisting_export_is_stale(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Read strict records from SQLite and report, but do not trust, stale JSON."""
+    run_store = _complete_one_strict_round(monkeypatch, tmp_path)
+    stale_export = json.loads(run_store.export_path.read_text())
+    stale_export["watermark"] = -1
+    run_store.export_path.write_text(json.dumps(stale_export))
+    stale_bytes = run_store.export_path.read_bytes()
+
+    artifact = read_analysis_run_artifact(run_store.run_folder)
+
+    assert artifact.artifact_source == "sqlite"
+    assert artifact.source_format == "strict_round_record_export"
+    assert artifact.is_partial is False
+    assert artifact.export_is_current is False
+    assert artifact.analysis_document is not None
+    assert len(artifact.analysis_document["rounds"]) == 1
+    assert artifact.analysis_document["_analysis_compatibility"] == {
+        "source_format": "strict_round_record_export",
+        "partial": False,
+        "artifact_source": "sqlite",
+        "export_is_current": False,
+        "unavailable_fields": [],
+        "diagnostics": [
+            {
+                "code": "strict_export_stale",
+                "path": "results.json.watermark",
+                "message": (
+                    "SQLite is authoritative; the coexisting JSON export is stale."
+                ),
+            }
+        ],
+    }
+    assert run_store.export_path.read_bytes() == stale_bytes
+    loaded, _folder_names = load_results(run_store.run_folder.parent)
+    assert loaded[0]["_analysis_compatibility"]["artifact_source"] == "sqlite"
+    assert loaded[0]["_analysis_compatibility"]["export_is_current"] is False
+    status_results = load_worker_results([run_store.run_folder])
+    assert len(status_results) == 1
+    assert status_results[0]["rounds"][0]["score"] == 0
+
+
+def test_portable_strict_export_loads_without_its_sqlite_database(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Decode known completed records through strict validation for interchange."""
+    run_store = _complete_one_strict_round(monkeypatch, tmp_path)
+    portable_folder = tmp_path / "portable" / "solo_evaluation_portable"
+    portable_folder.mkdir(parents=True)
+    shutil.copyfile(run_store.export_path, portable_folder / "results.json")
+
+    artifact = read_analysis_run_artifact(portable_folder)
+
+    assert artifact.artifact_source == "json"
+    assert artifact.source_format == "strict_round_record_export"
+    assert artifact.is_partial is False
+    assert artifact.export_is_current is None
+    assert artifact.analysis_document is not None
+    assert artifact.analysis_document["rounds"][0]["score"] == 0
+
+
+@pytest.mark.parametrize(
+    ("document", "diagnostic_code", "diagnostic_path"),
+    [
+        (
+            {"version": 99},
+            "unsupported_benchmark_run_export_version",
+            "version",
+        ),
+        (
+            {
+                "version": 1,
+                "run": {},
+                "completed_round_records": [{"version": 99}],
+                "shadow_verdicts": [],
+                "derived": {"rounds": [], "summary": {}},
+                "watermark": 1,
+            },
+            "unsupported_completed_round_record_version",
+            "completed_round_records[0].version",
+        ),
+    ],
+)
+def test_unknown_completed_record_and_export_versions_have_explicit_policy(
+    document: dict[str, object],
+    diagnostic_code: str,
+    diagnostic_path: str,
+    tmp_path: Path,
+) -> None:
+    """Return diagnostics for unknown historical versions without lax validation."""
+    run_folder = tmp_path / "solo_evaluation_unknown_version"
+    run_folder.mkdir()
+    (run_folder / "results.json").write_text(json.dumps(document))
+
+    artifact = read_analysis_run_artifact(run_folder)
+
+    assert artifact.is_partial is True
+    assert artifact.analysis_document is None
+    assert any(
+        item.code == diagnostic_code and item.path == diagnostic_path
+        for item in artifact.diagnostics
+    )
