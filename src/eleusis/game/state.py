@@ -1,7 +1,11 @@
 """Game state management for Eleusis."""
 
+from __future__ import annotations
+
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass, field
+from typing import cast
 
 from eleusis.game.cards import Card, Deck, Hand
 
@@ -167,3 +171,76 @@ class GameState:
             "game_over": self.game_over,
             "winner": self.winner,
         }
+
+    def snapshot_game_continuation(self) -> dict[str, object]:
+        """Capture all visible and hidden mutable game state for continuation."""
+        return {
+            "mainline": [
+                card.to_canonical_card_data() for card in self.mainline.get_all()
+            ],
+            "sidelines": [
+                {
+                    "mainline_index": index,
+                    "cards": [
+                        card.to_canonical_card_data() for card in sideline.get_cards()
+                    ],
+                }
+                for index, sideline in sorted(self.sidelines.items())
+            ],
+            "deck": self.deck.snapshot_deck_cards(),
+            "player": {
+                "name": self._player.name,
+                "hand": self._player.hand.snapshot_hand_cards(),
+                "score": self._player.score,
+            },
+            "failed_rule_guesses": [dict(guess) for guess in self.failed_rule_guesses],
+            "turn_number": self.turn_number,
+            "game_over": self.game_over,
+            "winner": self.winner,
+        }
+
+    @classmethod
+    def restore_game_continuation(
+        cls,
+        payload: Mapping[str, object],
+    ) -> GameState:
+        """Restore fresh game-state objects from validated continuation data."""
+        player_payload = cast(Mapping[str, object], payload["player"])
+        player_name = cast(str, player_payload["name"])
+        state = cls(player_name)
+        state.mainline = Mainline()
+        mainline_payload = cast(list[Mapping[str, object]], payload["mainline"])
+        for card_payload in mainline_payload:
+            state.mainline.add_card(Card.from_canonical_card_data(card_payload))
+
+        state.sidelines = {}
+        sidelines_payload = cast(list[Mapping[str, object]], payload["sidelines"])
+        for sideline_payload in sidelines_payload:
+            index = cast(int, sideline_payload["mainline_index"])
+            sideline = Sideline(index)
+            card_payloads = cast(
+                list[Mapping[str, object]],
+                sideline_payload["cards"],
+            )
+            for card_payload in card_payloads:
+                sideline.add_card(Card.from_canonical_card_data(card_payload))
+            state.sidelines[index] = sideline
+
+        state.deck = Deck.restore_deck_cards(
+            cast(list[Mapping[str, object]], payload["deck"])
+        )
+        state._player.hand = Hand.restore_hand_cards(
+            cast(list[Mapping[str, object]], player_payload["hand"])
+        )
+        state._player.score = cast(int, player_payload["score"])
+        state.failed_rule_guesses = [
+            dict(guess)
+            for guess in cast(
+                list[Mapping[str, str]],
+                payload["failed_rule_guesses"],
+            )
+        ]
+        state.turn_number = cast(int, payload["turn_number"])
+        state.game_over = cast(bool, payload["game_over"])
+        state.winner = cast(str | None, payload["winner"])
+        return state

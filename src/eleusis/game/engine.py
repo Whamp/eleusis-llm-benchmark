@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import textwrap
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from types import CodeType, FunctionType
 from typing import TYPE_CHECKING, cast
@@ -160,6 +160,54 @@ class GameEngine:
         self.turns_per_simulation = turns_per_simulation
         self.simulation_seed = simulation_seed
         self.compiler_max_retries = compiler_max_retries
+
+    def snapshot_engine_continuation(self) -> dict[str, object]:
+        """Capture mutable counters and fixed settings needed to continue a Round."""
+        validator_cache = (
+            self.rule_validator.snapshot_validator_cache()
+            if self.rule_validator is not None
+            else []
+        )
+        return {
+            "rule_guessed": self.rule_guessed,
+            "winning_turn": self.winning_turn,
+            "failed_guess_count": self.failed_guess_count,
+            "hand_size": self.hand_size,
+            "wrong_guess_penalty": self.wrong_guess_penalty,
+            "num_simulations": self.num_simulations,
+            "turns_per_simulation": self.turns_per_simulation,
+            "simulation_seed": self.simulation_seed,
+            "compiler_max_retries": self.compiler_max_retries,
+            "validator_cache": validator_cache,
+        }
+
+    @classmethod
+    def restore_engine_continuation(
+        cls,
+        payload: Mapping[str, object],
+        *,
+        game_state: GameState,
+        rule: Rule,
+        rule_compiler_client: BaseLLMClient,
+        rule_validator: RuleValidator,
+    ) -> GameEngine:
+        """Build a fresh engine without dealing or shuffling the restored game."""
+        engine = cls(
+            game_state,
+            rule,
+            rule_compiler_client=rule_compiler_client,
+            rule_validator=rule_validator,
+            hand_size=cast(int, payload["hand_size"]),
+            wrong_guess_penalty=cast(int, payload["wrong_guess_penalty"]),
+            num_simulations=cast(int, payload["num_simulations"]),
+            turns_per_simulation=cast(int, payload["turns_per_simulation"]),
+            simulation_seed=cast(int, payload["simulation_seed"]),
+            compiler_max_retries=cast(int, payload["compiler_max_retries"]),
+        )
+        engine.rule_guessed = cast(bool, payload["rule_guessed"])
+        engine.winning_turn = cast(int | None, payload["winning_turn"])
+        engine.failed_guess_count = cast(int, payload["failed_guess_count"])
+        return engine
 
     def setup_game(self, round_seed: int | None = None) -> None:
         """Deal initial hand and place starter card."""
