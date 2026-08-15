@@ -139,6 +139,22 @@ class _FormalGuessRecord(_StrictRoundRecordModel):
     equivalence: _FormalGuessEquivalenceRecord
 
 
+class _OnlineShadowEvaluationRecord(_StrictRoundRecordModel):
+    correct: bool
+    reasoning: str
+    guessed_code: str | None
+    node_count: int | None
+    cyclomatic_complexity: int | None
+
+
+class _ShadowGuessRecord(_StrictRoundRecordModel):
+    version: Literal[1]
+    kind: Literal["shadow"]
+    proposal_id: str
+    guess: str
+    online_evaluation: _OnlineShadowEvaluationRecord | None
+
+
 def _require_unchanged_failed_guesses(
     before: list[dict[str, str]],
     after: list[dict[str, str]],
@@ -221,7 +237,11 @@ class _RoundTurnRecord(_StrictRoundRecordModel):
             return self
         if not isinstance(guess, dict):
             raise TypeError("Guess Attempt must be an object")
-        if guess.get("shadow") is True:
+        if guess.get("kind") == "shadow":
+            try:
+                _ShadowGuessRecord.model_validate(guess)
+            except ValidationError as error:
+                raise ValueError("Shadow Guess evidence is invalid") from error
             _require_unchanged_failed_guesses(
                 before,
                 after,
@@ -511,6 +531,58 @@ def _final_decision(
     }
 
 
+def _shadow_guess_proposal(
+    guess: Mapping[str, object],
+    *,
+    round_number: int,
+    turn_number: int,
+) -> dict[str, object]:
+    """Normalize one runtime shadow observation into immutable proposal evidence."""
+    guess_text = guess.get("guess")
+    if not isinstance(guess_text, str) or not guess_text:
+        raise RoundRecordValidationError(
+            "Round Record Shadow Guess invalid: proposal text is missing"
+        )
+    online_evaluation = None
+    if guess.get("evaluated") is not False:
+        correct = guess.get("correct")
+        reasoning = guess.get("reasoning")
+        if not isinstance(correct, bool) or not isinstance(reasoning, str):
+            raise RoundRecordValidationError(
+                "Round Record Shadow Guess invalid: online verdict evidence is missing"
+            )
+        online_evaluation = {
+            "correct": correct,
+            "reasoning": reasoning,
+            "guessed_code": guess.get("guessed_code"),
+            "node_count": guess.get("node_count"),
+            "cyclomatic_complexity": guess.get("cyclomatic_complexity"),
+        }
+    return {
+        "version": 1,
+        "kind": "shadow",
+        "proposal_id": f"round:{round_number}:turn:{turn_number}:shadow",
+        "guess": guess_text,
+        "online_evaluation": online_evaluation,
+    }
+
+
+def _authoritative_guess_attempt(
+    guess: Mapping[str, object] | None,
+    *,
+    round_number: int,
+    turn_number: int,
+) -> Mapping[str, object] | None:
+    """Translate runtime Guess Attempt evidence into the strict Round Record shape."""
+    if guess is None or guess.get("shadow") is not True:
+        return guess
+    return _shadow_guess_proposal(
+        guess,
+        round_number=round_number,
+        turn_number=turn_number,
+    )
+
+
 def create_active_round_record(
     manifest: Mapping[str, object],
     runtime: RoundRuntime,
@@ -617,7 +689,11 @@ def append_round_record_turn(
                 "replacement_draw": replacement_draw,
             },
             "post_card_state": post_state,
-            "guess_attempt": turn_record["guess_attempt"],
+            "guess_attempt": _authoritative_guess_attempt(
+                turn_record["guess_attempt"],
+                round_number=record.scheduled_round_number,
+                turn_number=expected_turn,
+            ),
         }
     )
     return validate_round_record_document(payload)

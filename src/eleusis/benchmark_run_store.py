@@ -30,6 +30,10 @@ from eleusis.round_record import (
     create_active_round_record,
     validate_round_record_document,
 )
+from eleusis.shadow_verdict import (
+    SHADOW_VERDICT_VERSION,
+    validate_shadow_verdict_document,
+)
 
 if TYPE_CHECKING:
     from eleusis.round_execution import RoundRuntime
@@ -159,6 +163,29 @@ class BenchmarkRunStore:
             WHEN OLD.status = 'completed'
             BEGIN
                 SELECT RAISE(ABORT, 'immutable completed Round Record delete rejected');
+            END;
+
+            CREATE TABLE shadow_verdicts (
+                run_id TEXT NOT NULL,
+                verdict_id TEXT NOT NULL,
+                proposal_id TEXT NOT NULL,
+                verdict_version INTEGER NOT NULL,
+                verdict_document TEXT NOT NULL,
+                transaction_sequence INTEGER NOT NULL,
+                PRIMARY KEY (run_id, verdict_id),
+                FOREIGN KEY (run_id) REFERENCES benchmark_run(run_id)
+            ) STRICT;
+
+            CREATE TRIGGER reject_shadow_verdict_update
+            BEFORE UPDATE ON shadow_verdicts
+            BEGIN
+                SELECT RAISE(ABORT, 'immutable Shadow Verdict update rejected');
+            END;
+
+            CREATE TRIGGER reject_shadow_verdict_delete
+            BEFORE DELETE ON shadow_verdicts
+            BEGIN
+                SELECT RAISE(ABORT, 'immutable Shadow Verdict delete rejected');
             END;
             """
         )
@@ -468,6 +495,97 @@ class BenchmarkRunStore:
             for row in rows
         ]
 
+    def read_completed_rounds(self) -> list[dict[str, object]]:
+        """Read all immutable completed Round Records in scheduled order."""
+        return self._completed_rounds()
+
+    @staticmethod
+    def _round_shadow_proposal_ids(record: Mapping[str, object]) -> set[str]:
+        """Collect immutable Shadow Guess proposal identities from one Round."""
+        proposal_ids: set[str] = set()
+        turns = cast(list[Mapping[str, object]], record["turns"])
+        for turn in turns:
+            guess = turn.get("guess_attempt")
+            if isinstance(guess, Mapping) and guess.get("kind") == "shadow":
+                proposal_id = guess.get("proposal_id")
+                if isinstance(proposal_id, str):
+                    proposal_ids.add(proposal_id)
+        return proposal_ids
+
+    def add_shadow_verdict(self, payload: Mapping[str, object]) -> None:
+        """Append one immutable offline Shadow Verdict for a completed proposal."""
+        verdict = validate_shadow_verdict_document(payload)
+        proposal_ids = {
+            proposal_id
+            for record in self._completed_rounds()
+            for proposal_id in self._round_shadow_proposal_ids(record)
+        }
+        proposal_id = cast(str, verdict["proposal_id"])
+        if proposal_id not in proposal_ids:
+            raise BenchmarkRunStoreError(
+                "Benchmark Run Shadow Verdict rejected: completed proposal "
+                f"{proposal_id!r} is unavailable"
+            )
+        manifest = self.read_manifest()
+        with closing(self._connect()) as connection, connection:
+            sequence = self._next_transaction_sequence(connection)
+            try:
+                connection.execute(
+                    """
+                    INSERT INTO shadow_verdicts (
+                        run_id,
+                        verdict_id,
+                        proposal_id,
+                        verdict_version,
+                        verdict_document,
+                        transaction_sequence
+                    ) VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        manifest["run_id"],
+                        verdict["verdict_id"],
+                        proposal_id,
+                        verdict["version"],
+                        self._encode_document(verdict),
+                        sequence,
+                    ),
+                )
+            except sqlite3.IntegrityError as error:
+                raise BenchmarkRunStoreError(
+                    "Benchmark Run Shadow Verdict rejected: immutable verdict "
+                    f"{verdict['verdict_id']!r} already exists"
+                ) from error
+            connection.execute(
+                "UPDATE benchmark_run SET completed_sequence = ?",
+                (sequence,),
+            )
+        self.ensure_current_export()
+
+    def read_shadow_verdicts(self) -> list[dict[str, object]]:
+        """Read immutable offline Shadow Verdicts in append order."""
+        with closing(self._connect()) as connection:
+            rows = connection.execute(
+                """
+                SELECT verdict_version, verdict_document
+                FROM shadow_verdicts
+                ORDER BY transaction_sequence
+                """
+            ).fetchall()
+        verdicts: list[dict[str, object]] = []
+        for row in rows:
+            version = cast(int, row["verdict_version"])
+            if version != SHADOW_VERDICT_VERSION:
+                raise BenchmarkRunStoreError(
+                    "Benchmark Run Shadow Verdict incompatible: "
+                    f"found version {version}, expected {SHADOW_VERDICT_VERSION}"
+                )
+            verdicts.append(
+                validate_shadow_verdict_document(
+                    self._decode_document(cast(str, row["verdict_document"]))
+                )
+            )
+        return verdicts
+
     def _export_sequences(self) -> tuple[int, int]:
         """Return terminal-data and generated-export ordering watermarks."""
         with closing(self._connect()) as connection:
@@ -548,6 +666,20 @@ class BenchmarkRunStore:
         }
 
     @staticmethod
+    def _turn_has_correct_guess_observation(turn: Mapping[str, object]) -> bool:
+        """Return whether a Formal or observed online Shadow Guess was correct."""
+        guess = turn.get("guess_attempt")
+        if not isinstance(guess, Mapping):
+            return False
+        if guess.get("correct") is True:
+            return True
+        online_evaluation = guess.get("online_evaluation")
+        return (
+            isinstance(online_evaluation, Mapping)
+            and online_evaluation.get("correct") is True
+        )
+
+    @staticmethod
     def _derived_round_values(record: Mapping[str, object]) -> dict[str, object]:
         """Recompute score and usage from authoritative terminal facts."""
         turns = cast(list[Mapping[str, object]], record["turns"])
@@ -566,8 +698,7 @@ class BenchmarkRunStore:
         correct_turns = [
             cast(int, turn["turn_number"])
             for turn in turns
-            if isinstance(turn.get("guess_attempt"), Mapping)
-            and cast(Mapping[str, object], turn["guess_attempt"]).get("correct") is True
+            if BenchmarkRunStore._turn_has_correct_guess_observation(turn)
         ]
         first_correct_turn = min(correct_turns) if correct_turns else None
         no_stakes_score = (
@@ -591,6 +722,7 @@ class BenchmarkRunStore:
             "version": BENCHMARK_RUN_EXPORT_VERSION,
             "run": self.read_manifest(),
             "completed_round_records": records,
+            "shadow_verdicts": self.read_shadow_verdicts(),
             "derived": {
                 "rounds": [self._derived_round_values(record) for record in records]
             },
