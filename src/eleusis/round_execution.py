@@ -278,11 +278,21 @@ def execute_round_turn(
     return _execute_turn(runtime, turn_index)
 
 
-def execute_round_turns(runtime: RoundRuntime) -> tuple[int, str, list[TurnRecord]]:
-    """Run turns until a correct guess, game-over state, or turn limit."""
-    turn_count = 0
+def execute_round_turns(
+    runtime: RoundRuntime,
+    *,
+    completed_turns: list[TurnRecord] | None = None,
+    next_turn_index: int = 0,
+) -> tuple[int, str, list[TurnRecord]]:
+    """Run from the next uncommitted Turn until a terminal Round outcome."""
+    turns = list(completed_turns or [])
+    if next_turn_index != len(turns):
+        raise ValueError(
+            "Round execution resume invalid: next Turn index does not match "
+            "completed Turn records"
+        )
+    turn_count = next_turn_index
     game_over_reason = "max_turns"
-    turns: list[TurnRecord] = []
     while turn_count < runtime.max_turns and not runtime.engine.is_game_over():
         turn_record, result = execute_round_turn(runtime, turn_count)
         turns.append(turn_record)
