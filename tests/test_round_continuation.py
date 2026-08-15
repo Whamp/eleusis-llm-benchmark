@@ -319,6 +319,29 @@ def test_round_continuation_preserves_hidden_runtime_state() -> None:
     ]
 
 
+def test_round_continuation_rejects_incompatible_runtime_serialization() -> None:
+    """Active RNG serialization refuses a different Python runtime contract."""
+    runtime = _build_round_runtime()
+    continuation = capture_round_continuation(
+        runtime,
+        [],
+        next_turn_index=0,
+    )
+    runtime_identity = cast(dict[str, object], continuation["runtime"])
+    runtime_identity["python_version"] = "0.0"
+
+    with pytest.raises(
+        RoundContinuationIncompatibilityError,
+        match=r"Round continuation incompatible: runtime\.python_version changed",
+    ):
+        restore_round_continuation(
+            continuation,
+            scientist_client=FakeLLMClient(),
+            rule_compiler_client=FakeLLMClient(),
+            handle_action_error=_unexpected_action_error,
+        )
+
+
 def test_round_continuation_rejects_unknown_and_malformed_versions() -> None:
     """Continuation decoding fails closed with one searchable domain error."""
     runtime = _build_round_runtime()

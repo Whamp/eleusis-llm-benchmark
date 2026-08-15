@@ -137,14 +137,18 @@ Results land in separate folders (`results/solo_evaluation_*_w0_*`,
 
 ### Pause and Resume
 
-The checkpoint saves to `results.json` after every completed round. If a process
-is killed mid-round, you lose at most 1 in-progress round per worker.
+New runs use `benchmark_run.sqlite3` as their authoritative store and regenerate
+`results.json` after each completed Round. Setup is committed before the first
+Model Attempt. If a process stops at that boundary, resume restores the same
+board, hand, deck, RNG state, seed, and first prompt without dealing again.
 
 **Pause:** Kill the processes (`Ctrl+C`, or `kill <pid>`).
 
-**Resume:** Point `--resume` at each worker's result folder. The checkpoint is
-self-contained — model, config, rules library, and batch round offset are all
-stored in `results.json`.
+**Resume:** Point `--resume` at each worker's result folder. When SQLite is
+present, resume uses it instead of `results.json` and verifies the stored model,
+compiler, prompts, settings, schedule, seeds, and source fingerprint. A changed
+scientific input requires a new Benchmark Run. Historical JSON-only folders keep
+the legacy completed-Round resume path.
 
 ```bash
 # Find the result folders from the interrupted run
@@ -159,8 +163,10 @@ uv run python scripts/evaluate_single.py \
   --resume results/solo_evaluation_20260403_120000_w2_kimi-k2 &
 ```
 
-No need to re-specify `--config`, `--model`, or `--batch-round-offset` — they are
-all read from the checkpoint.
+The stored model and seed inputs are reused. If the Run used a non-default
+configuration path, pass the same `--config` so resume can verify it. Do not
+re-specify scientific overrides such as `--model` or `--batch-round-offset` with
+different values.
 
 ### Multiple Models in Parallel
 

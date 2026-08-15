@@ -80,6 +80,115 @@ def _validate_resume_library(startup: EvaluationStartup) -> bool:
     return True
 
 
+def _rules_from_run_manifest(
+    manifest: dict[str, object],
+) -> list[RuleLibraryEntry]:
+    """Recover the ordered embedded rule library needed by resumed orchestration."""
+    schedule = manifest["schedule"]
+    if not isinstance(schedule, list):
+        raise TypeError("Benchmark Run resume schedule must be a list")
+    rules: list[RuleLibraryEntry] = []
+    seen: set[tuple[str | None, str, str]] = set()
+    for scheduled in schedule:
+        if not isinstance(scheduled, dict):
+            raise TypeError("Benchmark Run resume schedule entry must be an object")
+        description = scheduled["rule_description"]
+        code = scheduled["rule_code"]
+        name = scheduled["rule_name"]
+        if not isinstance(description, str) or not isinstance(code, str):
+            raise TypeError(
+                "Benchmark Run resume requires an embedded deterministic Round rule"
+            )
+        key = (name if isinstance(name, str) else None, description, code)
+        if key in seen:
+            continue
+        seen.add(key)
+        rule: RuleLibraryEntry = {"description": description, "code": code}
+        if key[0] is not None:
+            rule["name"] = key[0]
+        rules.append(rule)
+    return rules
+
+
+def _initialize_sqlite_resume_state(
+    startup: EvaluationStartup,
+) -> EvaluationState | None:
+    """Restore orchestration state for an untouched active SQLite Round."""
+    run_store = startup.run_store
+    manifest = startup.run_manifest
+    if run_store is None or manifest is None:
+        return None
+    active = run_store.read_resumable_round()
+    if active is None:
+        logger.error("Benchmark Run resume unavailable: no active Round checkpoint")
+        return None
+    turns = active.record["turns"]
+    next_turn_index = active.continuation["next_turn_index"]
+    if turns != [] or next_turn_index != 0:
+        logger.error(
+            "Benchmark Run initial resume incompatible: active checkpoint contains "
+            "completed Turns"
+        )
+        return None
+    rule_payload = active.continuation["rule"]
+    if not isinstance(rule_payload, dict):
+        logger.error("Benchmark Run resume incompatible: active rule is malformed")
+        return None
+    description = rule_payload["description"]
+    code = rule_payload["code"]
+    if not isinstance(description, str) or not isinstance(code, str):
+        logger.error("Benchmark Run resume incompatible: active rule is malformed")
+        return None
+    rules = _rules_from_run_manifest(manifest)
+    folder_name = run_store.run_folder.name
+    results = _new_evaluation_results(
+        startup,
+        folder_name,
+        rules,
+        startup.rules_config["index"] + 1,
+    )
+    secret_rule = active.record["secret_rule"]
+    current_rule_name = (
+        secret_rule.get("name")
+        if isinstance(secret_rule, dict) and isinstance(secret_rule.get("name"), str)
+        else None
+    )
+    results["checkpoint"]["rules_consumed"] = [
+        {
+            "name": current_rule_name,
+            "description": description,
+            "code": code,
+            "rounds_completed": 0,
+        }
+    ]
+    versions = manifest["versions"]
+    logger.info("=" * 80)
+    logger.info("RESUMING AUTHORITATIVE BENCHMARK RUN")
+    logger.info("=" * 80)
+    logger.info(
+        "Active Round %s: 0 committed Turns; schema versions %s",
+        active.round_number,
+        versions,
+    )
+    return EvaluationState(
+        startup=startup,
+        results=results,
+        folder_name=folder_name,
+        start_round=active.round_number,
+        current_rule=Rule(description, code),
+        current_rule_name=current_rule_name,
+        rule_factory_index=startup.rules_config["index"] + 1,
+        checkpoint_rules_library=rules,
+        all_rules_library=rules,
+        rule_name_to_index={
+            name: index
+            for index, rule in enumerate(rules)
+            if isinstance((name := rule.get("name")), str)
+        },
+        run_store=run_store,
+    )
+
+
 def _initialize_resume_state(startup: EvaluationStartup) -> EvaluationState | None:
     """Restore mutable evaluation state from a validated checkpoint."""
     checkpoint = startup.checkpoint
@@ -192,7 +301,8 @@ def _new_evaluation_results(
 def _initialize_fresh_state(startup: EvaluationStartup) -> EvaluationState:
     """Load the library and initialize a fresh authoritative Benchmark Run."""
     folder_name = f"solo_evaluation_{startup.timestamp}_{startup.output_tag}"
-    if startup.game_config["seed"] is None:
+    configured_game_seed = startup.game_config["seed"]
+    if configured_game_seed is None:
         effective_seed = secrets.randbits(32)
         startup.game_config["seed"] = effective_seed
         startup.config["game"]["seed"] = effective_seed
@@ -217,6 +327,7 @@ def _initialize_fresh_state(startup: EvaluationStartup) -> EvaluationState:
         startup,
         all_rules,
         run_id=str(uuid.uuid4()),
+        configured_game_seed=configured_game_seed,
     )
     run_store = BenchmarkRunStore.create(
         Path("results") / folder_name,
@@ -246,8 +357,8 @@ def initialize_evaluation_state(
     startup: EvaluationStartup,
 ) -> EvaluationState | None:
     """Create fresh state or restore resume state for the evaluation loop."""
-    return (
-        _initialize_resume_state(startup)
-        if startup.checkpoint
-        else _initialize_fresh_state(startup)
-    )
+    if startup.run_store is not None:
+        return _initialize_sqlite_resume_state(startup)
+    if startup.checkpoint:
+        return _initialize_resume_state(startup)
+    return _initialize_fresh_state(startup)

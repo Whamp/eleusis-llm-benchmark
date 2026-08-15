@@ -71,7 +71,11 @@ def _execute_round(
         start_rule_index=start_index,
         rules_list=rules_list,
         batch_round_index=selection.batch_round_index,
-        results_folder=f"results/{state.folder_name}",
+        results_folder=(
+            str(state.run_store.run_folder)
+            if state.run_store is not None
+            else f"results/{state.folder_name}"
+        ),
         run_store=state.run_store,
     )
     _update_current_rule(state, result, generated_new_rule)
