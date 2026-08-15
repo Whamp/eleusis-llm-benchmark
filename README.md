@@ -139,8 +139,9 @@ Results land in separate folders (`results/solo_evaluation_*_w0_*`,
 
 New runs use `benchmark_run.sqlite3` as their authoritative store and regenerate
 `results.json` after each completed Round. Setup is committed before the first
-Model Attempt. If a process stops at that boundary, resume restores the same
-board, hand, deck, RNG state, seed, and first prompt without dealing again.
+Model Attempt, and each validated Turn is committed before the next Model
+Attempt. Resume restores the last committed board, hand, deck, RNG state, and
+seed, then starts the exact next Turn without repeating completed work.
 
 **Pause:** Kill the processes (`Ctrl+C`, or `kill <pid>`).
 

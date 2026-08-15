@@ -317,6 +317,8 @@ def play_round(
     active = (
         run_store.read_active_round(round_number) if run_store is not None else None
     )
+    completed_turns: list[TurnRecord] = []
+    next_turn_index = 0
     if active is not None:
         compiler, scientist_client = _create_round_clients(
             config,
@@ -330,11 +332,9 @@ def play_round(
             pause_after_turn=config["game"].get("pause_after_turn", False),
             results_folder=results_folder,
         )
-        if restored.next_turn_index != 0 or restored.turn_records:
-            raise RuntimeError(
-                "Benchmark Run initial resume requires a zero-Turn checkpoint"
-            )
         runtime = restored.runtime
+        completed_turns = restored.turn_records
+        next_turn_index = restored.next_turn_index
     else:
         runtime = _prepare_round_runtime(request)
         if run_store is not None:
@@ -350,7 +350,14 @@ def play_round(
             )
     if run_store is not None:
         runtime.completed_turn_committer = run_store.commit_completed_turn
-    turn_count, game_over_reason, turns = execute_round_turns(runtime)
+    if next_turn_index == 0:
+        turn_count, game_over_reason, turns = execute_round_turns(runtime)
+    else:
+        turn_count, game_over_reason, turns = execute_round_turns(
+            runtime,
+            completed_turns=completed_turns,
+            next_turn_index=next_turn_index,
+        )
     result = build_round_result(runtime, turn_count, game_over_reason, turns)
     if run_store is not None:
         run_store.complete_round(

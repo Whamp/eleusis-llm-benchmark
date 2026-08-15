@@ -113,7 +113,7 @@ def _rules_from_run_manifest(
 def _initialize_sqlite_resume_state(
     startup: EvaluationStartup,
 ) -> EvaluationState | None:
-    """Restore orchestration state for an untouched active SQLite Round."""
+    """Restore orchestration state from the active SQLite Round Checkpoint."""
     run_store = startup.run_store
     manifest = startup.run_manifest
     if run_store is None or manifest is None:
@@ -124,10 +124,14 @@ def _initialize_sqlite_resume_state(
         return None
     turns = active.record["turns"]
     next_turn_index = active.continuation["next_turn_index"]
-    if turns != [] or next_turn_index != 0:
+    if (
+        not isinstance(turns, list)
+        or not isinstance(next_turn_index, int)
+        or len(turns) != next_turn_index
+    ):
         logger.error(
-            "Benchmark Run initial resume incompatible: active checkpoint contains "
-            "completed Turns"
+            "Benchmark Run resume incompatible: active Round Record and checkpoint "
+            "disagree on completed Turns"
         )
         return None
     rule_payload = active.continuation["rule"]
@@ -166,8 +170,9 @@ def _initialize_sqlite_resume_state(
     logger.info("RESUMING AUTHORITATIVE BENCHMARK RUN")
     logger.info("=" * 80)
     logger.info(
-        "Active Round %s: 0 committed Turns; schema versions %s",
+        "Active Round %s: %s committed Turns; schema versions %s",
         active.round_number,
+        next_turn_index,
         versions,
     )
     return EvaluationState(

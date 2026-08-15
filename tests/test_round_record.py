@@ -62,6 +62,27 @@ def _execute_play_only_turn(
     return turn_record
 
 
+def test_round_record_rejects_non_contiguous_turn_number() -> None:
+    """A proposed Turn must immediately follow the active Round Record."""
+    runtime = _build_round_runtime()
+    before = capture_round_continuation(runtime, [], next_turn_index=0)
+    turn_record = _execute_play_only_turn(runtime, 0)
+    after = capture_round_continuation(runtime, [turn_record], next_turn_index=1)
+    active = create_active_round_record(
+        _manifest(runtime),
+        runtime,
+        effective_round_seed=8675309,
+        batch_round_index=0,
+    )
+    turn_record["turn_number"] = 2
+
+    with pytest.raises(
+        RoundRecordValidationError,
+        match="Turn ordering is not contiguous",
+    ):
+        append_round_record_turn(active, before, after, turn_record, runtime)
+
+
 def test_round_record_rejects_selected_card_outside_pre_decision_hand() -> None:
     """A proposed Turn cannot select a Card absent from its observation."""
     runtime = _build_round_runtime()
