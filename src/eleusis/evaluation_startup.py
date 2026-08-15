@@ -24,7 +24,6 @@ from eleusis.evaluation_results import EvaluationResults
 from eleusis.evaluation_support import (
     apply_cli_overrides,
     generate_output_tag,
-    load_checkpoint,
     load_config,
     load_rules_from_library,
     preflight_check,
@@ -257,14 +256,20 @@ def resolve_evaluation_startup(args: argparse.Namespace) -> EvaluationStartup | 
         Path(args.resume) / BENCHMARK_RUN_DATABASE_NAME if args.resume else None
     )
     sqlite_resume = database_path is not None and database_path.is_file()
-    checkpoint = (
-        None
-        if sqlite_resume
-        else (load_checkpoint(args.resume) if args.resume else None)
-    )
-    if args.resume and not sqlite_resume and checkpoint is None:
-        logger.error("Failed to load checkpoint")
+    if args.resume and not sqlite_resume:
+        results_path = Path(args.resume) / "results.json"
+        if results_path.is_file():
+            logger.error(
+                "Historical JSON-only Benchmark Run cannot be resumed. "
+                "Start a new Run; legacy import is not implemented."
+            )
+        else:
+            logger.error(
+                "Benchmark Run resume unavailable: neither %s nor results.json exists",
+                BENCHMARK_RUN_DATABASE_NAME,
+            )
         return None
+    checkpoint = None
     if sqlite_resume:
         try:
             run_store = BenchmarkRunStore(Path(args.resume))

@@ -67,6 +67,16 @@ class BenchmarkRunProgress:
     is_complete: bool
 
 
+@dataclass(frozen=True)
+class BenchmarkRunExportStatus:
+    """Compare a portable JSON export with SQLite's terminal-data watermark."""
+
+    authoritative_watermark: int
+    export_watermark: int | None
+    export_version: int | None
+    is_current: bool
+
+
 class BenchmarkRunStore:
     """Own SQLite transactions and portable exports for one Benchmark Run."""
 
@@ -679,18 +689,38 @@ class BenchmarkRunStore:
             )
         return cast(int, row["completed_sequence"]), cast(int, row["export_sequence"])
 
-    def _export_is_current(self, completed_sequence: int) -> bool:
-        """Check whether the portable export has the authoritative watermark."""
-        if not self.export_path.is_file():
-            return False
+    def read_export_status(self) -> BenchmarkRunExportStatus:
+        """Identify a missing, stale, or current export without rewriting it."""
+        completed_sequence, export_sequence = self._export_sequences()
+        export_watermark: int | None = None
+        export_version: int | None = None
         try:
             document = json.loads(self.export_path.read_text())
         except (OSError, json.JSONDecodeError):
-            return False
+            document = None
+        if isinstance(document, dict):
+            version_value = document.get("version")
+            watermark_value = document.get("watermark")
+            if isinstance(version_value, int):
+                export_version = version_value
+            if isinstance(watermark_value, int):
+                export_watermark = watermark_value
+        return BenchmarkRunExportStatus(
+            authoritative_watermark=completed_sequence,
+            export_watermark=export_watermark,
+            export_version=export_version,
+            is_current=(
+                export_sequence == completed_sequence
+                and export_version == BENCHMARK_RUN_EXPORT_VERSION
+                and export_watermark == completed_sequence
+            ),
+        )
+
+    def _export_is_current(self, completed_sequence: int) -> bool:
+        """Check whether the portable export has the authoritative watermark."""
+        status = self.read_export_status()
         return (
-            isinstance(document, dict)
-            and document.get("version") == BENCHMARK_RUN_EXPORT_VERSION
-            and document.get("watermark") == completed_sequence
+            status.authoritative_watermark == completed_sequence and status.is_current
         )
 
     @staticmethod
@@ -761,8 +791,8 @@ class BenchmarkRunStore:
         )
 
     @staticmethod
-    def _derived_round_values(record: Mapping[str, object]) -> dict[str, object]:
-        """Recompute score and usage from authoritative terminal facts."""
+    def derive_round_values(record: Mapping[str, object]) -> dict[str, object]:
+        """Recompute report values from authoritative terminal Round facts."""
         turns = cast(list[Mapping[str, object]], record["turns"])
         outcome = cast(Mapping[str, object], record["terminal_outcome"])
         settings = cast(Mapping[str, object], record["settings"])
@@ -878,13 +908,13 @@ class BenchmarkRunStore:
     def read_derived_summary(self) -> dict[str, object]:
         """Derive current aggregate statistics from immutable completed Rounds."""
         records = self._completed_rounds()
-        rounds = [self._derived_round_values(record) for record in records]
+        rounds = [self.derive_round_values(record) for record in records]
         return self._derived_run_summary(records, rounds)
 
     def _build_export(self, watermark: int) -> dict[str, object]:
         """Build the versioned portable snapshot from authoritative SQLite data."""
         records = self._completed_rounds()
-        rounds = [self._derived_round_values(record) for record in records]
+        rounds = [self.derive_round_values(record) for record in records]
         return {
             "version": BENCHMARK_RUN_EXPORT_VERSION,
             "run": self.read_manifest(),

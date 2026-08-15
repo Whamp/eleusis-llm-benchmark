@@ -21,14 +21,18 @@ import logging
 import sys
 from collections import Counter
 from pathlib import Path
+from typing import cast
 
 from eleusis.analysis import analyze_folder
+from eleusis.analysis.benchmark_run_artifact import (
+    HistoricalRunCompatibilityError,
+    read_analysis_run_artifact,
+)
 from eleusis.evaluation_results import (
     ConsumedRule,
     EvaluationResults,
     EvaluationStatistics,
     SavedRound,
-    parse_evaluation_results,
 )
 from eleusis.game.rule_library import RuleLibraryEntry
 
@@ -76,18 +80,21 @@ def get_integer_metric(metrics: dict[str, object], key: str) -> int:
 
 
 def load_worker_results(folders: list[Path]) -> list[EvaluationResults]:
-    """Load results.json from each worker folder."""
+    """Load worker analysis views, preferring authoritative SQLite state."""
     results = []
     for folder in folders:
-        rfile = folder / "results.json"
-        if not rfile.exists():
-            logger.warning(f"No results.json in {folder.name}, skipping")
-            continue
         try:
-            with rfile.open() as results_file:
-                results.append(parse_evaluation_results(json.load(results_file)))
-        except json.JSONDecodeError:
-            logger.warning(f"Corrupt results.json in {folder.name}, skipping")
+            artifact = read_analysis_run_artifact(folder)
+        except HistoricalRunCompatibilityError as error:
+            logger.warning("Skipped %s: %s", folder.name, error)
+            continue
+        if artifact.analysis_document is None:
+            logger.warning(
+                "Skipped %s: compatibility policy produced no analysis view",
+                folder.name,
+            )
+            continue
+        results.append(cast(EvaluationResults, artifact.analysis_document))
     return results
 
 
@@ -292,13 +299,18 @@ def main() -> int:
     for sub in sorted(ref_folder.iterdir()):
         if not (sub.is_dir() and sub.name.startswith("solo_evaluation_")):
             continue
-        rfile = sub / "results.json"
-        if not rfile.exists():
+        try:
+            artifact = read_analysis_run_artifact(sub)
+        except HistoricalRunCompatibilityError as error:
+            logger.warning("Skipped reference %s: %s", sub.name, error)
             continue
-
-        with rfile.open() as results_file:
-            ref_data = parse_evaluation_results(json.load(results_file))
-
+        if artifact.analysis_document is None:
+            logger.warning(
+                "Skipped reference %s: compatibility policy produced no analysis view",
+                sub.name,
+            )
+            continue
+        ref_data = cast(EvaluationResults, artifact.analysis_document)
         ref_filtered = filter_to_rules(ref_data, completed_rules)
         ref_dir = status_folder / sub.name
         ref_dir.mkdir(exist_ok=True)

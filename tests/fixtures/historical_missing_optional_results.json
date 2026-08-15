@@ -1,0 +1,43 @@
+{
+  "timestamp": "20260403_070831",
+  "folder_name": "solo_evaluation_historical_missing_optional",
+  "config": {
+    "player": "Historical Model",
+    "player_model": "historical-model",
+    "max_turns": 5,
+    "wrong_guess_penalty": 2
+  },
+  "rounds": [
+    {
+      "round_number": 1,
+      "rule_description": "Only even ranks.",
+      "rule_code": "return card.rank % 2 == 0",
+      "turn_count": 1,
+      "success": false,
+      "score": 0,
+      "floored_score": 0,
+      "no_stakes_score": 0,
+      "failed_guesses": 0,
+      "game_over_reason": "max_turns",
+      "llm_usage": {"player": {"output_tokens": 0}},
+      "turns": [
+        {
+          "turn_number": 1,
+          "mainline_state": "4♠",
+          "hand": ["2♥"],
+          "llm_response": {},
+          "action_result": {"accepted": true},
+          "guess_attempt": null
+        }
+      ]
+    }
+  ],
+  "statistics": {
+    "total_score": 0,
+    "successful_rounds": 0,
+    "failed_rounds": 1,
+    "total_turns": 1,
+    "total_failed_guesses": 0
+  },
+  "checkpoint": {"rules_library": []}
+}
