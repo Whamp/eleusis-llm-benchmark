@@ -1,0 +1,3029 @@
+{
+  "version": 1,
+  "run": {
+    "version": 1,
+    "run_id": "6b93aee6-a6d1-4827-8ae5-0bb1505dca59",
+    "versions": {
+      "database": 1,
+      "manifest": 1,
+      "round_record": 1,
+      "round_checkpoint": 2,
+      "export": 1
+    },
+    "schedule": [
+      {
+        "round_number": 1,
+        "rule_name": "even_ranks_only",
+        "rule_description": "Only cards with an even rank (2,4,6,8,10,12).",
+        "rule_code": "return card.rank % 2 == 0",
+        "batch_round_index": 0
+      }
+    ],
+    "effective_settings": {
+      "configured_game_seed": 42,
+      "game_seed": 42,
+      "hand_size": 12,
+      "max_turns": 8,
+      "wrong_guess_penalty": 2,
+      "shadow_mode": "offline",
+      "llm_max_tokens": 16384,
+      "llm_temperature": 0.7,
+      "llm_seed": 42,
+      "llm_max_retries": 3,
+      "rule_selection": "sequential"
+    },
+    "scientific_config": {
+      "game": {
+        "batch_round_offset": null,
+        "hand_size": 12,
+        "max_turns": 8,
+        "num_rounds_per_rule": 1,
+        "num_rules": 1,
+        "seed": 42,
+        "shadow_mode": "offline",
+        "wrong_guess_penalty": 2
+      },
+      "llm": {
+        "max_llm_retries": 3,
+        "max_tokens": 16384,
+        "seed": 42,
+        "temperature": 0.7
+      },
+      "model": "gpt-5.6-luna-deepthink",
+      "rule_compiler": {
+        "base_url": "https://openrouter.ai/api/v1",
+        "extra_body": {
+          "provider": {
+            "allow_fallbacks": false,
+            "order": [
+              "Novita"
+            ]
+          }
+        },
+        "max_retries": 3,
+        "model_id": "openai/gpt-oss-120b",
+        "num_simulations": 20,
+        "provider": "openai_compat",
+        "reasoning_effort": "medium",
+        "simulation_seed": 42,
+        "temperature": 0.7,
+        "turns_per_simulation": 20
+      },
+      "rules": {
+        "index": 0,
+        "selection": "sequential"
+      },
+      "suite": null
+    },
+    "model_identity": {
+      "model_key": "gpt-5.6-luna-deepthink",
+      "display_name": "Gpt 5.6 Luna Deepthink"
+    },
+    "compiler_identity": {
+      "provider": "openai_compat",
+      "model_id": "openai/gpt-oss-120b",
+      "display_name": "Gpt Oss 120B"
+    },
+    "prompt_identities": [
+      {
+        "name": "action",
+        "sha256": "7383bba21264573f7a745f27d9b153c11ae7944e08edc43a0c8b9e83f3578117"
+      },
+      {
+        "name": "compile",
+        "sha256": "348694492199a5a25a78b985e1d50c443ee0df3e2c99d8567b8376ba4680e6c2"
+      },
+      {
+        "name": "game_rules",
+        "sha256": "da2ee6123a9e134d00d24bc214e4daf4d1570237fe8c10e2862616083cf994ca"
+      }
+    ],
+    "source_provenance": {
+      "revision": "bd3300e6dbdd5def81fdc72c861a7f25cabd350e",
+      "dirty": false,
+      "files": [
+        {
+          "path": "config.yaml",
+          "sha256": "d46c7cdc8a96b5efd3323d0df804e50a43e8e4076e5dec5ad056138f81b27de2"
+        },
+        {
+          "path": "models.yaml",
+          "sha256": "366e1c526efa81c9eb3383700baffcf74eb7c0a1db7be977e1366740b5ecb3cc"
+        },
+        {
+          "path": "pyproject.toml",
+          "sha256": "92f3ebc2b62e3e7c73fa4a4d0f2908d9aa8e021481c11ed73a1a37fa6c49d8b5"
+        },
+        {
+          "path": "rules.json",
+          "sha256": "2d1b3739b0385997c7ae3e42224d74ab6efefcafc05766d9f8bda519899bb25c"
+        },
+        {
+          "path": "scripts/__init__.py",
+          "sha256": "4f971450d2d033caa6fd37b5a2263a915a7d761123efa87301d8df3d25b3fe34"
+        },
+        {
+          "path": "scripts/analyze_results.py",
+          "sha256": "0236bee3d20386d0261c8441db6e042c6823a421240b309e5275d69981039846"
+        },
+        {
+          "path": "scripts/check_progress.py",
+          "sha256": "ed70e793b51bdcbe913255b24a1a5f7e37fad9e86e9fd8626ced6fcb603b9e25"
+        },
+        {
+          "path": "scripts/evaluate_shadows.py",
+          "sha256": "4328c977bc58eae4f74c99924b6dbbdb1b30057c7d128d6313e26167af5e6b91"
+        },
+        {
+          "path": "scripts/evaluate_single.py",
+          "sha256": "10ef29b3e9d5bbf24106bdf682cb40f99557ce56a840a057c3f3e2d68421cc70"
+        },
+        {
+          "path": "scripts/generate_rule_library.py",
+          "sha256": "fdf9fa19828bd5f3196c12642fe48995b26901bd837570c0401548c66f1c13df"
+        },
+        {
+          "path": "scripts/run_parallel_benchmark.py",
+          "sha256": "c9663ccde768c6de6c7dde3410b13ea3e57606af8b5f3c8995643b3fad86c704"
+        },
+        {
+          "path": "scripts/run_parallel_eval.sh",
+          "sha256": "fd974d606fe3c9aac6d8ff9ec24436ea5567324a29c9599420c67d027ad63bf9"
+        },
+        {
+          "path": "scripts/status_report.py",
+          "sha256": "375593e02b19fbf06ad4bfa1401a17f05e123f778492afcb502cde23c352c6ae"
+        },
+        {
+          "path": "src/eleusis/__init__.py",
+          "sha256": "5178c326f150809ecc04a3363fb9c5df06d88077ed73d88e661a4292c9ffe478"
+        },
+        {
+          "path": "src/eleusis/analysis/__init__.py",
+          "sha256": "3009d68bfa38f634345709f48b60ef33223faf70cca5703a835c30a3164c163f"
+        },
+        {
+          "path": "src/eleusis/analysis/basic_metric_confidence.py",
+          "sha256": "7a7b9c015c3c473a3c28df9591660a3662f1020c64d45b8059a49769084eba65"
+        },
+        {
+          "path": "src/eleusis/analysis/basic_metric_performance.py",
+          "sha256": "a8dc90bf03319443f906024f8a91a8267feb2ed24f300c4d878122515739def1"
+        },
+        {
+          "path": "src/eleusis/analysis/basic_metrics.py",
+          "sha256": "7f5c4b1f6398192799912d9f622e56423eeafb9b6701efdecf047cd0b53c8166"
+        },
+        {
+          "path": "src/eleusis/analysis/benchmark_report.html",
+          "sha256": "071039d3ef97211d1e1726a9cf81794e857c7b58a42c79fb753fd8c640064a8f"
+        },
+        {
+          "path": "src/eleusis/analysis/benchmark_report.py",
+          "sha256": "761042c464c0008848b05506783b708c3a582b629c3d4312459b21ae4818f4cf"
+        },
+        {
+          "path": "src/eleusis/analysis/benchmark_run_artifact.py",
+          "sha256": "1929b9daeea8bef02b3a4da3bfa258ffe7de3e3e47e89576a5f1721ff832d9bb"
+        },
+        {
+          "path": "src/eleusis/analysis/by_rule.py",
+          "sha256": "ddbcee3c5f69033515087f6004991b0181fee6b450d329fa9ba32bc06b508328"
+        },
+        {
+          "path": "src/eleusis/analysis/colors.py",
+          "sha256": "f138acd61a9c647966e3368f4020784897bf2cb99ba78908637f1b352b7ef64a"
+        },
+        {
+          "path": "src/eleusis/analysis/complexity.py",
+          "sha256": "502f3d5c8a5d011e68e3d880402a2b73a658b438ce56267e0d4ab2eec69687af"
+        },
+        {
+          "path": "src/eleusis/analysis/complexity_ratio.py",
+          "sha256": "0b699b7b252f77ba614c970f418bb9a53b7742135cc41175497dcf4b32258ea5"
+        },
+        {
+          "path": "src/eleusis/analysis/excess_caution.py",
+          "sha256": "b6405b70eefac239810351be93604635bd4cfdcf764e5e1002d870e8b9fbb0c4"
+        },
+        {
+          "path": "src/eleusis/analysis/excess_caution_distribution.py",
+          "sha256": "f57b127c2cdd04d562d08e5939109bc1d8551a0257eeab9872cd7b58c0c006cc"
+        },
+        {
+          "path": "src/eleusis/analysis/excess_caution_relationships.py",
+          "sha256": "97440e655b1decfe0736726d358a1e113278bd922bef61fb0ea29ec1d1f69554"
+        },
+        {
+          "path": "src/eleusis/analysis/historical_run.py",
+          "sha256": "ec5b18f42b50e71160b7c73c270e66fa719df599704ba2c34127f2f350afd532"
+        },
+        {
+          "path": "src/eleusis/analysis/legacy_records.py",
+          "sha256": "68951cae7f962c4c3e59a3376fea7be4d93ce11965d30b1cc3acde35af94d04f"
+        },
+        {
+          "path": "src/eleusis/analysis/loader.py",
+          "sha256": "707d8c181b7d37b85fe61b95271293aee26a7602779ad278e52a8737397eb0c1"
+        },
+        {
+          "path": "src/eleusis/analysis/no_stakes.py",
+          "sha256": "4829899e777258c75b50b6b5dd859ab80427d44b751f58eacaf43a157bd5726a"
+        },
+        {
+          "path": "src/eleusis/analysis/per_model.py",
+          "sha256": "0776ee93594aef140f0f1b46736a2320a9e29a932f83ea569c6f85e5e0b2825d"
+        },
+        {
+          "path": "src/eleusis/analysis/reckless_guessing.py",
+          "sha256": "17b87bbcc97eb8bd3192c51a6e7c1f765e73eb8adf9a241854fa6116fe63b7f2"
+        },
+        {
+          "path": "src/eleusis/analysis/tokens_by_turn.py",
+          "sha256": "1df8a995ada948db03b8dce9e364a36a475ecdfa5e1d00faed2775fa1a2d8cbb"
+        },
+        {
+          "path": "src/eleusis/analysis/utils.py",
+          "sha256": "d840e9d65be8186392293d21b131d3d08b7d754d8e6b1f9505fd839e6a7bfe32"
+        },
+        {
+          "path": "src/eleusis/benchmark_config.py",
+          "sha256": "068bbcc690aac08053343c07c96d7e9fb86a88fb705e8c78214cead8bfb0b3f6"
+        },
+        {
+          "path": "src/eleusis/benchmark_run_manifest.py",
+          "sha256": "29882bdff1e013f4c3c30366f151396591fef3059518fedbb9e2a7b3b290bfda"
+        },
+        {
+          "path": "src/eleusis/benchmark_run_store.py",
+          "sha256": "73b102075549ce50e4ad7b8788ca157bd03b88daf411f1e527a77cad3a2a2915"
+        },
+        {
+          "path": "src/eleusis/evaluation_orchestrator.py",
+          "sha256": "d97119914d7dd3a9c970ecd4c29b86792f8e3dc7d344508b903ab163d4bd840a"
+        },
+        {
+          "path": "src/eleusis/evaluation_results.py",
+          "sha256": "9213f2c0414240b5c054504ddf2cf563a4176131f3d865d32bdd7dcde4ed13db"
+        },
+        {
+          "path": "src/eleusis/evaluation_startup.py",
+          "sha256": "2e42176612443fe0a17ffe81df6645771d432dd158a21e71541e51a293178d62"
+        },
+        {
+          "path": "src/eleusis/evaluation_state.py",
+          "sha256": "6d3f4969d22f0c3045d4fd28d90612dbfe1f0792a78df5ca9f9e30d7465c3923"
+        },
+        {
+          "path": "src/eleusis/evaluation_support.py",
+          "sha256": "abb1c21d0a8c03aedad612ccba7408124787328ec1b4d650a58dbb47f85ea1cb"
+        },
+        {
+          "path": "src/eleusis/experiment.py",
+          "sha256": "a1b1fa399cb9d1ac8800d3f9aaefaed08712144c49df6de05d729aa2b2c8f9ac"
+        },
+        {
+          "path": "src/eleusis/game/__init__.py",
+          "sha256": "07c00ef64ba2df367fb1ad1f2e8e80273d574b1b81992a3a416b73ae45e2a2be"
+        },
+        {
+          "path": "src/eleusis/game/cards.py",
+          "sha256": "48818f2ad04bbd31975573f8267e2fbbe711f53a0cfbe7894a6316bc634f1ed8"
+        },
+        {
+          "path": "src/eleusis/game/engine.py",
+          "sha256": "58797e1db72017a2ca26caaea91191caa0b77b52b3e7d6be61502590884de3c4"
+        },
+        {
+          "path": "src/eleusis/game/metrics.py",
+          "sha256": "97ca54499657a5c9cd605cc096b15458d251a3f2649f2f0fe6caa16308b35725"
+        },
+        {
+          "path": "src/eleusis/game/rule_factory.py",
+          "sha256": "dacc875831fb5948d891420291bdbfcbcf5576a8a42aab64b329dd3a961d6b0c"
+        },
+        {
+          "path": "src/eleusis/game/rule_library.py",
+          "sha256": "25cda8312c837c55e334485f87eb259a1e15d7d4a2f959089054620cae6518e5"
+        },
+        {
+          "path": "src/eleusis/game/state.py",
+          "sha256": "f005a1443be0e5e26143421d0dccfcab5bd8e5ce2966baff6bf266afd5e23cbc"
+        },
+        {
+          "path": "src/eleusis/game/validator.py",
+          "sha256": "17f81f28bc58fc723932eb336b3bd3308fe092136f2c36a14ffebf16e5f123ce"
+        },
+        {
+          "path": "src/eleusis/llm/__init__.py",
+          "sha256": "f3fc4af966c523d6a87e25e96c0271e0c4ac3dbd095962ffbd61c1041ddbe6bd"
+        },
+        {
+          "path": "src/eleusis/llm/anthropic.py",
+          "sha256": "64d8506c422c15677328a80f05fb9539e127a0b05e41950104c7c109e3190e4e"
+        },
+        {
+          "path": "src/eleusis/llm/base.py",
+          "sha256": "4e398fbd13806f7cbe4d6a9e1895a655cffbedcfc906049e1acac1faea65c0d3"
+        },
+        {
+          "path": "src/eleusis/llm/client_factory.py",
+          "sha256": "8f0579b5c1c39e80f89bc05350f054f2d9667e74bca2ec70bd7d651c2edd7228"
+        },
+        {
+          "path": "src/eleusis/llm/google.py",
+          "sha256": "e9ff4992e293e7d30eb1a4d1afc35e082bcda98117d573107e3827a27b7b912e"
+        },
+        {
+          "path": "src/eleusis/llm/huggingface.py",
+          "sha256": "97f519a1198f9a0b19acf8417b4e8fa2dcfafda6fe8d3bb678da381bccf19248"
+        },
+        {
+          "path": "src/eleusis/llm/huggingface_metrics.py",
+          "sha256": "3e3ab349b022ce0baaef725388e0a422a49e79a6175baf0cca5ad18396c9ea2f"
+        },
+        {
+          "path": "src/eleusis/llm/openai_client.py",
+          "sha256": "d910ed0e4089e904fb84e3c9eb1f0405ab682d759795b9120006c7dca5a921bd"
+        },
+        {
+          "path": "src/eleusis/llm/openai_compat.py",
+          "sha256": "16b28128951c00148ab273def8dfb117d0a164b9959d62c8006918c085ef8106"
+        },
+        {
+          "path": "src/eleusis/llm/openai_messages.py",
+          "sha256": "ce6aac5c823f57091dea9b411aa55c87e9073bd9a20e51f8ec9bc21d7821eead"
+        },
+        {
+          "path": "src/eleusis/llm/pi_auth.py",
+          "sha256": "8a904e22abc8bab015722aa69c41af7cf3c0792fe2301f9ea5e2249e16a09465"
+        },
+        {
+          "path": "src/eleusis/llm/rule_compilation.py",
+          "sha256": "ac60b0ac42c52d84430ba7cfecec6eec8b950de651516f5eab0c5be8ff6b5b96"
+        },
+        {
+          "path": "src/eleusis/llm/xai.py",
+          "sha256": "4c3450e0502a45279c7cb0edf932bb80a29c1d0388254f869f3ec6ceadbe3d16"
+        },
+        {
+          "path": "src/eleusis/normalization.py",
+          "sha256": "26e931718293f2c320a30bb459673a5da1a8fb1b73522756919e91a0a9adbeee"
+        },
+        {
+          "path": "src/eleusis/player.py",
+          "sha256": "669e7af172c79c50d32e00d93ceb195f7091c3fbfe5b3c24ba76a510b0a9d5b6"
+        },
+        {
+          "path": "src/eleusis/prompts/__init__.py",
+          "sha256": "aaf361af7916114227cbaf25e95845c46d282961d3dfaf81e1721fb4190e8f74"
+        },
+        {
+          "path": "src/eleusis/prompts/action.py",
+          "sha256": "7383bba21264573f7a745f27d9b153c11ae7944e08edc43a0c8b9e83f3578117"
+        },
+        {
+          "path": "src/eleusis/prompts/compile.py",
+          "sha256": "348694492199a5a25a78b985e1d50c443ee0df3e2c99d8567b8376ba4680e6c2"
+        },
+        {
+          "path": "src/eleusis/prompts/game_rules.py",
+          "sha256": "da2ee6123a9e134d00d24bc214e4daf4d1570237fe8c10e2862616083cf994ca"
+        },
+        {
+          "path": "src/eleusis/round_continuation.py",
+          "sha256": "abb52e2640b52aa3bc16e21df0c2dff89251c715c11bdbfdc4cab4b859629c4e"
+        },
+        {
+          "path": "src/eleusis/round_execution.py",
+          "sha256": "f476c5328736d0a9076e86b826b0f94d58abad16b61b27cd6ed1f3baa0431429"
+        },
+        {
+          "path": "src/eleusis/round_record.py",
+          "sha256": "89c3af554440d197592596b175753ac86d38d5f60e1c6d6abec5d8cf99769480"
+        },
+        {
+          "path": "src/eleusis/runner.py",
+          "sha256": "5245f82777b355776b7e4cea85e43781acf20cfefca12cc787ca3b188053aa48"
+        },
+        {
+          "path": "src/eleusis/shadow_verdict.py",
+          "sha256": "1de1e92bac390f11409c62baaa92175a34c9549298baba55f3f293e3220a4a8e"
+        },
+        {
+          "path": "src/eleusis/suites.py",
+          "sha256": "032aa7e7ec0ec463709ce78c96dc5899219e0ac85b356138ec02075b4b051235"
+        },
+        {
+          "path": "src/eleusis/utils.py",
+          "sha256": "f7ef15a24907484b814463d1c219842aa9c9cc708df71e4a1dbe39a6f3ea0ae3"
+        },
+        {
+          "path": "suites.yaml",
+          "sha256": "a295c22dd2690a182fa445cedd28a2ec04746d7eff8c53e3d4827693f2b72a77"
+        },
+        {
+          "path": "uv.lock",
+          "sha256": "367acd8011a7203994858929c39c35f94f328e6201a07a627d414c69fdaceac2"
+        }
+      ],
+      "fingerprint": "9da927ba439838e62d2bb0b8ff640af6c481cc1656f1ef38f142f3567ba91754"
+    }
+  },
+  "completed_round_records": [
+    {
+      "version": 1,
+      "run_id": "6b93aee6-a6d1-4827-8ae5-0bb1505dca59",
+      "scheduled_round_number": 1,
+      "secret_rule": {
+        "name": "even_ranks_only",
+        "description": "Only cards with an even rank (2,4,6,8,10,12).",
+        "code": "return card.rank % 2 == 0"
+      },
+      "settings": {
+        "effective_game_seed": 42,
+        "effective_round_seed": 3991486048,
+        "batch_round_index": 0,
+        "hand_size": 12,
+        "max_turns": 8,
+        "wrong_guess_penalty": 2,
+        "shadow_mode": "offline",
+        "llm": {
+          "max_tokens": 16384,
+          "temperature": 0.7,
+          "seed": 42,
+          "max_llm_retries": 3
+        },
+        "rule_compiler": {
+          "base_url": "https://openrouter.ai/api/v1",
+          "extra_body": {
+            "provider": {
+              "allow_fallbacks": false,
+              "order": [
+                "Novita"
+              ]
+            }
+          },
+          "max_retries": 3,
+          "model_id": "openai/gpt-oss-120b",
+          "num_simulations": 20,
+          "provider": "openai_compat",
+          "reasoning_effort": "medium",
+          "simulation_seed": 42,
+          "temperature": 0.7,
+          "turns_per_simulation": 20
+        }
+      },
+      "model_identity": {
+        "display_name": "Gpt 5.6 Luna Deepthink",
+        "model_key": "gpt-5.6-luna-deepthink"
+      },
+      "compiler_identity": {
+        "display_name": "Gpt Oss 120B",
+        "model_id": "openai/gpt-oss-120b",
+        "provider": "openai_compat"
+      },
+      "prompt_identities": [
+        {
+          "name": "action",
+          "sha256": "7383bba21264573f7a745f27d9b153c11ae7944e08edc43a0c8b9e83f3578117"
+        },
+        {
+          "name": "compile",
+          "sha256": "348694492199a5a25a78b985e1d50c443ee0df3e2c99d8567b8376ba4680e6c2"
+        },
+        {
+          "name": "game_rules",
+          "sha256": "da2ee6123a9e134d00d24bc214e4daf4d1570237fe8c10e2862616083cf994ca"
+        }
+      ],
+      "source_provenance": {
+        "dirty": false,
+        "files": [
+          {
+            "path": "config.yaml",
+            "sha256": "d46c7cdc8a96b5efd3323d0df804e50a43e8e4076e5dec5ad056138f81b27de2"
+          },
+          {
+            "path": "models.yaml",
+            "sha256": "366e1c526efa81c9eb3383700baffcf74eb7c0a1db7be977e1366740b5ecb3cc"
+          },
+          {
+            "path": "pyproject.toml",
+            "sha256": "92f3ebc2b62e3e7c73fa4a4d0f2908d9aa8e021481c11ed73a1a37fa6c49d8b5"
+          },
+          {
+            "path": "rules.json",
+            "sha256": "2d1b3739b0385997c7ae3e42224d74ab6efefcafc05766d9f8bda519899bb25c"
+          },
+          {
+            "path": "scripts/__init__.py",
+            "sha256": "4f971450d2d033caa6fd37b5a2263a915a7d761123efa87301d8df3d25b3fe34"
+          },
+          {
+            "path": "scripts/analyze_results.py",
+            "sha256": "0236bee3d20386d0261c8441db6e042c6823a421240b309e5275d69981039846"
+          },
+          {
+            "path": "scripts/check_progress.py",
+            "sha256": "ed70e793b51bdcbe913255b24a1a5f7e37fad9e86e9fd8626ced6fcb603b9e25"
+          },
+          {
+            "path": "scripts/evaluate_shadows.py",
+            "sha256": "4328c977bc58eae4f74c99924b6dbbdb1b30057c7d128d6313e26167af5e6b91"
+          },
+          {
+            "path": "scripts/evaluate_single.py",
+            "sha256": "10ef29b3e9d5bbf24106bdf682cb40f99557ce56a840a057c3f3e2d68421cc70"
+          },
+          {
+            "path": "scripts/generate_rule_library.py",
+            "sha256": "fdf9fa19828bd5f3196c12642fe48995b26901bd837570c0401548c66f1c13df"
+          },
+          {
+            "path": "scripts/run_parallel_benchmark.py",
+            "sha256": "c9663ccde768c6de6c7dde3410b13ea3e57606af8b5f3c8995643b3fad86c704"
+          },
+          {
+            "path": "scripts/run_parallel_eval.sh",
+            "sha256": "fd974d606fe3c9aac6d8ff9ec24436ea5567324a29c9599420c67d027ad63bf9"
+          },
+          {
+            "path": "scripts/status_report.py",
+            "sha256": "375593e02b19fbf06ad4bfa1401a17f05e123f778492afcb502cde23c352c6ae"
+          },
+          {
+            "path": "src/eleusis/__init__.py",
+            "sha256": "5178c326f150809ecc04a3363fb9c5df06d88077ed73d88e661a4292c9ffe478"
+          },
+          {
+            "path": "src/eleusis/analysis/__init__.py",
+            "sha256": "3009d68bfa38f634345709f48b60ef33223faf70cca5703a835c30a3164c163f"
+          },
+          {
+            "path": "src/eleusis/analysis/basic_metric_confidence.py",
+            "sha256": "7a7b9c015c3c473a3c28df9591660a3662f1020c64d45b8059a49769084eba65"
+          },
+          {
+            "path": "src/eleusis/analysis/basic_metric_performance.py",
+            "sha256": "a8dc90bf03319443f906024f8a91a8267feb2ed24f300c4d878122515739def1"
+          },
+          {
+            "path": "src/eleusis/analysis/basic_metrics.py",
+            "sha256": "7f5c4b1f6398192799912d9f622e56423eeafb9b6701efdecf047cd0b53c8166"
+          },
+          {
+            "path": "src/eleusis/analysis/benchmark_report.html",
+            "sha256": "071039d3ef97211d1e1726a9cf81794e857c7b58a42c79fb753fd8c640064a8f"
+          },
+          {
+            "path": "src/eleusis/analysis/benchmark_report.py",
+            "sha256": "761042c464c0008848b05506783b708c3a582b629c3d4312459b21ae4818f4cf"
+          },
+          {
+            "path": "src/eleusis/analysis/benchmark_run_artifact.py",
+            "sha256": "1929b9daeea8bef02b3a4da3bfa258ffe7de3e3e47e89576a5f1721ff832d9bb"
+          },
+          {
+            "path": "src/eleusis/analysis/by_rule.py",
+            "sha256": "ddbcee3c5f69033515087f6004991b0181fee6b450d329fa9ba32bc06b508328"
+          },
+          {
+            "path": "src/eleusis/analysis/colors.py",
+            "sha256": "f138acd61a9c647966e3368f4020784897bf2cb99ba78908637f1b352b7ef64a"
+          },
+          {
+            "path": "src/eleusis/analysis/complexity.py",
+            "sha256": "502f3d5c8a5d011e68e3d880402a2b73a658b438ce56267e0d4ab2eec69687af"
+          },
+          {
+            "path": "src/eleusis/analysis/complexity_ratio.py",
+            "sha256": "0b699b7b252f77ba614c970f418bb9a53b7742135cc41175497dcf4b32258ea5"
+          },
+          {
+            "path": "src/eleusis/analysis/excess_caution.py",
+            "sha256": "b6405b70eefac239810351be93604635bd4cfdcf764e5e1002d870e8b9fbb0c4"
+          },
+          {
+            "path": "src/eleusis/analysis/excess_caution_distribution.py",
+            "sha256": "f57b127c2cdd04d562d08e5939109bc1d8551a0257eeab9872cd7b58c0c006cc"
+          },
+          {
+            "path": "src/eleusis/analysis/excess_caution_relationships.py",
+            "sha256": "97440e655b1decfe0736726d358a1e113278bd922bef61fb0ea29ec1d1f69554"
+          },
+          {
+            "path": "src/eleusis/analysis/historical_run.py",
+            "sha256": "ec5b18f42b50e71160b7c73c270e66fa719df599704ba2c34127f2f350afd532"
+          },
+          {
+            "path": "src/eleusis/analysis/legacy_records.py",
+            "sha256": "68951cae7f962c4c3e59a3376fea7be4d93ce11965d30b1cc3acde35af94d04f"
+          },
+          {
+            "path": "src/eleusis/analysis/loader.py",
+            "sha256": "707d8c181b7d37b85fe61b95271293aee26a7602779ad278e52a8737397eb0c1"
+          },
+          {
+            "path": "src/eleusis/analysis/no_stakes.py",
+            "sha256": "4829899e777258c75b50b6b5dd859ab80427d44b751f58eacaf43a157bd5726a"
+          },
+          {
+            "path": "src/eleusis/analysis/per_model.py",
+            "sha256": "0776ee93594aef140f0f1b46736a2320a9e29a932f83ea569c6f85e5e0b2825d"
+          },
+          {
+            "path": "src/eleusis/analysis/reckless_guessing.py",
+            "sha256": "17b87bbcc97eb8bd3192c51a6e7c1f765e73eb8adf9a241854fa6116fe63b7f2"
+          },
+          {
+            "path": "src/eleusis/analysis/tokens_by_turn.py",
+            "sha256": "1df8a995ada948db03b8dce9e364a36a475ecdfa5e1d00faed2775fa1a2d8cbb"
+          },
+          {
+            "path": "src/eleusis/analysis/utils.py",
+            "sha256": "d840e9d65be8186392293d21b131d3d08b7d754d8e6b1f9505fd839e6a7bfe32"
+          },
+          {
+            "path": "src/eleusis/benchmark_config.py",
+            "sha256": "068bbcc690aac08053343c07c96d7e9fb86a88fb705e8c78214cead8bfb0b3f6"
+          },
+          {
+            "path": "src/eleusis/benchmark_run_manifest.py",
+            "sha256": "29882bdff1e013f4c3c30366f151396591fef3059518fedbb9e2a7b3b290bfda"
+          },
+          {
+            "path": "src/eleusis/benchmark_run_store.py",
+            "sha256": "73b102075549ce50e4ad7b8788ca157bd03b88daf411f1e527a77cad3a2a2915"
+          },
+          {
+            "path": "src/eleusis/evaluation_orchestrator.py",
+            "sha256": "d97119914d7dd3a9c970ecd4c29b86792f8e3dc7d344508b903ab163d4bd840a"
+          },
+          {
+            "path": "src/eleusis/evaluation_results.py",
+            "sha256": "9213f2c0414240b5c054504ddf2cf563a4176131f3d865d32bdd7dcde4ed13db"
+          },
+          {
+            "path": "src/eleusis/evaluation_startup.py",
+            "sha256": "2e42176612443fe0a17ffe81df6645771d432dd158a21e71541e51a293178d62"
+          },
+          {
+            "path": "src/eleusis/evaluation_state.py",
+            "sha256": "6d3f4969d22f0c3045d4fd28d90612dbfe1f0792a78df5ca9f9e30d7465c3923"
+          },
+          {
+            "path": "src/eleusis/evaluation_support.py",
+            "sha256": "abb1c21d0a8c03aedad612ccba7408124787328ec1b4d650a58dbb47f85ea1cb"
+          },
+          {
+            "path": "src/eleusis/experiment.py",
+            "sha256": "a1b1fa399cb9d1ac8800d3f9aaefaed08712144c49df6de05d729aa2b2c8f9ac"
+          },
+          {
+            "path": "src/eleusis/game/__init__.py",
+            "sha256": "07c00ef64ba2df367fb1ad1f2e8e80273d574b1b81992a3a416b73ae45e2a2be"
+          },
+          {
+            "path": "src/eleusis/game/cards.py",
+            "sha256": "48818f2ad04bbd31975573f8267e2fbbe711f53a0cfbe7894a6316bc634f1ed8"
+          },
+          {
+            "path": "src/eleusis/game/engine.py",
+            "sha256": "58797e1db72017a2ca26caaea91191caa0b77b52b3e7d6be61502590884de3c4"
+          },
+          {
+            "path": "src/eleusis/game/metrics.py",
+            "sha256": "97ca54499657a5c9cd605cc096b15458d251a3f2649f2f0fe6caa16308b35725"
+          },
+          {
+            "path": "src/eleusis/game/rule_factory.py",
+            "sha256": "dacc875831fb5948d891420291bdbfcbcf5576a8a42aab64b329dd3a961d6b0c"
+          },
+          {
+            "path": "src/eleusis/game/rule_library.py",
+            "sha256": "25cda8312c837c55e334485f87eb259a1e15d7d4a2f959089054620cae6518e5"
+          },
+          {
+            "path": "src/eleusis/game/state.py",
+            "sha256": "f005a1443be0e5e26143421d0dccfcab5bd8e5ce2966baff6bf266afd5e23cbc"
+          },
+          {
+            "path": "src/eleusis/game/validator.py",
+            "sha256": "17f81f28bc58fc723932eb336b3bd3308fe092136f2c36a14ffebf16e5f123ce"
+          },
+          {
+            "path": "src/eleusis/llm/__init__.py",
+            "sha256": "f3fc4af966c523d6a87e25e96c0271e0c4ac3dbd095962ffbd61c1041ddbe6bd"
+          },
+          {
+            "path": "src/eleusis/llm/anthropic.py",
+            "sha256": "64d8506c422c15677328a80f05fb9539e127a0b05e41950104c7c109e3190e4e"
+          },
+          {
+            "path": "src/eleusis/llm/base.py",
+            "sha256": "4e398fbd13806f7cbe4d6a9e1895a655cffbedcfc906049e1acac1faea65c0d3"
+          },
+          {
+            "path": "src/eleusis/llm/client_factory.py",
+            "sha256": "8f0579b5c1c39e80f89bc05350f054f2d9667e74bca2ec70bd7d651c2edd7228"
+          },
+          {
+            "path": "src/eleusis/llm/google.py",
+            "sha256": "e9ff4992e293e7d30eb1a4d1afc35e082bcda98117d573107e3827a27b7b912e"
+          },
+          {
+            "path": "src/eleusis/llm/huggingface.py",
+            "sha256": "97f519a1198f9a0b19acf8417b4e8fa2dcfafda6fe8d3bb678da381bccf19248"
+          },
+          {
+            "path": "src/eleusis/llm/huggingface_metrics.py",
+            "sha256": "3e3ab349b022ce0baaef725388e0a422a49e79a6175baf0cca5ad18396c9ea2f"
+          },
+          {
+            "path": "src/eleusis/llm/openai_client.py",
+            "sha256": "d910ed0e4089e904fb84e3c9eb1f0405ab682d759795b9120006c7dca5a921bd"
+          },
+          {
+            "path": "src/eleusis/llm/openai_compat.py",
+            "sha256": "16b28128951c00148ab273def8dfb117d0a164b9959d62c8006918c085ef8106"
+          },
+          {
+            "path": "src/eleusis/llm/openai_messages.py",
+            "sha256": "ce6aac5c823f57091dea9b411aa55c87e9073bd9a20e51f8ec9bc21d7821eead"
+          },
+          {
+            "path": "src/eleusis/llm/pi_auth.py",
+            "sha256": "8a904e22abc8bab015722aa69c41af7cf3c0792fe2301f9ea5e2249e16a09465"
+          },
+          {
+            "path": "src/eleusis/llm/rule_compilation.py",
+            "sha256": "ac60b0ac42c52d84430ba7cfecec6eec8b950de651516f5eab0c5be8ff6b5b96"
+          },
+          {
+            "path": "src/eleusis/llm/xai.py",
+            "sha256": "4c3450e0502a45279c7cb0edf932bb80a29c1d0388254f869f3ec6ceadbe3d16"
+          },
+          {
+            "path": "src/eleusis/normalization.py",
+            "sha256": "26e931718293f2c320a30bb459673a5da1a8fb1b73522756919e91a0a9adbeee"
+          },
+          {
+            "path": "src/eleusis/player.py",
+            "sha256": "669e7af172c79c50d32e00d93ceb195f7091c3fbfe5b3c24ba76a510b0a9d5b6"
+          },
+          {
+            "path": "src/eleusis/prompts/__init__.py",
+            "sha256": "aaf361af7916114227cbaf25e95845c46d282961d3dfaf81e1721fb4190e8f74"
+          },
+          {
+            "path": "src/eleusis/prompts/action.py",
+            "sha256": "7383bba21264573f7a745f27d9b153c11ae7944e08edc43a0c8b9e83f3578117"
+          },
+          {
+            "path": "src/eleusis/prompts/compile.py",
+            "sha256": "348694492199a5a25a78b985e1d50c443ee0df3e2c99d8567b8376ba4680e6c2"
+          },
+          {
+            "path": "src/eleusis/prompts/game_rules.py",
+            "sha256": "da2ee6123a9e134d00d24bc214e4daf4d1570237fe8c10e2862616083cf994ca"
+          },
+          {
+            "path": "src/eleusis/round_continuation.py",
+            "sha256": "abb52e2640b52aa3bc16e21df0c2dff89251c715c11bdbfdc4cab4b859629c4e"
+          },
+          {
+            "path": "src/eleusis/round_execution.py",
+            "sha256": "f476c5328736d0a9076e86b826b0f94d58abad16b61b27cd6ed1f3baa0431429"
+          },
+          {
+            "path": "src/eleusis/round_record.py",
+            "sha256": "89c3af554440d197592596b175753ac86d38d5f60e1c6d6abec5d8cf99769480"
+          },
+          {
+            "path": "src/eleusis/runner.py",
+            "sha256": "5245f82777b355776b7e4cea85e43781acf20cfefca12cc787ca3b188053aa48"
+          },
+          {
+            "path": "src/eleusis/shadow_verdict.py",
+            "sha256": "1de1e92bac390f11409c62baaa92175a34c9549298baba55f3f293e3220a4a8e"
+          },
+          {
+            "path": "src/eleusis/suites.py",
+            "sha256": "032aa7e7ec0ec463709ce78c96dc5899219e0ac85b356138ec02075b4b051235"
+          },
+          {
+            "path": "src/eleusis/utils.py",
+            "sha256": "f7ef15a24907484b814463d1c219842aa9c9cc708df71e4a1dbe39a6f3ea0ae3"
+          },
+          {
+            "path": "suites.yaml",
+            "sha256": "a295c22dd2690a182fa445cedd28a2ec04746d7eff8c53e3d4827693f2b72a77"
+          },
+          {
+            "path": "uv.lock",
+            "sha256": "367acd8011a7203994858929c39c35f94f328e6201a07a627d414c69fdaceac2"
+          }
+        ],
+        "fingerprint": "9da927ba439838e62d2bb0b8ff640af6c481cc1656f1ef38f142f3567ba91754",
+        "revision": "bd3300e6dbdd5def81fdc72c861a7f25cabd350e"
+      },
+      "turns": [
+        {
+          "turn_number": 1,
+          "pre_decision_state": {
+            "mainline": [
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              }
+            ],
+            "hand": [
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 2,
+                "suit": "hearts"
+              },
+              {
+                "rank": 1,
+                "suit": "spades"
+              },
+              {
+                "rank": 2,
+                "suit": "spades"
+              },
+              {
+                "rank": 3,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 6,
+                "suit": "hearts"
+              },
+              {
+                "rank": 6,
+                "suit": "spades"
+              },
+              {
+                "rank": 11,
+                "suit": "hearts"
+              },
+              {
+                "rank": 4,
+                "suit": "clubs"
+              },
+              {
+                "rank": 4,
+                "suit": "clubs"
+              },
+              {
+                "rank": 7,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 7,
+                "suit": "hearts"
+              }
+            ],
+            "turn_number": 1,
+            "failed_rule_guesses": []
+          },
+          "model_attempts": [
+            {
+              "attempt_number": 1,
+              "prompt": "# PATTERN DISCOVERY CARD GAME\n\nYou are playing a single-player card game where the goal is to discover a secret rule that determines which cards are accepted or rejected.\nThis is your turn to play. Your task is to select a card from your hand to play, and optionally try to guess the secret rule.\nYour score will depend on how many turns it takes you to correctly identify the rule.\nBelow you will find the rules of the game, the current game state, your play history, and a description of what you are expected to do.\n\n## RULES OF THE GAME\n### Overview\nThis is a single-player game.\nA hidden rule created by the game master determines which cards are accepted or rejected.\nYour goal is to play cards and discover the rule as efficiently as possible.\n\nThe game uses 2 standard 52-card decks shuffled together (104 cards total):\n- Ranks: Ace = 1 (low), 2-10, Jack = 11, Queen = 12, King = 13. Number cards are 1-10, face cards are 11-13.\n- Suits: Hearts \u2665\ufe0f (red), Diamonds \u2666\ufe0f (red), Clubs \u2663\ufe0f (black), Spades \u2660\ufe0f (black)\n\nThe playing area consists of:\n- **Mainline:** A horizontal row of accepted cards, ordered left-to-right by time of acceptance\n- **Sidelines:** Vertical columns beneath mainline cards. When a card is rejected, it is\n  placed in a column below the mainline card it was played after\n\n### Setup\n\n#### Secret Rule\n\nA deterministic secret rule is chosen by the game master.\nThe rule decides unambiguously whether a newly played card is **accepted** or **rejected**, for every possible card in every possible mainline state.\nThe rule is simple enough to be described in a single sentence.\nThe rule depends only on information visible in the mainline: the candidate card and/or any previously accepted mainline cards and their properties (their suits, colors, ranks, parity, positions, etc.)\nThe rule is deterministic, objective, does not reference sideline rejected cards or hidden information (cards in the deck, cards in your hand...)\n\nExamples of rules:\n- The card must be a different color than the last mainline card.\n- The card must be a heart or a spade.\n- The card must share either the suit or the color with the last mainline card, but not both.\n- The card's rank must differ from the last mainline card's rank by exactly 1 or 2.\n\n#### Initial Deal\n\nYou start with **12 cards** in your hand.\nThis hand size remains constant throughout the game, you always draw 1 card after playing.\nA starter card that satisfies the rule is placed on the mainline to begin the game.\n\n### Turn Structure\n\nOn each turn, you must:\n- Play a card from your hand, you then receive feedback (accepted or rejected)\n- Optionally try to guess the rule, in order to end the round and score (see below)\n- You draw a new card from the deck to maintain your hand size\n\n#### Playing a Card\n\nOnce you played a card from your hand to play, you will receive the feedback from the game master, based on the secret rule.\n- **If Rejected:** the card goes to a sideline column directly below the last mainline card;\n- **If Accepted:** the card becomes the new last mainline card;\n\n### Guessing the Rule\n\nWhen playing a card, you may attempt to state the rule you believe governs acceptance/rejection.\nThe game master judges whether your stated rule is **equivalent** to the secret rule.\nThe wording does not need to match exactly. Only logical equivalence matters.\n- **Incorrect guess:** The guess is recorded as wrong and **penalty of 2 points** will later be applied to your final score. Play continues.\n- **Correct guess:** The game ends immediately, you score based on the number of turns taken and wrong guesses.\n\n### End Game & Scoring\n\nThe game ends when:\n1. You **correctly guess the rule**, or\n2. You reach the maximum of 8 turns without guessing correctly\n\nYour score is calculated as follows:\nScore = (8 - current_turn) - (2 x number_of_failed_guesses)\n\nScore can be negative. **Higher scores are better**. The goal is to discover the rule quickly with few failed guesses.\n---\n\n\n## YOUR TASK: CHOOSE YOUR NEXT ACTION\n\nAs a player, this is your turn to play and you must simultaneously:\n1. Select a card from your hand to play.\n2. Optionally, make a guess about the hidden rule.\n\n### Current game state\n\nTurn: 1 / 8\nPenalty so far for 0 wrong guesses: 0\nCurrent potential score if you guess the rule correctly this turn: 8\n\n#### Mainline & Sidelines\n\nThis is the mainline and sidelines so far. Rejected cards are shown in brackets after the mainline card they were played after :\n\n4\u2660\n\n#### Your hand\n\n8\u2666, 2\u2665, A\u2660, 2\u2660, 3\u2666, 6\u2665, 6\u2660, J\u2665, 4\u2663, 4\u2663, 7\u2666, 7\u2665\n\n#### Your recent play history\n\n\n\n#### All your previous failed rule guesses (if any)\n\n\n### Task description and formatting instructions\n\nYou must select a card from your hand to play and optionally decide to try to guess the rule.\n\nYou will be asked to provide the following in your response:\n- A short one sentence summary of your reasoning, explaining your thought process about the pattern so far and why you are playing the selected card.\n- The card you are playing from your hand (must be one of the cards listed in your hand).\n- Your current best guess about the hidden rule (must be clear and unequivocal).\n- Your confidence level in your tentative guess rule on a scale of 0-10 (for instance 7 means \"70% confident : there 70% probability to be correct\")\n- Whether you want to officially guess the rule this turn (true or false). Only set to true if you want to make an official guess with your tentative rule. Otherwise, your tentative rule is just for your own tracking and will not be evaluated this turn.\n\nFormat your response as follows:\n<ACTION>\n{\n    \"reasoning_summary\": \"One sentence summary of your analysis and why you're playing this card\",\n    \"card\": \"5\u2665\" (the card symbol from your hand, must be the exact symbol e.g., \"5\u2665\", \"K\u2660\", \"A\u2666\",...)\n    \"tentative_rule\": \"Your current best guess about the rule\",\n    \"confidence_level\": 0-10,\n    \"guess_rule\": true or false (whether to officially try to guess the rule this turn)\n}\n</ACTION>\n\nAlways provide your current best hypothesis as a tentative rule, even if you're uncertain.\nIf you set guess_rule to false, this tentative rule will not be evaluated, it's just for your own tracking.\nSet \"guess_rule\" to true only when you want to officially try to guess the rule.\n   - If correct, you score and the round ends immediately.\n   - If incorrect, you will lose 2 points from your final score, and the round continues.\n\n#### Example:\n<ACTION>\n{\n    \"reasoning_summary\": \"I see red and black cards alternating. My 3\u2665 is red, last card was black.\",\n    \"card\": \"3\u2665\",\n    \"tentative_rule\": \"Cards must alternate between red and black colors\",\n    \"confidence_level\": 8,\n    \"guess_rule\": false\n}\n</ACTION>\n",
+              "raw_completion": "<ACTION>\n{\n  \"reasoning_summary\": \"With only the starter 4\u2660 revealed, I am testing whether acceptance depends on matching the previous card's rank or color while changing the suit.\",\n  \"card\": \"4\u2663\",\n  \"tentative_rule\": \"A card is accepted if it shares either the rank or the color with the last mainline card.\",\n  \"confidence_level\": 1,\n  \"guess_rule\": false\n}\n</ACTION>",
+              "structured_completion": {
+                "card": "4\u2663",
+                "confidence_level": 1,
+                "guess_rule": false,
+                "reasoning_summary": "With only the starter 4\u2660 revealed, I am testing whether acceptance depends on matching the previous card's rank or color while changing the suit.",
+                "tentative_rule": "A card is accepted if it shares either the rank or the color with the last mainline card."
+              },
+              "interpretation": "usable_action",
+              "retry_cause": null,
+              "started_at": 1786910291.7613232,
+              "duration_seconds": 15.701675653457642,
+              "provider": "openai",
+              "model": "gpt-5.6-luna",
+              "finish_reason": "stop",
+              "token_metrics": {
+                "prompt_tokens": 2054,
+                "output_tokens": 100,
+                "reasoning_tokens": 0,
+                "answer_tokens": 100
+              },
+              "reasoning_text": "We need choose exploratory card, no guess. Need infer likely simple rule and maximize information. Starter 4\u2660. Hand varied. Could play card likely accepted under hypotheses? Need one action only, feedback next. Choose 4\u2663 perhaps tests same rank/suit/color possibilities: same rank black, whereas 6\u2660 tests same suit, black; 2\u2665 etc. To distinguish common rules, card 4\u2663 shares rank and color with 4\u2660 but not suit; if accepted suggests same color/rank rules, rejected could indicate different color, suit, rank difference. 4\u2663 duplicate available. Play 4\u2663. Tentative best guess perhaps card must share suit or rank with last mainline? But starter and no evidence. Could state \"",
+              "provider_calls": [
+                {
+                  "call_number": 1,
+                  "provider": "openai",
+                  "model": "gpt-5.6-luna",
+                  "timestamp": 1786910304.8361008,
+                  "duration_seconds": 2.6264355182647705,
+                  "finish_reason": "stop",
+                  "is_continuation": true,
+                  "continuation_depth": 1,
+                  "token_metrics": {
+                    "prompt_tokens": 2054,
+                    "output_tokens": 100,
+                    "reasoning_tokens": 0,
+                    "answer_tokens": 100
+                  }
+                }
+              ]
+            }
+          ],
+          "final_decision": {
+            "origin": "model_attempt",
+            "selected_card": {
+              "rank": 4,
+              "suit": "clubs"
+            },
+            "model_attempt_number": 1
+          },
+          "card_outcome": {
+            "accepted": true,
+            "replacement_draw": {
+              "rank": 8,
+              "suit": "diamonds"
+            }
+          },
+          "post_card_state": {
+            "mainline": [
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "clubs"
+                },
+                "rejected_cards": []
+              }
+            ],
+            "hand": [
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 2,
+                "suit": "hearts"
+              },
+              {
+                "rank": 1,
+                "suit": "spades"
+              },
+              {
+                "rank": 2,
+                "suit": "spades"
+              },
+              {
+                "rank": 3,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 6,
+                "suit": "hearts"
+              },
+              {
+                "rank": 6,
+                "suit": "spades"
+              },
+              {
+                "rank": 11,
+                "suit": "hearts"
+              },
+              {
+                "rank": 4,
+                "suit": "clubs"
+              },
+              {
+                "rank": 7,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 7,
+                "suit": "hearts"
+              },
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              }
+            ],
+            "turn_number": 1,
+            "failed_rule_guesses": []
+          },
+          "guess_attempt": null,
+          "schema_errors": []
+        },
+        {
+          "turn_number": 2,
+          "pre_decision_state": {
+            "mainline": [
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "clubs"
+                },
+                "rejected_cards": []
+              }
+            ],
+            "hand": [
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 2,
+                "suit": "hearts"
+              },
+              {
+                "rank": 1,
+                "suit": "spades"
+              },
+              {
+                "rank": 2,
+                "suit": "spades"
+              },
+              {
+                "rank": 3,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 6,
+                "suit": "hearts"
+              },
+              {
+                "rank": 6,
+                "suit": "spades"
+              },
+              {
+                "rank": 11,
+                "suit": "hearts"
+              },
+              {
+                "rank": 4,
+                "suit": "clubs"
+              },
+              {
+                "rank": 7,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 7,
+                "suit": "hearts"
+              },
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              }
+            ],
+            "turn_number": 2,
+            "failed_rule_guesses": []
+          },
+          "model_attempts": [
+            {
+              "attempt_number": 1,
+              "prompt": "# PATTERN DISCOVERY CARD GAME\n\nYou are playing a single-player card game where the goal is to discover a secret rule that determines which cards are accepted or rejected.\nThis is your turn to play. Your task is to select a card from your hand to play, and optionally try to guess the secret rule.\nYour score will depend on how many turns it takes you to correctly identify the rule.\nBelow you will find the rules of the game, the current game state, your play history, and a description of what you are expected to do.\n\n## RULES OF THE GAME\n### Overview\nThis is a single-player game.\nA hidden rule created by the game master determines which cards are accepted or rejected.\nYour goal is to play cards and discover the rule as efficiently as possible.\n\nThe game uses 2 standard 52-card decks shuffled together (104 cards total):\n- Ranks: Ace = 1 (low), 2-10, Jack = 11, Queen = 12, King = 13. Number cards are 1-10, face cards are 11-13.\n- Suits: Hearts \u2665\ufe0f (red), Diamonds \u2666\ufe0f (red), Clubs \u2663\ufe0f (black), Spades \u2660\ufe0f (black)\n\nThe playing area consists of:\n- **Mainline:** A horizontal row of accepted cards, ordered left-to-right by time of acceptance\n- **Sidelines:** Vertical columns beneath mainline cards. When a card is rejected, it is\n  placed in a column below the mainline card it was played after\n\n### Setup\n\n#### Secret Rule\n\nA deterministic secret rule is chosen by the game master.\nThe rule decides unambiguously whether a newly played card is **accepted** or **rejected**, for every possible card in every possible mainline state.\nThe rule is simple enough to be described in a single sentence.\nThe rule depends only on information visible in the mainline: the candidate card and/or any previously accepted mainline cards and their properties (their suits, colors, ranks, parity, positions, etc.)\nThe rule is deterministic, objective, does not reference sideline rejected cards or hidden information (cards in the deck, cards in your hand...)\n\nExamples of rules:\n- The card must be a different color than the last mainline card.\n- The card must be a heart or a spade.\n- The card must share either the suit or the color with the last mainline card, but not both.\n- The card's rank must differ from the last mainline card's rank by exactly 1 or 2.\n\n#### Initial Deal\n\nYou start with **12 cards** in your hand.\nThis hand size remains constant throughout the game, you always draw 1 card after playing.\nA starter card that satisfies the rule is placed on the mainline to begin the game.\n\n### Turn Structure\n\nOn each turn, you must:\n- Play a card from your hand, you then receive feedback (accepted or rejected)\n- Optionally try to guess the rule, in order to end the round and score (see below)\n- You draw a new card from the deck to maintain your hand size\n\n#### Playing a Card\n\nOnce you played a card from your hand to play, you will receive the feedback from the game master, based on the secret rule.\n- **If Rejected:** the card goes to a sideline column directly below the last mainline card;\n- **If Accepted:** the card becomes the new last mainline card;\n\n### Guessing the Rule\n\nWhen playing a card, you may attempt to state the rule you believe governs acceptance/rejection.\nThe game master judges whether your stated rule is **equivalent** to the secret rule.\nThe wording does not need to match exactly. Only logical equivalence matters.\n- **Incorrect guess:** The guess is recorded as wrong and **penalty of 2 points** will later be applied to your final score. Play continues.\n- **Correct guess:** The game ends immediately, you score based on the number of turns taken and wrong guesses.\n\n### End Game & Scoring\n\nThe game ends when:\n1. You **correctly guess the rule**, or\n2. You reach the maximum of 8 turns without guessing correctly\n\nYour score is calculated as follows:\nScore = (8 - current_turn) - (2 x number_of_failed_guesses)\n\nScore can be negative. **Higher scores are better**. The goal is to discover the rule quickly with few failed guesses.\n---\n\n\n## YOUR TASK: CHOOSE YOUR NEXT ACTION\n\nAs a player, this is your turn to play and you must simultaneously:\n1. Select a card from your hand to play.\n2. Optionally, make a guess about the hidden rule.\n\n### Current game state\n\nTurn: 2 / 8\nPenalty so far for 0 wrong guesses: 0\nCurrent potential score if you guess the rule correctly this turn: 7\n\n#### Mainline & Sidelines\n\nThis is the mainline and sidelines so far. Rejected cards are shown in brackets after the mainline card they were played after :\n\n4\u2660 4\u2663\n\n#### Your hand\n\n8\u2666, 2\u2665, A\u2660, 2\u2660, 3\u2666, 6\u2665, 6\u2660, J\u2665, 4\u2663, 7\u2666, 7\u2665, 8\u2666\n\n#### Your recent play history\n\nYour last 3 turns (the card you played, the outcome and your reasoning summary):\n- 4\u2663: \u2713 ACCEPTED\n  Your reasoning: With only the starter 4\u2660 revealed, I am testing whether acceptance depends on matching the previous card's rank or color while changing the suit.\n\n\n#### All your previous failed rule guesses (if any)\n\n\n### Task description and formatting instructions\n\nYou must select a card from your hand to play and optionally decide to try to guess the rule.\n\nYou will be asked to provide the following in your response:\n- A short one sentence summary of your reasoning, explaining your thought process about the pattern so far and why you are playing the selected card.\n- The card you are playing from your hand (must be one of the cards listed in your hand).\n- Your current best guess about the hidden rule (must be clear and unequivocal).\n- Your confidence level in your tentative guess rule on a scale of 0-10 (for instance 7 means \"70% confident : there 70% probability to be correct\")\n- Whether you want to officially guess the rule this turn (true or false). Only set to true if you want to make an official guess with your tentative rule. Otherwise, your tentative rule is just for your own tracking and will not be evaluated this turn.\n\nFormat your response as follows:\n<ACTION>\n{\n    \"reasoning_summary\": \"One sentence summary of your analysis and why you're playing this card\",\n    \"card\": \"5\u2665\" (the card symbol from your hand, must be the exact symbol e.g., \"5\u2665\", \"K\u2660\", \"A\u2666\",...)\n    \"tentative_rule\": \"Your current best guess about the rule\",\n    \"confidence_level\": 0-10,\n    \"guess_rule\": true or false (whether to officially try to guess the rule this turn)\n}\n</ACTION>\n\nAlways provide your current best hypothesis as a tentative rule, even if you're uncertain.\nIf you set guess_rule to false, this tentative rule will not be evaluated, it's just for your own tracking.\nSet \"guess_rule\" to true only when you want to officially try to guess the rule.\n   - If correct, you score and the round ends immediately.\n   - If incorrect, you will lose 2 points from your final score, and the round continues.\n\n#### Example:\n<ACTION>\n{\n    \"reasoning_summary\": \"I see red and black cards alternating. My 3\u2665 is red, last card was black.\",\n    \"card\": \"3\u2665\",\n    \"tentative_rule\": \"Cards must alternate between red and black colors\",\n    \"confidence_level\": 8,\n    \"guess_rule\": false\n}\n</ACTION>\n",
+              "raw_completion": "<ACTION>\n{\n  \"reasoning_summary\": \"The accepted 4\u2663 shared the black color with the preceding 4\u2660, so I am testing the color hypothesis with another black card of a different rank.\",\n  \"card\": \"2\u2660\",\n  \"tentative_rule\": \"A card is accepted if it has the same color as the previous mainline card.\",\n  \"confidence_level\": 3,\n  \"guess_rule\": false\n}\n</ACTION>",
+              "structured_completion": {
+                "card": "2\u2660",
+                "confidence_level": 3,
+                "guess_rule": false,
+                "reasoning_summary": "The accepted 4\u2663 shared the black color with the preceding 4\u2660, so I am testing the color hypothesis with another black card of a different rank.",
+                "tentative_rule": "A card is accepted if it has the same color as the previous mainline card."
+              },
+              "interpretation": "usable_action",
+              "retry_cause": null,
+              "started_at": 1786910307.4805868,
+              "duration_seconds": 13.013214349746704,
+              "provider": "openai",
+              "model": "gpt-5.6-luna",
+              "finish_reason": "stop",
+              "token_metrics": {
+                "prompt_tokens": 4059,
+                "output_tokens": 636,
+                "reasoning_tokens": 0,
+                "answer_tokens": 636
+              },
+              "reasoning_text": "We need choose card, infer from 4\u2660 starter, 4\u2663 accepted. Need exploit distinctions. Possibilities rule same rank? Different color? Same rank and different suit? Given 4\u2660 to 4\u2663: same rank, both black, different suit. We need select likely probe distinguishing. Hand includes 4\u2663 duplicate (already played? hand lists it oddly perhaps duplicate deck), 2 cards etc. Could play 4\u2665 or 4\u2666 unavailable. Rule perhaps card rank equals last? Then play another 4\u2663 (same rank) accepted likely, but duplicates. Could test color/suit/rank. 2\u2665: different rank, different color, different suit. 2\u2660: diff rank, same color, diff suit. 6\u2660 diff rank same suit as last? Last 4\u2663, no. 6\u2665 etc. Need likely select 2\u2660 to test same color perhaps, or 4\u2663 to test rank. Since only observed acceptance of 4\u2663, common hidden rule likely same rank as previous card, or same color, or same suit? 4\u2660 -> 4\u2663 shares rank and color, not suit. Need maximize information, choose card with rank 4 if hypothesis rank; only 4\u2663 duplicate. But if rejected, can distinguish. Better play 2\u2660: same color as last, different rank/suit; if accepted supports color, if rejected rules out color but not rank/suit. Yet no card same suit as last (4\u2660) available. 6\u2660 same suit as starter? Current last is 4\u2663, so rule may compare to last. Need remember mainline 4\u2660 4\u2663. Candidate 2\u2660 shares suit with first, not last. Rule examples likely last card. Could choose 2\u2660 to test color (same black) and perhaps alternating rank? 6\u2663 unavailable. 4\u2663 duplicate is exact same properties and likely accepted under many rules (same card), low info. Choose 2\u2660 as diagnostic, no official guess. Tentative best rule: accepted cards must have same color as previous mainline card. Confidence maybe 3 due one data point. But candidate 2\u2660 may be accepted if color rule, then stronger. Could choose 2\u2665 to test different color, but if rejected supports color and also many others. Same color candidate maximizes test of color. Use 2\u2660.",
+              "provider_calls": [
+                {
+                  "call_number": 1,
+                  "provider": "openai",
+                  "model": "gpt-5.6-luna",
+                  "timestamp": 1786910307.4805973,
+                  "duration_seconds": 10.460875988006592,
+                  "finish_reason": "stop",
+                  "is_continuation": false,
+                  "continuation_depth": 0,
+                  "token_metrics": {
+                    "prompt_tokens": 1753,
+                    "output_tokens": 535,
+                    "reasoning_tokens": 0,
+                    "answer_tokens": 535
+                  }
+                },
+                {
+                  "call_number": 2,
+                  "provider": "openai",
+                  "model": "gpt-5.6-luna",
+                  "timestamp": 1786910317.941679,
+                  "duration_seconds": 2.551476240158081,
+                  "finish_reason": "stop",
+                  "is_continuation": true,
+                  "continuation_depth": 1,
+                  "token_metrics": {
+                    "prompt_tokens": 2306,
+                    "output_tokens": 101,
+                    "reasoning_tokens": 0,
+                    "answer_tokens": 101
+                  }
+                }
+              ]
+            }
+          ],
+          "final_decision": {
+            "origin": "model_attempt",
+            "selected_card": {
+              "rank": 2,
+              "suit": "spades"
+            },
+            "model_attempt_number": 1
+          },
+          "card_outcome": {
+            "accepted": true,
+            "replacement_draw": {
+              "rank": 2,
+              "suit": "spades"
+            }
+          },
+          "post_card_state": {
+            "mainline": [
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "clubs"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 2,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              }
+            ],
+            "hand": [
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 2,
+                "suit": "hearts"
+              },
+              {
+                "rank": 1,
+                "suit": "spades"
+              },
+              {
+                "rank": 3,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 6,
+                "suit": "hearts"
+              },
+              {
+                "rank": 6,
+                "suit": "spades"
+              },
+              {
+                "rank": 11,
+                "suit": "hearts"
+              },
+              {
+                "rank": 4,
+                "suit": "clubs"
+              },
+              {
+                "rank": 7,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 7,
+                "suit": "hearts"
+              },
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 2,
+                "suit": "spades"
+              }
+            ],
+            "turn_number": 2,
+            "failed_rule_guesses": []
+          },
+          "guess_attempt": null,
+          "schema_errors": []
+        },
+        {
+          "turn_number": 3,
+          "pre_decision_state": {
+            "mainline": [
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "clubs"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 2,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              }
+            ],
+            "hand": [
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 2,
+                "suit": "hearts"
+              },
+              {
+                "rank": 1,
+                "suit": "spades"
+              },
+              {
+                "rank": 3,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 6,
+                "suit": "hearts"
+              },
+              {
+                "rank": 6,
+                "suit": "spades"
+              },
+              {
+                "rank": 11,
+                "suit": "hearts"
+              },
+              {
+                "rank": 4,
+                "suit": "clubs"
+              },
+              {
+                "rank": 7,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 7,
+                "suit": "hearts"
+              },
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 2,
+                "suit": "spades"
+              }
+            ],
+            "turn_number": 3,
+            "failed_rule_guesses": []
+          },
+          "model_attempts": [
+            {
+              "attempt_number": 1,
+              "prompt": "# PATTERN DISCOVERY CARD GAME\n\nYou are playing a single-player card game where the goal is to discover a secret rule that determines which cards are accepted or rejected.\nThis is your turn to play. Your task is to select a card from your hand to play, and optionally try to guess the secret rule.\nYour score will depend on how many turns it takes you to correctly identify the rule.\nBelow you will find the rules of the game, the current game state, your play history, and a description of what you are expected to do.\n\n## RULES OF THE GAME\n### Overview\nThis is a single-player game.\nA hidden rule created by the game master determines which cards are accepted or rejected.\nYour goal is to play cards and discover the rule as efficiently as possible.\n\nThe game uses 2 standard 52-card decks shuffled together (104 cards total):\n- Ranks: Ace = 1 (low), 2-10, Jack = 11, Queen = 12, King = 13. Number cards are 1-10, face cards are 11-13.\n- Suits: Hearts \u2665\ufe0f (red), Diamonds \u2666\ufe0f (red), Clubs \u2663\ufe0f (black), Spades \u2660\ufe0f (black)\n\nThe playing area consists of:\n- **Mainline:** A horizontal row of accepted cards, ordered left-to-right by time of acceptance\n- **Sidelines:** Vertical columns beneath mainline cards. When a card is rejected, it is\n  placed in a column below the mainline card it was played after\n\n### Setup\n\n#### Secret Rule\n\nA deterministic secret rule is chosen by the game master.\nThe rule decides unambiguously whether a newly played card is **accepted** or **rejected**, for every possible card in every possible mainline state.\nThe rule is simple enough to be described in a single sentence.\nThe rule depends only on information visible in the mainline: the candidate card and/or any previously accepted mainline cards and their properties (their suits, colors, ranks, parity, positions, etc.)\nThe rule is deterministic, objective, does not reference sideline rejected cards or hidden information (cards in the deck, cards in your hand...)\n\nExamples of rules:\n- The card must be a different color than the last mainline card.\n- The card must be a heart or a spade.\n- The card must share either the suit or the color with the last mainline card, but not both.\n- The card's rank must differ from the last mainline card's rank by exactly 1 or 2.\n\n#### Initial Deal\n\nYou start with **12 cards** in your hand.\nThis hand size remains constant throughout the game, you always draw 1 card after playing.\nA starter card that satisfies the rule is placed on the mainline to begin the game.\n\n### Turn Structure\n\nOn each turn, you must:\n- Play a card from your hand, you then receive feedback (accepted or rejected)\n- Optionally try to guess the rule, in order to end the round and score (see below)\n- You draw a new card from the deck to maintain your hand size\n\n#### Playing a Card\n\nOnce you played a card from your hand to play, you will receive the feedback from the game master, based on the secret rule.\n- **If Rejected:** the card goes to a sideline column directly below the last mainline card;\n- **If Accepted:** the card becomes the new last mainline card;\n\n### Guessing the Rule\n\nWhen playing a card, you may attempt to state the rule you believe governs acceptance/rejection.\nThe game master judges whether your stated rule is **equivalent** to the secret rule.\nThe wording does not need to match exactly. Only logical equivalence matters.\n- **Incorrect guess:** The guess is recorded as wrong and **penalty of 2 points** will later be applied to your final score. Play continues.\n- **Correct guess:** The game ends immediately, you score based on the number of turns taken and wrong guesses.\n\n### End Game & Scoring\n\nThe game ends when:\n1. You **correctly guess the rule**, or\n2. You reach the maximum of 8 turns without guessing correctly\n\nYour score is calculated as follows:\nScore = (8 - current_turn) - (2 x number_of_failed_guesses)\n\nScore can be negative. **Higher scores are better**. The goal is to discover the rule quickly with few failed guesses.\n---\n\n\n## YOUR TASK: CHOOSE YOUR NEXT ACTION\n\nAs a player, this is your turn to play and you must simultaneously:\n1. Select a card from your hand to play.\n2. Optionally, make a guess about the hidden rule.\n\n### Current game state\n\nTurn: 3 / 8\nPenalty so far for 0 wrong guesses: 0\nCurrent potential score if you guess the rule correctly this turn: 6\n\n#### Mainline & Sidelines\n\nThis is the mainline and sidelines so far. Rejected cards are shown in brackets after the mainline card they were played after :\n\n4\u2660 4\u2663 2\u2660\n\n#### Your hand\n\n8\u2666, 2\u2665, A\u2660, 3\u2666, 6\u2665, 6\u2660, J\u2665, 4\u2663, 7\u2666, 7\u2665, 8\u2666, 2\u2660\n\n#### Your recent play history\n\nYour last 3 turns (the card you played, the outcome and your reasoning summary):\n- 4\u2663: \u2713 ACCEPTED\n  Your reasoning: With only the starter 4\u2660 revealed, I am testing whether acceptance depends on matching the previous card's rank or color while changing the suit.\n- 2\u2660: \u2713 ACCEPTED\n  Your reasoning: The accepted 4\u2663 shared the black color with the preceding 4\u2660, so I am testing the color hypothesis with another black card of a different rank.\n\n\n#### All your previous failed rule guesses (if any)\n\n\n### Task description and formatting instructions\n\nYou must select a card from your hand to play and optionally decide to try to guess the rule.\n\nYou will be asked to provide the following in your response:\n- A short one sentence summary of your reasoning, explaining your thought process about the pattern so far and why you are playing the selected card.\n- The card you are playing from your hand (must be one of the cards listed in your hand).\n- Your current best guess about the hidden rule (must be clear and unequivocal).\n- Your confidence level in your tentative guess rule on a scale of 0-10 (for instance 7 means \"70% confident : there 70% probability to be correct\")\n- Whether you want to officially guess the rule this turn (true or false). Only set to true if you want to make an official guess with your tentative rule. Otherwise, your tentative rule is just for your own tracking and will not be evaluated this turn.\n\nFormat your response as follows:\n<ACTION>\n{\n    \"reasoning_summary\": \"One sentence summary of your analysis and why you're playing this card\",\n    \"card\": \"5\u2665\" (the card symbol from your hand, must be the exact symbol e.g., \"5\u2665\", \"K\u2660\", \"A\u2666\",...)\n    \"tentative_rule\": \"Your current best guess about the rule\",\n    \"confidence_level\": 0-10,\n    \"guess_rule\": true or false (whether to officially try to guess the rule this turn)\n}\n</ACTION>\n\nAlways provide your current best hypothesis as a tentative rule, even if you're uncertain.\nIf you set guess_rule to false, this tentative rule will not be evaluated, it's just for your own tracking.\nSet \"guess_rule\" to true only when you want to officially try to guess the rule.\n   - If correct, you score and the round ends immediately.\n   - If incorrect, you will lose 2 points from your final score, and the round continues.\n\n#### Example:\n<ACTION>\n{\n    \"reasoning_summary\": \"I see red and black cards alternating. My 3\u2665 is red, last card was black.\",\n    \"card\": \"3\u2665\",\n    \"tentative_rule\": \"Cards must alternate between red and black colors\",\n    \"confidence_level\": 8,\n    \"guess_rule\": false\n}\n</ACTION>\n",
+              "raw_completion": "<ACTION>\n{\n  \"reasoning_summary\": \"The accepted cards have all been black, but 2\u2665 would test whether matching the last card's rank is sufficient despite changing color and suit.\",\n  \"card\": \"2\u2665\",\n  \"tentative_rule\": \"A card is accepted if it is black.\",\n  \"confidence_level\": 5,\n  \"guess_rule\": false\n}\n</ACTION>",
+              "structured_completion": {
+                "card": "2\u2665",
+                "confidence_level": 5,
+                "guess_rule": false,
+                "reasoning_summary": "The accepted cards have all been black, but 2\u2665 would test whether matching the last card's rank is sufficient despite changing color and suit.",
+                "tentative_rule": "A card is accepted if it is black."
+              },
+              "interpretation": "usable_action",
+              "retry_cause": null,
+              "started_at": 1786910320.5162535,
+              "duration_seconds": 6.780333757400513,
+              "provider": "openai",
+              "model": "gpt-5.6-luna",
+              "finish_reason": "stop",
+              "token_metrics": {
+                "prompt_tokens": 3799,
+                "output_tokens": 260,
+                "reasoning_tokens": 0,
+                "answer_tokens": 260
+              },
+              "reasoning_text": "Accepted mainline 4\u2660, 4\u2663, 2\u2660. Need choose informative card. Possible rule likely card must share suit or rank? Transitions: 4S->4C share rank, 4C->2S share color (black), perhaps rule is card must be black? All accepted black, but hand tests. Could be successive accepted cards must share either rank or color? 4C to 2S shares color; 4S to 4C shares rank and color. Choose a red card to test black-only versus relational hypotheses, ideally 2\u2665 shares rank with last 2\u2660 but changes color/suit; or 6\u2660 shares color with last. Playing 2\u2665 distinguishes rule ",
+              "provider_calls": [
+                {
+                  "call_number": 1,
+                  "provider": "openai",
+                  "model": "gpt-5.6-luna",
+                  "timestamp": 1786910320.516262,
+                  "duration_seconds": 4.408396482467651,
+                  "finish_reason": "stop",
+                  "is_continuation": false,
+                  "continuation_depth": 0,
+                  "token_metrics": {
+                    "prompt_tokens": 1805,
+                    "output_tokens": 173,
+                    "reasoning_tokens": 0,
+                    "answer_tokens": 173
+                  }
+                },
+                {
+                  "call_number": 2,
+                  "provider": "openai",
+                  "model": "gpt-5.6-luna",
+                  "timestamp": 1786910324.9249227,
+                  "duration_seconds": 2.371271848678589,
+                  "finish_reason": "stop",
+                  "is_continuation": true,
+                  "continuation_depth": 1,
+                  "token_metrics": {
+                    "prompt_tokens": 1994,
+                    "output_tokens": 87,
+                    "reasoning_tokens": 0,
+                    "answer_tokens": 87
+                  }
+                }
+              ]
+            }
+          ],
+          "final_decision": {
+            "origin": "model_attempt",
+            "selected_card": {
+              "rank": 2,
+              "suit": "hearts"
+            },
+            "model_attempt_number": 1
+          },
+          "card_outcome": {
+            "accepted": true,
+            "replacement_draw": {
+              "rank": 5,
+              "suit": "spades"
+            }
+          },
+          "post_card_state": {
+            "mainline": [
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "clubs"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 2,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 2,
+                  "suit": "hearts"
+                },
+                "rejected_cards": []
+              }
+            ],
+            "hand": [
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 1,
+                "suit": "spades"
+              },
+              {
+                "rank": 3,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 6,
+                "suit": "hearts"
+              },
+              {
+                "rank": 6,
+                "suit": "spades"
+              },
+              {
+                "rank": 11,
+                "suit": "hearts"
+              },
+              {
+                "rank": 4,
+                "suit": "clubs"
+              },
+              {
+                "rank": 7,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 7,
+                "suit": "hearts"
+              },
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 2,
+                "suit": "spades"
+              },
+              {
+                "rank": 5,
+                "suit": "spades"
+              }
+            ],
+            "turn_number": 3,
+            "failed_rule_guesses": []
+          },
+          "guess_attempt": {
+            "guess": "A card is accepted if it is black.",
+            "kind": "shadow",
+            "online_evaluation": null,
+            "proposal_id": "round:1:turn:3:shadow",
+            "version": 1
+          },
+          "schema_errors": []
+        },
+        {
+          "turn_number": 4,
+          "pre_decision_state": {
+            "mainline": [
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "clubs"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 2,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 2,
+                  "suit": "hearts"
+                },
+                "rejected_cards": []
+              }
+            ],
+            "hand": [
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 1,
+                "suit": "spades"
+              },
+              {
+                "rank": 3,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 6,
+                "suit": "hearts"
+              },
+              {
+                "rank": 6,
+                "suit": "spades"
+              },
+              {
+                "rank": 11,
+                "suit": "hearts"
+              },
+              {
+                "rank": 4,
+                "suit": "clubs"
+              },
+              {
+                "rank": 7,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 7,
+                "suit": "hearts"
+              },
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 2,
+                "suit": "spades"
+              },
+              {
+                "rank": 5,
+                "suit": "spades"
+              }
+            ],
+            "turn_number": 4,
+            "failed_rule_guesses": []
+          },
+          "model_attempts": [
+            {
+              "attempt_number": 1,
+              "prompt": "# PATTERN DISCOVERY CARD GAME\n\nYou are playing a single-player card game where the goal is to discover a secret rule that determines which cards are accepted or rejected.\nThis is your turn to play. Your task is to select a card from your hand to play, and optionally try to guess the secret rule.\nYour score will depend on how many turns it takes you to correctly identify the rule.\nBelow you will find the rules of the game, the current game state, your play history, and a description of what you are expected to do.\n\n## RULES OF THE GAME\n### Overview\nThis is a single-player game.\nA hidden rule created by the game master determines which cards are accepted or rejected.\nYour goal is to play cards and discover the rule as efficiently as possible.\n\nThe game uses 2 standard 52-card decks shuffled together (104 cards total):\n- Ranks: Ace = 1 (low), 2-10, Jack = 11, Queen = 12, King = 13. Number cards are 1-10, face cards are 11-13.\n- Suits: Hearts \u2665\ufe0f (red), Diamonds \u2666\ufe0f (red), Clubs \u2663\ufe0f (black), Spades \u2660\ufe0f (black)\n\nThe playing area consists of:\n- **Mainline:** A horizontal row of accepted cards, ordered left-to-right by time of acceptance\n- **Sidelines:** Vertical columns beneath mainline cards. When a card is rejected, it is\n  placed in a column below the mainline card it was played after\n\n### Setup\n\n#### Secret Rule\n\nA deterministic secret rule is chosen by the game master.\nThe rule decides unambiguously whether a newly played card is **accepted** or **rejected**, for every possible card in every possible mainline state.\nThe rule is simple enough to be described in a single sentence.\nThe rule depends only on information visible in the mainline: the candidate card and/or any previously accepted mainline cards and their properties (their suits, colors, ranks, parity, positions, etc.)\nThe rule is deterministic, objective, does not reference sideline rejected cards or hidden information (cards in the deck, cards in your hand...)\n\nExamples of rules:\n- The card must be a different color than the last mainline card.\n- The card must be a heart or a spade.\n- The card must share either the suit or the color with the last mainline card, but not both.\n- The card's rank must differ from the last mainline card's rank by exactly 1 or 2.\n\n#### Initial Deal\n\nYou start with **12 cards** in your hand.\nThis hand size remains constant throughout the game, you always draw 1 card after playing.\nA starter card that satisfies the rule is placed on the mainline to begin the game.\n\n### Turn Structure\n\nOn each turn, you must:\n- Play a card from your hand, you then receive feedback (accepted or rejected)\n- Optionally try to guess the rule, in order to end the round and score (see below)\n- You draw a new card from the deck to maintain your hand size\n\n#### Playing a Card\n\nOnce you played a card from your hand to play, you will receive the feedback from the game master, based on the secret rule.\n- **If Rejected:** the card goes to a sideline column directly below the last mainline card;\n- **If Accepted:** the card becomes the new last mainline card;\n\n### Guessing the Rule\n\nWhen playing a card, you may attempt to state the rule you believe governs acceptance/rejection.\nThe game master judges whether your stated rule is **equivalent** to the secret rule.\nThe wording does not need to match exactly. Only logical equivalence matters.\n- **Incorrect guess:** The guess is recorded as wrong and **penalty of 2 points** will later be applied to your final score. Play continues.\n- **Correct guess:** The game ends immediately, you score based on the number of turns taken and wrong guesses.\n\n### End Game & Scoring\n\nThe game ends when:\n1. You **correctly guess the rule**, or\n2. You reach the maximum of 8 turns without guessing correctly\n\nYour score is calculated as follows:\nScore = (8 - current_turn) - (2 x number_of_failed_guesses)\n\nScore can be negative. **Higher scores are better**. The goal is to discover the rule quickly with few failed guesses.\n---\n\n\n## YOUR TASK: CHOOSE YOUR NEXT ACTION\n\nAs a player, this is your turn to play and you must simultaneously:\n1. Select a card from your hand to play.\n2. Optionally, make a guess about the hidden rule.\n\n### Current game state\n\nTurn: 4 / 8\nPenalty so far for 0 wrong guesses: 0\nCurrent potential score if you guess the rule correctly this turn: 5\n\n#### Mainline & Sidelines\n\nThis is the mainline and sidelines so far. Rejected cards are shown in brackets after the mainline card they were played after :\n\n4\u2660 4\u2663 2\u2660 2\u2665\n\n#### Your hand\n\n8\u2666, A\u2660, 3\u2666, 6\u2665, 6\u2660, J\u2665, 4\u2663, 7\u2666, 7\u2665, 8\u2666, 2\u2660, 5\u2660\n\n#### Your recent play history\n\nYour last 3 turns (the card you played, the outcome and your reasoning summary):\n- 4\u2663: \u2713 ACCEPTED\n  Your reasoning: With only the starter 4\u2660 revealed, I am testing whether acceptance depends on matching the previous card's rank or color while changing the suit.\n- 2\u2660: \u2713 ACCEPTED\n  Your reasoning: The accepted 4\u2663 shared the black color with the preceding 4\u2660, so I am testing the color hypothesis with another black card of a different rank.\n- 2\u2665: \u2713 ACCEPTED\n  Your reasoning: The accepted cards have all been black, but 2\u2665 would test whether matching the last card's rank is sufficient despite changing color and suit.\n\n\n#### All your previous failed rule guesses (if any)\n\n\n### Task description and formatting instructions\n\nYou must select a card from your hand to play and optionally decide to try to guess the rule.\n\nYou will be asked to provide the following in your response:\n- A short one sentence summary of your reasoning, explaining your thought process about the pattern so far and why you are playing the selected card.\n- The card you are playing from your hand (must be one of the cards listed in your hand).\n- Your current best guess about the hidden rule (must be clear and unequivocal).\n- Your confidence level in your tentative guess rule on a scale of 0-10 (for instance 7 means \"70% confident : there 70% probability to be correct\")\n- Whether you want to officially guess the rule this turn (true or false). Only set to true if you want to make an official guess with your tentative rule. Otherwise, your tentative rule is just for your own tracking and will not be evaluated this turn.\n\nFormat your response as follows:\n<ACTION>\n{\n    \"reasoning_summary\": \"One sentence summary of your analysis and why you're playing this card\",\n    \"card\": \"5\u2665\" (the card symbol from your hand, must be the exact symbol e.g., \"5\u2665\", \"K\u2660\", \"A\u2666\",...)\n    \"tentative_rule\": \"Your current best guess about the rule\",\n    \"confidence_level\": 0-10,\n    \"guess_rule\": true or false (whether to officially try to guess the rule this turn)\n}\n</ACTION>\n\nAlways provide your current best hypothesis as a tentative rule, even if you're uncertain.\nIf you set guess_rule to false, this tentative rule will not be evaluated, it's just for your own tracking.\nSet \"guess_rule\" to true only when you want to officially try to guess the rule.\n   - If correct, you score and the round ends immediately.\n   - If incorrect, you will lose 2 points from your final score, and the round continues.\n\n#### Example:\n<ACTION>\n{\n    \"reasoning_summary\": \"I see red and black cards alternating. My 3\u2665 is red, last card was black.\",\n    \"card\": \"3\u2665\",\n    \"tentative_rule\": \"Cards must alternate between red and black colors\",\n    \"confidence_level\": 8,\n    \"guess_rule\": false\n}\n</ACTION>\n",
+              "raw_completion": "<ACTION>\n{\n  \"reasoning_summary\": \"All accepted cards so far have even ranks, so I am playing 6\u2660 to test whether another even-ranked card is accepted despite differing from the last rank.\",\n  \"card\": \"6\u2660\",\n  \"tentative_rule\": \"A card is accepted if and only if its rank is even.\",\n  \"confidence_level\": 6,\n  \"guess_rule\": false\n}\n</ACTION>",
+              "structured_completion": {
+                "card": "6\u2660",
+                "confidence_level": 6,
+                "guess_rule": false,
+                "reasoning_summary": "All accepted cards so far have even ranks, so I am playing 6\u2660 to test whether another even-ranked card is accepted despite differing from the last rank.",
+                "tentative_rule": "A card is accepted if and only if its rank is even."
+              },
+              "interpretation": "usable_action",
+              "retry_cause": null,
+              "started_at": 1786910327.3152013,
+              "duration_seconds": 8.382830142974854,
+              "provider": "openai",
+              "model": "gpt-5.6-luna",
+              "finish_reason": "stop",
+              "token_metrics": {
+                "prompt_tokens": 4002,
+                "output_tokens": 378,
+                "reasoning_tokens": 0,
+                "answer_tokens": 378
+              },
+              "reasoning_text": "Accepted sequence 4\u2660, 4\u2663, 2\u2660, 2\u2665. Strong pattern: rank pairs, each next accepted card perhaps same rank as previous then next pair? Could be card rank must be even? All ranks 4,4,2,2. Need test odd/even or rank nonincreasing? Hand candidates. A\u2660,3\u2666,6..., J,7,5. Since exact rule likely rank parity: accepted cards must have even rank? Starter 4, then 4,2,2 all even. Play an odd card to test rejection, but feedback not known; choose likely card maximizing information. If rule is rank must be even, odd rejected; if rule is rank must match last rank? 5\u2660 etc rejected. To distinguish hypotheses choose even rank different from 2, e.g. 6\u2660 or 6\u2665. If accepted, supports even rank; if rejected, supports same rank / perhaps rank divides? Choose 6\u2660. Tentative rule current best: rank is even. Don't officially guess due uncertainty. Note 4\u2663 duplicated in hand despite already played (two decks), valid. Could hidden rule be rank prime? 2,2,4 not prime, no. Even likely.",
+              "provider_calls": [
+                {
+                  "call_number": 1,
+                  "provider": "openai",
+                  "model": "gpt-5.6-luna",
+                  "timestamp": 1786910327.3152115,
+                  "duration_seconds": 5.829907417297363,
+                  "finish_reason": "stop",
+                  "is_continuation": false,
+                  "continuation_depth": 0,
+                  "token_metrics": {
+                    "prompt_tokens": 1851,
+                    "output_tokens": 282,
+                    "reasoning_tokens": 0,
+                    "answer_tokens": 282
+                  }
+                },
+                {
+                  "call_number": 2,
+                  "provider": "openai",
+                  "model": "gpt-5.6-luna",
+                  "timestamp": 1786910333.1453683,
+                  "duration_seconds": 2.5522799491882324,
+                  "finish_reason": "stop",
+                  "is_continuation": true,
+                  "continuation_depth": 1,
+                  "token_metrics": {
+                    "prompt_tokens": 2151,
+                    "output_tokens": 96,
+                    "reasoning_tokens": 0,
+                    "answer_tokens": 96
+                  }
+                }
+              ]
+            }
+          ],
+          "final_decision": {
+            "origin": "model_attempt",
+            "selected_card": {
+              "rank": 6,
+              "suit": "spades"
+            },
+            "model_attempt_number": 1
+          },
+          "card_outcome": {
+            "accepted": true,
+            "replacement_draw": {
+              "rank": 12,
+              "suit": "hearts"
+            }
+          },
+          "post_card_state": {
+            "mainline": [
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "clubs"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 2,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 2,
+                  "suit": "hearts"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 6,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              }
+            ],
+            "hand": [
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 1,
+                "suit": "spades"
+              },
+              {
+                "rank": 3,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 6,
+                "suit": "hearts"
+              },
+              {
+                "rank": 11,
+                "suit": "hearts"
+              },
+              {
+                "rank": 4,
+                "suit": "clubs"
+              },
+              {
+                "rank": 7,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 7,
+                "suit": "hearts"
+              },
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 2,
+                "suit": "spades"
+              },
+              {
+                "rank": 5,
+                "suit": "spades"
+              },
+              {
+                "rank": 12,
+                "suit": "hearts"
+              }
+            ],
+            "turn_number": 4,
+            "failed_rule_guesses": []
+          },
+          "guess_attempt": {
+            "guess": "A card is accepted if and only if its rank is even.",
+            "kind": "shadow",
+            "online_evaluation": null,
+            "proposal_id": "round:1:turn:4:shadow",
+            "version": 1
+          },
+          "schema_errors": []
+        },
+        {
+          "turn_number": 5,
+          "pre_decision_state": {
+            "mainline": [
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "clubs"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 2,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 2,
+                  "suit": "hearts"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 6,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              }
+            ],
+            "hand": [
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 1,
+                "suit": "spades"
+              },
+              {
+                "rank": 3,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 6,
+                "suit": "hearts"
+              },
+              {
+                "rank": 11,
+                "suit": "hearts"
+              },
+              {
+                "rank": 4,
+                "suit": "clubs"
+              },
+              {
+                "rank": 7,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 7,
+                "suit": "hearts"
+              },
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 2,
+                "suit": "spades"
+              },
+              {
+                "rank": 5,
+                "suit": "spades"
+              },
+              {
+                "rank": 12,
+                "suit": "hearts"
+              }
+            ],
+            "turn_number": 5,
+            "failed_rule_guesses": []
+          },
+          "model_attempts": [
+            {
+              "attempt_number": 1,
+              "prompt": "# PATTERN DISCOVERY CARD GAME\n\nYou are playing a single-player card game where the goal is to discover a secret rule that determines which cards are accepted or rejected.\nThis is your turn to play. Your task is to select a card from your hand to play, and optionally try to guess the secret rule.\nYour score will depend on how many turns it takes you to correctly identify the rule.\nBelow you will find the rules of the game, the current game state, your play history, and a description of what you are expected to do.\n\n## RULES OF THE GAME\n### Overview\nThis is a single-player game.\nA hidden rule created by the game master determines which cards are accepted or rejected.\nYour goal is to play cards and discover the rule as efficiently as possible.\n\nThe game uses 2 standard 52-card decks shuffled together (104 cards total):\n- Ranks: Ace = 1 (low), 2-10, Jack = 11, Queen = 12, King = 13. Number cards are 1-10, face cards are 11-13.\n- Suits: Hearts \u2665\ufe0f (red), Diamonds \u2666\ufe0f (red), Clubs \u2663\ufe0f (black), Spades \u2660\ufe0f (black)\n\nThe playing area consists of:\n- **Mainline:** A horizontal row of accepted cards, ordered left-to-right by time of acceptance\n- **Sidelines:** Vertical columns beneath mainline cards. When a card is rejected, it is\n  placed in a column below the mainline card it was played after\n\n### Setup\n\n#### Secret Rule\n\nA deterministic secret rule is chosen by the game master.\nThe rule decides unambiguously whether a newly played card is **accepted** or **rejected**, for every possible card in every possible mainline state.\nThe rule is simple enough to be described in a single sentence.\nThe rule depends only on information visible in the mainline: the candidate card and/or any previously accepted mainline cards and their properties (their suits, colors, ranks, parity, positions, etc.)\nThe rule is deterministic, objective, does not reference sideline rejected cards or hidden information (cards in the deck, cards in your hand...)\n\nExamples of rules:\n- The card must be a different color than the last mainline card.\n- The card must be a heart or a spade.\n- The card must share either the suit or the color with the last mainline card, but not both.\n- The card's rank must differ from the last mainline card's rank by exactly 1 or 2.\n\n#### Initial Deal\n\nYou start with **12 cards** in your hand.\nThis hand size remains constant throughout the game, you always draw 1 card after playing.\nA starter card that satisfies the rule is placed on the mainline to begin the game.\n\n### Turn Structure\n\nOn each turn, you must:\n- Play a card from your hand, you then receive feedback (accepted or rejected)\n- Optionally try to guess the rule, in order to end the round and score (see below)\n- You draw a new card from the deck to maintain your hand size\n\n#### Playing a Card\n\nOnce you played a card from your hand to play, you will receive the feedback from the game master, based on the secret rule.\n- **If Rejected:** the card goes to a sideline column directly below the last mainline card;\n- **If Accepted:** the card becomes the new last mainline card;\n\n### Guessing the Rule\n\nWhen playing a card, you may attempt to state the rule you believe governs acceptance/rejection.\nThe game master judges whether your stated rule is **equivalent** to the secret rule.\nThe wording does not need to match exactly. Only logical equivalence matters.\n- **Incorrect guess:** The guess is recorded as wrong and **penalty of 2 points** will later be applied to your final score. Play continues.\n- **Correct guess:** The game ends immediately, you score based on the number of turns taken and wrong guesses.\n\n### End Game & Scoring\n\nThe game ends when:\n1. You **correctly guess the rule**, or\n2. You reach the maximum of 8 turns without guessing correctly\n\nYour score is calculated as follows:\nScore = (8 - current_turn) - (2 x number_of_failed_guesses)\n\nScore can be negative. **Higher scores are better**. The goal is to discover the rule quickly with few failed guesses.\n---\n\n\n## YOUR TASK: CHOOSE YOUR NEXT ACTION\n\nAs a player, this is your turn to play and you must simultaneously:\n1. Select a card from your hand to play.\n2. Optionally, make a guess about the hidden rule.\n\n### Current game state\n\nTurn: 5 / 8\nPenalty so far for 0 wrong guesses: 0\nCurrent potential score if you guess the rule correctly this turn: 4\n\n#### Mainline & Sidelines\n\nThis is the mainline and sidelines so far. Rejected cards are shown in brackets after the mainline card they were played after :\n\n4\u2660 4\u2663 2\u2660 2\u2665 6\u2660\n\n#### Your hand\n\n8\u2666, A\u2660, 3\u2666, 6\u2665, J\u2665, 4\u2663, 7\u2666, 7\u2665, 8\u2666, 2\u2660, 5\u2660, Q\u2665\n\n#### Your recent play history\n\nYour last 3 turns (the card you played, the outcome and your reasoning summary):\n- 2\u2660: \u2713 ACCEPTED\n  Your reasoning: The accepted 4\u2663 shared the black color with the preceding 4\u2660, so I am testing the color hypothesis with another black card of a different rank.\n- 2\u2665: \u2713 ACCEPTED\n  Your reasoning: The accepted cards have all been black, but 2\u2665 would test whether matching the last card's rank is sufficient despite changing color and suit.\n- 6\u2660: \u2713 ACCEPTED\n  Your reasoning: All accepted cards so far have even ranks, so I am playing 6\u2660 to test whether another even-ranked card is accepted despite differing from the last rank.\n\n\n#### All your previous failed rule guesses (if any)\n\n\n### Task description and formatting instructions\n\nYou must select a card from your hand to play and optionally decide to try to guess the rule.\n\nYou will be asked to provide the following in your response:\n- A short one sentence summary of your reasoning, explaining your thought process about the pattern so far and why you are playing the selected card.\n- The card you are playing from your hand (must be one of the cards listed in your hand).\n- Your current best guess about the hidden rule (must be clear and unequivocal).\n- Your confidence level in your tentative guess rule on a scale of 0-10 (for instance 7 means \"70% confident : there 70% probability to be correct\")\n- Whether you want to officially guess the rule this turn (true or false). Only set to true if you want to make an official guess with your tentative rule. Otherwise, your tentative rule is just for your own tracking and will not be evaluated this turn.\n\nFormat your response as follows:\n<ACTION>\n{\n    \"reasoning_summary\": \"One sentence summary of your analysis and why you're playing this card\",\n    \"card\": \"5\u2665\" (the card symbol from your hand, must be the exact symbol e.g., \"5\u2665\", \"K\u2660\", \"A\u2666\",...)\n    \"tentative_rule\": \"Your current best guess about the rule\",\n    \"confidence_level\": 0-10,\n    \"guess_rule\": true or false (whether to officially try to guess the rule this turn)\n}\n</ACTION>\n\nAlways provide your current best hypothesis as a tentative rule, even if you're uncertain.\nIf you set guess_rule to false, this tentative rule will not be evaluated, it's just for your own tracking.\nSet \"guess_rule\" to true only when you want to officially try to guess the rule.\n   - If correct, you score and the round ends immediately.\n   - If incorrect, you will lose 2 points from your final score, and the round continues.\n\n#### Example:\n<ACTION>\n{\n    \"reasoning_summary\": \"I see red and black cards alternating. My 3\u2665 is red, last card was black.\",\n    \"card\": \"3\u2665\",\n    \"tentative_rule\": \"Cards must alternate between red and black colors\",\n    \"confidence_level\": 8,\n    \"guess_rule\": false\n}\n</ACTION>\n",
+              "raw_completion": "<ACTION>\n{\n    \"reasoning_summary\": \"All accepted cards so far have even ranks, so I am playing 3\u2666 to test whether an odd-ranked card is rejected.\",\n    \"card\": \"3\u2666\",\n    \"tentative_rule\": \"A card is accepted if and only if its rank is even.\",\n    \"confidence_level\": 7,\n    \"guess_rule\": false\n}\n</ACTION>",
+              "structured_completion": {
+                "card": "3\u2666",
+                "confidence_level": 7,
+                "guess_rule": false,
+                "reasoning_summary": "All accepted cards so far have even ranks, so I am playing 3\u2666 to test whether an odd-ranked card is rejected.",
+                "tentative_rule": "A card is accepted if and only if its rank is even."
+              },
+              "interpretation": "usable_action",
+              "retry_cause": null,
+              "started_at": 1786910335.7179334,
+              "duration_seconds": 6.0250725746154785,
+              "provider": "openai",
+              "model": "gpt-5.6-luna",
+              "finish_reason": "stop",
+              "token_metrics": {
+                "prompt_tokens": 3874,
+                "output_tokens": 232,
+                "reasoning_tokens": 0,
+                "answer_tokens": 232
+              },
+              "reasoning_text": "Need infer rule. Mainline all accepted: 4s,4c,2s,2h,6s. Likely rank even? Each accepted even, but need test odd. Could be card rank parity even, simple. Play odd card to test, ideally 3\u2666 or 5\u2660/J\u2665. Since turn 5, no guess yet; play odd and don't guess. Choose 3\u2666 perhaps tests parity while red diamond. Tentative rule rank even. Note mainline representation omitted sidelines, but all listed accepted. Could rule rank is even. Use exact card symbol 3\u2666.",
+              "provider_calls": [
+                {
+                  "call_number": 1,
+                  "provider": "openai",
+                  "model": "gpt-5.6-luna",
+                  "timestamp": 1786910335.717943,
+                  "duration_seconds": 3.481846332550049,
+                  "finish_reason": "stop",
+                  "is_continuation": false,
+                  "continuation_depth": 0,
+                  "token_metrics": {
+                    "prompt_tokens": 1856,
+                    "output_tokens": 144,
+                    "reasoning_tokens": 0,
+                    "answer_tokens": 144
+                  }
+                },
+                {
+                  "call_number": 2,
+                  "provider": "openai",
+                  "model": "gpt-5.6-luna",
+                  "timestamp": 1786910339.2000248,
+                  "duration_seconds": 2.5425541400909424,
+                  "finish_reason": "stop",
+                  "is_continuation": true,
+                  "continuation_depth": 1,
+                  "token_metrics": {
+                    "prompt_tokens": 2018,
+                    "output_tokens": 88,
+                    "reasoning_tokens": 0,
+                    "answer_tokens": 88
+                  }
+                }
+              ]
+            }
+          ],
+          "final_decision": {
+            "origin": "model_attempt",
+            "selected_card": {
+              "rank": 3,
+              "suit": "diamonds"
+            },
+            "model_attempt_number": 1
+          },
+          "card_outcome": {
+            "accepted": false,
+            "replacement_draw": {
+              "rank": 8,
+              "suit": "clubs"
+            }
+          },
+          "post_card_state": {
+            "mainline": [
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "clubs"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 2,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 2,
+                  "suit": "hearts"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 6,
+                  "suit": "spades"
+                },
+                "rejected_cards": [
+                  {
+                    "rank": 3,
+                    "suit": "diamonds"
+                  }
+                ]
+              }
+            ],
+            "hand": [
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 1,
+                "suit": "spades"
+              },
+              {
+                "rank": 6,
+                "suit": "hearts"
+              },
+              {
+                "rank": 11,
+                "suit": "hearts"
+              },
+              {
+                "rank": 4,
+                "suit": "clubs"
+              },
+              {
+                "rank": 7,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 7,
+                "suit": "hearts"
+              },
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 2,
+                "suit": "spades"
+              },
+              {
+                "rank": 5,
+                "suit": "spades"
+              },
+              {
+                "rank": 12,
+                "suit": "hearts"
+              },
+              {
+                "rank": 8,
+                "suit": "clubs"
+              }
+            ],
+            "turn_number": 5,
+            "failed_rule_guesses": []
+          },
+          "guess_attempt": {
+            "guess": "A card is accepted if and only if its rank is even.",
+            "kind": "shadow",
+            "online_evaluation": null,
+            "proposal_id": "round:1:turn:5:shadow",
+            "version": 1
+          },
+          "schema_errors": []
+        },
+        {
+          "turn_number": 6,
+          "pre_decision_state": {
+            "mainline": [
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "clubs"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 2,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 2,
+                  "suit": "hearts"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 6,
+                  "suit": "spades"
+                },
+                "rejected_cards": [
+                  {
+                    "rank": 3,
+                    "suit": "diamonds"
+                  }
+                ]
+              }
+            ],
+            "hand": [
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 1,
+                "suit": "spades"
+              },
+              {
+                "rank": 6,
+                "suit": "hearts"
+              },
+              {
+                "rank": 11,
+                "suit": "hearts"
+              },
+              {
+                "rank": 4,
+                "suit": "clubs"
+              },
+              {
+                "rank": 7,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 7,
+                "suit": "hearts"
+              },
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 2,
+                "suit": "spades"
+              },
+              {
+                "rank": 5,
+                "suit": "spades"
+              },
+              {
+                "rank": 12,
+                "suit": "hearts"
+              },
+              {
+                "rank": 8,
+                "suit": "clubs"
+              }
+            ],
+            "turn_number": 6,
+            "failed_rule_guesses": []
+          },
+          "model_attempts": [
+            {
+              "attempt_number": 1,
+              "prompt": "# PATTERN DISCOVERY CARD GAME\n\nYou are playing a single-player card game where the goal is to discover a secret rule that determines which cards are accepted or rejected.\nThis is your turn to play. Your task is to select a card from your hand to play, and optionally try to guess the secret rule.\nYour score will depend on how many turns it takes you to correctly identify the rule.\nBelow you will find the rules of the game, the current game state, your play history, and a description of what you are expected to do.\n\n## RULES OF THE GAME\n### Overview\nThis is a single-player game.\nA hidden rule created by the game master determines which cards are accepted or rejected.\nYour goal is to play cards and discover the rule as efficiently as possible.\n\nThe game uses 2 standard 52-card decks shuffled together (104 cards total):\n- Ranks: Ace = 1 (low), 2-10, Jack = 11, Queen = 12, King = 13. Number cards are 1-10, face cards are 11-13.\n- Suits: Hearts \u2665\ufe0f (red), Diamonds \u2666\ufe0f (red), Clubs \u2663\ufe0f (black), Spades \u2660\ufe0f (black)\n\nThe playing area consists of:\n- **Mainline:** A horizontal row of accepted cards, ordered left-to-right by time of acceptance\n- **Sidelines:** Vertical columns beneath mainline cards. When a card is rejected, it is\n  placed in a column below the mainline card it was played after\n\n### Setup\n\n#### Secret Rule\n\nA deterministic secret rule is chosen by the game master.\nThe rule decides unambiguously whether a newly played card is **accepted** or **rejected**, for every possible card in every possible mainline state.\nThe rule is simple enough to be described in a single sentence.\nThe rule depends only on information visible in the mainline: the candidate card and/or any previously accepted mainline cards and their properties (their suits, colors, ranks, parity, positions, etc.)\nThe rule is deterministic, objective, does not reference sideline rejected cards or hidden information (cards in the deck, cards in your hand...)\n\nExamples of rules:\n- The card must be a different color than the last mainline card.\n- The card must be a heart or a spade.\n- The card must share either the suit or the color with the last mainline card, but not both.\n- The card's rank must differ from the last mainline card's rank by exactly 1 or 2.\n\n#### Initial Deal\n\nYou start with **12 cards** in your hand.\nThis hand size remains constant throughout the game, you always draw 1 card after playing.\nA starter card that satisfies the rule is placed on the mainline to begin the game.\n\n### Turn Structure\n\nOn each turn, you must:\n- Play a card from your hand, you then receive feedback (accepted or rejected)\n- Optionally try to guess the rule, in order to end the round and score (see below)\n- You draw a new card from the deck to maintain your hand size\n\n#### Playing a Card\n\nOnce you played a card from your hand to play, you will receive the feedback from the game master, based on the secret rule.\n- **If Rejected:** the card goes to a sideline column directly below the last mainline card;\n- **If Accepted:** the card becomes the new last mainline card;\n\n### Guessing the Rule\n\nWhen playing a card, you may attempt to state the rule you believe governs acceptance/rejection.\nThe game master judges whether your stated rule is **equivalent** to the secret rule.\nThe wording does not need to match exactly. Only logical equivalence matters.\n- **Incorrect guess:** The guess is recorded as wrong and **penalty of 2 points** will later be applied to your final score. Play continues.\n- **Correct guess:** The game ends immediately, you score based on the number of turns taken and wrong guesses.\n\n### End Game & Scoring\n\nThe game ends when:\n1. You **correctly guess the rule**, or\n2. You reach the maximum of 8 turns without guessing correctly\n\nYour score is calculated as follows:\nScore = (8 - current_turn) - (2 x number_of_failed_guesses)\n\nScore can be negative. **Higher scores are better**. The goal is to discover the rule quickly with few failed guesses.\n---\n\n\n## YOUR TASK: CHOOSE YOUR NEXT ACTION\n\nAs a player, this is your turn to play and you must simultaneously:\n1. Select a card from your hand to play.\n2. Optionally, make a guess about the hidden rule.\n\n### Current game state\n\nTurn: 6 / 8\nPenalty so far for 0 wrong guesses: 0\nCurrent potential score if you guess the rule correctly this turn: 3\n\n#### Mainline & Sidelines\n\nThis is the mainline and sidelines so far. Rejected cards are shown in brackets after the mainline card they were played after :\n\n4\u2660 4\u2663 2\u2660 2\u2665 6\u2660 [3\u2666]\n\n#### Your hand\n\n8\u2666, A\u2660, 6\u2665, J\u2665, 4\u2663, 7\u2666, 7\u2665, 8\u2666, 2\u2660, 5\u2660, Q\u2665, 8\u2663\n\n#### Your recent play history\n\nYour last 3 turns (the card you played, the outcome and your reasoning summary):\n- 2\u2665: \u2713 ACCEPTED\n  Your reasoning: The accepted cards have all been black, but 2\u2665 would test whether matching the last card's rank is sufficient despite changing color and suit.\n- 6\u2660: \u2713 ACCEPTED\n  Your reasoning: All accepted cards so far have even ranks, so I am playing 6\u2660 to test whether another even-ranked card is accepted despite differing from the last rank.\n- 3\u2666: \u2717 REJECTED\n  Your reasoning: All accepted cards so far have even ranks, so I am playing 3\u2666 to test whether an odd-ranked card is rejected.\n\n\n#### All your previous failed rule guesses (if any)\n\n\n### Task description and formatting instructions\n\nYou must select a card from your hand to play and optionally decide to try to guess the rule.\n\nYou will be asked to provide the following in your response:\n- A short one sentence summary of your reasoning, explaining your thought process about the pattern so far and why you are playing the selected card.\n- The card you are playing from your hand (must be one of the cards listed in your hand).\n- Your current best guess about the hidden rule (must be clear and unequivocal).\n- Your confidence level in your tentative guess rule on a scale of 0-10 (for instance 7 means \"70% confident : there 70% probability to be correct\")\n- Whether you want to officially guess the rule this turn (true or false). Only set to true if you want to make an official guess with your tentative rule. Otherwise, your tentative rule is just for your own tracking and will not be evaluated this turn.\n\nFormat your response as follows:\n<ACTION>\n{\n    \"reasoning_summary\": \"One sentence summary of your analysis and why you're playing this card\",\n    \"card\": \"5\u2665\" (the card symbol from your hand, must be the exact symbol e.g., \"5\u2665\", \"K\u2660\", \"A\u2666\",...)\n    \"tentative_rule\": \"Your current best guess about the rule\",\n    \"confidence_level\": 0-10,\n    \"guess_rule\": true or false (whether to officially try to guess the rule this turn)\n}\n</ACTION>\n\nAlways provide your current best hypothesis as a tentative rule, even if you're uncertain.\nIf you set guess_rule to false, this tentative rule will not be evaluated, it's just for your own tracking.\nSet \"guess_rule\" to true only when you want to officially try to guess the rule.\n   - If correct, you score and the round ends immediately.\n   - If incorrect, you will lose 2 points from your final score, and the round continues.\n\n#### Example:\n<ACTION>\n{\n    \"reasoning_summary\": \"I see red and black cards alternating. My 3\u2665 is red, last card was black.\",\n    \"card\": \"3\u2665\",\n    \"tentative_rule\": \"Cards must alternate between red and black colors\",\n    \"confidence_level\": 8,\n    \"guess_rule\": false\n}\n</ACTION>\n",
+              "raw_completion": "<ACTION>\n{\n  \"reasoning_summary\": \"All accepted cards have even ranks while the odd-ranked 3\u2666 was rejected, so I am playing 8\u2663 to further test an even-rank pattern.\",\n  \"card\": \"8\u2663\",\n  \"tentative_rule\": \"A card is accepted if and only if its rank is even.\",\n  \"confidence_level\": 7,\n  \"guess_rule\": false\n}\n</ACTION>",
+              "structured_completion": {
+                "card": "8\u2663",
+                "confidence_level": 7,
+                "guess_rule": false,
+                "reasoning_summary": "All accepted cards have even ranks while the odd-ranked 3\u2666 was rejected, so I am playing 8\u2663 to further test an even-rank pattern.",
+                "tentative_rule": "A card is accepted if and only if its rank is even."
+              },
+              "interpretation": "usable_action",
+              "retry_cause": null,
+              "started_at": 1786910341.7645254,
+              "duration_seconds": 7.242807149887085,
+              "provider": "openai",
+              "model": "gpt-5.6-luna",
+              "finish_reason": "stop",
+              "token_metrics": {
+                "prompt_tokens": 3909,
+                "output_tokens": 281,
+                "reasoning_tokens": 0,
+                "answer_tokens": 281
+              },
+              "reasoning_text": "Accepted sequence 4\u2660,4\u2663,2\u2660,2\u2665,6\u2660; rejected 3\u2666 after 6\u2660. Notice all accepted cards are even ranks, but likely rule more specific. Accepted suits: spade, club, spade, heart, spade; perhaps rank even AND suit? Rejection odd supports even-rank rule, but need test an even card, ideally 8\u2663 or 8\u2666 etc. Hand has 8\u2663, 8\u2666, 4\u2663,2\u2660. If rule is even rank, accepted. Could be card rank divisible by 2, or rank equal? Sequence suggests parity. Play 8\u2663 to test even rank; don't guess yet due alternative rules. Tentative best rule: rank is even.",
+              "provider_calls": [
+                {
+                  "call_number": 1,
+                  "provider": "openai",
+                  "model": "gpt-5.6-luna",
+                  "timestamp": 1786910341.7645335,
+                  "duration_seconds": 4.468394756317139,
+                  "finish_reason": "stop",
+                  "is_continuation": false,
+                  "continuation_depth": 0,
+                  "token_metrics": {
+                    "prompt_tokens": 1853,
+                    "output_tokens": 185,
+                    "reasoning_tokens": 0,
+                    "answer_tokens": 185
+                  }
+                },
+                {
+                  "call_number": 2,
+                  "provider": "openai",
+                  "model": "gpt-5.6-luna",
+                  "timestamp": 1786910346.2332742,
+                  "duration_seconds": 2.7736589908599854,
+                  "finish_reason": "stop",
+                  "is_continuation": true,
+                  "continuation_depth": 1,
+                  "token_metrics": {
+                    "prompt_tokens": 2056,
+                    "output_tokens": 96,
+                    "reasoning_tokens": 0,
+                    "answer_tokens": 96
+                  }
+                }
+              ]
+            }
+          ],
+          "final_decision": {
+            "origin": "model_attempt",
+            "selected_card": {
+              "rank": 8,
+              "suit": "clubs"
+            },
+            "model_attempt_number": 1
+          },
+          "card_outcome": {
+            "accepted": true,
+            "replacement_draw": {
+              "rank": 1,
+              "suit": "clubs"
+            }
+          },
+          "post_card_state": {
+            "mainline": [
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "clubs"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 2,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 2,
+                  "suit": "hearts"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 6,
+                  "suit": "spades"
+                },
+                "rejected_cards": [
+                  {
+                    "rank": 3,
+                    "suit": "diamonds"
+                  }
+                ]
+              },
+              {
+                "card": {
+                  "rank": 8,
+                  "suit": "clubs"
+                },
+                "rejected_cards": []
+              }
+            ],
+            "hand": [
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 1,
+                "suit": "spades"
+              },
+              {
+                "rank": 6,
+                "suit": "hearts"
+              },
+              {
+                "rank": 11,
+                "suit": "hearts"
+              },
+              {
+                "rank": 4,
+                "suit": "clubs"
+              },
+              {
+                "rank": 7,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 7,
+                "suit": "hearts"
+              },
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 2,
+                "suit": "spades"
+              },
+              {
+                "rank": 5,
+                "suit": "spades"
+              },
+              {
+                "rank": 12,
+                "suit": "hearts"
+              },
+              {
+                "rank": 1,
+                "suit": "clubs"
+              }
+            ],
+            "turn_number": 6,
+            "failed_rule_guesses": []
+          },
+          "guess_attempt": {
+            "guess": "A card is accepted if and only if its rank is even.",
+            "kind": "shadow",
+            "online_evaluation": null,
+            "proposal_id": "round:1:turn:6:shadow",
+            "version": 1
+          },
+          "schema_errors": []
+        },
+        {
+          "turn_number": 7,
+          "pre_decision_state": {
+            "mainline": [
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "clubs"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 2,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 2,
+                  "suit": "hearts"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 6,
+                  "suit": "spades"
+                },
+                "rejected_cards": [
+                  {
+                    "rank": 3,
+                    "suit": "diamonds"
+                  }
+                ]
+              },
+              {
+                "card": {
+                  "rank": 8,
+                  "suit": "clubs"
+                },
+                "rejected_cards": []
+              }
+            ],
+            "hand": [
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 1,
+                "suit": "spades"
+              },
+              {
+                "rank": 6,
+                "suit": "hearts"
+              },
+              {
+                "rank": 11,
+                "suit": "hearts"
+              },
+              {
+                "rank": 4,
+                "suit": "clubs"
+              },
+              {
+                "rank": 7,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 7,
+                "suit": "hearts"
+              },
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 2,
+                "suit": "spades"
+              },
+              {
+                "rank": 5,
+                "suit": "spades"
+              },
+              {
+                "rank": 12,
+                "suit": "hearts"
+              },
+              {
+                "rank": 1,
+                "suit": "clubs"
+              }
+            ],
+            "turn_number": 7,
+            "failed_rule_guesses": []
+          },
+          "model_attempts": [
+            {
+              "attempt_number": 1,
+              "prompt": "# PATTERN DISCOVERY CARD GAME\n\nYou are playing a single-player card game where the goal is to discover a secret rule that determines which cards are accepted or rejected.\nThis is your turn to play. Your task is to select a card from your hand to play, and optionally try to guess the secret rule.\nYour score will depend on how many turns it takes you to correctly identify the rule.\nBelow you will find the rules of the game, the current game state, your play history, and a description of what you are expected to do.\n\n## RULES OF THE GAME\n### Overview\nThis is a single-player game.\nA hidden rule created by the game master determines which cards are accepted or rejected.\nYour goal is to play cards and discover the rule as efficiently as possible.\n\nThe game uses 2 standard 52-card decks shuffled together (104 cards total):\n- Ranks: Ace = 1 (low), 2-10, Jack = 11, Queen = 12, King = 13. Number cards are 1-10, face cards are 11-13.\n- Suits: Hearts \u2665\ufe0f (red), Diamonds \u2666\ufe0f (red), Clubs \u2663\ufe0f (black), Spades \u2660\ufe0f (black)\n\nThe playing area consists of:\n- **Mainline:** A horizontal row of accepted cards, ordered left-to-right by time of acceptance\n- **Sidelines:** Vertical columns beneath mainline cards. When a card is rejected, it is\n  placed in a column below the mainline card it was played after\n\n### Setup\n\n#### Secret Rule\n\nA deterministic secret rule is chosen by the game master.\nThe rule decides unambiguously whether a newly played card is **accepted** or **rejected**, for every possible card in every possible mainline state.\nThe rule is simple enough to be described in a single sentence.\nThe rule depends only on information visible in the mainline: the candidate card and/or any previously accepted mainline cards and their properties (their suits, colors, ranks, parity, positions, etc.)\nThe rule is deterministic, objective, does not reference sideline rejected cards or hidden information (cards in the deck, cards in your hand...)\n\nExamples of rules:\n- The card must be a different color than the last mainline card.\n- The card must be a heart or a spade.\n- The card must share either the suit or the color with the last mainline card, but not both.\n- The card's rank must differ from the last mainline card's rank by exactly 1 or 2.\n\n#### Initial Deal\n\nYou start with **12 cards** in your hand.\nThis hand size remains constant throughout the game, you always draw 1 card after playing.\nA starter card that satisfies the rule is placed on the mainline to begin the game.\n\n### Turn Structure\n\nOn each turn, you must:\n- Play a card from your hand, you then receive feedback (accepted or rejected)\n- Optionally try to guess the rule, in order to end the round and score (see below)\n- You draw a new card from the deck to maintain your hand size\n\n#### Playing a Card\n\nOnce you played a card from your hand to play, you will receive the feedback from the game master, based on the secret rule.\n- **If Rejected:** the card goes to a sideline column directly below the last mainline card;\n- **If Accepted:** the card becomes the new last mainline card;\n\n### Guessing the Rule\n\nWhen playing a card, you may attempt to state the rule you believe governs acceptance/rejection.\nThe game master judges whether your stated rule is **equivalent** to the secret rule.\nThe wording does not need to match exactly. Only logical equivalence matters.\n- **Incorrect guess:** The guess is recorded as wrong and **penalty of 2 points** will later be applied to your final score. Play continues.\n- **Correct guess:** The game ends immediately, you score based on the number of turns taken and wrong guesses.\n\n### End Game & Scoring\n\nThe game ends when:\n1. You **correctly guess the rule**, or\n2. You reach the maximum of 8 turns without guessing correctly\n\nYour score is calculated as follows:\nScore = (8 - current_turn) - (2 x number_of_failed_guesses)\n\nScore can be negative. **Higher scores are better**. The goal is to discover the rule quickly with few failed guesses.\n---\n\n\n## YOUR TASK: CHOOSE YOUR NEXT ACTION\n\nAs a player, this is your turn to play and you must simultaneously:\n1. Select a card from your hand to play.\n2. Optionally, make a guess about the hidden rule.\n\n### Current game state\n\nTurn: 7 / 8\nPenalty so far for 0 wrong guesses: 0\nCurrent potential score if you guess the rule correctly this turn: 2\n\n#### Mainline & Sidelines\n\nThis is the mainline and sidelines so far. Rejected cards are shown in brackets after the mainline card they were played after :\n\n4\u2660 4\u2663 2\u2660 2\u2665 6\u2660 [3\u2666] 8\u2663\n\n#### Your hand\n\n8\u2666, A\u2660, 6\u2665, J\u2665, 4\u2663, 7\u2666, 7\u2665, 8\u2666, 2\u2660, 5\u2660, Q\u2665, A\u2663\n\n#### Your recent play history\n\nYour last 3 turns (the card you played, the outcome and your reasoning summary):\n- 6\u2660: \u2713 ACCEPTED\n  Your reasoning: All accepted cards so far have even ranks, so I am playing 6\u2660 to test whether another even-ranked card is accepted despite differing from the last rank.\n- 3\u2666: \u2717 REJECTED\n  Your reasoning: All accepted cards so far have even ranks, so I am playing 3\u2666 to test whether an odd-ranked card is rejected.\n- 8\u2663: \u2713 ACCEPTED\n  Your reasoning: All accepted cards have even ranks while the odd-ranked 3\u2666 was rejected, so I am playing 8\u2663 to further test an even-rank pattern.\n\n\n#### All your previous failed rule guesses (if any)\n\n\n### Task description and formatting instructions\n\nYou must select a card from your hand to play and optionally decide to try to guess the rule.\n\nYou will be asked to provide the following in your response:\n- A short one sentence summary of your reasoning, explaining your thought process about the pattern so far and why you are playing the selected card.\n- The card you are playing from your hand (must be one of the cards listed in your hand).\n- Your current best guess about the hidden rule (must be clear and unequivocal).\n- Your confidence level in your tentative guess rule on a scale of 0-10 (for instance 7 means \"70% confident : there 70% probability to be correct\")\n- Whether you want to officially guess the rule this turn (true or false). Only set to true if you want to make an official guess with your tentative rule. Otherwise, your tentative rule is just for your own tracking and will not be evaluated this turn.\n\nFormat your response as follows:\n<ACTION>\n{\n    \"reasoning_summary\": \"One sentence summary of your analysis and why you're playing this card\",\n    \"card\": \"5\u2665\" (the card symbol from your hand, must be the exact symbol e.g., \"5\u2665\", \"K\u2660\", \"A\u2666\",...)\n    \"tentative_rule\": \"Your current best guess about the rule\",\n    \"confidence_level\": 0-10,\n    \"guess_rule\": true or false (whether to officially try to guess the rule this turn)\n}\n</ACTION>\n\nAlways provide your current best hypothesis as a tentative rule, even if you're uncertain.\nIf you set guess_rule to false, this tentative rule will not be evaluated, it's just for your own tracking.\nSet \"guess_rule\" to true only when you want to officially try to guess the rule.\n   - If correct, you score and the round ends immediately.\n   - If incorrect, you will lose 2 points from your final score, and the round continues.\n\n#### Example:\n<ACTION>\n{\n    \"reasoning_summary\": \"I see red and black cards alternating. My 3\u2665 is red, last card was black.\",\n    \"card\": \"3\u2665\",\n    \"tentative_rule\": \"Cards must alternate between red and black colors\",\n    \"confidence_level\": 8,\n    \"guess_rule\": false\n}\n</ACTION>\n",
+              "raw_completion": "<ACTION>\n{\n  \"reasoning_summary\": \"All accepted cards have even ranks while the rejected card had an odd rank, so I am playing 7\u2666 to test whether another odd-ranked card is rejected.\",\n  \"card\": \"7\u2666\",\n  \"tentative_rule\": \"A card is accepted if and only if its rank is even.\",\n  \"confidence_level\": 7,\n  \"guess_rule\": false\n}\n</ACTION>",
+              "structured_completion": {
+                "card": "7\u2666",
+                "confidence_level": 7,
+                "guess_rule": false,
+                "reasoning_summary": "All accepted cards have even ranks while the rejected card had an odd rank, so I am playing 7\u2666 to test whether another odd-ranked card is rejected.",
+                "tentative_rule": "A card is accepted if and only if its rank is even."
+              },
+              "interpretation": "usable_action",
+              "retry_cause": null,
+              "started_at": 1786910349.028688,
+              "duration_seconds": 6.746370315551758,
+              "provider": "openai",
+              "model": "gpt-5.6-luna",
+              "finish_reason": "stop",
+              "token_metrics": {
+                "prompt_tokens": 3894,
+                "output_tokens": 246,
+                "reasoning_tokens": 0,
+                "answer_tokens": 246
+              },
+              "reasoning_text": "Accepted mainline ranks are 4,4,2,2,6,8; rejected 3. Strong rule likely even rank. Turn 7 of 8: should test with an odd card, ideally rank 7, while not guessing unless confidence enough. Play 7\u2666. Tentative rule cards with even numerical rank (including face? Need exact rule likely rank even, perhaps accepted ranks 2,4,6,8,10,12; observed only). Could guess now? Need score 2 if correct, but uncertain alternatives (rank divisible? accepted all even; rejection odd). Better false, test odd. Confidence perhaps 7.",
+              "provider_calls": [
+                {
+                  "call_number": 1,
+                  "provider": "openai",
+                  "model": "gpt-5.6-luna",
+                  "timestamp": 1786910349.0286984,
+                  "duration_seconds": 4.294753551483154,
+                  "finish_reason": "stop",
+                  "is_continuation": false,
+                  "continuation_depth": 0,
+                  "token_metrics": {
+                    "prompt_tokens": 1862,
+                    "output_tokens": 152,
+                    "reasoning_tokens": 0,
+                    "answer_tokens": 152
+                  }
+                },
+                {
+                  "call_number": 2,
+                  "provider": "openai",
+                  "model": "gpt-5.6-luna",
+                  "timestamp": 1786910353.3236449,
+                  "duration_seconds": 2.450960397720337,
+                  "finish_reason": "stop",
+                  "is_continuation": true,
+                  "continuation_depth": 1,
+                  "token_metrics": {
+                    "prompt_tokens": 2032,
+                    "output_tokens": 94,
+                    "reasoning_tokens": 0,
+                    "answer_tokens": 94
+                  }
+                }
+              ]
+            }
+          ],
+          "final_decision": {
+            "origin": "model_attempt",
+            "selected_card": {
+              "rank": 7,
+              "suit": "diamonds"
+            },
+            "model_attempt_number": 1
+          },
+          "card_outcome": {
+            "accepted": false,
+            "replacement_draw": {
+              "rank": 1,
+              "suit": "diamonds"
+            }
+          },
+          "post_card_state": {
+            "mainline": [
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "clubs"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 2,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 2,
+                  "suit": "hearts"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 6,
+                  "suit": "spades"
+                },
+                "rejected_cards": [
+                  {
+                    "rank": 3,
+                    "suit": "diamonds"
+                  }
+                ]
+              },
+              {
+                "card": {
+                  "rank": 8,
+                  "suit": "clubs"
+                },
+                "rejected_cards": [
+                  {
+                    "rank": 7,
+                    "suit": "diamonds"
+                  }
+                ]
+              }
+            ],
+            "hand": [
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 1,
+                "suit": "spades"
+              },
+              {
+                "rank": 6,
+                "suit": "hearts"
+              },
+              {
+                "rank": 11,
+                "suit": "hearts"
+              },
+              {
+                "rank": 4,
+                "suit": "clubs"
+              },
+              {
+                "rank": 7,
+                "suit": "hearts"
+              },
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 2,
+                "suit": "spades"
+              },
+              {
+                "rank": 5,
+                "suit": "spades"
+              },
+              {
+                "rank": 12,
+                "suit": "hearts"
+              },
+              {
+                "rank": 1,
+                "suit": "clubs"
+              },
+              {
+                "rank": 1,
+                "suit": "diamonds"
+              }
+            ],
+            "turn_number": 7,
+            "failed_rule_guesses": []
+          },
+          "guess_attempt": {
+            "guess": "A card is accepted if and only if its rank is even.",
+            "kind": "shadow",
+            "online_evaluation": null,
+            "proposal_id": "round:1:turn:7:shadow",
+            "version": 1
+          },
+          "schema_errors": []
+        },
+        {
+          "turn_number": 8,
+          "pre_decision_state": {
+            "mainline": [
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "clubs"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 2,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 2,
+                  "suit": "hearts"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 6,
+                  "suit": "spades"
+                },
+                "rejected_cards": [
+                  {
+                    "rank": 3,
+                    "suit": "diamonds"
+                  }
+                ]
+              },
+              {
+                "card": {
+                  "rank": 8,
+                  "suit": "clubs"
+                },
+                "rejected_cards": [
+                  {
+                    "rank": 7,
+                    "suit": "diamonds"
+                  }
+                ]
+              }
+            ],
+            "hand": [
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 1,
+                "suit": "spades"
+              },
+              {
+                "rank": 6,
+                "suit": "hearts"
+              },
+              {
+                "rank": 11,
+                "suit": "hearts"
+              },
+              {
+                "rank": 4,
+                "suit": "clubs"
+              },
+              {
+                "rank": 7,
+                "suit": "hearts"
+              },
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 2,
+                "suit": "spades"
+              },
+              {
+                "rank": 5,
+                "suit": "spades"
+              },
+              {
+                "rank": 12,
+                "suit": "hearts"
+              },
+              {
+                "rank": 1,
+                "suit": "clubs"
+              },
+              {
+                "rank": 1,
+                "suit": "diamonds"
+              }
+            ],
+            "turn_number": 8,
+            "failed_rule_guesses": []
+          },
+          "model_attempts": [
+            {
+              "attempt_number": 1,
+              "prompt": "# PATTERN DISCOVERY CARD GAME\n\nYou are playing a single-player card game where the goal is to discover a secret rule that determines which cards are accepted or rejected.\nThis is your turn to play. Your task is to select a card from your hand to play, and optionally try to guess the secret rule.\nYour score will depend on how many turns it takes you to correctly identify the rule.\nBelow you will find the rules of the game, the current game state, your play history, and a description of what you are expected to do.\n\n## RULES OF THE GAME\n### Overview\nThis is a single-player game.\nA hidden rule created by the game master determines which cards are accepted or rejected.\nYour goal is to play cards and discover the rule as efficiently as possible.\n\nThe game uses 2 standard 52-card decks shuffled together (104 cards total):\n- Ranks: Ace = 1 (low), 2-10, Jack = 11, Queen = 12, King = 13. Number cards are 1-10, face cards are 11-13.\n- Suits: Hearts \u2665\ufe0f (red), Diamonds \u2666\ufe0f (red), Clubs \u2663\ufe0f (black), Spades \u2660\ufe0f (black)\n\nThe playing area consists of:\n- **Mainline:** A horizontal row of accepted cards, ordered left-to-right by time of acceptance\n- **Sidelines:** Vertical columns beneath mainline cards. When a card is rejected, it is\n  placed in a column below the mainline card it was played after\n\n### Setup\n\n#### Secret Rule\n\nA deterministic secret rule is chosen by the game master.\nThe rule decides unambiguously whether a newly played card is **accepted** or **rejected**, for every possible card in every possible mainline state.\nThe rule is simple enough to be described in a single sentence.\nThe rule depends only on information visible in the mainline: the candidate card and/or any previously accepted mainline cards and their properties (their suits, colors, ranks, parity, positions, etc.)\nThe rule is deterministic, objective, does not reference sideline rejected cards or hidden information (cards in the deck, cards in your hand...)\n\nExamples of rules:\n- The card must be a different color than the last mainline card.\n- The card must be a heart or a spade.\n- The card must share either the suit or the color with the last mainline card, but not both.\n- The card's rank must differ from the last mainline card's rank by exactly 1 or 2.\n\n#### Initial Deal\n\nYou start with **12 cards** in your hand.\nThis hand size remains constant throughout the game, you always draw 1 card after playing.\nA starter card that satisfies the rule is placed on the mainline to begin the game.\n\n### Turn Structure\n\nOn each turn, you must:\n- Play a card from your hand, you then receive feedback (accepted or rejected)\n- Optionally try to guess the rule, in order to end the round and score (see below)\n- You draw a new card from the deck to maintain your hand size\n\n#### Playing a Card\n\nOnce you played a card from your hand to play, you will receive the feedback from the game master, based on the secret rule.\n- **If Rejected:** the card goes to a sideline column directly below the last mainline card;\n- **If Accepted:** the card becomes the new last mainline card;\n\n### Guessing the Rule\n\nWhen playing a card, you may attempt to state the rule you believe governs acceptance/rejection.\nThe game master judges whether your stated rule is **equivalent** to the secret rule.\nThe wording does not need to match exactly. Only logical equivalence matters.\n- **Incorrect guess:** The guess is recorded as wrong and **penalty of 2 points** will later be applied to your final score. Play continues.\n- **Correct guess:** The game ends immediately, you score based on the number of turns taken and wrong guesses.\n\n### End Game & Scoring\n\nThe game ends when:\n1. You **correctly guess the rule**, or\n2. You reach the maximum of 8 turns without guessing correctly\n\nYour score is calculated as follows:\nScore = (8 - current_turn) - (2 x number_of_failed_guesses)\n\nScore can be negative. **Higher scores are better**. The goal is to discover the rule quickly with few failed guesses.\n---\n\n\n## YOUR TASK: CHOOSE YOUR NEXT ACTION\n\nAs a player, this is your turn to play and you must simultaneously:\n1. Select a card from your hand to play.\n2. Optionally, make a guess about the hidden rule.\n\n### Current game state\n\nTurn: 8 / 8\nPenalty so far for 0 wrong guesses: 0\nCurrent potential score if you guess the rule correctly this turn: 1\n\n#### Mainline & Sidelines\n\nThis is the mainline and sidelines so far. Rejected cards are shown in brackets after the mainline card they were played after :\n\n4\u2660 4\u2663 2\u2660 2\u2665 6\u2660 [3\u2666] 8\u2663 [7\u2666]\n\n#### Your hand\n\n8\u2666, A\u2660, 6\u2665, J\u2665, 4\u2663, 7\u2665, 8\u2666, 2\u2660, 5\u2660, Q\u2665, A\u2663, A\u2666\n\n#### Your recent play history\n\nYour last 3 turns (the card you played, the outcome and your reasoning summary):\n- 3\u2666: \u2717 REJECTED\n  Your reasoning: All accepted cards so far have even ranks, so I am playing 3\u2666 to test whether an odd-ranked card is rejected.\n- 8\u2663: \u2713 ACCEPTED\n  Your reasoning: All accepted cards have even ranks while the odd-ranked 3\u2666 was rejected, so I am playing 8\u2663 to further test an even-rank pattern.\n- 7\u2666: \u2717 REJECTED\n  Your reasoning: All accepted cards have even ranks while the rejected card had an odd rank, so I am playing 7\u2666 to test whether another odd-ranked card is rejected.\n\n\n#### All your previous failed rule guesses (if any)\n\n\n### Task description and formatting instructions\n\nYou must select a card from your hand to play and optionally decide to try to guess the rule.\n\nYou will be asked to provide the following in your response:\n- A short one sentence summary of your reasoning, explaining your thought process about the pattern so far and why you are playing the selected card.\n- The card you are playing from your hand (must be one of the cards listed in your hand).\n- Your current best guess about the hidden rule (must be clear and unequivocal).\n- Your confidence level in your tentative guess rule on a scale of 0-10 (for instance 7 means \"70% confident : there 70% probability to be correct\")\n- Whether you want to officially guess the rule this turn (true or false). Only set to true if you want to make an official guess with your tentative rule. Otherwise, your tentative rule is just for your own tracking and will not be evaluated this turn.\n\nFormat your response as follows:\n<ACTION>\n{\n    \"reasoning_summary\": \"One sentence summary of your analysis and why you're playing this card\",\n    \"card\": \"5\u2665\" (the card symbol from your hand, must be the exact symbol e.g., \"5\u2665\", \"K\u2660\", \"A\u2666\",...)\n    \"tentative_rule\": \"Your current best guess about the rule\",\n    \"confidence_level\": 0-10,\n    \"guess_rule\": true or false (whether to officially try to guess the rule this turn)\n}\n</ACTION>\n\nAlways provide your current best hypothesis as a tentative rule, even if you're uncertain.\nIf you set guess_rule to false, this tentative rule will not be evaluated, it's just for your own tracking.\nSet \"guess_rule\" to true only when you want to officially try to guess the rule.\n   - If correct, you score and the round ends immediately.\n   - If incorrect, you will lose 2 points from your final score, and the round continues.\n\n#### Example:\n<ACTION>\n{\n    \"reasoning_summary\": \"I see red and black cards alternating. My 3\u2665 is red, last card was black.\",\n    \"card\": \"3\u2665\",\n    \"tentative_rule\": \"Cards must alternate between red and black colors\",\n    \"confidence_level\": 8,\n    \"guess_rule\": false\n}\n</ACTION>\n",
+              "raw_completion": "<ACTION>\n{\n  \"reasoning_summary\": \"Every accepted card has an even rank and both tested odd-ranked cards were rejected, so I am playing another even-ranked card to confirm the pattern.\",\n  \"card\": \"6\u2665\",\n  \"tentative_rule\": \"A card is accepted if and only if its rank is even.\",\n  \"confidence_level\": 9,\n  \"guess_rule\": true\n}\n</ACTION>",
+              "structured_completion": {
+                "card": "6\u2665",
+                "confidence_level": 9,
+                "guess_rule": true,
+                "reasoning_summary": "Every accepted card has an even rank and both tested odd-ranked cards were rejected, so I am playing another even-ranked card to confirm the pattern.",
+                "tentative_rule": "A card is accepted if and only if its rank is even."
+              },
+              "interpretation": "usable_action",
+              "retry_cause": null,
+              "started_at": 1786910355.7972872,
+              "duration_seconds": 5.939739942550659,
+              "provider": "openai",
+              "model": "gpt-5.6-luna",
+              "finish_reason": "stop",
+              "token_metrics": {
+                "prompt_tokens": 3879,
+                "output_tokens": 224,
+                "reasoning_tokens": 0,
+                "answer_tokens": 224
+              },
+              "reasoning_text": "Accepted mainline ranks are 4,4,2,2,6,8, all even; rejected 3 and 7 odd. Strong rule likely even rank. Need play an even card and officially guess on turn 8. Choose 6\u2665 or 4\u2663/2\u2660/8\u2666, but potentially rule could be rank divisible by 2, all evidence. State rule unequivocally: rank is even (2,4,6,8,10,12). Choose 6\u2665. Confidence high 9, guess true.",
+              "provider_calls": [
+                {
+                  "call_number": 1,
+                  "provider": "openai",
+                  "model": "gpt-5.6-luna",
+                  "timestamp": 1786910355.7972994,
+                  "duration_seconds": 3.3373539447784424,
+                  "finish_reason": "stop",
+                  "is_continuation": false,
+                  "continuation_depth": 0,
+                  "token_metrics": {
+                    "prompt_tokens": 1864,
+                    "output_tokens": 133,
+                    "reasoning_tokens": 0,
+                    "answer_tokens": 133
+                  }
+                },
+                {
+                  "call_number": 2,
+                  "provider": "openai",
+                  "model": "gpt-5.6-luna",
+                  "timestamp": 1786910359.134845,
+                  "duration_seconds": 2.60176944732666,
+                  "finish_reason": "stop",
+                  "is_continuation": true,
+                  "continuation_depth": 1,
+                  "token_metrics": {
+                    "prompt_tokens": 2015,
+                    "output_tokens": 91,
+                    "reasoning_tokens": 0,
+                    "answer_tokens": 91
+                  }
+                }
+              ]
+            }
+          ],
+          "final_decision": {
+            "origin": "model_attempt",
+            "selected_card": {
+              "rank": 6,
+              "suit": "hearts"
+            },
+            "model_attempt_number": 1
+          },
+          "card_outcome": {
+            "accepted": true,
+            "replacement_draw": {
+              "rank": 10,
+              "suit": "spades"
+            }
+          },
+          "post_card_state": {
+            "mainline": [
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 4,
+                  "suit": "clubs"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 2,
+                  "suit": "spades"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 2,
+                  "suit": "hearts"
+                },
+                "rejected_cards": []
+              },
+              {
+                "card": {
+                  "rank": 6,
+                  "suit": "spades"
+                },
+                "rejected_cards": [
+                  {
+                    "rank": 3,
+                    "suit": "diamonds"
+                  }
+                ]
+              },
+              {
+                "card": {
+                  "rank": 8,
+                  "suit": "clubs"
+                },
+                "rejected_cards": [
+                  {
+                    "rank": 7,
+                    "suit": "diamonds"
+                  }
+                ]
+              },
+              {
+                "card": {
+                  "rank": 6,
+                  "suit": "hearts"
+                },
+                "rejected_cards": []
+              }
+            ],
+            "hand": [
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 1,
+                "suit": "spades"
+              },
+              {
+                "rank": 11,
+                "suit": "hearts"
+              },
+              {
+                "rank": 4,
+                "suit": "clubs"
+              },
+              {
+                "rank": 7,
+                "suit": "hearts"
+              },
+              {
+                "rank": 8,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 2,
+                "suit": "spades"
+              },
+              {
+                "rank": 5,
+                "suit": "spades"
+              },
+              {
+                "rank": 12,
+                "suit": "hearts"
+              },
+              {
+                "rank": 1,
+                "suit": "clubs"
+              },
+              {
+                "rank": 1,
+                "suit": "diamonds"
+              },
+              {
+                "rank": 10,
+                "suit": "spades"
+              }
+            ],
+            "turn_number": 8,
+            "failed_rule_guesses": []
+          },
+          "guess_attempt": {
+            "compilation": {
+              "artifact_provider": "openai_compat/openai/gpt-oss-120b",
+              "attempt_count": 1,
+              "cache_hit": false,
+              "rule_compilation_attempts": null,
+              "status": "success"
+            },
+            "correct": true,
+            "cyclomatic_complexity": 2,
+            "equivalence": {
+              "cache_hit": false,
+              "comparisons": 20800,
+              "duration_seconds": 0.004,
+              "mismatches": 0,
+              "num_simulations": 20,
+              "simulation_seed": 42,
+              "turns_per_simulation": 20
+            },
+            "guess": "A card is accepted if and only if its rank is even.",
+            "guessed_code": "if not mainline:\n    return card.rank % 2 == 0\nreturn card.rank % 2 == 0",
+            "kind": "formal",
+            "node_count": 28,
+            "reasoning": "Rules appear equivalent: 20800 comparisons, all matched",
+            "version": 1
+          },
+          "schema_errors": []
+        }
+      ],
+      "terminal_outcome": {
+        "kind": "correct_formal_guess"
+      }
+    }
+  ],
+  "shadow_verdicts": [],
+  "derived": {
+    "rounds": [
+      {
+        "round_number": 1,
+        "turn_count": 8,
+        "score": 1,
+        "floored_score": 1,
+        "no_stakes_score": 1,
+        "first_correct_turn": 8,
+        "failed_guesses": 0,
+        "schema_compliance_rate": 1.0,
+        "usage": {
+          "model_attempt_count": 8,
+          "provider_call_count": 15,
+          "prompt_tokens": 29470,
+          "output_tokens": 2357,
+          "reasoning_tokens": 0,
+          "answer_tokens": 2357,
+          "duration_seconds": 56.751935,
+          "throughput_tokens_per_second": 41.53,
+          "cost": {
+            "usd": null,
+            "pricing_version": null
+          }
+        }
+      }
+    ],
+    "summary": {
+      "completed_rounds": 1,
+      "successful_rounds": 1,
+      "failed_rounds": 0,
+      "success_rate": 100.0,
+      "total_score": 1,
+      "average_score": 1.0,
+      "total_turns": 8,
+      "average_turns": 8.0,
+      "average_turns_when_successful": 8.0,
+      "total_failed_guesses": 0,
+      "average_failed_guesses": 0.0,
+      "schema_compliance_rate": 1.0,
+      "total_retries": 0,
+      "retry_by_cause": {},
+      "usage": {
+        "model_attempt_count": 8,
+        "provider_call_count": 15,
+        "prompt_tokens": 29470,
+        "output_tokens": 2357,
+        "reasoning_tokens": 0,
+        "answer_tokens": 2357,
+        "duration_seconds": 56.751935,
+        "throughput_tokens_per_second": 41.53,
+        "cost": {
+          "usd": null,
+          "pricing_version": null
+        }
+      }
+    }
+  },
+  "watermark": 10
+}
