@@ -279,8 +279,8 @@ def _finalize_evaluation(state: EvaluationState) -> None:
         total_answer_tokens = cast(int, usage["answer_tokens"])
         total_duration_seconds = cast(float, usage["duration_seconds"])
         duration_label = "Total model provider call time"
-        total_retries = 0
-        retry_by_cause: Mapping[str, int] = {}
+        total_retries = cast(int, summary["total_retries"])
+        retry_by_cause = cast(Mapping[str, int], summary["retry_by_cause"])
     else:
         statistics = state.results["statistics"]
         rounds = state.startup.num_rounds

@@ -221,6 +221,8 @@ def test_resume_after_completed_round_runs_next_persisted_schedule_entry(
         "total_failed_guesses": 0,
         "average_failed_guesses": 0.0,
         "schema_compliance_rate": 1.0,
+        "total_retries": 0,
+        "retry_by_cause": {},
         "usage": {
             "model_attempt_count": 2,
             "provider_call_count": 2,

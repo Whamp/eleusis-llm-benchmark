@@ -857,6 +857,15 @@ class BenchmarkRunStore:
     ) -> dict[str, object]:
         """Derive aggregate progress, outcomes, scores, and usage from Round Records."""
         completed_rounds = len(records)
+        total_retries = 0
+        retry_by_cause: dict[str, int] = {}
+        for record in records:
+            for turn in cast(list[Mapping[str, object]], record["turns"]):
+                for attempt in cast(list[Mapping[str, object]], turn["model_attempts"]):
+                    cause = attempt["retry_cause"]
+                    if isinstance(cause, str):
+                        total_retries += 1
+                        retry_by_cause[cause] = retry_by_cause.get(cause, 0) + 1
         successful_rounds = sum(
             1
             for record in records
@@ -927,6 +936,8 @@ class BenchmarkRunStore:
             "schema_compliance_rate": (
                 compliant_turns / total_turns if total_turns else None
             ),
+            "total_retries": total_retries,
+            "retry_by_cause": retry_by_cause,
             "usage": {
                 **usage_totals,
                 "duration_seconds": duration_seconds,
