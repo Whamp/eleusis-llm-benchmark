@@ -73,19 +73,10 @@ class TurnRecordInput:
 def _request_turn_action(
     runtime: RoundRuntime,
 ) -> tuple[Action, dict[str, str | None] | None, int]:
-    """Request one action and recover through the configured error boundary."""
+    """Request one action while allowing unexpected player failures to propagate."""
     metrics_before = len(runtime.scientist_client.generate_metrics)
-    try:
-        action = runtime.scientist.get_action(runtime.game_state)
-        error_info = None
-    # This boundary records arbitrary model/player failures as turn metadata.
-    except Exception as error:  # ruff: ignore[blind-except]
-        action, error_info = runtime.handle_action_error(
-            error,
-            runtime.scientist,
-            runtime.game_state,
-        )
-    return action, error_info, metrics_before
+    action = runtime.scientist.get_action(runtime.game_state)
+    return action, None, metrics_before
 
 
 def _turn_token_metrics(client: BaseLLMClient, metrics_before: int) -> dict[str, int]:
@@ -231,6 +222,7 @@ def _execute_turn(
     """Execute one card play and any associated formal or shadow guess."""
     state = runtime.game_state
     player = state.player
+    state.turn_number = turn_index + 1
     mainline_before = state.to_compact_string()
     hand_before = [str(card) for card in player.hand.get_all_cards()]
     logger.info("=" * 80)
@@ -241,7 +233,6 @@ def _execute_turn(
     logger.info(f"Board: {mainline_before}")
     logger.info(f"Deck remaining: {state.deck.remaining_count()} cards")
     logger.info(f"Hand ({len(hand_before)} cards): {', '.join(hand_before)}\n")
-    state.turn_number = turn_index + 1
 
     action, error_info, metrics_before = _request_turn_action(runtime)
     if runtime.results_folder and runtime.scientist.last_prompt:

@@ -32,6 +32,9 @@ class _ShadowVerdictSettings(_StrictShadowVerdictModel):
     turns_per_simulation: int = Field(ge=0)
     simulation_seed: int
     compiler_max_retries: int = Field(ge=0)
+    compiler_temperature: float
+    llm_max_tokens: int = Field(ge=1)
+    llm_seed: int | None
 
 
 class _ShadowVerdictResult(_StrictShadowVerdictModel):

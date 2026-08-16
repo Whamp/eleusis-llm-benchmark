@@ -195,6 +195,15 @@ class _RoundTurnRecord(_StrictRoundRecordModel):
     card_outcome: _CardOutcomeRecord
     post_card_state: _VisibleStateRecord
     guess_attempt: JsonValue | None
+    schema_errors: list[str]
+
+    @model_validator(mode="after")
+    def _validate_turn_state_numbers(self) -> _RoundTurnRecord:
+        if self.pre_decision_state.turn_number != self.turn_number:
+            raise ValueError("pre-decision state must identify its Round Turn")
+        if self.post_card_state.turn_number != self.turn_number:
+            raise ValueError("post-card state must identify its Round Turn")
+        return self
 
     @model_validator(mode="after")
     def _validate_model_attempt_lifecycle(self) -> _RoundTurnRecord:
@@ -262,6 +271,13 @@ class _SecretRuleRecord(_StrictRoundRecordModel):
     code: str
 
 
+class _LlmGenerationSettingsRecord(_StrictRoundRecordModel):
+    max_tokens: int = Field(ge=1)
+    temperature: float
+    seed: int | None
+    max_llm_retries: int = Field(ge=1)
+
+
 class _RoundSettingsRecord(_StrictRoundRecordModel):
     effective_game_seed: int
     effective_round_seed: int
@@ -270,6 +286,8 @@ class _RoundSettingsRecord(_StrictRoundRecordModel):
     max_turns: int = Field(ge=1)
     wrong_guess_penalty: int = Field(ge=0)
     shadow_mode: str
+    llm: _LlmGenerationSettingsRecord
+    rule_compiler: dict[str, JsonValue]
 
 
 class _TerminalOutcomeRecord(_StrictRoundRecordModel):
@@ -300,7 +318,10 @@ class _RoundRecordDocument(_StrictRoundRecordModel):
         if turn_numbers != list(range(1, len(self.turns) + 1)):
             raise ValueError("Round Turn numbers must be contiguous from one")
         for previous, current in zip(self.turns, self.turns[1:], strict=False):
-            if previous.post_card_state != current.pre_decision_state:
+            previous_state = previous.post_card_state.model_dump(mode="json")
+            current_state = current.pre_decision_state.model_dump(mode="json")
+            current_state["turn_number"] = previous_state["turn_number"]
+            if previous_state != current_state:
                 raise ValueError("Round Turn state continuity is broken")
         if self.terminal_outcome is None:
             return self
@@ -600,6 +621,7 @@ def create_active_round_record(
             "schedule"
         )
     effective_settings = cast(Mapping[str, object], manifest["effective_settings"])
+    scientific_config = cast(Mapping[str, object], manifest["scientific_config"])
     payload = {
         "version": ROUND_RECORD_VERSION,
         "run_id": manifest["run_id"],
@@ -621,6 +643,8 @@ def create_active_round_record(
             "max_turns": runtime.max_turns,
             "wrong_guess_penalty": runtime.engine.wrong_guess_penalty,
             "shadow_mode": runtime.shadow_mode,
+            "llm": scientific_config["llm"],
+            "rule_compiler": scientific_config["rule_compiler"],
         },
         "model_identity": manifest["model_identity"],
         "compiler_identity": manifest["compiler_identity"],
@@ -653,11 +677,17 @@ def append_round_record_turn(
             "Round Record transition invalid: Turn ordering is not contiguous"
         )
     pre_state = _visible_state(previous)
+    pre_state["turn_number"] = expected_turn
     post_state = _visible_state(current)
-    if (
-        record.turns
-        and record.turns[-1].post_card_state.model_dump(mode="json") != pre_state
-    ):
+    previous_state = (
+        record.turns[-1].post_card_state.model_dump(mode="json")
+        if record.turns
+        else None
+    )
+    comparable_pre_state = dict(pre_state)
+    if previous_state is not None:
+        comparable_pre_state["turn_number"] = previous_state["turn_number"]
+    if previous_state is not None and previous_state != comparable_pre_state:
         raise RoundRecordValidationError(
             "Round Record transition invalid: pre-decision state breaks continuity"
         )
@@ -694,6 +724,7 @@ def append_round_record_turn(
                 round_number=record.scheduled_round_number,
                 turn_number=expected_turn,
             ),
+            "schema_errors": list(turn_record["schema_errors"]),
         }
     )
     return validate_round_record_document(payload)

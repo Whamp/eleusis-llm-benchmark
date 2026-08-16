@@ -2,18 +2,7 @@
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
-from unittest.mock import patch
-
 from eleusis.evaluation_results import EvaluationResults
-
-# We test the functions from evaluate_single.py directly
-from scripts.evaluate_single import (
-    load_checkpoint,
-    reconstruct_config_from_checkpoint,
-    restore_rule_from_checkpoint,
-)
 
 
 def _make_checkpoint(
@@ -102,124 +91,6 @@ def _make_checkpoint(
             ],
         },
     }
-
-
-class TestReconstructConfigFromCheckpoint:
-    """reconstruct_config_from_checkpoint should produce a valid config dict."""
-
-    def test_preserves_rule_factory_state(self) -> None:
-        """Preserve rule selection and index in reconstructed configuration."""
-        checkpoint = _make_checkpoint(rule_factory_index=7, selection="sequential")
-        config = reconstruct_config_from_checkpoint(checkpoint)
-
-        assert config["rules"]["selection"] == "sequential"
-        assert config["rules"]["index"] == 7
-
-    def test_preserves_game_settings(self) -> None:
-        """Game settings (turns, hand size, penalty) round-trip through checkpoint."""
-        checkpoint = _make_checkpoint()
-        config = reconstruct_config_from_checkpoint(checkpoint)
-
-        assert config["game"]["max_turns"] == 40
-        assert config["game"]["hand_size"] == 12
-        assert config["game"]["wrong_guess_penalty"] == 3
-        assert config["game"]["num_rounds_per_rule"] == 1
-
-    def test_preserves_batch_round_offset(self) -> None:
-        """batch_round_offset must survive checkpoint/resume cycle."""
-        checkpoint = _make_checkpoint(batch_round_offset=2)
-        config = reconstruct_config_from_checkpoint(checkpoint)
-
-        assert config["game"]["batch_round_offset"] == 2
-
-
-class TestResumeRuleFactoryIndex:
-    """The resume path in main() must correctly read rule_factory_index from checkpoint.
-
-    Bug: line 425 used undefined `chk` instead of `checkpoint['checkpoint']`.
-    """
-
-    def test_rule_factory_index_from_checkpoint(self) -> None:
-        """rule_factory_index must use checkpoint['checkpoint'], not undefined chk."""
-        checkpoint = _make_checkpoint(rule_factory_index=13)
-        chk_data = checkpoint["checkpoint"]
-
-        # This is what the fixed code should do:
-        rule_factory_index = chk_data["rule_factory_state"]["current_index"]
-        assert rule_factory_index == 13
-
-    def test_chk_not_in_main_scope(self) -> None:
-        """Keep the checkpoint helper's local names out of caller scope.
-
-        The function defines `chk` internally. The resume branch of main() must use
-        checkpoint['checkpoint'] instead.
-        """
-        checkpoint = _make_checkpoint(rule_factory_index=9)
-
-        # Call the function — it returns config, not chk
-        config = reconstruct_config_from_checkpoint(checkpoint)
-
-        # Verify we can get the index from the checkpoint directly
-        # (this is how the fixed main() code should work)
-        idx = checkpoint["checkpoint"]["rule_factory_state"]["current_index"]
-        assert idx == 9
-
-        # Verify config also has the right index
-        assert config["rules"]["index"] == 9
-
-
-class TestRestoreRuleFromCheckpoint:
-    """restore_rule_from_checkpoint handles valid and missing data."""
-
-    def test_valid_rule_data(self) -> None:
-        """Verify valid rule data."""
-        rule = restore_rule_from_checkpoint(
-            {
-                "description": "Only hearts.",
-                "code": 'return card.suit.name == "HEARTS"',
-            }
-        )
-        assert rule is not None
-        assert rule.description() == "Only hearts."
-
-    def test_none_input(self) -> None:
-        """Verify none input."""
-        assert restore_rule_from_checkpoint(None) is None
-
-    def test_missing_code(self) -> None:
-        """Verify missing code."""
-        assert restore_rule_from_checkpoint({"description": "Only hearts."}) is None
-
-
-class TestLoadCheckpoint:
-    """load_checkpoint validates JSON structure."""
-
-    def test_valid_checkpoint(self, tmp_path: Path) -> None:
-        """Verify valid checkpoint."""
-        checkpoint = _make_checkpoint()
-        results_path = tmp_path / "results.json"
-        results_path.write_text(json.dumps(checkpoint))
-
-        with patch("scripts.evaluate_single.logger"):
-            result = load_checkpoint(str(tmp_path))
-
-        assert result is not None
-        assert result["checkpoint"]["completed_rounds"] == 5
-
-    def test_missing_file(self, tmp_path: Path) -> None:
-        """Verify missing file."""
-        with patch("scripts.evaluate_single.logger"):
-            result = load_checkpoint(str(tmp_path))
-        assert result is None
-
-    def test_missing_checkpoint_field(self, tmp_path: Path) -> None:
-        """Verify missing checkpoint field."""
-        results_path = tmp_path / "results.json"
-        results_path.write_text(json.dumps({"config": {}}))
-
-        with patch("scripts.evaluate_single.logger"):
-            result = load_checkpoint(str(tmp_path))
-        assert result is None
 
 
 class TestResultsMetadataSelfDescribing:

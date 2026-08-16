@@ -282,6 +282,9 @@ def _shadow_verdict_settings(config: BenchmarkConfig) -> dict[str, object]:
         "compiler_max_retries": (
             2 if compiler_max_retries is None else compiler_max_retries
         ),
+        "compiler_temperature": rule_compiler.get("temperature", 0.7),
+        "llm_max_tokens": config["llm"]["max_tokens"],
+        "llm_seed": config["llm"]["seed"],
     }
 
 

@@ -7,15 +7,9 @@ import re
 from pathlib import Path
 
 import yaml
-from pydantic import ValidationError
 
 from eleusis.benchmark_config import BenchmarkConfig, parse_benchmark_config
-from eleusis.evaluation_results import (
-    CurrentRuleCheckpoint,
-    EvaluationResults,
-    parse_evaluation_results,
-)
-from eleusis.game import Rule
+from eleusis.evaluation_results import EvaluationResults
 from eleusis.game.rule_library import RuleLibraryEntry, parse_rule_library_entries
 from eleusis.llm import create_client
 
@@ -83,85 +77,6 @@ def save_evaluation_results(
     with Path(output_file).open("w") as results_file:
         json.dump(evaluation_results, results_file, indent=2)
     return output_file
-
-
-def load_checkpoint(resume_folder: str) -> EvaluationResults | None:
-    """Load checkpoint from results.json in resume folder."""
-    results_path = Path(resume_folder) / "results.json"
-    if not results_path.exists():
-        logger.error(f"No results.json found in {resume_folder}")
-        return None
-
-    try:
-        with results_path.open() as results_file:
-            checkpoint = parse_evaluation_results(json.load(results_file))
-    except (json.JSONDecodeError, ValidationError) as e:
-        logger.error(f"Invalid JSON in results.json: {e}")
-        return None
-
-    return checkpoint
-
-
-def restore_rule_from_checkpoint(
-    rule_data: CurrentRuleCheckpoint | dict[str, object] | None,
-) -> Rule | None:
-    """Restore Rule object from checkpoint data."""
-    if not rule_data:
-        return None
-    description = rule_data.get("description")
-    code = rule_data.get("code")
-    if not isinstance(description, str) or not isinstance(code, str):
-        return None
-    return Rule(description, code)
-
-
-def reconstruct_config_from_checkpoint(
-    checkpoint: EvaluationResults,
-) -> BenchmarkConfig:
-    """Reconstruct full config dict from checkpoint data for self-contained resume."""
-    cfg = checkpoint["config"]
-    chk = checkpoint["checkpoint"]
-
-    return parse_benchmark_config(
-        {
-            "model": cfg["player_model"],
-            "game": {
-                "num_rules": cfg["num_rules"],
-                "num_rounds_per_rule": cfg["num_rounds_per_rule"],
-                "max_turns": cfg["max_turns"],
-                "hand_size": cfg["hand_size"],
-                "wrong_guess_penalty": cfg["wrong_guess_penalty"],
-                "seed": cfg.get("seed"),
-                "batch_round_offset": cfg.get("batch_round_offset"),
-            },
-            "llm": {
-                "max_tokens": cfg.get("llm_max_tokens"),
-                "temperature": cfg.get("llm_temperature"),
-                "seed": cfg.get("llm_seed"),
-                "max_llm_retries": cfg.get("llm_max_retries"),
-            },
-            "rule_compiler": {
-                "provider": cfg["rule_compiler_provider"],
-                "model_id": cfg["rule_compiler_model_id"],
-                "reasoning_format": cfg.get(
-                    "rule_compiler_reasoning_format", "separate_field"
-                ),
-                # hf_provider intentionally omitted - allows backup providers
-                "temperature": cfg.get("rule_compiler_temperature"),
-                "max_retries": cfg.get("rule_compiler_max_retries", 10),
-                "num_simulations": cfg.get("rule_compiler_num_simulations", 100),
-                "turns_per_simulation": cfg.get(
-                    "rule_compiler_turns_per_simulation", 40
-                ),
-                "simulation_seed": cfg.get("rule_compiler_simulation_seed"),
-            },
-            "rules": {
-                "library_path": None,  # Not needed, rules embedded in checkpoint
-                "selection": chk["rule_factory_state"]["selection"],
-                "index": chk["rule_factory_state"]["current_index"],
-            },
-        }
-    )
 
 
 def load_rules_from_library(config: BenchmarkConfig) -> list[RuleLibraryEntry]:

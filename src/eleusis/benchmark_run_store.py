@@ -222,10 +222,16 @@ class BenchmarkRunStore:
 
     def _verify_database_version(self) -> None:
         """Reject databases outside this store implementation's exact schema."""
-        with closing(sqlite3.connect(self.database_path)) as connection:
-            row = connection.execute(
-                "SELECT database_version FROM benchmark_run"
-            ).fetchone()
+        try:
+            with closing(sqlite3.connect(self.database_path)) as connection:
+                row = connection.execute(
+                    "SELECT database_version FROM benchmark_run"
+                ).fetchone()
+        except sqlite3.Error as error:
+            raise BenchmarkRunStoreError(
+                "Benchmark Run database incompatible: "
+                f"{self.database_path} has a schema defect: {error}"
+            ) from error
         if row is None or row[0] != BENCHMARK_RUN_DATABASE_VERSION:
             found = None if row is None else row[0]
             raise BenchmarkRunStoreError(
@@ -353,14 +359,27 @@ class BenchmarkRunStore:
     def _decode_active_round(self, row: sqlite3.Row) -> ActiveStoredRound:
         """Validate one active SQL row and both versioned domain documents."""
         self._validate_active_round_versions(row)
+        round_number = cast(int, row["round_number"])
+        record = validate_round_record_document(
+            self._decode_document(cast(str, row["record_document"]))
+        )
+        continuation = validate_round_continuation_document(
+            self._decode_document(cast(str, row["continuation_document"]))
+        )
+        continuation_round = cast(Mapping[str, object], continuation["round"])
+        if not (
+            round_number
+            == record["scheduled_round_number"]
+            == continuation_round["number"]
+        ):
+            raise BenchmarkRunStoreError(
+                "Benchmark Run active Round identity incompatible: SQL Round, "
+                "Round Record, and continuation numbers disagree"
+            )
         return ActiveStoredRound(
-            round_number=cast(int, row["round_number"]),
-            record=validate_round_record_document(
-                self._decode_document(cast(str, row["record_document"]))
-            ),
-            continuation=validate_round_continuation_document(
-                self._decode_document(cast(str, row["continuation_document"]))
-            ),
+            round_number=round_number,
+            record=record,
+            continuation=continuation,
         )
 
     def read_active_round(self, round_number: int) -> ActiveStoredRound | None:
@@ -823,6 +842,11 @@ class BenchmarkRunStore:
             "no_stakes_score": no_stakes_score,
             "first_correct_turn": first_correct_turn,
             "failed_guesses": len(failed_guesses),
+            "schema_compliance_rate": (
+                sum(1 for turn in turns if not turn["schema_errors"]) / len(turns)
+                if turns
+                else None
+            ),
             "usage": BenchmarkRunStore._derived_model_usage(record),
         }
 
@@ -872,6 +896,12 @@ class BenchmarkRunStore:
             6,
         )
         output_tokens = usage_totals["output_tokens"]
+        compliant_turns = sum(
+            1
+            for record in records
+            for turn in cast(list[Mapping[str, object]], record["turns"])
+            if not turn["schema_errors"]
+        )
         return {
             "completed_rounds": completed_rounds,
             "successful_rounds": successful_rounds,
@@ -893,6 +923,9 @@ class BenchmarkRunStore:
             "total_failed_guesses": total_failed_guesses,
             "average_failed_guesses": (
                 total_failed_guesses / completed_rounds if completed_rounds else 0.0
+            ),
+            "schema_compliance_rate": (
+                compliant_turns / total_turns if total_turns else None
             ),
             "usage": {
                 **usage_totals,
