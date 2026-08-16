@@ -73,28 +73,24 @@ class RoundSetupRequest:
     results_folder: str | None
 
 
-def _handle_action_error(
+def handle_action_error(
     error: Exception,
     scientist: LLMScientist,
     game_state: GameState,
 ) -> tuple[PlayCardAction, dict[str, str | None]]:
-    """Produce a deterministic fallback card and serializable error metadata."""
-    hand_cards = game_state.player.hand.get_all_cards()
-    if not hand_cards:
-        raise RuntimeError("Cannot recover from action error with an empty player hand")
-    fallback_card = scientist.rng.choice(hand_cards)
-    logger.error(
-        f"Error getting action from {scientist.name}: {type(error).__name__}: {error}"
-    )
-    logger.warning(
-        f"{scientist.name} using deterministic fallback after unhandled error: "
-        f"{fallback_card}"
-    )
-    return PlayCardAction(fallback_card), {
-        "error_type": type(error).__name__,
-        "error_message": str(error),
-        "fallback_card": str(fallback_card),
-    }
+    """Propagate unexpected player errors; never fabricate a card.
+
+    A card played at this boundary would carry no Model Attempt evidence and
+    corrupt the authoritative Round Record. Unexpected errors (including the
+    provider-patience abort) must abort the turn so the Round stays resumable
+    from its last committed Turn. The only sanctioned fallback lives inside
+    LLMScientist after bounded model failures, where explicit Fallback
+    Decision evidence is recorded.
+
+    The return type satisfies the historical ActionErrorHandler contract;
+    this implementation always raises.
+    """
+    raise error
 
 
 def _create_round_clients(
@@ -286,7 +282,7 @@ def _prepare_round_runtime(request: RoundSetupRequest) -> RoundRuntime:
         shadow_mode=game_config.get("shadow_mode", "offline"),
         pause_after_turn=game_config.get("pause_after_turn", False),
         results_folder=request.results_folder,
-        handle_action_error=_handle_action_error,
+        handle_action_error=handle_action_error,
     )
     return runtime
 
@@ -328,7 +324,7 @@ def play_round(
             active.continuation,
             scientist_client=scientist_client,
             rule_compiler_client=compiler,
-            handle_action_error=_handle_action_error,
+            handle_action_error=handle_action_error,
             pause_after_turn=config["game"].get("pause_after_turn", False),
             results_folder=results_folder,
         )

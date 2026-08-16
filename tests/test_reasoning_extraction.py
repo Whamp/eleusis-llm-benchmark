@@ -629,3 +629,243 @@ def test_persistent_transport_failure_raises_provider_unavailable(
 
     with pytest.raises(ProviderUnavailableError, match="provider unavailable"):
         client.generate("Pick a card.")
+
+
+# --- Grok hardening review: stream lifecycle, classification, salvage ---
+
+
+class _ClosableStalledStream:
+    """Stream that yields events then stalls, recording close()."""
+
+    def __init__(
+        self, events: list[Any], stall_seconds: float = 10.0, gap: float = 0.0
+    ) -> None:
+        self._events = events
+        self._stall = stall_seconds
+        self._gap = gap
+        self.closed = False
+
+    def __iter__(self) -> Iterator[Any]:
+        for event in self._events:
+            yield event
+            time.sleep(self._gap)
+        time.sleep(self._stall)
+        yield _FakeCompletedEvent()
+
+    def close(self) -> None:
+        self.closed = True
+
+
+def test_deadline_closes_stream(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Hardening H1: a deadline abort must close the HTTP stream.
+
+    Without close, the pump thread stays blocked on keepalive bytes and the
+    connection leaks from the shared pool for the worker's lifetime.
+    """
+    client = _subscription_client(reasoning_extraction="deep_think")
+    client.stream_deadline_seconds = 0.3
+    monkeypatch.setattr(openai_client, "time", _ClientTimeStub())
+
+    stalled = _ClosableStalledStream([])
+    monkeypatch.setattr(client.client.responses, "create", lambda **kw: stalled)
+
+    with pytest.raises(ProviderUnavailableError, match="deadline"):
+        client.generate("Pick a card.")
+    assert stalled.closed, "deadline abort must close the underlying stream"
+
+
+def test_stream_deadline_is_inactivity_based(monkeypatch: pytest.MonkeyPatch) -> None:
+    """H3: progress resets the deadline; healthy long streams survive.
+
+    Per-event gaps below the inactivity bound must complete even when the
+    stream's total duration far exceeds the bound; the old total-deadline
+    logic aborted such streams.
+    """
+    import time as time_module
+
+    client = _subscription_client(reasoning_extraction="deep_think")
+    client.stream_deadline_seconds = 0.5
+    monkeypatch.setattr(openai_client, "time", _ClientTimeStub())
+
+    events = [_FakeSummaryDeltaEvent(delta="thinking ") for _ in range(6)]
+    events += _text_round("Play 4C")
+    slow = _ClosableStalledStream(events, stall_seconds=0.0, gap=0.3)
+    monkeypatch.setattr(client.client.responses, "create", lambda **kw: slow)
+
+    started = time_module.monotonic()
+    content = client.generate("Pick a card.")
+    assert content == "Play 4C"
+    assert time_module.monotonic() - started < 10
+
+
+def test_deadline_mid_argument_salvages_partial_thought(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """H4: deadline during a tool-argument run takes the salvage path.
+
+    A slow runaway trickle must keep its partial reasoning and continue on
+    a fresh round instead of discarding the thought as a capacity failure.
+    """
+    client = _subscription_client(reasoning_extraction="deep_think")
+    client.stream_deadline_seconds = 0.2
+    monkeypatch.setattr(openai_client, "time", _ClientTimeStub())
+
+    prefix = '{"thoughts": "Consider alternating colors carefully. "'
+    rounds: list[Any] = []
+
+    class _SlowArgumentStream:
+        def __init__(self) -> None:
+            self.closed = False
+
+        def __iter__(self) -> Iterator[Any]:
+            yield _FakeArgsDeltaEvent(delta=prefix)
+            time.sleep(5)
+            yield _FakeCompletedEvent()
+
+        def close(self) -> None:
+            self.closed = True
+
+    stalled = _SlowArgumentStream()
+    rounds.append(stalled)
+    rounds.append(_ClosableStream(events=_text_round("Play 4C")))
+
+    def alternating_create(**kwargs: object) -> object:
+        return rounds.pop(0)
+
+    monkeypatch.setattr(client.client.responses, "create", alternating_create)
+
+    content = client.generate("Pick a card.")
+    assert content == "Play 4C"
+    assert stalled.closed
+    traces = [m.reasoning_text or "" for m in client.call_metrics]
+    assert any("alternating colors" in t for t in traces), (
+        f"partial thought lost; traces={traces!r}"
+    )
+
+
+def test_sdk_connection_error_is_provider_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Hardening H2: SDK-wrapped connection failures are capacity failures.
+
+    The SDK surfaces connect/header timeouts as APIConnectionError; those
+    must reach the capacity path, not the model-failure path.
+    """
+    import httpx
+    from openai import APIConnectionError
+
+    client = _subscription_client(reasoning_extraction="deep_think")
+    client_time = _ClientTimeStub()
+    monkeypatch.setattr(openai_client, "time", client_time)
+
+    request = httpx.Request("POST", "https://chatgpt.com/backend-api")
+    calls: list[int] = []
+
+    def flaky_create(**kwargs: object) -> object:
+        calls.append(1)
+        raise APIConnectionError(request=request, message="timed out")
+
+    monkeypatch.setattr(client.client.responses, "create", flaky_create)
+
+    with pytest.raises(ProviderUnavailableError):
+        client.generate("Pick a card.")
+    assert len(calls) == client.max_retries
+
+
+def test_sdk_server_error_is_provider_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Hardening H2: 5xx responses are capacity failures."""
+    import httpx
+    from openai import InternalServerError
+
+    client = _subscription_client(reasoning_extraction="deep_think")
+    monkeypatch.setattr(openai_client, "time", _ClientTimeStub())
+
+    request = httpx.Request("POST", "https://chatgpt.com/backend-api")
+
+    def broken_create(**kwargs: object) -> object:
+        raise InternalServerError(
+            "server overloaded",
+            response=httpx.Response(503, request=request),
+            body=None,
+        )
+
+    monkeypatch.setattr(client.client.responses, "create", broken_create)
+
+    with pytest.raises(ProviderUnavailableError):
+        client.generate("Pick a card.")
+
+
+def test_moderation_rejection_is_not_provider_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Hardening H2: policy rejections stay model-visible failures.
+
+    A 400 'Invalid prompt' is a policy failure, not capacity; it must keep
+    the existing APIError path so the player records a model failure.
+    """
+    import httpx
+    from openai import BadRequestError
+
+    client = _subscription_client(reasoning_extraction="deep_think")
+    monkeypatch.setattr(openai_client, "time", _ClientTimeStub())
+
+    request = httpx.Request("POST", "https://chatgpt.com/backend-api")
+
+    def rejected_create(**kwargs: object) -> object:
+        raise BadRequestError(
+            "Invalid prompt: flagged",
+            response=httpx.Response(400, request=request),
+            body=None,
+        )
+
+    monkeypatch.setattr(client.client.responses, "create", rejected_create)
+
+    from openai import APIError
+
+    with pytest.raises(APIError):
+        client.generate("Pick a card.")
+
+
+def test_response_failed_event_is_provider_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Hardening H5: response.failed is infrastructure, not model failure."""
+
+    class _FailedResponse:
+        error = "backend capacity"
+
+    class _FailedEvent:
+        type = "response.failed"
+        response = _FailedResponse()
+
+    client = _subscription_client(reasoning_extraction="deep_think")
+    monkeypatch.setattr(openai_client, "time", _ClientTimeStub())
+    monkeypatch.setattr(
+        client.client.responses,
+        "create",
+        lambda **kw: _ClosableStalledStream([_FailedEvent()], stall_seconds=0.0),
+    )
+
+    with pytest.raises(ProviderUnavailableError):
+        client.generate("Pick a card.")
+
+
+def test_truncated_stream_is_provider_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Hardening H5: EOF without response.completed is infrastructure."""
+
+    class _EmptyStream:
+        def __iter__(self) -> Iterator[Any]:
+            return iter(())
+
+        def close(self) -> None: ...
+
+    client = _subscription_client(reasoning_extraction="deep_think")
+    monkeypatch.setattr(openai_client, "time", _ClientTimeStub())
+    monkeypatch.setattr(client.client.responses, "create", lambda **kw: _EmptyStream())
+
+    with pytest.raises(ProviderUnavailableError, match=r"without response\.completed"):
+        client.generate("Pick a card.")

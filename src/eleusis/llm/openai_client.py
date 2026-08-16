@@ -12,7 +12,13 @@ from queue import Empty, SimpleQueue
 from typing import Any, Literal, cast
 
 import httpx
-from openai import APIError, OpenAI
+from openai import (
+    APIConnectionError,
+    APIError,
+    InternalServerError,
+    OpenAI,
+    RateLimitError,
+)
 from openai._streaming import Stream
 from openai.types.responses import (
     EasyInputMessageParam,
@@ -315,7 +321,9 @@ class OpenAIClient(BaseLLMClient):
         self.codex_auth = codex_auth
         self.reasoning_extraction = reasoning_extraction
         if codex_auth is None:
-            self.client = OpenAI(api_key=self.api_key)
+            # Retry policy is owned by _request_once; the SDK's own
+            # retries would nest inside it and stretch outages.
+            self.client = OpenAI(api_key=self.api_key, max_retries=0)
         else:
             # The subscription backend requires per-request OAuth headers;
             # api_key only satisfies the SDK's constructor requirement.
@@ -323,6 +331,7 @@ class OpenAIClient(BaseLLMClient):
                 api_key="pi-codex-subscription",
                 base_url=CODEX_BACKEND_BASE_URL,
                 http_client=httpx.Client(auth=codex_auth, timeout=600.0),
+                max_retries=0,
             )
 
     @property
@@ -387,16 +396,18 @@ class OpenAIClient(BaseLLMClient):
                 logger.debug(f"LLM response:\n{choice}")
                 return response, choice, metrics
 
-            except APIError as e:
-                logger.warning(
-                    f"{self.model_name} Attempt {attempt + 1}/{self.max_retries}"
-                    f" failed: {e}"
-                )
-                if attempt < self.max_retries - 1:
-                    time.sleep(2**attempt)
-                else:
-                    raise
-            except (httpx.HTTPError, ProviderUnavailableError) as e:
+            except (
+                # Capacity-scale failures: transport drops, SDK-wrapped
+                # connection/timeout errors, 5xx, and 429 rate limiting all
+                # mean the provider cannot serve the request right now.
+                # Policy rejections (4xx, moderation) stay on the APIError
+                # path below so the player records a model failure.
+                ProviderUnavailableError,
+                httpx.HTTPError,
+                APIConnectionError,
+                InternalServerError,
+                RateLimitError,
+            ) as e:
                 # Transport drops and stalled streams are provider-capacity
                 # failures: back off long enough for congestion to clear.
                 logger.warning(
@@ -410,6 +421,15 @@ class OpenAIClient(BaseLLMClient):
                         f"{self.model_name} provider unavailable after"
                         f" {self.max_retries} attempts: {e}"
                     ) from e
+            except APIError as e:
+                logger.warning(
+                    f"{self.model_name} Attempt {attempt + 1}/{self.max_retries}"
+                    f" failed: {e}"
+                )
+                if attempt < self.max_retries - 1:
+                    time.sleep(2**attempt)
+                else:
+                    raise
 
         raise RuntimeError("Max retries exceeded")
 
@@ -579,11 +599,14 @@ class OpenAIClient(BaseLLMClient):
     _STREAM_DONE = object()
 
     def _deadline_bounded(self, stream: Stream[ResponseStreamEvent]) -> Iterator[Any]:
-        """Yield stream events while enforcing the wall-clock deadline.
+        """Yield stream events while bounding inter-event silence.
 
-        A pump thread feeds a queue so a stalled stream cannot block past the
-        deadline even when no events ever arrive. The pump is a daemon: an
-        abandoned blocked read dies with the process.
+        A pump thread feeds a queue so a stalled stream cannot block past
+        the deadline even when no events ever arrive. The deadline measures
+        silence between events, not total stream duration: a slow but
+        steadily producing stream runs as long as it keeps producing. The
+        consumer closes the stream on every exit path, which unblocks an
+        abandoned pump read and returns the connection to the pool.
         """
         queue: SimpleQueue[Any] = SimpleQueue()
 
@@ -604,20 +627,53 @@ class OpenAIClient(BaseLLMClient):
             if remaining <= 0:
                 raise ProviderUnavailableError(
                     "provider stream exceeded"
-                    f" {self.stream_deadline_seconds:.0f}s wall-clock deadline"
+                    f" {self.stream_deadline_seconds:.0f}s inactivity deadline"
                 )
             try:
                 item = queue.get(timeout=remaining)
             except Empty:
                 raise ProviderUnavailableError(
                     "provider stream exceeded"
-                    f" {self.stream_deadline_seconds:.0f}s wall-clock deadline"
+                    f" {self.stream_deadline_seconds:.0f}s inactivity deadline"
                 ) from None
             if item is self._STREAM_DONE:
                 return
             if isinstance(item, BaseException):
                 raise item
+            deadline = time.monotonic() + self.stream_deadline_seconds
             yield item
+
+    def _apply_codex_stream_event(
+        self,
+        payload: CodexStreamPayload,
+        argument_run: _CodexArgumentRun,
+        event: ResponseStreamEvent,
+    ) -> CodexStreamPayload | None:
+        """Fold one stream event; return the payload when the stream completes.
+
+        Terminal infrastructure failures (response.failed) raise
+        ProviderUnavailableError: the provider, not the model, broke.
+        """
+        if event.type == "response.output_item.done":
+            self._apply_codex_output_item(payload, event.item)
+        elif event.type == "response.output_item.added":
+            item = event.item
+            if getattr(item, "type", None) == "function_call":
+                added_call = cast("ResponseFunctionToolCall", item)
+                argument_run.call_id = added_call.call_id or ""
+        elif event.type == "response.reasoning_summary_text.delta":
+            payload.reasoning_summary_text += event.delta
+        elif event.type == "response.function_call_arguments.delta":
+            argument_run.observe(event.delta)
+            if self._codex_argument_runaway(argument_run):
+                raise self._runaway_error(argument_run)
+        elif event.type == "response.completed":
+            return self._complete_codex_payload(payload, event.response)
+        elif event.type == "response.failed":
+            raise ProviderUnavailableError(
+                f"Codex subscription response failed: {event.response.error}"
+            )
+        return None
 
     def _consume_codex_stream(
         self, stream: Stream[ResponseStreamEvent]
@@ -625,32 +681,30 @@ class OpenAIClient(BaseLLMClient):
         """Accumulate one Codex subscription stream into a response payload.
 
         Message text and reasoning arrive only as stream events; the
-        response.completed event carries the terminal status and usage.
+        response.completed event carries the terminal status and usage. Every
+        exit path closes the stream so a deadline abort cannot leave the pump
+        thread parked on keepalive bytes holding a pooled connection.
         """
         payload = CodexStreamPayload()
         argument_run = _CodexArgumentRun()
-        for event in self._deadline_bounded(stream):
-            if event.type == "response.output_item.done":
-                self._apply_codex_output_item(payload, event.item)
-            elif event.type == "response.output_item.added":
-                item = event.item
-                if getattr(item, "type", None) == "function_call":
-                    added_call = cast("ResponseFunctionToolCall", item)
-                    argument_run.call_id = added_call.call_id or ""
-            elif event.type == "response.reasoning_summary_text.delta":
-                payload.reasoning_summary_text += event.delta
-            elif event.type == "response.function_call_arguments.delta":
-                argument_run.observe(event.delta)
-                if self._codex_argument_runaway(argument_run):
-                    _close_quietly(stream)
-                    raise self._runaway_error(argument_run)
-            elif event.type == "response.completed":
-                return self._complete_codex_payload(payload, event.response)
-            elif event.type == "response.failed":
-                raise RuntimeError(
-                    f"Codex subscription response failed: {event.response.error}"
-                )
-        raise RuntimeError("Codex subscription stream ended without response.completed")
+        try:
+            for event in self._deadline_bounded(stream):
+                completed = self._apply_codex_stream_event(payload, argument_run, event)
+                if completed is not None:
+                    return completed
+        except ProviderUnavailableError:
+            if argument_run.arguments.strip():
+                # The stream died mid-thought while trickling tool
+                # arguments; a slow runaway behaves like the fast one:
+                # salvage the partial reasoning and continue on a fresh
+                # round rather than discarding it as a capacity failure.
+                raise self._runaway_error(argument_run) from None
+            raise
+        finally:
+            _close_quietly(stream)
+        raise ProviderUnavailableError(
+            "Codex subscription stream ended without response.completed"
+        )
 
     @staticmethod
     def _runaway_error(run: _CodexArgumentRun) -> CodexRunawayToolArgumentsError:
