@@ -23,6 +23,7 @@ from eleusis.benchmark_run_manifest import (
 from eleusis.benchmark_run_store import (
     BENCHMARK_RUN_DATABASE_NAME,
     BenchmarkRunStore,
+    BenchmarkRunStoreError,
 )
 from eleusis.round_record import (
     RoundRecordValidationError,
@@ -97,6 +98,14 @@ def _strict_turn_legacy_view(turn: Mapping[str, object], player: str) -> LegacyR
     pre_state = cast(Mapping[str, object], turn["pre_decision_state"])
     hand = cast(list[Mapping[str, object]], pre_state["hand"])
     card_outcome = cast(Mapping[str, object], turn["card_outcome"])
+    retry_causes: list[LegacyRecord] = [
+        {
+            "attempt": attempt["attempt_number"],
+            "cause": attempt["retry_cause"],
+        }
+        for attempt in attempts
+        if attempt["retry_cause"] is not None
+    ]
     return {
         "turn_number": turn["turn_number"],
         "player": player,
@@ -106,8 +115,8 @@ def _strict_turn_legacy_view(turn: Mapping[str, object], player: str) -> LegacyR
         "action_result": {"accepted": card_outcome["accepted"]},
         "guess_attempt": _strict_guess_legacy_view(turn.get("guess_attempt")),
         "tokens": tokens,
-        "retry_count": max(0, len(attempts) - 1),
-        "retry_causes": [],
+        "retry_count": len(retry_causes),
+        "retry_causes": retry_causes,
     }
 
 
@@ -346,14 +355,19 @@ def read_analysis_run_artifact(run_folder: Path) -> AnalysisRunArtifact:
     """Select SQLite before JSON and decode one Run without rewriting artifacts."""
     database_path = run_folder / BENCHMARK_RUN_DATABASE_NAME
     if database_path.is_file():
-        run_store = BenchmarkRunStore(run_folder)
-        status = run_store.read_export_status()
-        return _strict_artifact(
-            run_store.read_manifest(),
-            run_store.read_completed_rounds(),
-            artifact_source="sqlite",
-            export_is_current=status.is_current,
-        )
+        try:
+            run_store = BenchmarkRunStore(run_folder)
+            status = run_store.read_export_status()
+            return _strict_artifact(
+                run_store.read_manifest(),
+                run_store.read_completed_rounds(),
+                artifact_source="sqlite",
+                export_is_current=status.is_current,
+            )
+        except BenchmarkRunStoreError as error:
+            raise HistoricalRunCompatibilityError(
+                f"Benchmark Run analysis artifact is unreadable: {error}"
+            ) from error
     results_path = run_folder / "results.json"
     if not results_path.is_file():
         raise HistoricalRunCompatibilityError(
