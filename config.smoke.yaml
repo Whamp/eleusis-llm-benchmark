@@ -11,11 +11,18 @@ game:
   seed: 42
 
 rule_compiler:
-  provider: huggingface
+  # Matches the production config.yaml compiler (Novita gpt-oss-120b medium)
+  # with smoke-tuned retries and simulation counts.
+  provider: openai_compat
   model_id: openai/gpt-oss-120b
-  hf_provider: together
-  reasoning_format: separate_field
-  temperature: 0.2
+  base_url: https://openrouter.ai/api/v1
+  api_key: ${OPENROUTER_API_KEY}
+  temperature: 0.7
+  reasoning_effort: medium
+  extra_body:
+    provider:
+      order: [Novita]
+      allow_fallbacks: false
   max_retries: 3
   num_simulations: 20
   turns_per_simulation: 20
