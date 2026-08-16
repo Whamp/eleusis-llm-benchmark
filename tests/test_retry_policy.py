@@ -28,6 +28,7 @@ def _make_scientist(
     max_retries: int = 3,
     rng: random.Random | None = None,
     provider_retry_patience_seconds: float = 1800.0,
+    provider_retry_backoff_seconds: float = 0.0,
 ) -> tuple[LLMScientist, GameEngine, GameState]:
     """Set up a scientist with a fake client and pre-loaded hand."""
     rule = rule or Rule("Only even ranks.", "return card.rank % 2 == 0")
@@ -50,6 +51,7 @@ def _make_scientist(
         max_turns=40,
         rng=rng or random.Random(42),
         provider_retry_patience_seconds=provider_retry_patience_seconds,
+        provider_retry_backoff_seconds=provider_retry_backoff_seconds,
     )
     return scientist, engine, state
 
@@ -262,6 +264,10 @@ class TestProviderUnavailableRetry:
             "provider_unavailable",
             "usable_action",
         ]
+        # Accounting: every failed submission, provider ones included,
+        # must land in both retry_count and retry_causes.
+        assert scientist.last_retry_count == 2
+        assert len(scientist.last_retry_causes) == 2
 
     def test_provider_unavailable_exhaustion_raises_instead_of_fallback(
         self,

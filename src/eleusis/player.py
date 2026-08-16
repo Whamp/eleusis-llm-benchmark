@@ -308,6 +308,10 @@ class LLMScientist:
                         started_at=started_at,
                         call_metrics_before=call_metrics_before,
                     )
+                    # Count every failed submission — provider failures
+                    # included — so retry_count never disagrees with
+                    # retry_causes.
+                    self.last_retry_count = len(self.last_retry_causes)
                     return PlayCardAction(card)
                 cause = "card_parse_error"
                 interpretation = "card_parse_error"
