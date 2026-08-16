@@ -378,6 +378,9 @@ def test_live_progress_command_reads_active_round_from_sqlite(
 
     from scripts import check_progress
 
+    monkeypatch.setattr(
+        "sys.argv", ["check_progress.py", "--pattern", "solo_evaluation_*"]
+    )
     check_progress.main()
 
     output = capsys.readouterr().out

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Check live progress of matching parallel benchmark workers."""
 
+import argparse
 import glob
 import json
 from pathlib import Path
@@ -13,11 +14,11 @@ from eleusis.benchmark_run_store import (
 )
 
 
-def _matching_worker_folders() -> list[Path]:
+def _matching_worker_folders(pattern: str) -> list[Path]:
     """Find matching legacy exports and authoritative SQLite worker folders."""
     artifact_patterns = (
-        "results/solo_evaluation_*w*qwen*/results.json",
-        f"results/solo_evaluation_*w*qwen*/{BENCHMARK_RUN_DATABASE_NAME}",
+        f"results/{pattern}/results.json",
+        f"results/{pattern}/{BENCHMARK_RUN_DATABASE_NAME}",
     )
     return sorted(
         {
@@ -68,11 +69,20 @@ def _sqlite_worker_progress(folder: Path) -> dict[str, object]:
 
 def main() -> None:
     """Print progress summaries, preferring SQLite for new-format Runs."""
-    folders = _matching_worker_folders()
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+    )
+    parser.add_argument(
+        "--pattern",
+        default="solo_evaluation_*w*qwen*",
+        help=("Glob pattern for results/ worker folders (default: %(default)s)"),
+    )
+    args = parser.parse_args()
+    folders = _matching_worker_folders(args.pattern)
     if not folders:
         print("No benchmark results found yet.")
         print(
-            "Looking for: results/solo_evaluation_*w*qwen*/"
+            f"Looking for: results/{args.pattern}/"
             f"{{results.json,{BENCHMARK_RUN_DATABASE_NAME}}}"
         )
         return
