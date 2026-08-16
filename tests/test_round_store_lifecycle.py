@@ -20,6 +20,7 @@ from eleusis.game.cards import Deck
 from eleusis.game.rule_library import RuleLibraryEntry
 from eleusis.round_continuation import RoundContinuationIncompatibilityError
 from eleusis.round_execution import execute_round_turn, execute_round_turns
+from eleusis.round_record import RoundRecordValidationError
 from tests.conftest import FakeLLMClient, make_action_response
 from tests.test_evaluation_orchestrator import _startup
 from tests.test_round_continuation import _build_round_runtime
@@ -228,6 +229,49 @@ def test_one_turn_round_uses_complete_authoritative_store_lifecycle(
             sqlite3.IntegrityError, match="immutable completed Round Record"
         ):
             connection.execute("DELETE FROM rounds WHERE round_number = 1")
+
+
+@pytest.mark.parametrize("game_over_reason", ["abandoned", "max_turns"])
+def test_correct_formal_guess_rejects_inconsistent_terminal_promotion(
+    tmp_path: Path,
+    game_over_reason: str,
+) -> None:
+    """A correct Formal Guess can only promote as its matching outcome."""
+    runtime = _build_round_runtime()
+    runtime.max_turns = 1
+    compiler = runtime.rule_compiler_client
+    scientist = runtime.scientist_client
+    assert isinstance(compiler, FakeLLMClient)
+    assert isinstance(scientist, FakeLLMClient)
+    selected = runtime.game_state.player.hand.get_all_cards()[0]
+    compiler.responses.append("return card.rank % 2 == 0")
+    scientist.responses.append(
+        make_action_response(
+            str(selected),
+            tentative_rule="Only even ranks.",
+            confidence_level=5,
+            guess_rule=True,
+        )
+    )
+    store = BenchmarkRunStore.create(tmp_path / "run", _manifest(runtime))
+    store.start_round(runtime, effective_round_seed=8675309, batch_round_index=0)
+    turn, result = execute_round_turn(runtime, 0)
+    assert result["correct"] is True
+    store.commit_completed_turn(runtime, [turn])
+
+    with pytest.raises(
+        RoundRecordValidationError,
+        match=r"correct Formal Guess.*correct_formal_guess",
+    ):
+        store.complete_round(
+            runtime.round_number,
+            game_over_reason=game_over_reason,
+        )
+
+    active = store.read_active_round(runtime.round_number)
+    assert active is not None
+    assert active.record["terminal_outcome"] is None
+    assert store.read_completed_rounds() == []
 
 
 def test_unexpected_action_error_leaves_only_initial_checkpoint(

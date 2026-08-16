@@ -281,6 +281,13 @@ def _initialize_fresh_state(startup: EvaluationStartup) -> EvaluationState:
         Path("results") / folder_name,
         manifest,
     )
+    source_provenance = manifest["source_provenance"]
+    if isinstance(source_provenance, dict) and source_provenance["dirty"] is True:
+        logger.warning(
+            "Fresh Benchmark Run uses dirty source provenance; persisted "
+            "fingerprint: %s",
+            source_provenance["fingerprint"],
+        )
     startup.run_store = run_store
     startup.run_manifest = manifest
     return EvaluationState(

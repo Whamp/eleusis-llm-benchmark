@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import json
+import logging
 import subprocess
 import sys
 from argparse import Namespace
@@ -13,7 +14,12 @@ import pytest
 import yaml
 from pytest import MonkeyPatch
 
-from eleusis import evaluation_orchestrator, evaluation_startup, runner
+from eleusis import (
+    benchmark_run_manifest,
+    evaluation_orchestrator,
+    evaluation_startup,
+    runner,
+)
 from eleusis.benchmark_config import BenchmarkConfig
 from eleusis.benchmark_run_store import BenchmarkRunStoreError
 from eleusis.evaluation_startup import resolve_evaluation_startup
@@ -99,6 +105,51 @@ def _create_interrupted_initial_round(
     assert active.continuation["next_turn_index"] == 0
     run_folder = tmp_path / "results" / state.folder_name
     return config_before_run, run_folder, active.continuation
+
+
+def test_fresh_dirty_run_warns_with_persisted_source_fingerprint(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Fresh Run creation permits dirty source with an auditable warning."""
+    monkeypatch.chdir(tmp_path)
+    startup = _startup()
+    Path("rules.json").write_text(
+        json.dumps(
+            {
+                "rules": [
+                    {
+                        "name": "only_red",
+                        "description": "Only red cards.",
+                        "code": "return card.color == 'red'",
+                    }
+                ]
+            }
+        )
+    )
+    fingerprint = "d" * 64
+    monkeypatch.setattr(
+        benchmark_run_manifest,
+        "capture_source_provenance",
+        lambda: {
+            "revision": "dirty-test-revision",
+            "dirty": True,
+            "files": [],
+            "fingerprint": fingerprint,
+        },
+    )
+
+    with caplog.at_level(logging.WARNING):
+        state = initialize_evaluation_state(startup)
+
+    assert state is not None
+    assert state.run_store is not None
+    persisted = state.run_store.read_manifest()["source_provenance"]
+    assert isinstance(persisted, dict)
+    assert persisted["fingerprint"] == fingerprint
+    assert "dirty source provenance" in caplog.text
+    assert fingerprint in caplog.text
 
 
 def test_resume_restores_initial_checkpoint_without_round_setup(
