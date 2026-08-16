@@ -90,6 +90,7 @@ def _load_sqlite_resume_startup(
     current_config = load_config(args.config)
     config = restore_benchmark_run_config(manifest, current_config)
     comparison_config = apply_cli_overrides(copy.deepcopy(config), args)
+    comparison_config["game"]["seed"] = current_config["game"]["seed"]
     comparison_config["model"] = stored_model
     if args.suite is not None:
         comparison_config["suite"] = args.suite
