@@ -190,6 +190,56 @@ class TestShadowEvaluationCache:
         assert result1[0] is False
         assert len(compiler.compile_calls) == 1  # only compiled once
 
+    def test_cache_key_includes_current_mainline(self) -> None:
+        """A changed mainline must not reuse a verdict cached for another state.
+
+        Simulations start from current_mainline, so rules whose acceptance
+        depends on board state can flip their equivalence verdict as the
+        mainline grows. Reusing an earlier verdict would report a wrong
+        shadow result for the new board state.
+        """
+        actual = Rule(
+            "Anything first, then match the first card's color",
+            "return len(mainline) == 0 or card.color == mainline[0].color",
+        )
+        guessed_text = "Anything first, then only red cards"
+        guessed_code = "return len(mainline) == 0 or card.color == 'red'"
+        compiler = FakeShadowCompiler({guessed_text: guessed_code})
+        black_starter = [Card(13, Suit.SPADES)]
+
+        shared = self._make_validator()
+        empty_verdict = shared.compare_rules(
+            actual,
+            guessed_text,
+            [],
+            compiler,
+            num_simulations=1,
+            turns_per_simulation=2,
+            simulation_seed=0,
+        )[0]
+        cached_verdict = shared.compare_rules(
+            actual,
+            guessed_text,
+            black_starter,
+            compiler,
+            num_simulations=1,
+            turns_per_simulation=2,
+            simulation_seed=0,
+        )[0]
+        fresh_verdict = self._make_validator().compare_rules(
+            actual,
+            guessed_text,
+            black_starter,
+            compiler,
+            num_simulations=1,
+            turns_per_simulation=2,
+            simulation_seed=0,
+        )[0]
+
+        assert empty_verdict is True
+        assert fresh_verdict is False
+        assert cached_verdict == fresh_verdict
+
     def test_clear_shadow_cache(self) -> None:
         """clear_shadow_cache() should force re-evaluation."""
         validator = self._make_validator()

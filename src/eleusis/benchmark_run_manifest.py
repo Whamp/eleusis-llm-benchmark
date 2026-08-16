@@ -37,7 +37,11 @@ class _ManifestVersions(_StrictManifestModel):
     database: Literal[1]
     manifest: Literal[1]
     round_record: Literal[1]
-    round_checkpoint: Literal[1]
+    # Manifests record the checkpoint schema that created the run. Version 2
+    # added the validator cache mainline to the checkpoint key; decoding a
+    # completed v1 Run stays analysis-readable while resume of its v1 active
+    # checkpoint still fails closed in BenchmarkRunStore.
+    round_checkpoint: Literal[1, 2]
     export: Literal[1]
 
 

@@ -38,7 +38,7 @@ __all__ = [
     "validate_round_continuation_document",
 ]
 
-ROUND_CONTINUATION_VERSION = 1
+ROUND_CONTINUATION_VERSION = 2
 
 
 class RoundContinuationIncompatibilityError(ValueError):
@@ -140,6 +140,7 @@ class _RuleComparisonSnapshot(_StrictContinuationModel):
 class _ValidatorCacheKeySnapshot(_StrictContinuationModel):
     actual_rule_code: str
     guessed_rule_description: str
+    current_mainline: list[_CardSnapshot]
     num_simulations: int = Field(ge=0)
     turns_per_simulation: int = Field(ge=0)
     simulation_seed: int
@@ -260,7 +261,7 @@ class _RuntimeSnapshot(_StrictContinuationModel):
 
 
 class _RoundContinuationDocument(_StrictContinuationModel):
-    version: Literal[1]
+    version: Literal[2]
     next_turn_index: int = Field(ge=0)
     turn_records: list[TurnRecord]
     round: _RoundSnapshot

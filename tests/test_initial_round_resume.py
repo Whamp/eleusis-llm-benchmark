@@ -413,7 +413,7 @@ def test_active_checkpoint_column_version_fails_closed(
         BenchmarkRunStoreError,
         match=(
             "Benchmark Run active checkpoint incompatible: found version 999, "
-            "expected 1"
+            "expected 2"
         ),
     ):
         store.read_active_round(1)
