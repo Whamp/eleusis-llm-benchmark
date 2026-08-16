@@ -36,6 +36,14 @@ gpt-5.6-luna-medium:
   reasoning_effort: medium  # none|minimal|low|medium|high|xhigh
   color: "#8FB8C9"  # OpenAI sky
 
+gpt-5.6-luna-deepthink:
+  provider: openai
+  model_id: gpt-5.6-luna
+  auth: pi-codex              # ChatGPT subscription via pi's auth.json
+  reasoning_effort: none     # native thinking off; scratchpad tool carries it
+  reasoning_extraction: deep_think  # capture CoT via deep_think tool arguments
+  color: "#7EA8C4"  # OpenAI sky (darker)
+
 gpt-5.2-high:
   provider: openai
   model_id: gpt-5.2

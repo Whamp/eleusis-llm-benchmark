@@ -88,6 +88,9 @@ class _ModelAttemptRecord(_StrictRoundRecordModel):
     model: str
     finish_reason: str | None
     token_metrics: _TokenMetricsRecord
+    # Captured reasoning trace for this attempt; defaulted so historical
+    # records written before reasoning extraction decode unchanged.
+    reasoning_text: str | None = None
     provider_calls: list[_ProviderCallRecord]
 
 

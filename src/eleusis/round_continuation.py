@@ -202,6 +202,9 @@ class _CallMetricsSnapshot(_StrictContinuationModel):
     continuation_depth: int = Field(ge=0)
     provider: str
     cost_usd: float | None
+    # Captured reasoning trace; optional so v2 checkpoints written before
+    # reasoning extraction restore unchanged.
+    reasoning_text: str | None = None
 
 
 class _GenerateMetricsSnapshot(_StrictContinuationModel):

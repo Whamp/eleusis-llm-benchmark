@@ -76,6 +76,9 @@ class LLMCallMetrics:
     continuation_depth: int = 0
     provider: str = "unknown"
     cost_usd: float | None = None
+    # Captured reasoning trace for this call: native reasoning summaries or
+    # deep_think scratchpad arguments, when the provider exposes either.
+    reasoning_text: str | None = None
 
 
 @dataclass
@@ -113,6 +116,10 @@ def _restore_call_metrics(payload: Mapping[str, object]) -> LLMCallMetrics:
         continuation_depth=cast(int, payload["continuation_depth"]),
         provider=cast(str, payload["provider"]),
         cost_usd=cast(float | None, payload["cost_usd"]),
+        reasoning_text=cast(
+            "str | None",
+            payload.get("reasoning_text"),
+        ),
     )
 
 

@@ -198,12 +198,12 @@ def test_openai_client_subscription_mode_streams_without_store(
         ]
 
     monkeypatch.setattr(client.client.responses, "create", fake_create, raising=True)
-    payload = client._create_response([], disable_thinking=False)
+    payload = client._create_response([], "medium")
     choice, metrics = client._call_api([{"role": "user", "content": "pick"}])
 
     assert captured["store"] is False
     assert captured["stream"] is True
-    assert captured["reasoning"] == {"effort": "medium"}
+    assert captured["reasoning"] == {"effort": "medium", "summary": "detailed"}
     assert payload.output_text == "2H"
     assert choice.message.content == "2H"
     assert choice.message.reasoning == "reasoned"
