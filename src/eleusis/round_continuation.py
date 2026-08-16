@@ -340,7 +340,7 @@ def capture_round_continuation(
         next_turn_index: Zero-based index of the next Turn to execute.
 
     Returns:
-        A strictly validated version-one continuation document.
+        A strictly validated continuation document at ROUND_CONTINUATION_VERSION.
 
     Raises:
         RoundContinuationIncompatibilityError: If live state violates the contract.
