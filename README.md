@@ -143,7 +143,11 @@ Model Attempt, and each validated Turn is committed before the next Model
 Attempt. Resume restores the last committed board, hand, deck, RNG state, and
 seed, then starts the exact next Turn without repeating completed work.
 
-**Pause:** Kill the processes (`Ctrl+C`, or `kill <pid>`).
+**Pause:** Kill the processes (`Ctrl+C`, or `kill <pid>` on the `python`
+process — killing the `uv run` wrapper orphans the Python child, which keeps
+playing; `pkill -f evaluate_single.py` covers every worker). A hard `kill -9`
+at any moment is safe: only whole validated Turns are committed, and a second
+concurrent writer is rejected fail-closed rather than corrupting the run.
 
 **Resume:** Point `--resume` at each worker's result folder. When SQLite is
 present, resume uses it instead of `results.json` and verifies the stored model,
