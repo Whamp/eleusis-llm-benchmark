@@ -462,6 +462,10 @@ class OpenAIClient(BaseLLMClient):
             ]
             metrics.reasoning_text = "\n\n".join(pending_salvage + round_chunks)
             pending_salvage.clear()
+            # The round's entire provider-reported output is the externalized
+            # chain of thought: count it as reasoning, not answer tokens.
+            metrics.reasoning_tokens = metrics.output_tokens
+            metrics.answer_tokens = 0
             self.call_metrics.append(metrics)
             for name, arguments, call_id in think_calls:
                 history.append(

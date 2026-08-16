@@ -134,7 +134,9 @@ class _FakeCompletedEvent:
     response: _FakeCompletedResponse = field(default_factory=_FakeCompletedResponse)
 
 
-def _think_round(thoughts: str, call_id: str = "call_1") -> list[Any]:
+def _think_round(
+    thoughts: str, call_id: str = "call_1", usage: _FakeUsage | None = None
+) -> list[Any]:
     """Stream events for one round that only calls deep_think."""
     return [
         _FakeItemDoneEvent(
@@ -144,15 +146,15 @@ def _think_round(thoughts: str, call_id: str = "call_1") -> list[Any]:
                 call_id=call_id,
             )
         ),
-        _FakeCompletedEvent(),
+        _FakeCompletedEvent(response=_FakeCompletedResponse(usage=usage)),
     ]
 
 
-def _text_round(text: str) -> list[Any]:
+def _text_round(text: str, usage: _FakeUsage | None = None) -> list[Any]:
     """Stream events for one round that answers with plain text."""
     return [
         _FakeItemDoneEvent(item=_FakeMessageItem(content=[_FakeTextPart(text=text)])),
-        _FakeCompletedEvent(),
+        _FakeCompletedEvent(response=_FakeCompletedResponse(usage=usage)),
     ]
 
 
@@ -479,3 +481,39 @@ def test_factory_wires_deep_think_extraction(
     client = create_client("gpt-5.6-luna-deepthink")
     assert isinstance(client, OpenAIClient)
     assert client.reasoning_extraction == "deep_think"
+
+
+def test_deep_think_round_tokens_count_as_reasoning(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """C8: a scratchpad round's output tokens are reasoning tokens.
+
+    The whole output of a thinking round is the externalized chain of
+    thought, so its provider-reported output tokens are classified as
+    reasoning, not answer tokens.
+    """
+    client = _subscription_client(reasoning_extraction="deep_think")
+    think_usage = _FakeUsage(input_tokens=10, output_tokens=120)
+    answer_usage = _FakeUsage(input_tokens=20, output_tokens=30)
+    streams: list[_ClosableStream] = [
+        _ClosableStream(
+            events=_think_round("weighing suits and ranks", usage=think_usage)
+        ),
+        _ClosableStream(events=_text_round("Play 4C", usage=answer_usage)),
+    ]
+    monkeypatch.setattr(
+        client.client.responses,
+        "create",
+        lambda **kwargs: streams.pop(0),
+        raising=True,
+    )
+
+    content = client.generate("Pick a card.")
+
+    assert content == "Play 4C"
+    think_metrics, answer_metrics = client.call_metrics
+    assert think_metrics.output_tokens == 120
+    assert think_metrics.reasoning_tokens == 120
+    assert think_metrics.answer_tokens == 0
+    assert answer_metrics.reasoning_tokens == 0
+    assert answer_metrics.answer_tokens == 30
