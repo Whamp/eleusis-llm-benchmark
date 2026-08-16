@@ -154,3 +154,29 @@ def test_dashboard_serves_html_and_progress_json(
     finally:
         server.shutdown()
         server.server_close()
+
+
+def test_dashboard_binds_all_interfaces_by_default(
+    monkeypatch: MonkeyPatch, tmp_path: Path
+) -> None:
+    """C4: the dashboard is reachable from the tailnet, not just localhost."""
+    from scripts.dashboard import create_server
+
+    _worker_with_completed_and_active_round(monkeypatch, tmp_path)
+    server = create_server(pattern="solo_evaluation_*", port=0)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        bind_host, bind_port = server.server_address[:2]
+        assert bind_host == "0.0.0.0"
+        with urllib.request.urlopen(
+            f"http://127.0.0.1:{bind_port}/api/progress", timeout=5
+        ) as response:
+            assert response.status == 200
+    finally:
+        server.shutdown()
+        server.server_close()
+
+    restricted = create_server(pattern="solo_evaluation_*", port=0, host="127.0.0.1")
+    assert restricted.server_address[0] == "127.0.0.1"
+    restricted.server_close()

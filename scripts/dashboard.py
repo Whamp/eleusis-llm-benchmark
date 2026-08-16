@@ -194,8 +194,15 @@ def _progress_payload(pattern: str) -> dict[str, object]:
     }
 
 
-def create_server(pattern: str, port: int) -> ThreadingHTTPServer:
-    """Create the read-only dashboard server bound to localhost."""
+def create_server(
+    pattern: str, port: int, host: str = "0.0.0.0"
+) -> ThreadingHTTPServer:
+    """Create the read-only dashboard server bound to ``host``.
+
+    The default binds every interface so the dashboard is reachable on the
+    tailnet (for example ``http://desktop:8390/``); pass ``127.0.0.1`` to
+    restrict it to localhost.
+    """
 
     class DashboardHandler(BaseHTTPRequestHandler):
         """Serve the dashboard page and its live JSON endpoint."""
@@ -223,7 +230,7 @@ def create_server(pattern: str, port: int) -> ThreadingHTTPServer:
         def log_message(self, format: str, *args: object) -> None:
             """Keep the console quiet; the page shows its own status."""
 
-    return ThreadingHTTPServer(("127.0.0.1", port), DashboardHandler)
+    return ThreadingHTTPServer((host, port), DashboardHandler)
 
 
 def main() -> None:
@@ -240,9 +247,17 @@ def main() -> None:
         default=8390,
         help="Local port to serve on (default: %(default)s)",
     )
+    parser.add_argument(
+        "--host",
+        default="0.0.0.0",
+        help=(
+            "Interface to bind (default: all interfaces, so the dashboard is "
+            "reachable on the tailnet; use 127.0.0.1 for localhost only)"
+        ),
+    )
     args = parser.parse_args()
-    server = create_server(pattern=args.pattern, port=args.port)
-    print(f"Eleusis Benchmark Dashboard: http://127.0.0.1:{args.port}/")
+    server = create_server(pattern=args.pattern, port=args.port, host=args.host)
+    print(f"Eleusis Benchmark Dashboard: http://{args.host}:{args.port}/")
     print(f"pattern: {args.pattern} | Ctrl+C to stop")
     try:
         server.serve_forever()

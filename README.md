@@ -271,7 +271,9 @@ uv run python scripts/check_progress.py --pattern 'solo_evaluation_*<tag>*' --wa
 uv run python scripts/dashboard.py --pattern 'solo_evaluation_*<tag>*'
 ```
 
-The web dashboard is read-only and bound to localhost. It shows overall
+The web dashboard is read-only. By default it binds every interface so it is
+reachable on the tailnet (for example ``http://desktop:8390/``); pass
+``--host 127.0.0.1`` to restrict it to localhost. It shows overall
 rounds solved, average score, reasoning vs. answer token totals, and one card
 per worker with per-Round score, turns, and outcome chips.
 
