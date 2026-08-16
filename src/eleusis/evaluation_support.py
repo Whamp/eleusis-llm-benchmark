@@ -20,7 +20,10 @@ def load_config(config_path: str) -> BenchmarkConfig:
     """Load configuration from YAML file."""
     path = Path(config_path)
     if not path.is_absolute():
-        path = Path(__file__).parent.parent / config_path
+        # Repo files (config.yaml, config.smoke.yaml) resolve against the
+        # repository root, not the caller's working directory, matching
+        # suites.py and benchmark_run_manifest.py repo-root anchoring.
+        path = Path(__file__).parent.parent.parent / config_path
     with path.open() as config_file:
         return parse_benchmark_config(yaml.safe_load(config_file))
 
