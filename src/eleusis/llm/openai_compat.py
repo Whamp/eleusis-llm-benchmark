@@ -66,6 +66,8 @@ class OpenAICompatClient(BaseLLMClient):
         seed: int | None = None,
         reasoning_format: str = "reasoning_content",
         timeout: int = 600,
+        reasoning_effort: str | None = None,
+        extra_body: dict[str, object] | None = None,
     ) -> None:
         """Initialize OpenAI-compatible client.
 
@@ -83,6 +85,10 @@ class OpenAICompatClient(BaseLLMClient):
                 "think_tags" - <think>...</think> in content (DeepSeek R1)
                 "none" - no reasoning content
             timeout: Request timeout in seconds.
+            reasoning_effort: Optional reasoning-effort level forwarded on every
+                request (e.g. "low"/"medium"/"high" for OpenRouter models).
+            extra_body: Optional request-body fields merged into every call, used
+                for gateway routing options such as OpenRouter provider pinning.
         """
         super().__init__(
             model_name=model_name,
@@ -97,6 +103,8 @@ class OpenAICompatClient(BaseLLMClient):
         self.base_url = base_url
         self.reasoning_format = reasoning_format
         self.timeout = timeout
+        self.reasoning_effort = reasoning_effort
+        self.extra_body = extra_body
 
         self.client = OpenAI(
             api_key=self.api_key,
@@ -127,7 +135,12 @@ class OpenAICompatClient(BaseLLMClient):
                 start_time = time.time()
 
                 chat_messages = build_openai_chat_messages(messages)
-                stream = self.client.chat.completions.create(
+                request_kwargs: dict[str, object] = {}
+                if self.reasoning_effort is not None:
+                    request_kwargs["reasoning_effort"] = self.reasoning_effort
+                if self.extra_body is not None:
+                    request_kwargs["extra_body"] = self.extra_body
+                stream = self.client.chat.completions.create(  # ty: ignore[no-matching-overload]
                     model=self.model_name,
                     messages=chat_messages,
                     max_tokens=self.max_tokens,
@@ -135,6 +148,9 @@ class OpenAICompatClient(BaseLLMClient):
                     stream=True,
                     stream_options={"include_usage": True},
                     seed=self.seed,
+                    # Optional gateway params are merged conditionally above, so
+                    # the overload cannot see their static types.
+                    **request_kwargs,
                 )
 
                 stream_result = self._consume_completion_stream(stream)
