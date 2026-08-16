@@ -7,9 +7,9 @@ C1 PiCodexAuth injects the Authorization bearer token and the
    each time so refreshed tokens are picked up without rebuilding clients.
 C2 PiCodexAuth raises a clear PiCodexAuthError when auth.json is missing,
    has no usable openai-codex entry, or the token has expired.
-C3 OpenAIClient in subscription mode sends store=False and consumes a
-   streamed response, returning the completed Response unchanged so the
-   existing choice/metrics parsing keeps working.
+C3 OpenAIClient in subscription mode sends store=False, consumes the
+   streamed events, and assembles a response-shaped payload so the existing
+   choice/metrics parsing keeps working.
 C4 create_client builds that subscription-mode client when a models.yaml
    entry sets auth: pi-codex, honoring its reasoning_effort.
 C5 Subscription mode sends typed content blocks (input_text/output_text)
