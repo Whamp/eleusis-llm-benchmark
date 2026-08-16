@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import json
 import time
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -41,7 +42,8 @@ from typing import Any
 import pytest
 
 from eleusis.benchmark_config import ModelConfig
-from eleusis.llm.base import LLMCallMetrics
+from eleusis.llm import openai_client
+from eleusis.llm.base import LLMCallMetrics, ProviderUnavailableError
 from eleusis.llm.client_factory import create_client
 from eleusis.llm.openai_client import (
     DEEP_THINK_TOOL,
@@ -517,3 +519,113 @@ def test_deep_think_round_tokens_count_as_reasoning(
     assert think_metrics.answer_tokens == 0
     assert answer_metrics.reasoning_tokens == 0
     assert answer_metrics.answer_tokens == 30
+
+
+class _ClientTimeStub:
+    """time-module stand-in that records sleeps without really sleeping.
+
+    Replaces only eleusis.llm.openai_client's ``time`` reference, so real
+    time.sleep in other code (for example a deliberately stalled fake
+    stream) keeps working.
+    """
+
+    def __init__(self) -> None:
+        self.sleeps: list[float] = []
+
+    @staticmethod
+    def monotonic() -> float:
+        return time.monotonic()
+
+    @staticmethod
+    def time() -> float:
+        return time.time()
+
+    def sleep(self, seconds: float) -> None:
+        self.sleeps.append(seconds)
+
+
+def test_stalled_stream_hits_wall_clock_deadline(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """C9: a stream that never delivers events is bounded by a deadline.
+
+    A capacity-starved backend can trickle keepalive bytes forever, which
+    resets per-read timeouts; only a wall-clock deadline bounds the attempt.
+    """
+    import time as time_module
+
+    client = _subscription_client(reasoning_extraction="deep_think")
+    client.stream_deadline_seconds = 0.3
+    monkeypatch.setattr(openai_client, "time", _ClientTimeStub())
+
+    class _StalledStream:
+        """Stream whose first event never arrives."""
+
+        def __iter__(self) -> Iterator[Any]:
+            time_module.sleep(10)
+            yield _FakeCompletedEvent()
+
+    monkeypatch.setattr(
+        client.client.responses, "create", lambda **kwargs: _StalledStream()
+    )
+
+    started = time_module.monotonic()
+    with pytest.raises(ProviderUnavailableError, match="deadline"):
+        client.generate("Pick a card.")
+    assert time_module.monotonic() - started < 5
+
+
+def test_transport_errors_retry_with_capacity_backoff(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """C10: dropped streams are retried with real backoff before failing."""
+    import httpx
+
+    client = _subscription_client(reasoning_extraction="deep_think")
+    client_time = _ClientTimeStub()
+    monkeypatch.setattr(openai_client, "time", client_time)
+
+    attempts: list[int] = []
+
+    def flaky_create(**kwargs: object) -> _ClosableStream:
+        attempts.append(1)
+        if len(attempts) < 3:
+            raise httpx.RemoteProtocolError(
+                "peer closed connection without sending complete message body"
+            )
+        return _ClosableStream(
+            events=[
+                *_text_round("Play 4C"),
+                _FakeCompletedEvent(
+                    response=_FakeCompletedResponse(
+                        usage=_FakeUsage(input_tokens=10, output_tokens=5)
+                    )
+                ),
+            ]
+        )
+
+    monkeypatch.setattr(client.client.responses, "create", flaky_create)
+
+    content = client.generate("Pick a card.")
+
+    assert content == "Play 4C"
+    assert len(attempts) == 3
+    assert all(delay >= 15 for delay in client_time.sleeps)
+
+
+def test_persistent_transport_failure_raises_provider_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """C11: exhausted transport retries surface a classified error."""
+    import httpx
+
+    client = _subscription_client(reasoning_extraction="deep_think")
+    monkeypatch.setattr(openai_client, "time", _ClientTimeStub())
+
+    def broken_create(**kwargs: object) -> None:
+        raise httpx.RemoteProtocolError("peer closed connection")
+
+    monkeypatch.setattr(client.client.responses, "create", broken_create)
+
+    with pytest.raises(ProviderUnavailableError, match="provider unavailable"):
+        client.generate("Pick a card.")

@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, cast
 from typing_extensions import TypedDict
 
 from eleusis.game.cards import Card, Suit
-from eleusis.llm.base import TruncationError
+from eleusis.llm.base import ProviderUnavailableError, TruncationError
 
 __all__ = ["LLMScientist"]
 
@@ -74,6 +74,8 @@ class LLMScientist:
         engine: GameEngine | None = None,
         max_turns: int = 40,
         rng: random.Random | None = None,
+        provider_retry_patience_seconds: float = 1800.0,
+        provider_retry_backoff_seconds: float = 30.0,
     ) -> None:
         """Initialize scientist with name and LLM client."""
         self.name = name
@@ -82,6 +84,8 @@ class LLMScientist:
         self.engine = engine
         self.max_turns = max_turns
         self.rng = rng or random.Random()
+        self.provider_retry_patience_seconds = provider_retry_patience_seconds
+        self.provider_retry_backoff_seconds = provider_retry_backoff_seconds
         self.play_history: list[PlayHistoryEntry] = []
         self.last_action_response: dict[str, object] | None = None
         self.last_prompt: str | None = None
@@ -156,6 +160,41 @@ class LLMScientist:
                 "answer_tokens": metric.answer_tokens,
             },
         }
+
+    def _record_provider_failure_or_abort(
+        self,
+        *,
+        error: ProviderUnavailableError,
+        attempt_number: int,
+        prompt: str,
+        interpretation: str,
+        started_at: float,
+        call_metrics_before: int,
+        patience_started: float | None,
+    ) -> float:
+        """Record one provider failure; abort past patience, else keep window.
+
+        Returns the patience window's start time, opening it on the first
+        provider failure. Past the window the turn aborts so the Round stays
+        resumable instead of fabricating a fallback card.
+        """
+        self._record_model_attempt(
+            attempt_number=attempt_number,
+            prompt=prompt,
+            interpretation=interpretation,
+            retry_cause="provider_unavailable",
+            started_at=started_at,
+            call_metrics_before=call_metrics_before,
+        )
+        now = time.time()
+        effective_start = now if patience_started is None else patience_started
+        if now - effective_start >= self.provider_retry_patience_seconds:
+            raise RuntimeError(
+                f"{self.name} provider unavailable past"
+                f" {self.provider_retry_patience_seconds:.0f}s patience;"
+                " aborting turn to keep the Round resumable"
+            ) from error
+        return effective_start
 
     def _record_model_attempt(
         self,
@@ -236,9 +275,23 @@ class LLMScientist:
         base_prompt = self._build_action_prompt(game_state, hand_cards)
 
         last_cause: str | None = None
-        for attempt in range(self.max_retries):
-            attempt_number = attempt + 1
-            prompt = self._retry_prompt(base_prompt, attempt, last_cause)
+        # Provider-capacity failures are not model failures: they never
+        # consume the model budget, resend the identical prompt, and outlive
+        # it only within the patience window. Evidence numbering counts every
+        # prompt submission, including provider retries.
+        evidence_number = 0
+        model_failures = 0
+        provider_streak = 0
+        provider_patience_started: float | None = None
+        while model_failures < self.max_retries:
+            evidence_number += 1
+            attempt_number = evidence_number
+            if provider_streak:
+                # Infrastructure failure: the scientific condition must not
+                # change, so resend the unmodified prompt.
+                prompt = base_prompt
+            else:
+                prompt = self._retry_prompt(base_prompt, model_failures, last_cause)
             self.last_prompt = prompt
             self.last_action_response = None
             self.llm_client.last_raw_completion = None
@@ -275,6 +328,31 @@ class LLMScientist:
                     f"{self.name} attempt {attempt_number}: {cause} - "
                     f"{type(error).__name__}: {error}"
                 )
+            except ProviderUnavailableError as error:
+                # Infrastructure failure: never the model's fault, never a
+                # random fallback. Resend the same prompt until the patience
+                # window closes, then abort so the Round stays resumable.
+                cause = "provider_unavailable"
+                interpretation = "provider_unavailable"
+                logger.warning(
+                    f"{self.name} attempt {attempt_number}: {cause} - {error}"
+                )
+                provider_patience_started = self._record_provider_failure_or_abort(
+                    error=error,
+                    attempt_number=attempt_number,
+                    prompt=prompt,
+                    interpretation=interpretation,
+                    started_at=started_at,
+                    call_metrics_before=call_metrics_before,
+                    patience_started=provider_patience_started,
+                )
+                last_cause = cause
+                self.last_retry_causes.append(
+                    {"attempt": attempt_number, "cause": cause}
+                )
+                provider_streak += 1
+                time.sleep(self.provider_retry_backoff_seconds)
+                continue
             # The player retry boundary records arbitrary provider failures.
             except Exception as error:  # ruff: ignore[blind-except]
                 cause = "other_error"
@@ -292,6 +370,8 @@ class LLMScientist:
                 call_metrics_before=call_metrics_before,
             )
             last_cause = cause
+            provider_streak = 0
+            model_failures += 1
             self.last_retry_count = attempt_number
             self.last_retry_causes.append({"attempt": attempt_number, "cause": cause})
 

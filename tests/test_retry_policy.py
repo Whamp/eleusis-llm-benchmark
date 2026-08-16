@@ -11,10 +11,12 @@ from __future__ import annotations
 
 import random
 
+import pytest
+
 from eleusis.game.cards import Card, Suit
 from eleusis.game.engine import GameEngine, PlayCardAction, Rule
 from eleusis.game.state import GameState
-from eleusis.llm.base import TruncationError
+from eleusis.llm.base import ProviderUnavailableError, TruncationError
 from eleusis.player import LLMScientist
 from tests.conftest import FakeLLMClient, make_action_response
 
@@ -25,6 +27,7 @@ def _make_scientist(
     rule: Rule | None = None,
     max_retries: int = 3,
     rng: random.Random | None = None,
+    provider_retry_patience_seconds: float = 1800.0,
 ) -> tuple[LLMScientist, GameEngine, GameState]:
     """Set up a scientist with a fake client and pre-loaded hand."""
     rule = rule or Rule("Only even ranks.", "return card.rank % 2 == 0")
@@ -46,6 +49,7 @@ def _make_scientist(
         engine=engine,
         max_turns=40,
         rng=rng or random.Random(42),
+        provider_retry_patience_seconds=provider_retry_patience_seconds,
     )
     return scientist, engine, state
 
@@ -218,3 +222,92 @@ class TestMaxRetriesRespected:
         scientist.get_action(state)
 
         assert client._call_count == 2
+
+
+class TestProviderUnavailableRetry:
+    """Provider-capacity failures retry without model-failure semantics."""
+
+    def test_provider_unavailable_retries_resend_identical_prompt(
+        self,
+    ) -> None:
+        """Provider-capacity failures never consume the model budget.
+
+        Infrastructure failures are not the model's fault, so retries resend
+        the identical prompt (the scientific condition must not change), do
+        not count toward max_retries, and are recorded as Model Attempts with
+        retry_cause provider_unavailable.
+        """
+        client = FakeLLMClient(
+            [
+                ProviderUnavailableError("peer closed connection"),
+                ProviderUnavailableError("stream stalled"),
+                make_action_response("2♥"),
+            ]
+        )
+        scientist, _, state = _make_scientist(client, SAMPLE_HAND, max_retries=3)
+
+        action = scientist.get_action(state)
+
+        assert isinstance(action, PlayCardAction)
+        assert action.card == Card(2, Suit.HEARTS)
+        causes = [attempt["retry_cause"] for attempt in scientist.last_model_attempts]
+        assert causes == ["provider_unavailable", "provider_unavailable", None]
+        prompts = [attempt["prompt"] for attempt in scientist.last_model_attempts]
+        assert prompts[0] == prompts[1] == prompts[2]
+        interpretations = [
+            attempt["interpretation"] for attempt in scientist.last_model_attempts
+        ]
+        assert interpretations == [
+            "provider_unavailable",
+            "provider_unavailable",
+            "usable_action",
+        ]
+
+    def test_provider_unavailable_exhaustion_raises_instead_of_fallback(
+        self,
+    ) -> None:
+        """Past the patience budget the turn aborts instead of playing junk.
+
+        A random fallback card would fabricate benchmark evidence for an
+        infrastructure outage, so exhaustion must raise and leave the Round
+        resumable from its checkpoint.
+        """
+        client = FakeLLMClient([ProviderUnavailableError("peer closed connection")])
+        scientist, _, state = _make_scientist(
+            client,
+            SAMPLE_HAND,
+            max_retries=3,
+            provider_retry_patience_seconds=0.0,
+        )
+
+        with pytest.raises(RuntimeError, match="provider unavailable"):
+            scientist.get_action(state)
+
+        assert scientist.last_model_attempts[-1]["retry_cause"] == (
+            "provider_unavailable"
+        )
+
+    def test_provider_failure_does_not_consume_model_budget(
+        self,
+    ) -> None:
+        """A provider failure plus two parse errors still leaves model budget.
+
+        With max_retries=3 the model budget covers three model-failing
+        attempts; the provider failure must not consume one, so the third
+        parse-retry attempt still happens and succeeds.
+        """
+        client = FakeLLMClient(
+            [
+                ProviderUnavailableError("capacity"),
+                make_action_response("not_a_card"),
+                make_action_response("not_a_card"),
+                make_action_response("2♥"),
+            ]
+        )
+        scientist, _, state = _make_scientist(client, SAMPLE_HAND, max_retries=3)
+
+        action = scientist.get_action(state)
+
+        assert isinstance(action, PlayCardAction)
+        assert action.card == Card(2, Suit.HEARTS)
+        assert len(client.prompts_seen) == 4

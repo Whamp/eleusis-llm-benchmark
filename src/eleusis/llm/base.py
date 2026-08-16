@@ -164,6 +164,16 @@ class TruncationError(Exception):
     """Raised when LLM response is truncated due to max tokens."""
 
 
+class ProviderUnavailableError(RuntimeError):
+    """Raised when the provider cannot serve the request right now.
+
+    Covers transport drops, stalled streams past the wall-clock deadline,
+    and exhausted transient retries. This is an infrastructure failure,
+    never a model failure: callers must not change the prompt in response,
+    and must not fabricate fallback content for it.
+    """
+
+
 class BaseLLMClient(ABC):
     """Abstract base class for LLM clients."""
 

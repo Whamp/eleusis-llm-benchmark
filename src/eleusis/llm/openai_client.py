@@ -4,8 +4,11 @@ import json
 import logging
 import os
 import re
+import threading
 import time
+from collections.abc import Iterator
 from dataclasses import dataclass, field
+from queue import Empty, SimpleQueue
 from typing import Any, Literal, cast
 
 import httpx
@@ -24,7 +27,12 @@ from openai.types.responses import (
 from openai.types.responses.response_usage import ResponseUsage
 
 from eleusis.benchmark_config import OpenAIReasoningEffort
-from eleusis.llm.base import BaseLLMClient, LLMCallMetrics, LLMMessage
+from eleusis.llm.base import (
+    BaseLLMClient,
+    LLMCallMetrics,
+    LLMMessage,
+    ProviderUnavailableError,
+)
 from eleusis.llm.pi_auth import CODEX_BACKEND_BASE_URL, PiCodexAuth
 
 logger = logging.getLogger(__name__)
@@ -268,6 +276,7 @@ class OpenAIClient(BaseLLMClient):
         reasoning_effort: OpenAIReasoningEffort = "medium",
         codex_auth: PiCodexAuth | None = None,
         reasoning_extraction: ReasoningExtraction | None = None,
+        stream_deadline_seconds: float = 300.0,
     ) -> None:
         """Initialize OpenAI client.
 
@@ -286,6 +295,10 @@ class OpenAIClient(BaseLLMClient):
             reasoning_extraction: When "deep_think", disable native thinking
                 and externalize reasoning through the deep_think scratchpad
                 tool so hidden chain-of-thought is captured as evidence.
+            stream_deadline_seconds: Wall-clock bound on consuming one
+                streaming response. Capacity-starved backends can trickle
+                keepalive bytes forever, which resets per-read timeouts; only
+                a deadline bounds such attempts.
         """
         super().__init__(
             model_name=model_name,
@@ -298,6 +311,7 @@ class OpenAIClient(BaseLLMClient):
         )
 
         self.reasoning_effort = reasoning_effort
+        self.stream_deadline_seconds = stream_deadline_seconds
         self.codex_auth = codex_auth
         self.reasoning_extraction = reasoning_extraction
         if codex_auth is None:
@@ -382,6 +396,20 @@ class OpenAIClient(BaseLLMClient):
                     time.sleep(2**attempt)
                 else:
                     raise
+            except (httpx.HTTPError, ProviderUnavailableError) as e:
+                # Transport drops and stalled streams are provider-capacity
+                # failures: back off long enough for congestion to clear.
+                logger.warning(
+                    f"{self.model_name} Attempt {attempt + 1}/{self.max_retries}"
+                    f" provider unavailable: {e}"
+                )
+                if attempt < self.max_retries - 1:
+                    time.sleep(min(15 * 2**attempt, 120))
+                else:
+                    raise ProviderUnavailableError(
+                        f"{self.model_name} provider unavailable after"
+                        f" {self.max_retries} attempts: {e}"
+                    ) from e
 
         raise RuntimeError("Max retries exceeded")
 
@@ -548,6 +576,49 @@ class OpenAIClient(BaseLLMClient):
             reasoning={"effort": effort},
         )
 
+    _STREAM_DONE = object()
+
+    def _deadline_bounded(self, stream: Stream[ResponseStreamEvent]) -> Iterator[Any]:
+        """Yield stream events while enforcing the wall-clock deadline.
+
+        A pump thread feeds a queue so a stalled stream cannot block past the
+        deadline even when no events ever arrive. The pump is a daemon: an
+        abandoned blocked read dies with the process.
+        """
+        queue: SimpleQueue[Any] = SimpleQueue()
+
+        def pump() -> None:
+            try:
+                for event in stream:
+                    queue.put(event)
+            except BaseException as error:  # ruff: ignore[blind-except]
+                # Pump failures surface to the consumer through the queue.
+                queue.put(error)
+            else:
+                queue.put(self._STREAM_DONE)
+
+        threading.Thread(target=pump, daemon=True, name="codex-stream-deadline").start()
+        deadline = time.monotonic() + self.stream_deadline_seconds
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise ProviderUnavailableError(
+                    "provider stream exceeded"
+                    f" {self.stream_deadline_seconds:.0f}s wall-clock deadline"
+                )
+            try:
+                item = queue.get(timeout=remaining)
+            except Empty:
+                raise ProviderUnavailableError(
+                    "provider stream exceeded"
+                    f" {self.stream_deadline_seconds:.0f}s wall-clock deadline"
+                ) from None
+            if item is self._STREAM_DONE:
+                return
+            if isinstance(item, BaseException):
+                raise item
+            yield item
+
     def _consume_codex_stream(
         self, stream: Stream[ResponseStreamEvent]
     ) -> CodexStreamPayload:
@@ -558,7 +629,7 @@ class OpenAIClient(BaseLLMClient):
         """
         payload = CodexStreamPayload()
         argument_run = _CodexArgumentRun()
-        for event in stream:
+        for event in self._deadline_bounded(stream):
             if event.type == "response.output_item.done":
                 self._apply_codex_output_item(payload, event.item)
             elif event.type == "response.output_item.added":
