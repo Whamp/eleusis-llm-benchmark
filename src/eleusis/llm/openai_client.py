@@ -608,8 +608,8 @@ class OpenAIClient(BaseLLMClient):
     def _codex_argument_runaway(cls, run: _CodexArgumentRun) -> bool:
         """Whether streamed tool arguments crossed the runaway bounds."""
         return (
-            run.chars > cls.MAX_TOOL_ARGUMENT_CHARS
-            or run.whitespace_run > cls.MAX_CONSECUTIVE_WHITESPACE_DELTAS
+            run.chars >= cls.MAX_TOOL_ARGUMENT_CHARS
+            or run.whitespace_run >= cls.MAX_CONSECUTIVE_WHITESPACE_DELTAS
         )
 
     @staticmethod
