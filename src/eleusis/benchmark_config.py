@@ -47,6 +47,7 @@ class ModelConfig(TypedDict):
 
     provider: ProviderName
     model_id: str
+    auth: NotRequired[Literal["pi-codex"]]
     api_key: NotRequired[str]
     base_url: NotRequired[str]
     color: NotRequired[str]

@@ -3,13 +3,24 @@
 import logging
 import os
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
+import httpx
 from openai import APIError, OpenAI
-from openai.types.responses import Response, ResponseInputParam
+from openai._streaming import Stream
+from openai.types.responses import (
+    EasyInputMessageParam,
+    Response,
+    ResponseInputParam,
+    ResponseInputTextParam,
+    ResponseOutputItem,
+    ResponseStreamEvent,
+)
+from openai.types.responses.response_usage import ResponseUsage
 
 from eleusis.benchmark_config import OpenAIReasoningEffort
 from eleusis.llm.base import BaseLLMClient, LLMCallMetrics, LLMMessage
+from eleusis.llm.pi_auth import CODEX_BACKEND_BASE_URL, PiCodexAuth
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +41,60 @@ class OpenAIChoice:
     finish_reason: str
 
 
+@dataclass
+class _CodexSummaryBlock:
+    """One reasoning summary block from a Codex stream."""
+
+    text: str
+
+
+@dataclass
+class _CodexReasoningItem:
+    """One reasoning output item from a Codex stream."""
+
+    type: str
+    summary: list[_CodexSummaryBlock]
+
+
+@dataclass
+class _CodexTokenDetails:
+    """Token breakdown from a Codex stream response."""
+
+    reasoning_tokens: int
+
+
+@dataclass
+class _CodexUsage:
+    """Usage numbers from a Codex stream response."""
+
+    input_tokens: int
+    output_tokens: int
+    output_tokens_details: _CodexTokenDetails | None = None
+
+
+@dataclass
+class _CodexIncompleteDetails:
+    """Why a Codex stream response stopped early."""
+
+    reason: str
+
+
+@dataclass
+class CodexStreamPayload:
+    """Response-shaped payload accumulated from Codex stream events.
+
+    The Codex subscription backend delivers message text and reasoning only
+    as stream events; its response.completed event carries empty output, so
+    the client assembles this payload for the shared choice/metrics parsing.
+    """
+
+    output_text: str = ""
+    output: list[_CodexReasoningItem] = field(default_factory=list)
+    status: str = "completed"
+    incomplete_details: _CodexIncompleteDetails | None = None
+    usage: _CodexUsage | None = None
+
+
 class OpenAIClient(BaseLLMClient):
     """Client for OpenAI GPT API with reasoning effort support.
 
@@ -48,8 +113,23 @@ class OpenAIClient(BaseLLMClient):
         role: str = "unknown",
         seed: int | None = None,
         reasoning_effort: OpenAIReasoningEffort = "medium",
+        codex_auth: PiCodexAuth | None = None,
     ) -> None:
-        """Initialize OpenAI client."""
+        """Initialize OpenAI client.
+
+        Args:
+            model_name: Model ID to request.
+            api_key: Platform API key; unused in subscription mode.
+            temperature: Sampling temperature.
+            max_retries: Maximum endpoint call attempts.
+            max_tokens: Maximum generated tokens.
+            role: Metrics label for this client.
+            seed: Stored for reproducibility metadata (Responses API has no seed).
+            reasoning_effort: Reasoning-effort level sent to the API.
+            codex_auth: When set, use ChatGPT-subscription credentials from
+                pi's auth.json against the Codex backend instead of a platform
+                API key.
+        """
         super().__init__(
             model_name=model_name,
             api_key=api_key or os.getenv("OPENAI_API_KEY"),
@@ -61,7 +141,17 @@ class OpenAIClient(BaseLLMClient):
         )
 
         self.reasoning_effort = reasoning_effort
-        self.client = OpenAI(api_key=self.api_key)
+        self.codex_auth = codex_auth
+        if codex_auth is None:
+            self.client = OpenAI(api_key=self.api_key)
+        else:
+            # The subscription backend requires per-request OAuth headers;
+            # api_key only satisfies the SDK's constructor requirement.
+            self.client = OpenAI(
+                api_key="pi-codex-subscription",
+                base_url=CODEX_BACKEND_BASE_URL,
+                http_client=httpx.Client(auth=codex_auth, timeout=600.0),
+            )
 
     @property
     def provider_name(self) -> str:
@@ -113,27 +203,53 @@ class OpenAIClient(BaseLLMClient):
 
         raise RuntimeError("Max retries exceeded")
 
-    @staticmethod
-    def _build_response_input(messages: list[LLMMessage]) -> ResponseInputParam:
+    def _build_response_input(self, messages: list[LLMMessage]) -> ResponseInputParam:
         """Convert provider-neutral messages to Responses API input messages."""
         input_messages: ResponseInputParam = []
         for message in messages:
             role = message["role"]
-            input_messages.append(
-                {
-                    "role": "developer" if role == "system" else role,
-                    "content": message["content"],
-                }
-            )
+            mapped_role = "developer" if role == "system" else role
+            if self.codex_auth is None:
+                input_messages.append(
+                    {"role": mapped_role, "content": message["content"]}
+                )
+            else:
+                # The Codex subscription backend rejects plain string content,
+                # so every message becomes a typed input_text block. The
+                # benchmark player only sends user/developer prompts (history
+                # is embedded in the prompt text), so assistant input blocks
+                # are not needed here.
+                input_messages.append(
+                    EasyInputMessageParam(
+                        role=mapped_role,
+                        content=[
+                            ResponseInputTextParam(
+                                type="input_text",
+                                text=message["content"],
+                            )
+                        ],
+                    )
+                )
         return input_messages
 
     def _create_response(
         self,
         input_messages: ResponseInputParam,
         disable_thinking: bool,
-    ) -> Response:
+    ) -> Response | CodexStreamPayload:
         """Issue one Responses API request with the configured reasoning mode."""
         effort = "none" if disable_thinking else self.reasoning_effort
+        if self.codex_auth is not None:
+            # The Codex subscription backend only supports streaming, refuses
+            # server-side storage, and delivers output only as stream events.
+            stream = self.client.responses.create(
+                model=self.model_name,
+                input=input_messages,
+                reasoning={"effort": effort},
+                stream=True,
+                store=False,
+            )
+            return self._consume_codex_stream(stream)
         if disable_thinking:
             return self.client.responses.create(
                 model=self.model_name,
@@ -147,8 +263,76 @@ class OpenAIClient(BaseLLMClient):
             reasoning={"effort": effort},
         )
 
+    def _consume_codex_stream(
+        self, stream: Stream[ResponseStreamEvent]
+    ) -> CodexStreamPayload:
+        """Accumulate one Codex subscription stream into a response payload.
+
+        Message text and reasoning arrive only as stream events; the
+        response.completed event carries the terminal status and usage.
+        """
+        payload = CodexStreamPayload()
+        for event in stream:
+            if event.type == "response.output_item.done":
+                self._apply_codex_output_item(payload, event.item)
+            elif event.type == "response.completed":
+                response = event.response
+                payload.status = response.status or "unknown"
+                if response.incomplete_details is not None:
+                    payload.incomplete_details = _CodexIncompleteDetails(
+                        reason=response.incomplete_details.reason or ""
+                    )
+                if response.usage is not None:
+                    payload.usage = self._codex_usage(response.usage)
+                return payload
+            elif event.type == "response.failed":
+                raise RuntimeError(
+                    f"Codex subscription response failed: {event.response.error}"
+                )
+        raise RuntimeError("Codex subscription stream ended without response.completed")
+
     @staticmethod
-    def _parse_response_choice(response: Response) -> OpenAIChoice:
+    def _apply_codex_output_item(
+        payload: CodexStreamPayload, item: ResponseOutputItem
+    ) -> None:
+        """Fold one completed output item into the accumulating payload."""
+        if item.type == "message":
+            for part in item.content:
+                if part.type == "output_text":
+                    payload.output_text += part.text
+        elif item.type == "reasoning":
+            payload.output.append(
+                _CodexReasoningItem(
+                    type="reasoning",
+                    summary=[
+                        _CodexSummaryBlock(text=block.text) for block in item.summary
+                    ],
+                )
+            )
+
+    @staticmethod
+    def _codex_usage(usage: ResponseUsage) -> _CodexUsage:
+        """Convert one completed-event usage object to the payload shape."""
+        details = usage.output_tokens_details
+        reasoning_tokens = (
+            details.reasoning_tokens
+            if details is not None and details.reasoning_tokens is not None
+            else 0
+        )
+        return _CodexUsage(
+            input_tokens=usage.input_tokens,
+            output_tokens=usage.output_tokens,
+            output_tokens_details=(
+                _CodexTokenDetails(reasoning_tokens=reasoning_tokens)
+                if details is not None
+                else None
+            ),
+        )
+
+    @staticmethod
+    def _parse_response_choice(
+        response: Response | CodexStreamPayload,
+    ) -> OpenAIChoice:
         """Convert one Responses API result to the provider-neutral choice shape."""
         text_content = response.output_text or ""
         reasoning_parts: list[str] = []
@@ -176,7 +360,7 @@ class OpenAIClient(BaseLLMClient):
 
     def _extract_metrics(
         self,
-        response: Response,
+        response: Response | CodexStreamPayload,
         choice: OpenAIChoice,
         start_time: float,
         end_time: float,

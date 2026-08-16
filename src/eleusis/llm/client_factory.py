@@ -22,6 +22,7 @@ from eleusis.llm.google import GoogleClient
 from eleusis.llm.huggingface import HuggingFaceClient
 from eleusis.llm.openai_client import OpenAIClient
 from eleusis.llm.openai_compat import OpenAICompatClient
+from eleusis.llm.pi_auth import PiCodexAuth
 from eleusis.llm.xai import XAIClient
 from eleusis.player import LLMScientist  # Re-export for backward compat
 
@@ -125,9 +126,11 @@ def create_client(
 
         case "openai":
             reasoning_effort = config.get("reasoning_effort", "medium")
+            codex_auth = PiCodexAuth() if config.get("auth") == "pi-codex" else None
             return OpenAIClient(
-                api_key=os.getenv("OPENAI_API_KEY"),
+                api_key=os.getenv("OPENAI_API_KEY") if codex_auth is None else None,
                 reasoning_effort=reasoning_effort,
+                codex_auth=codex_auth,
                 model_name=model_id,
                 temperature=temperature,
                 max_tokens=max_tokens,

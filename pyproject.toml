@@ -37,7 +37,7 @@ build-backend = "hatchling.build"
 required-version = "==0.16.0"
 line-length = 88
 target-version = "py311"
-extend-exclude = [".venv"]
+extend-exclude = [".venv", "results"]
 
 [tool.ruff.lint]
 extend-select = [

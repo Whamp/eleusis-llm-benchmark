@@ -29,6 +29,13 @@ gpt-5.2-medium:
   reasoning_effort: medium  # none|minimal|low|medium|high|xhigh
   color: "#99BDB4"  # OpenAI teal (lightest)
 
+gpt-5.6-luna-medium:
+  provider: openai
+  model_id: gpt-5.6-luna
+  auth: pi-codex              # ChatGPT subscription via pi's auth.json
+  reasoning_effort: medium  # none|minimal|low|medium|high|xhigh
+  color: "#8FB8C9"  # OpenAI sky
+
 gpt-5.2-high:
   provider: openai
   model_id: gpt-5.2
