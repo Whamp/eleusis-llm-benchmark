@@ -21,7 +21,7 @@ from eleusis import (
     runner,
 )
 from eleusis.benchmark_config import BenchmarkConfig
-from eleusis.benchmark_run_store import BenchmarkRunStoreError
+from eleusis.benchmark_run_store import BenchmarkRunStore, BenchmarkRunStoreError
 from eleusis.evaluation_startup import resolve_evaluation_startup
 from eleusis.evaluation_state import (
     _initialize_fresh_state,
@@ -65,7 +65,9 @@ def _create_interrupted_initial_round(
     monkeypatch.chdir(tmp_path)
     startup = _startup()
     startup.config["game"]["max_turns"] = 1
+    startup.config["game"]["seed"] = None
     startup.game_config["max_turns"] = 1
+    startup.game_config["seed"] = None
     rule_entry: RuleLibraryEntry = {
         "name": "only_red",
         "description": "Only red cards.",
@@ -232,6 +234,13 @@ def test_resume_initial_checkpoint_across_fresh_process(
     assert isinstance(hand, list)
     selected_card = str(Card.from_canonical_card_data(hand[0]))
     assert isinstance(config, dict)
+    run_manifest = BenchmarkRunStore(run_folder).read_manifest()
+    effective_settings = run_manifest["effective_settings"]
+    assert isinstance(effective_settings, dict)
+    control_config = copy.deepcopy(config)
+    control_game_config = control_config["game"]
+    assert isinstance(control_game_config, dict)
+    control_game_config["seed"] = effective_settings["game_seed"]
     control_scientist = FakeLLMClient([make_action_response(selected_card)])
     monkeypatch.setattr(
         runner,
@@ -239,7 +248,7 @@ def test_resume_initial_checkpoint_across_fresh_process(
         lambda _config, _player_name: (FakeLLMClient(), control_scientist),
     )
     runner.play_round(
-        config,
+        control_config,
         1,
         start_rule_index=0,
         batch_round_index=0,
