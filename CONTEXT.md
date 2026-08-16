@@ -31,6 +31,9 @@ One prompt submission and interpretation cycle used to obtain a model decision d
 **Provider Call**:
 One observable API request and response made within a Model Attempt or Rule Compilation Attempt. Continuations and visible transport retries are separate Provider Calls.
 
+**Reasoning Trace**:
+The reasoning evidence captured for one Model Attempt when the provider exposes it: native reasoning summaries streamed by the endpoint, or the externalized chain-of-thought a model writes into a reasoning scratchpad tool when native thinking is disabled. Absent for providers that expose neither; never fabricated.
+
 **Fallback Decision**:
 A card decision made by the benchmark after its Model Attempts fail to produce a usable decision. It records its fallback origin rather than masquerading as a model response.
 

@@ -54,6 +54,7 @@ class ModelConfig(TypedDict):
     hf_provider: NotRequired[HuggingFaceProvider]
     reasoning_budget: NotRequired[int]
     reasoning_effort: NotRequired[OpenAIReasoningEffort]
+    reasoning_extraction: NotRequired[Literal["deep_think"]]
     reasoning_format: NotRequired[str]
     extra_body: NotRequired[dict[str, object]]
     thinking_level: NotRequired[str]

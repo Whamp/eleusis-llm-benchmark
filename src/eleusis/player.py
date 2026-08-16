@@ -184,6 +184,11 @@ class LLMScientist:
                 "answer_tokens",
             )
         }
+        reasoning_trace = "\n\n".join(
+            metric.reasoning_text
+            for metric in self.llm_client.call_metrics[call_metrics_before:]
+            if metric.reasoning_text
+        )
         self.last_model_attempts.append(
             cast(
                 "ModelAttemptRecord",
@@ -206,6 +211,7 @@ class LLMScientist:
                         provider_calls[-1]["finish_reason"] if provider_calls else None
                     ),
                     "token_metrics": token_metrics,
+                    "reasoning_text": reasoning_trace or None,
                     "provider_calls": provider_calls,
                 },
             )

@@ -126,6 +126,9 @@ class ModelAttemptRecord(TypedDict):
     model: str
     finish_reason: str | None
     token_metrics: ModelAttemptTokenMetrics
+    # Captured reasoning trace (native summaries or deep_think scratchpad
+    # arguments) across the attempt's provider calls; absent in old records.
+    reasoning_text: NotRequired[str | None]
     provider_calls: list[ProviderCallRecord]
 
 

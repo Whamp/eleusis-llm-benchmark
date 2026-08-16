@@ -1,9 +1,12 @@
 """OpenAI GPT API client implementation."""
 
+import json
 import logging
 import os
+import re
 import time
 from dataclasses import dataclass, field
+from typing import Any, Literal, cast
 
 import httpx
 from openai import APIError, OpenAI
@@ -11,9 +14,11 @@ from openai._streaming import Stream
 from openai.types.responses import (
     EasyInputMessageParam,
     Response,
+    ResponseFunctionToolCall,
     ResponseInputParam,
     ResponseInputTextParam,
     ResponseOutputItem,
+    ResponseReasoningItem,
     ResponseStreamEvent,
 )
 from openai.types.responses.response_usage import ResponseUsage
@@ -23,6 +28,50 @@ from eleusis.llm.base import BaseLLMClient, LLMCallMetrics, LLMMessage
 from eleusis.llm.pi_auth import CODEX_BACKEND_BASE_URL, PiCodexAuth
 
 logger = logging.getLogger(__name__)
+
+ReasoningExtraction = Literal["deep_think"]
+
+
+class CodexRunawayToolArgumentsError(RuntimeError):
+    """A streamed tool-call argument stream degenerated into a generation loop.
+
+    The Codex subscription backend rejects max_output_tokens, so a model
+    that externalizes long reasoning into tool arguments can occasionally
+    loop without bound after finishing its thought text. The consumer
+    aborts such streams; the deep_think loop salvages the partial argument
+    text and continues with a fresh round.
+    """
+
+    def __init__(self, message: str, *, partial_arguments: str, call_id: str) -> None:
+        """Store the aborted stream's partial tool-call payload."""
+        super().__init__(message)
+        self.partial_arguments = partial_arguments
+        self.call_id = call_id
+
+
+# Scratchpad tool used to externalize reasoning the provider hides: native
+# thinking is disabled and the model reasons by calling deep_think, whose
+# arguments carry the chain-of-thought in plain sight.
+DEEP_THINK_TOOL: dict[str, object] = {
+    "type": "function",
+    "name": "deep_think",
+    "description": (
+        "Private scratchpad for your internal reasoning before the final"
+        " answer. It will not be made visible to the user."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {"thoughts": {"type": "string"}},
+        "required": ["thoughts"],
+        "additionalProperties": False,
+    },
+}
+
+DEEP_THINK_INSTRUCTION = (
+    "Solve the user task exactly and follow its output format. Use the"
+    " deep_think tool as a private scratchpad for your reasoning before"
+    " answering. It will not be made visible to the user."
+)
 
 
 @dataclass
@@ -80,6 +129,16 @@ class _CodexIncompleteDetails:
 
 
 @dataclass
+class _CodexFunctionCallItem:
+    """One function-call output item from a Codex stream."""
+
+    type: str
+    name: str
+    arguments: str
+    call_id: str
+
+
+@dataclass
 class CodexStreamPayload:
     """Response-shaped payload accumulated from Codex stream events.
 
@@ -89,10 +148,95 @@ class CodexStreamPayload:
     """
 
     output_text: str = ""
-    output: list[_CodexReasoningItem] = field(default_factory=list)
+    output: list[Any] = field(default_factory=list)
+    reasoning_summary_text: str = ""
     status: str = "completed"
     incomplete_details: _CodexIncompleteDetails | None = None
     usage: _CodexUsage | None = None
+
+
+def _salvage_deep_think_thoughts(partial_arguments: str) -> str | None:
+    """Recover the thoughts text from an unterminated deep_think argument.
+
+    Degenerate streams end mid-JSON after real reasoning text; keep that
+    text and drop the trailing whitespace loop it degenerated into.
+    """
+    match = re.search(r'"thoughts"\s*:\s*"(.*)$', partial_arguments, re.DOTALL)
+    if match is None:
+        return None
+    text = match.group(1)
+    for escaped, literal in (
+        ("\\n", "\n"),
+        ("\\t", "\t"),
+        ('\\"', '"'),
+        ("\\\\", "\\"),
+    ):
+        text = text.replace(escaped, literal)
+    text = text.rstrip(" \t\r\n")
+    return text or None
+
+
+def _close_quietly(stream: Stream[ResponseStreamEvent]) -> None:
+    """Abort an SSE stream without letting close errors mask the abort."""
+    try:
+        stream.close()
+    except Exception:  # best-effort abort
+        logger.debug("Codex stream close during abort failed", exc_info=True)
+
+
+def _deep_think_thoughts(arguments: str) -> str:
+    """Extract the thoughts payload from one deep_think tool-call argument."""
+    try:
+        thoughts = json.loads(arguments).get("thoughts")
+    except (json.JSONDecodeError, AttributeError):
+        thoughts = None
+    if not isinstance(thoughts, str) or not thoughts:
+        return arguments
+    return thoughts
+
+
+def _payload_function_calls(
+    payload: Response | CodexStreamPayload,
+) -> list[tuple[str, str, str]]:
+    """Return (name, arguments, call_id) for each function-call output item."""
+    calls: list[tuple[str, str, str]] = []
+    for item in payload.output:
+        if isinstance(item, _CodexFunctionCallItem):
+            calls.append((item.name, item.arguments, item.call_id))
+        elif getattr(item, "type", None) == "function_call":
+            sdk_call = cast("ResponseFunctionToolCall", item)
+            calls.append((sdk_call.name, sdk_call.arguments, sdk_call.call_id))
+    return calls
+
+
+def _payload_reasoning_summaries(
+    payload: Response | CodexStreamPayload,
+) -> list[str]:
+    """Return reasoning summary texts carried by the payload's items."""
+    summaries: list[str] = []
+    for item in payload.output:
+        if isinstance(item, _CodexReasoningItem):
+            summaries.extend(block.text for block in item.summary)
+        elif getattr(item, "type", None) == "reasoning":
+            sdk_item = cast("ResponseReasoningItem", item)
+            summaries.extend(block.text for block in sdk_item.summary)
+    return summaries
+
+
+@dataclass
+class _CodexArgumentRun:
+    """Bounds state for one stream's tool-call argument deltas."""
+
+    chars: int = 0
+    whitespace_run: int = 0
+    arguments: str = ""
+    call_id: str = ""
+
+    def observe(self, delta: str) -> None:
+        """Fold one argument delta into the running totals."""
+        self.chars += len(delta)
+        self.arguments += delta
+        self.whitespace_run = self.whitespace_run + 1 if not delta.strip() else 0
 
 
 class OpenAIClient(BaseLLMClient):
@@ -102,6 +246,15 @@ class OpenAIClient(BaseLLMClient):
     parameter. The seed is stored but not passed to the API. The older Chat
     Completions API had seed support but it's being deprecated.
     """
+
+    # Scratchpad rounds before the final no-tools round forces a text answer.
+    MAX_DEEP_THINK_ROUNDS = 4
+
+    # Client-side bounds for streamed tool-call arguments: the backend
+    # rejects max_output_tokens, so runaway argument generation must be
+    # aborted locally. Generous enough for long legitimate reasoning traces.
+    MAX_TOOL_ARGUMENT_CHARS = 65_536
+    MAX_CONSECUTIVE_WHITESPACE_DELTAS = 512
 
     def __init__(
         self,
@@ -114,6 +267,7 @@ class OpenAIClient(BaseLLMClient):
         seed: int | None = None,
         reasoning_effort: OpenAIReasoningEffort = "medium",
         codex_auth: PiCodexAuth | None = None,
+        reasoning_extraction: ReasoningExtraction | None = None,
     ) -> None:
         """Initialize OpenAI client.
 
@@ -129,6 +283,9 @@ class OpenAIClient(BaseLLMClient):
             codex_auth: When set, use ChatGPT-subscription credentials from
                 pi's auth.json against the Codex backend instead of a platform
                 API key.
+            reasoning_extraction: When "deep_think", disable native thinking
+                and externalize reasoning through the deep_think scratchpad
+                tool so hidden chain-of-thought is captured as evidence.
         """
         super().__init__(
             model_name=model_name,
@@ -142,6 +299,7 @@ class OpenAIClient(BaseLLMClient):
 
         self.reasoning_effort = reasoning_effort
         self.codex_auth = codex_auth
+        self.reasoning_extraction = reasoning_extraction
         if codex_auth is None:
             self.client = OpenAI(api_key=self.api_key)
         else:
@@ -165,17 +323,41 @@ class OpenAIClient(BaseLLMClient):
         continuation_depth: int = 0,
         disable_thinking: bool = False,
     ) -> tuple[OpenAIChoice, LLMCallMetrics]:
-        """Make a single API call with retry logic."""
-        logger.debug(
-            f"Calling OpenAI API with {self.max_tokens} tokens, messages:\n{messages}"
+        """Make one API call, or the deep_think scratchpad loop."""
+        if self.reasoning_extraction == "deep_think" and not disable_thinking:
+            return self._call_api_deep_think(
+                messages,
+                is_continuation=is_continuation,
+                continuation_depth=continuation_depth,
+            )
+        input_messages = self._build_response_input(messages)
+        effort = "none" if disable_thinking else self.reasoning_effort
+        _, choice, metrics = self._request_once(
+            input_messages,
+            is_continuation=is_continuation,
+            continuation_depth=continuation_depth,
+            effort=effort,
         )
+        return choice, metrics
 
+    def _request_once(
+        self,
+        input_messages: ResponseInputParam,
+        *,
+        is_continuation: bool,
+        continuation_depth: int,
+        effort: OpenAIReasoningEffort,
+        tools: list[dict[str, object]] | None = None,
+    ) -> tuple[Response | CodexStreamPayload, OpenAIChoice, LLMCallMetrics]:
+        """Issue one Responses API request with retry logic."""
         for attempt in range(self.max_retries):
             try:
                 start_time = time.time()
-
-                input_messages = self._build_response_input(messages)
-                response = self._create_response(input_messages, disable_thinking)
+                response = self._create_response(
+                    input_messages,
+                    effort,
+                    tools=tools,
+                )
                 end_time = time.time()
                 choice = self._parse_response_choice(response)
 
@@ -189,7 +371,7 @@ class OpenAIClient(BaseLLMClient):
                 )
 
                 logger.debug(f"LLM response:\n{choice}")
-                return choice, metrics
+                return response, choice, metrics
 
             except APIError as e:
                 logger.warning(
@@ -202,6 +384,102 @@ class OpenAIClient(BaseLLMClient):
                     raise
 
         raise RuntimeError("Max retries exceeded")
+
+    def _call_api_deep_think(
+        self,
+        messages: list[LLMMessage],
+        *,
+        is_continuation: bool,
+        continuation_depth: int,
+    ) -> tuple[OpenAIChoice, LLMCallMetrics]:
+        """Run the deep_think scratchpad loop for one generation.
+
+        Each round issues one provider call. Rounds that only reason append
+        their own metrics to call_metrics (marked as continuations); the
+        final text round's metrics are returned for BaseLLMClient.generate
+        to append, so every round lands in call_metrics exactly once.
+        """
+        history = self._build_response_input(
+            [{"role": "system", "content": DEEP_THINK_INSTRUCTION}, *messages]
+        )
+        # Reasoning chunks salvaged from aborted runaway streams; attached to
+        # the next round's metrics so every trace character lands in exactly
+        # one provider-call record.
+        pending_salvage: list[str] = []
+        for round_index in range(self.MAX_DEEP_THINK_ROUNDS + 1):
+            final_round = round_index == self.MAX_DEEP_THINK_ROUNDS
+            tools = None if final_round else [DEEP_THINK_TOOL]
+            try:
+                payload, choice, metrics = self._request_once(
+                    history,
+                    is_continuation=is_continuation or round_index > 0,
+                    continuation_depth=continuation_depth + round_index,
+                    effort="none",
+                    tools=tools,
+                )
+            except CodexRunawayToolArgumentsError as error:
+                # The model finished its thought but degenerated instead of
+                # closing the argument; keep the reasoning and continue with
+                # a fresh round rather than re-rolling the same request.
+                salvaged = _salvage_deep_think_thoughts(error.partial_arguments)
+                if salvaged:
+                    pending_salvage.append(salvaged)
+                history.append(
+                    {
+                        "type": "function_call",
+                        "call_id": error.call_id,
+                        "name": "deep_think",
+                        "arguments": error.partial_arguments,
+                    }
+                )
+                history.append(
+                    {
+                        "type": "function_call_output",
+                        "call_id": error.call_id,
+                        "output": json.dumps({"recorded": True}),
+                    }
+                )
+                continue
+            think_calls = _payload_function_calls(payload)
+            if not think_calls:
+                if pending_salvage:
+                    metrics.reasoning_text = "\n\n".join(pending_salvage)
+                return choice, metrics
+            if final_round:
+                raise RuntimeError(
+                    "deep_think extraction exceeded"
+                    f" {self.MAX_DEEP_THINK_ROUNDS} scratchpad rounds without"
+                    " a final answer"
+                )
+            unexpected = [name for name, _, _ in think_calls if name != "deep_think"]
+            if unexpected:
+                raise RuntimeError(
+                    "deep_think extraction got unexpected tool call:"
+                    f" {', '.join(unexpected)}"
+                )
+            round_chunks = [
+                _deep_think_thoughts(arguments) for _, arguments, _ in think_calls
+            ]
+            metrics.reasoning_text = "\n\n".join(pending_salvage + round_chunks)
+            pending_salvage.clear()
+            self.call_metrics.append(metrics)
+            for name, arguments, call_id in think_calls:
+                history.append(
+                    {
+                        "type": "function_call",
+                        "call_id": call_id,
+                        "name": name,
+                        "arguments": arguments,
+                    }
+                )
+                history.append(
+                    {
+                        "type": "function_call_output",
+                        "call_id": call_id,
+                        "output": json.dumps({"recorded": True}),
+                    }
+                )
+        raise RuntimeError("unreachable deep_think round bound")
 
     def _build_response_input(self, messages: list[LLMMessage]) -> ResponseInputParam:
         """Convert provider-neutral messages to Responses API input messages."""
@@ -235,28 +513,31 @@ class OpenAIClient(BaseLLMClient):
     def _create_response(
         self,
         input_messages: ResponseInputParam,
-        disable_thinking: bool,
+        effort: OpenAIReasoningEffort,
+        tools: list[dict[str, object]] | None = None,
     ) -> Response | CodexStreamPayload:
-        """Issue one Responses API request with the configured reasoning mode."""
-        effort = "none" if disable_thinking else self.reasoning_effort
+        """Issue one Responses API request with the requested reasoning mode."""
         if self.codex_auth is not None:
             # The Codex subscription backend only supports streaming, refuses
             # server-side storage, and delivers output only as stream events.
-            stream = self.client.responses.create(
+            # Reasoning summaries arrive only as streamed deltas, so any
+            # effort that reasons also asks for a detailed summary.
+            reasoning: dict[str, object] = {"effort": effort}
+            if effort != "none":
+                reasoning["summary"] = "detailed"
+            kwargs: dict[str, object] = {}
+            if tools:
+                kwargs["tools"] = tools
+                kwargs["tool_choice"] = "auto"
+            stream = self.client.responses.create(  # ty: ignore[no-matching-overload]
                 model=self.model_name,
                 input=input_messages,
-                reasoning={"effort": effort},
+                reasoning=reasoning,
                 stream=True,
                 store=False,
+                **kwargs,
             )
             return self._consume_codex_stream(stream)
-        if disable_thinking:
-            return self.client.responses.create(
-                model=self.model_name,
-                input=input_messages,
-                reasoning={"effort": effort},
-                temperature=self.temperature,
-            )
         return self.client.responses.create(
             model=self.model_name,
             input=input_messages,
@@ -272,24 +553,64 @@ class OpenAIClient(BaseLLMClient):
         response.completed event carries the terminal status and usage.
         """
         payload = CodexStreamPayload()
+        argument_run = _CodexArgumentRun()
         for event in stream:
             if event.type == "response.output_item.done":
                 self._apply_codex_output_item(payload, event.item)
+            elif event.type == "response.output_item.added":
+                item = event.item
+                if getattr(item, "type", None) == "function_call":
+                    added_call = cast("ResponseFunctionToolCall", item)
+                    argument_run.call_id = added_call.call_id or ""
+            elif event.type == "response.reasoning_summary_text.delta":
+                payload.reasoning_summary_text += event.delta
+            elif event.type == "response.function_call_arguments.delta":
+                argument_run.observe(event.delta)
+                if self._codex_argument_runaway(argument_run):
+                    _close_quietly(stream)
+                    raise self._runaway_error(argument_run)
             elif event.type == "response.completed":
-                response = event.response
-                payload.status = response.status or "unknown"
-                if response.incomplete_details is not None:
-                    payload.incomplete_details = _CodexIncompleteDetails(
-                        reason=response.incomplete_details.reason or ""
-                    )
-                if response.usage is not None:
-                    payload.usage = self._codex_usage(response.usage)
-                return payload
+                return self._complete_codex_payload(payload, event.response)
             elif event.type == "response.failed":
                 raise RuntimeError(
                     f"Codex subscription response failed: {event.response.error}"
                 )
         raise RuntimeError("Codex subscription stream ended without response.completed")
+
+    @staticmethod
+    def _runaway_error(run: _CodexArgumentRun) -> CodexRunawayToolArgumentsError:
+        """Build the abort error carrying the partial tool-call payload."""
+        return CodexRunawayToolArgumentsError(
+            "Codex tool-call arguments exceeded client bounds"
+            f" ({run.chars} chars, whitespace run {run.whitespace_run});"
+            " aborting the stream",
+            partial_arguments=run.arguments,
+            call_id=run.call_id or f"call_salvaged_{int(time.time() * 1000)}",
+        )
+
+    @staticmethod
+    def _complete_codex_payload(
+        payload: CodexStreamPayload, response: object
+    ) -> CodexStreamPayload:
+        """Fold one response.completed event into the final payload."""
+        payload.status = getattr(response, "status", None) or "unknown"
+        incomplete = getattr(response, "incomplete_details", None)
+        if incomplete is not None:
+            payload.incomplete_details = _CodexIncompleteDetails(
+                reason=getattr(incomplete, "reason", None) or ""
+            )
+        usage = getattr(response, "usage", None)
+        if usage is not None:
+            payload.usage = OpenAIClient._codex_usage(cast("ResponseUsage", usage))
+        return payload
+
+    @classmethod
+    def _codex_argument_runaway(cls, run: _CodexArgumentRun) -> bool:
+        """Whether streamed tool arguments crossed the runaway bounds."""
+        return (
+            run.chars > cls.MAX_TOOL_ARGUMENT_CHARS
+            or run.whitespace_run > cls.MAX_CONSECUTIVE_WHITESPACE_DELTAS
+        )
 
     @staticmethod
     def _apply_codex_output_item(
@@ -307,6 +628,15 @@ class OpenAIClient(BaseLLMClient):
                     summary=[
                         _CodexSummaryBlock(text=block.text) for block in item.summary
                     ],
+                )
+            )
+        elif item.type == "function_call":
+            payload.output.append(
+                _CodexFunctionCallItem(
+                    type="function_call",
+                    name=item.name,
+                    arguments=item.arguments,
+                    call_id=item.call_id,
                 )
             )
 
@@ -335,12 +665,10 @@ class OpenAIClient(BaseLLMClient):
     ) -> OpenAIChoice:
         """Convert one Responses API result to the provider-neutral choice shape."""
         text_content = response.output_text or ""
-        reasoning_parts: list[str] = []
-        for item in response.output:
-            if item.type != "reasoning":
-                continue
-            for summary_block in item.summary:
-                reasoning_parts.append(summary_block.text)
+        reasoning_parts = _payload_reasoning_summaries(response)
+        # Subscription streams may deliver summaries only as deltas rather
+        # than completed reasoning items; fall back to the streamed text.
+        streamed_summary = getattr(response, "reasoning_summary_text", "")
         finish_reason = "stop"
         if (
             response.status == "incomplete"
@@ -348,7 +676,7 @@ class OpenAIClient(BaseLLMClient):
             and response.incomplete_details.reason == "max_output_tokens"
         ):
             finish_reason = "length"
-        reasoning_content = "".join(reasoning_parts)
+        reasoning_content = "".join(reasoning_parts) or streamed_summary
         logger.debug(f"Response output_text: {text_content[:200]}...")
         return OpenAIChoice(
             message=OpenAIMessage(
@@ -450,6 +778,7 @@ class OpenAIClient(BaseLLMClient):
             is_continuation=is_continuation,
             continuation_depth=continuation_depth,
             provider=self.provider_name,
+            reasoning_text=choice.message.reasoning,
         )
 
         logger.debug(

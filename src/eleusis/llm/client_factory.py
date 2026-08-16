@@ -127,10 +127,16 @@ def create_client(
         case "openai":
             reasoning_effort = config.get("reasoning_effort", "medium")
             codex_auth = PiCodexAuth() if config.get("auth") == "pi-codex" else None
+            reasoning_extraction = config.get("reasoning_extraction")
+            if reasoning_extraction not in (None, "deep_think"):
+                raise ValueError(
+                    f"Unsupported reasoning_extraction: {reasoning_extraction!r}"
+                )
             return OpenAIClient(
                 api_key=os.getenv("OPENAI_API_KEY") if codex_auth is None else None,
                 reasoning_effort=reasoning_effort,
                 codex_auth=codex_auth,
+                reasoning_extraction=reasoning_extraction,
                 model_name=model_id,
                 temperature=temperature,
                 max_tokens=max_tokens,
