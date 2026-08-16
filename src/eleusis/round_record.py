@@ -338,13 +338,19 @@ class _RoundRecordDocument(_StrictRoundRecordModel):
             raise ValueError(
                 "Correct-Formal-Guess outcome requires a correct final Formal Guess"
             )
-        if self.terminal_outcome.kind == "turn_limit":
-            if len(self.turns) != self.settings.max_turns:
-                raise ValueError("Turn-limit outcome requires exactly max_turns Turns")
-            if correct_formal_turns:
-                raise ValueError(
-                    "Turn-limit outcome cannot contain a correct Formal Guess"
-                )
+        if (
+            correct_formal_turns
+            and self.terminal_outcome.kind != "correct_formal_guess"
+        ):
+            raise ValueError(
+                "Round containing a correct Formal Guess must complete as "
+                "correct_formal_guess"
+            )
+        if (
+            self.terminal_outcome.kind == "turn_limit"
+            and len(self.turns) != self.settings.max_turns
+        ):
+            raise ValueError("Turn-limit outcome requires exactly max_turns Turns")
         return self
 
 

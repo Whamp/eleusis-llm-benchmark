@@ -170,6 +170,47 @@ configuration path, pass the same `--config` so resume can verify it. Do not
 re-specify scientific overrides such as `--model` or `--batch-round-offset` with
 different values.
 
+### Inspecting Run State and Export Freshness
+
+Set the Run folder once, then inspect its authoritative Run row and active Round:
+
+```bash
+RUN_DIR="results/solo_evaluation_20260403_120000_w0_kimi-k2"
+DB="$RUN_DIR/benchmark_run.sqlite3"
+
+sqlite3 "$DB" <<'SQL'
+.headers on
+.mode column
+SELECT run_id, database_version, transaction_sequence, completed_sequence,
+       export_sequence
+FROM benchmark_run;
+SELECT round_number, status,
+       json_array_length(record_document, '$.turns') AS committed_turns,
+       json_extract(continuation_document, '$.next_turn_index') AS next_turn_index,
+       transaction_sequence
+FROM rounds
+WHERE status = 'active';
+SQL
+```
+
+Check the authoritative and JSON export watermarks, and regenerate `results.json`
+atomically when it is missing or stale, through the existing Run store:
+
+```bash
+uv run python - "$RUN_DIR" <<'PY'
+import sys
+from pathlib import Path
+
+from eleusis.benchmark_run_store import BenchmarkRunStore
+
+store = BenchmarkRunStore(Path(sys.argv[1]))
+before = store.read_export_status()
+print(f"before: {before}")
+print(f"export: {store.ensure_current_export()}")
+print(f"after:  {store.read_export_status()}")
+PY
+```
+
 ### Multiple Models in Parallel
 
 ```bash
