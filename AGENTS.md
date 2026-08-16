@@ -9,6 +9,8 @@ played cards, and the benchmark model tries to infer that rule from observed out
 - Target `Whamp/eleusis-llm-benchmark` for pushes, issues, and pull requests. Treat
   `scienceetonnante/eleusis-llm-benchmark` as fetch-only upstream.
 - Run tests with `uv run pytest` and lint with `uv run ruff check`.
+- Commit run outputs under `results/`: they are the benchmark's primary scientific
+  artifacts, and git pairs each run with the exact code that produced it.
 - Smoke-test a model before a full run:
   `uv run python scripts/evaluate_single.py --config config.smoke.yaml --model <key> --tag smoke`.
 - Run the default full benchmark with
