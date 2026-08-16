@@ -309,33 +309,6 @@ def test_resume_rejects_changed_scientific_setting_with_field_path(
     )
 
 
-def test_resume_rejects_changed_configured_seed_with_field_path(
-    monkeypatch: MonkeyPatch,
-    tmp_path: Path,
-    caplog: pytest.LogCaptureFixture,
-) -> None:
-    """A changed configured seed fails before restoring the effective seed."""
-    config, run_folder, _continuation = _create_interrupted_initial_round(
-        monkeypatch,
-        tmp_path,
-    )
-    assert isinstance(config, dict)
-    game = config["game"]
-    assert isinstance(game, dict)
-    game["seed"] = 42
-    config_path = tmp_path / "changed-seed-config.yaml"
-    _write_resume_config(config_path, config)
-    monkeypatch.setattr(evaluation_startup, "preflight_check", lambda _model: None)
-
-    startup = resolve_evaluation_startup(_resume_args(config_path, run_folder))
-
-    assert startup is None
-    assert (
-        "Benchmark Run resume incompatible: scientific_config.game.seed changed"
-        in caplog.text
-    )
-
-
 def test_resume_allows_operational_pause_change(
     monkeypatch: MonkeyPatch,
     tmp_path: Path,

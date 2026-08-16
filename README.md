@@ -165,10 +165,11 @@ uv run python scripts/evaluate_single.py \
   --resume results/solo_evaluation_20260403_120000_w2_kimi-k2 &
 ```
 
-The stored model and seed inputs are reused. If the Run used a non-default
-configuration path, pass the same `--config` so resume can verify it. Do not
-re-specify scientific overrides such as `--model` or `--batch-round-offset` with
-different values.
+The stored scientific configuration, model, schedule, and seed inputs are
+reused. Pass `--config` only when resume needs current operational paths or
+provider credentials from a non-default file; persisted scientific values remain
+authoritative. Explicit scientific overrides such as `--model` or
+`--batch-round-offset` must match the stored Run.
 
 ### Inspecting Run State and Export Freshness
 
