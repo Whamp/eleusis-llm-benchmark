@@ -1,7 +1,7 @@
 """Tests for shadow evaluation caching.
 
 Verifies:
-- Identical (actual_rule, tentative_rule, sim_budget) shadow evals are simulated once
+- Identical (actual_rule, tentative_rule, mainline, sim_budget) evals simulate once
 - Cache key changes when simulation budget changes
 - Different tentative rules are evaluated independently
 """
@@ -67,7 +67,7 @@ class TestShadowEvaluationCache:
         return [Card(4, Suit.HEARTS)]
 
     def test_identical_shadow_evals_simulated_once(self) -> None:
-        """Same (actual_rule, tentative_rule, sim_budget) should simulate only once."""
+        """Same (actual_rule, tentative_rule, mainline, sim_budget) simulates once."""
         validator = self._make_validator()
         actual_rule = self._even_rule()
         compiler = FakeShadowCompiler({"Only even ranks": "return card.rank % 2 == 0"})
