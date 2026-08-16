@@ -255,6 +255,26 @@ uv run python scripts/status_report.py \
 Output goes to `status/` inside the first worker folder. Re-run anytime to get
 an updated report with newly completed rules.
 
+### Live Progress (CLI and Web Dashboard)
+
+Watch in-progress workers directly from their authoritative SQLite stores,
+including the active Round's committed Turns:
+
+```bash
+# One-shot report
+uv run python scripts/check_progress.py --pattern 'solo_evaluation_*<tag>*'
+
+# Redrawing terminal dashboard, refresh every 15s
+uv run python scripts/check_progress.py --pattern 'solo_evaluation_*<tag>*' --watch
+
+# Auto-refreshing web dashboard at http://127.0.0.1:8390/
+uv run python scripts/dashboard.py --pattern 'solo_evaluation_*<tag>*'
+```
+
+The web dashboard is read-only and bound to localhost. It shows overall
+rounds solved, average score, reasoning vs. answer token totals, and one card
+per worker with per-Round score, turns, and outcome chips.
+
 ## Configuration
 
 ### `models.yaml` — Model Definitions
