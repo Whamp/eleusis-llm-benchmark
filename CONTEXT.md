@@ -40,6 +40,12 @@ A playing card identified by rank and suit. Identical cards from the two decks a
 **Rule Compilation Attempt**:
 One generation, extraction, and validation cycle used to compile a natural-language Guess Attempt into executable rule code. It preserves its nested Provider Calls, validation failures, simulation settings, and verdict evidence; a compiler cache hit instead records the reused artifact and its provenance.
 
+**Rule Compilation Fidelity**:
+How faithfully a Rule Compilation Attempt's compiled code behaves like the intended rule, measured by behavioral-equivalence simulation against reference rule code. The shared property of apparatus correctness that benchmark measurements depend on.
+
+**Compiler Eval**:
+A measurement harness that scores Rule Compilation Fidelity of a compiler configuration against reference rules by simulation, independent of any Benchmark Run.
+
 **Guess Attempt**:
 A proposed rule evaluated against the secret rule during a Turn. A Guess Attempt is either a Formal Guess or a Shadow Guess.
 _Avoid_: Guess
