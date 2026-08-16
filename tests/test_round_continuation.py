@@ -262,6 +262,10 @@ def test_round_continuation_preserves_hidden_runtime_state() -> None:
                 "key": {
                     "actual_rule_code": runtime.rule.get_code(),
                     "guessed_rule_description": "all clubs",
+                    "current_mainline": [
+                        {"rank": 4, "suit": "hearts"},
+                        {"rank": 13, "suit": "spades"},
+                    ],
                     "num_simulations": 7,
                     "turns_per_simulation": 9,
                     "simulation_seed": 41,
@@ -393,6 +397,7 @@ def test_round_continuation_rejects_unknown_and_malformed_versions() -> None:
     invalid_rule_payload = cast(dict[str, object], invalid_rule["rule"])
     invalid_rule_payload["code"] = "return ("
     for payload in (
+        {**continuation, "version": 1},
         {**continuation, "version": 999},
         {**continuation, "game_state": {"mainline": "not-cards"}},
         invalid_rule,

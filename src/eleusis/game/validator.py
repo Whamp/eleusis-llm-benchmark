@@ -65,7 +65,7 @@ class RuleComparisonMetadata(TypedDict):
     equivalence_cache_hit: bool
 
 
-ShadowCacheKey = tuple[str, str, int, int, int]
+ShadowCacheKey = tuple[str, str, tuple[tuple[int, str], ...], int, int, int]
 ShadowCacheValue = tuple[bool, str, RuleComparisonMetadata]
 
 
@@ -77,6 +77,13 @@ class ValidationResult:
     deterministic: bool
     works_with_empty_mainline: bool
     issues: list[str]
+
+
+def _canonical_mainline_key(
+    current_mainline: list[Card],
+) -> tuple[tuple[int, str], ...]:
+    """Encode a mainline as hashable canonical rank-and-suit pairs."""
+    return tuple((card.rank, card.suit.suit_name) for card in current_mainline)
 
 
 class RuleValidator:
@@ -97,9 +104,12 @@ class RuleValidator:
                 "key": {
                     "actual_rule_code": key[0],
                     "guessed_rule_description": key[1],
-                    "num_simulations": key[2],
-                    "turns_per_simulation": key[3],
-                    "simulation_seed": key[4],
+                    "current_mainline": [
+                        {"rank": rank, "suit": suit} for rank, suit in key[2]
+                    ],
+                    "num_simulations": key[3],
+                    "turns_per_simulation": key[4],
+                    "simulation_seed": key[5],
                 },
                 "correct": value[0],
                 "reasoning": value[1],
@@ -119,6 +129,16 @@ class RuleValidator:
             key: ShadowCacheKey = (
                 cast(str, key_payload["actual_rule_code"]),
                 cast(str, key_payload["guessed_rule_description"]),
+                tuple(
+                    (
+                        cast(int, card_payload["rank"]),
+                        cast(str, card_payload["suit"]),
+                    )
+                    for card_payload in cast(
+                        Sequence[Mapping[str, object]],
+                        key_payload["current_mainline"],
+                    )
+                ),
                 cast(int, key_payload["num_simulations"]),
                 cast(int, key_payload["turns_per_simulation"]),
                 cast(int, key_payload["simulation_seed"]),
@@ -226,15 +246,17 @@ class RuleValidator:
     ) -> tuple[bool, str, RuleComparisonMetadata]:
         """Compare rules using simulation-based comparison.
 
-        Results are cached by (actual_rule_code, guessed_rule_desc, num_simulations,
-        turns_per_simulation, simulation_seed) so identical shadow evaluations within or
-        across rounds are not re-simulated.
+        Results are cached by (actual_rule_code, guessed_rule_desc, current_mainline,
+        num_simulations, turns_per_simulation, simulation_seed) so identical shadow
+        evaluations within or across rounds are not re-simulated. The mainline is
+        part of the key because every simulation starts from it, so rules whose
+        acceptance depends on board state can reach different verdicts from
+        different starting mainlines.
         """
-        # current_mainline excluded: simulation-based comparison generates
-        # independent random card sequences, so the mainline does not affect results.
-        cache_key = (
+        cache_key: ShadowCacheKey = (
             actual_rule.get_code(),
             guessed_rule_desc,
+            _canonical_mainline_key(current_mainline),
             num_simulations,
             turns_per_simulation,
             simulation_seed,

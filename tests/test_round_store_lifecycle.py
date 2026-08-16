@@ -91,7 +91,7 @@ def test_one_turn_round_uses_complete_authoritative_store_lifecycle(
         "database": 1,
         "manifest": 1,
         "round_record": 1,
-        "round_checkpoint": 1,
+        "round_checkpoint": 2,
         "export": 1,
     }
     effective_settings = manifest["effective_settings"]
