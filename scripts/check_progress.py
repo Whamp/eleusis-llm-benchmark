@@ -4,6 +4,8 @@
 import argparse
 import glob
 import json
+import sys
+import time
 from pathlib import Path
 from typing import cast
 
@@ -67,22 +69,12 @@ def _sqlite_worker_progress(folder: Path) -> dict[str, object]:
     }
 
 
-def main() -> None:
-    """Print progress summaries, preferring SQLite for new-format Runs."""
-    parser = argparse.ArgumentParser(
-        description=__doc__,
-    )
-    parser.add_argument(
-        "--pattern",
-        default="solo_evaluation_*w*qwen*",
-        help=("Glob pattern for results/ worker folders (default: %(default)s)"),
-    )
-    args = parser.parse_args()
-    folders = _matching_worker_folders(args.pattern)
+def _print_report(pattern: str) -> None:
+    """Render one progress report for matching worker folders."""
+    folders = _matching_worker_folders(pattern)
     if not folders:
-        print("No benchmark results found yet.")
         print(
-            f"Looking for: results/{args.pattern}/"
+            f"Looking for: results/{pattern}/"
             f"{{results.json,{BENCHMARK_RUN_DATABASE_NAME}}}"
         )
         return
@@ -164,6 +156,49 @@ def main() -> None:
             )
             print(f"  Avg score: {average_score:.1f}")
         print()
+
+
+def _watch(pattern: str, interval: float) -> None:
+    """Redraw the progress report every interval seconds until interrupted."""
+    interval = max(1.0, interval)
+    try:
+        while True:
+            sys.stdout.write("\x1b[2J\x1b[H")
+            refreshed_at = time.strftime("%H:%M:%S")
+            print(f"refreshed {refreshed_at} | every {interval:g}s | Ctrl+C to exit")
+            _print_report(pattern)
+            sys.stdout.flush()
+            time.sleep(interval)
+    except KeyboardInterrupt:
+        print()
+
+
+def main() -> None:
+    """Print progress summaries, preferring SQLite for new-format Runs."""
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+    )
+    parser.add_argument(
+        "--pattern",
+        default="solo_evaluation_*w*qwen*",
+        help=("Glob pattern for results/ worker folders (default: %(default)s)"),
+    )
+    parser.add_argument(
+        "--watch",
+        action="store_true",
+        help="Keep redrawing the report until interrupted",
+    )
+    parser.add_argument(
+        "--interval",
+        type=float,
+        default=15.0,
+        help="Seconds between redraws in watch mode (default: %(default)s)",
+    )
+    args = parser.parse_args()
+    if args.watch:
+        _watch(args.pattern, args.interval)
+    else:
+        _print_report(args.pattern)
 
 
 if __name__ == "__main__":

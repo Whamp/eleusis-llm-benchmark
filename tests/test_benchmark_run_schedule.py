@@ -457,3 +457,48 @@ def test_parallel_workers_keep_separate_stores_offsets_and_effective_seeds(
         second_settings["effective_round_seed"]
         == first_settings["effective_round_seed"] + 1
     )
+
+
+def test_watch_mode_refreshes_until_interrupted(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """--watch redraws the live report and exits cleanly on Ctrl+C."""
+    monkeypatch.chdir(tmp_path)
+    startup, _config, _config_path, _rules = _configure_two_round_schedule(tmp_path)
+    startup.output_tag = "w0_qwen"
+    state = _initialize_fresh_state(startup)
+    monkeypatch.setattr(
+        runner,
+        "_create_round_clients",
+        lambda _config, _player_name: (FakeLLMClient(), FakeLLMClient()),
+    )
+
+    def stop_after_initial_checkpoint(_runtime: object) -> object:
+        raise RuntimeError("stop after initial checkpoint")
+
+    monkeypatch.setattr(runner, "execute_round_turns", stop_after_initial_checkpoint)
+    with pytest.raises(RuntimeError, match="stop after initial checkpoint"):
+        evaluation_orchestrator._run_evaluation_round(state, 1)
+
+    from scripts import check_progress
+
+    monkeypatch.setattr(
+        "sys.argv",
+        ["check_progress.py", "--pattern", "solo_evaluation_*", "--watch"],
+    )
+
+    refreshes: list[float] = []
+
+    def fake_sleep(interval: float) -> None:
+        refreshes.append(interval)
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(check_progress.time, "sleep", fake_sleep)
+    check_progress.main()
+
+    output = capsys.readouterr().out
+    assert "0/2" in output
+    assert "active Round 1, 0 committed Turns" in output
+    assert len(refreshes) == 1
