@@ -1,6 +1,7 @@
 """Configuration, suite, logging, and round-count startup for one evaluation."""
 
 import argparse
+import copy
 import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -20,14 +21,12 @@ from eleusis.benchmark_run_store import (
     BenchmarkRunStore,
     BenchmarkRunStoreError,
 )
-from eleusis.evaluation_results import EvaluationResults
 from eleusis.evaluation_support import (
     apply_cli_overrides,
     generate_output_tag,
     load_config,
     load_rules_from_library,
     preflight_check,
-    reconstruct_config_from_checkpoint,
 )
 from eleusis.suites import resolve_suite
 from eleusis.utils import model_spec_to_display_name, setup_logging
@@ -40,7 +39,6 @@ class EvaluationStartup:
     """Resolved inputs and display metadata for one evaluation session."""
 
     args: argparse.Namespace
-    checkpoint: EvaluationResults | None
     config: BenchmarkConfig
     player_model: str
     player_display_name: str
@@ -57,43 +55,6 @@ class EvaluationStartup:
     num_rules: int
     run_store: BenchmarkRunStore | None = None
     run_manifest: dict[str, object] | None = None
-
-
-def _load_resume_startup(
-    args: argparse.Namespace,
-    checkpoint: EvaluationResults,
-) -> tuple[BenchmarkConfig, str, str, str, int] | None:
-    """Validate a checkpoint and recover its model/configuration display values."""
-    config = reconstruct_config_from_checkpoint(checkpoint)
-    try:
-        backup_providers = load_config(args.config)["rule_compiler"].get(
-            "backup_providers"
-        )
-        if backup_providers:
-            config["rule_compiler"]["backup_providers"] = backup_providers
-    except (OSError, ValidationError, yaml.YAMLError) as error:
-        logger.debug("Optional resume config unavailable: %s", error)
-    if args.model and args.model != checkpoint["config"]["player_model"]:
-        logger.error("Cannot resume with different model: %s", args.model)
-        return None
-    selection = checkpoint["checkpoint"]["rule_factory_state"]["selection"]
-    if selection != "sequential":
-        logger.error(
-            "Resume only supports sequential rule selection, not %s", selection
-        )
-        return None
-    completed = checkpoint["checkpoint"]["completed_rounds"]
-    total = checkpoint["checkpoint"]["total_rounds"]
-    if completed >= total:
-        logger.info("Evaluation already complete (%s/%s rounds)", completed, total)
-        return None
-    return (
-        config,
-        config["model"],
-        checkpoint["config"]["player"],
-        checkpoint["config"]["rule_compiler"],
-        config["game"].get("num_rounds_per_rule", 1),
-    )
 
 
 def _load_sqlite_resume_startup(
@@ -126,12 +87,13 @@ def _load_sqlite_resume_startup(
         raise BenchmarkRunManifestIncompatibilityError(
             "Benchmark Run resume incompatible: scientific_config.model changed"
         )
-    current_config = apply_cli_overrides(load_config(args.config), args)
-    current_config["model"] = stored_model
-    if args.suite is not None:
-        current_config["suite"] = args.suite
-    verify_benchmark_run_resume_compatibility(manifest, current_config)
+    current_config = load_config(args.config)
     config = restore_benchmark_run_config(manifest, current_config)
+    comparison_config = apply_cli_overrides(copy.deepcopy(config), args)
+    comparison_config["model"] = stored_model
+    if args.suite is not None:
+        comparison_config["suite"] = args.suite
+    verify_benchmark_run_resume_compatibility(manifest, comparison_config)
     schedule = manifest["schedule"]
     if not isinstance(schedule, list) or not schedule:
         raise BenchmarkRunManifestIncompatibilityError(
@@ -167,11 +129,8 @@ def _load_sqlite_resume_startup(
 def _resolve_suite_cases(
     args: argparse.Namespace,
     config: BenchmarkConfig,
-    checkpoint: EvaluationResults | None,
 ) -> tuple[str | None, list[tuple[str, int]] | None]:
     """Resolve and optionally partition a named suite for this worker."""
-    if checkpoint:
-        return None, None
     suite_name = args.suite or config.get("suite")
     if not suite_name:
         return None, None
@@ -184,21 +143,10 @@ def _resolve_suite_cases(
 
 def _configure_evaluation_logging(
     args: argparse.Namespace,
-    checkpoint: EvaluationResults | None,
     player_display_name: str,
 ) -> tuple[str, str, str]:
     """Resolve output tag and configure timestamped console/file logging."""
-    if checkpoint:
-        checkpoint_folder = checkpoint.get(
-            "folder_name", f"solo_evaluation_{checkpoint['timestamp']}"
-        )
-        output_tag = checkpoint_folder.replace(
-            f"solo_evaluation_{checkpoint['timestamp']}_", ""
-        )
-        if output_tag == checkpoint_folder:
-            output_tag = player_display_name.lower().replace(" ", "_")[:30]
-    else:
-        output_tag = generate_output_tag(args, player_display_name)
+    output_tag = generate_output_tag(args, player_display_name)
     timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     Path("logs").mkdir(exist_ok=True)
     log_file = f"logs/solo_evaluation_{timestamp}_{output_tag}.txt"
@@ -213,16 +161,11 @@ def _configure_evaluation_logging(
 
 def _resolve_round_counts(
     config: BenchmarkConfig,
-    checkpoint: EvaluationResults | None,
     suite_cases: list[tuple[str, int]] | None,
     num_rounds_per_rule: int,
 ) -> tuple[int, int] | None:
     """Resolve and validate rule and round counts for the selected mode."""
     game_config = config["game"]
-    if checkpoint:
-        return game_config.get("num_rules", 10), checkpoint["checkpoint"][
-            "total_rounds"
-        ]
     if suite_cases:
         num_rounds = len(suite_cases)
         num_rules = len(dict.fromkeys(name for name, _index in suite_cases))
@@ -269,7 +212,6 @@ def resolve_evaluation_startup(args: argparse.Namespace) -> EvaluationStartup | 
                 BENCHMARK_RUN_DATABASE_NAME,
             )
         return None
-    checkpoint = None
     if sqlite_resume:
         try:
             run_store = BenchmarkRunStore(Path(args.resume))
@@ -292,14 +234,6 @@ def resolve_evaluation_startup(args: argparse.Namespace) -> EvaluationStartup | 
         ) as error:
             logger.error("%s", error)
             return None
-    elif checkpoint:
-        resume_values = _load_resume_startup(args, checkpoint)
-        if resume_values is None:
-            return None
-        config, player_model, player_name, compiler_name, rounds_per_rule = (
-            resume_values
-        )
-        suite_name, suite_cases = _resolve_suite_cases(args, config, checkpoint)
     else:
         config = apply_cli_overrides(load_config(args.config), args)
         config["model"] = args.model
@@ -307,10 +241,8 @@ def resolve_evaluation_startup(args: argparse.Namespace) -> EvaluationStartup | 
         player_name = model_spec_to_display_name(player_model)
         compiler_name = model_spec_to_display_name(config["rule_compiler"]["model_id"])
         rounds_per_rule = config["game"].get("num_rounds_per_rule", 1)
-        suite_name, suite_cases = _resolve_suite_cases(args, config, checkpoint)
-    output_tag, timestamp, log_file = _configure_evaluation_logging(
-        args, checkpoint, player_name
-    )
+        suite_name, suite_cases = _resolve_suite_cases(args, config)
+    output_tag, timestamp, log_file = _configure_evaluation_logging(args, player_name)
     logger.info("=" * 80)
     logger.info("PRE-FLIGHT MODEL CHECK")
     logger.info("=" * 80)
@@ -328,13 +260,12 @@ def resolve_evaluation_startup(args: argparse.Namespace) -> EvaluationStartup | 
             }
         )
     else:
-        counts = _resolve_round_counts(config, checkpoint, suite_cases, rounds_per_rule)
+        counts = _resolve_round_counts(config, suite_cases, rounds_per_rule)
         if counts is None:
             return None
         num_rules, num_rounds = counts
     return EvaluationStartup(
         args=args,
-        checkpoint=checkpoint,
         config=config,
         player_model=player_model,
         player_display_name=player_name,

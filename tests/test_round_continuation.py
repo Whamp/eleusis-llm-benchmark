@@ -181,12 +181,10 @@ def test_round_continuation_preserves_hidden_runtime_state() -> None:
         [
             other.to_canonical_card_data(),
             duplicate.to_canonical_card_data(),
-            duplicate.to_canonical_card_data(),
         ]
     )
     runtime.game_state.player.hand = Hand.restore_hand_cards(
         [
-            duplicate.to_canonical_card_data(),
             duplicate.to_canonical_card_data(),
             other.to_canonical_card_data(),
         ]
@@ -321,6 +319,42 @@ def test_round_continuation_preserves_hidden_runtime_state() -> None:
     assert restored.runtime.rule_compiler_client.fallback_clients[0].call_metrics == [
         metric
     ]
+
+
+def test_round_continuation_rejects_third_physical_copy_on_capture_and_decode() -> None:
+    """A two-deck continuation cannot contain a third canonical Card."""
+    runtime = _build_round_runtime()
+    duplicate = runtime.game_state.player.hand.get_all_cards()[0]
+    runtime.game_state.deck = Deck.restore_deck_cards(
+        [duplicate.to_canonical_card_data(), duplicate.to_canonical_card_data()]
+    )
+
+    with pytest.raises(
+        RoundContinuationIncompatibilityError,
+        match="at most twice",
+    ):
+        capture_round_continuation(runtime, [], next_turn_index=0)
+
+    runtime = _build_round_runtime()
+    continuation = capture_round_continuation(runtime, [], next_turn_index=0)
+    invalid = copy.deepcopy(continuation)
+    game_state = cast(dict[str, object], invalid["game_state"])
+    player = cast(dict[str, object], game_state["player"])
+    hand = cast(list[dict[str, object]], player["hand"])
+    deck = cast(list[dict[str, object]], game_state["deck"])
+    duplicate_payload = hand[0]
+    deck.extend([duplicate_payload, duplicate_payload])
+
+    with pytest.raises(
+        RoundContinuationIncompatibilityError,
+        match="at most twice",
+    ):
+        restore_round_continuation(
+            invalid,
+            scientist_client=FakeLLMClient(),
+            rule_compiler_client=FakeLLMClient(),
+            handle_action_error=_unexpected_action_error,
+        )
 
 
 def test_round_continuation_rejects_incompatible_runtime_serialization() -> None:

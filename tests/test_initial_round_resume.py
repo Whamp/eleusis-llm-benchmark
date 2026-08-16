@@ -234,15 +234,13 @@ def test_resume_rejects_changed_scientific_setting_with_field_path(
         monkeypatch,
         tmp_path,
     )
-    assert isinstance(config, dict)
-    game = config["game"]
-    assert isinstance(game, dict)
-    game["max_turns"] = 2
     config_path = tmp_path / "changed-config.yaml"
     _write_resume_config(config_path, config)
     monkeypatch.setattr(evaluation_startup, "preflight_check", lambda _model: None)
+    args = _resume_args(config_path, run_folder)
+    args.max_turns = 2
 
-    startup = resolve_evaluation_startup(_resume_args(config_path, run_folder))
+    startup = resolve_evaluation_startup(args)
 
     assert startup is None
     assert (
@@ -272,6 +270,64 @@ def test_resume_allows_operational_pause_change(
 
     assert startup is not None
     assert startup.game_config["pause_after_turn"] is True
+
+
+def test_resume_rejects_continuation_round_identity_before_model_attempt(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Active-row identity mismatch fails before restoring a scientist client."""
+    config, run_folder, _continuation = _create_interrupted_initial_round(
+        monkeypatch,
+        tmp_path,
+    )
+    config_path = tmp_path / "identity-config.yaml"
+    _write_resume_config(config_path, config)
+    database_path = run_folder / "benchmark_run.sqlite3"
+    import sqlite3
+
+    with sqlite3.connect(database_path) as connection:
+        row = connection.execute(
+            "SELECT continuation_document FROM rounds WHERE round_number = 1"
+        ).fetchone()
+        assert row is not None
+        continuation = json.loads(row[0])
+        continuation["round"]["number"] = 99
+        connection.execute(
+            "UPDATE rounds SET continuation_document = ? WHERE round_number = 1",
+            (json.dumps(continuation),),
+        )
+    row_before = database_path.read_bytes()
+    monkeypatch.setattr(evaluation_startup, "preflight_check", lambda _model: None)
+    startup = resolve_evaluation_startup(_resume_args(config_path, run_folder))
+    assert startup is not None
+
+    with pytest.raises(BenchmarkRunStoreError, match="Round identity"):
+        initialize_evaluation_state(startup)
+
+    assert database_path.read_bytes() == row_before
+
+
+def test_malformed_sqlite_resume_reports_actionable_schema_error(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A database without the Run table fails through the resume diagnostic."""
+    run_folder = tmp_path / "malformed-run"
+    run_folder.mkdir()
+    import sqlite3
+
+    sqlite3.connect(run_folder / "benchmark_run.sqlite3").close()
+    config_path = tmp_path / "unused-config.yaml"
+    config_path.write_text("{}")
+
+    startup = resolve_evaluation_startup(_resume_args(config_path, run_folder))
+
+    assert startup is None
+    assert str(run_folder / "benchmark_run.sqlite3") in caplog.text
+    assert "schema defect" in caplog.text
+    assert "benchmark_run" in caplog.text
 
 
 def test_active_checkpoint_column_version_fails_closed(

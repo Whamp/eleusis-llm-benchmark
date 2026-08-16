@@ -10,10 +10,7 @@ from eleusis.benchmark_run_manifest import create_benchmark_run_manifest
 from eleusis.benchmark_run_store import ActiveStoredRound, BenchmarkRunStore
 from eleusis.evaluation_results import EvaluationResults
 from eleusis.evaluation_startup import EvaluationStartup
-from eleusis.evaluation_support import (
-    load_rules_from_library,
-    restore_rule_from_checkpoint,
-)
+from eleusis.evaluation_support import load_rules_from_library
 from eleusis.game import Rule
 from eleusis.game.rule_library import RuleLibraryEntry
 
@@ -35,49 +32,6 @@ class EvaluationState:
     all_rules_library: list[RuleLibraryEntry]
     rule_name_to_index: dict[str, int]
     run_store: BenchmarkRunStore | None = None
-
-
-def _ensure_resume_statistics(results: EvaluationResults) -> None:
-    """Add aggregate fields absent from historical checkpoints."""
-    statistics = results["statistics"]
-    statistics.setdefault("total_output_tokens", 0)
-    statistics.setdefault("total_reasoning_tokens", 0)
-    statistics.setdefault("total_answer_tokens", 0)
-    statistics.setdefault("total_wall_clock_seconds", 0.0)
-    statistics.setdefault("total_retries", 0)
-    statistics.setdefault("retry_by_cause", {})
-
-
-def _validate_resume_library(startup: EvaluationStartup) -> bool:
-    """Validate consumed-rule and library counts against the checkpoint cursor."""
-    checkpoint = startup.checkpoint
-    if checkpoint is None:
-        return False
-    checkpoint_data = checkpoint["checkpoint"]
-    consumed = checkpoint_data["rules_consumed"]
-    completed_rounds = checkpoint_data["completed_rounds"]
-    expected_consumed = (
-        completed_rounds + startup.num_rounds_per_rule - 1
-    ) // startup.num_rounds_per_rule
-    if len(consumed) != expected_consumed:
-        logger.error(
-            "Mismatch: %s rules consumed but expected %s for %s rounds",
-            len(consumed),
-            expected_consumed,
-            completed_rounds,
-        )
-        return False
-    expected_rules = (
-        checkpoint_data["total_rounds"] + startup.num_rounds_per_rule - 1
-    ) // startup.num_rounds_per_rule
-    if len(checkpoint_data["rules_library"]) < expected_rules:
-        logger.error(
-            "Not enough rules: %s in library but need %s",
-            len(checkpoint_data["rules_library"]),
-            expected_rules,
-        )
-        return False
-    return True
 
 
 def _rules_from_run_manifest(
@@ -156,6 +110,7 @@ def _initialize_sqlite_resume_state(
     active = run_store.read_resumable_round()
     completed_rounds = run_store.read_completed_rounds()
     if progress.is_complete:
+        run_store.ensure_current_export()
         logger.info(
             "Benchmark Run already complete (%s/%s Rounds)",
             progress.completed_rounds,
@@ -218,44 +173,6 @@ def _initialize_sqlite_resume_state(
         },
         run_store=run_store,
     )
-
-
-def _initialize_resume_state(startup: EvaluationStartup) -> EvaluationState | None:
-    """Restore mutable evaluation state from a validated checkpoint."""
-    checkpoint = startup.checkpoint
-    if checkpoint is None or not _validate_resume_library(startup):
-        return None
-    _ensure_resume_statistics(checkpoint)
-    checkpoint_data = checkpoint["checkpoint"]
-    consumed = checkpoint_data["rules_consumed"]
-    current_rule = restore_rule_from_checkpoint(checkpoint_data["current_rule"])
-    state = EvaluationState(
-        startup=startup,
-        results=checkpoint,
-        folder_name=checkpoint.get(
-            "folder_name", f"solo_evaluation_{checkpoint['timestamp']}"
-        ),
-        start_round=checkpoint_data["completed_rounds"] + 1,
-        current_rule=current_rule,
-        current_rule_name=consumed[-1]["name"] if consumed else None,
-        rule_factory_index=checkpoint_data["rule_factory_state"]["current_index"],
-        checkpoint_rules_library=checkpoint_data["rules_library"],
-        all_rules_library=[],
-        rule_name_to_index={},
-    )
-    logger.info("=" * 80)
-    logger.info("RESUMING SOLO MODE EVALUATION")
-    logger.info("=" * 80)
-    logger.info("Log file: %s", startup.log_file)
-    logger.info("Resuming from round %s / %s", state.start_round, startup.num_rounds)
-    logger.info(
-        "Rules consumed: %s, rule_factory_index: %s",
-        len(consumed),
-        state.rule_factory_index,
-    )
-    if current_rule:
-        logger.info("Reusing rule: %s...", current_rule.description()[:80])
-    return state
 
 
 def _new_evaluation_results(
@@ -392,6 +309,4 @@ def initialize_evaluation_state(
     """Create fresh state or restore resume state for the evaluation loop."""
     if startup.run_store is not None:
         return _initialize_sqlite_resume_state(startup)
-    if startup.checkpoint:
-        return _initialize_resume_state(startup)
     return _initialize_fresh_state(startup)

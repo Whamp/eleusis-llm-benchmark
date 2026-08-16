@@ -1,6 +1,7 @@
 """Focused strict-transition tests for authoritative Round Records."""
 
 import copy
+import json
 from typing import cast
 
 import pytest
@@ -33,9 +34,59 @@ def _manifest(runtime: RoundRuntime) -> dict[str, object]:
         for number in range(1, runtime.round_number + 1)
     ]
     return {
+        "version": 1,
         "run_id": "run-record-tests",
+        "versions": {
+            "database": 1,
+            "manifest": 1,
+            "round_record": 1,
+            "round_checkpoint": 1,
+            "export": 1,
+        },
         "schedule": schedule,
-        "effective_settings": {"game_seed": 8675309},
+        "effective_settings": {
+            "configured_game_seed": 8675309,
+            "game_seed": 8675309,
+            "hand_size": 12,
+            "max_turns": 40,
+            "wrong_guess_penalty": 3,
+            "shadow_mode": "disabled",
+            "llm_max_tokens": 4096,
+            "llm_temperature": 0.25,
+            "llm_seed": 17,
+            "llm_max_retries": 2,
+            "rule_selection": "sequential",
+        },
+        "scientific_config": {
+            "llm": {
+                "max_tokens": 4096,
+                "temperature": 0.25,
+                "seed": 17,
+                "max_llm_retries": 2,
+            },
+            "model": "fake",
+            "game": {
+                "num_rules": 1,
+                "num_rounds_per_rule": 1,
+                "max_turns": 40,
+                "hand_size": 12,
+                "wrong_guess_penalty": 3,
+                "seed": 8675309,
+                "batch_round_offset": None,
+                "shadow_mode": "disabled",
+            },
+            "rule_compiler": {
+                "provider": "fake",
+                "model_id": "fake-compiler",
+                "temperature": 0.5,
+                "max_retries": 2,
+                "num_simulations": 7,
+                "turns_per_simulation": 9,
+                "simulation_seed": 41,
+            },
+            "rules": {"selection": "sequential", "index": 0},
+            "suite": None,
+        },
         "model_identity": {"model_key": "fake", "display_name": "Fake"},
         "compiler_identity": {
             "provider": "fake",
@@ -362,13 +413,97 @@ def test_round_record_rejects_card_multiplicity_change() -> None:
     invalid_after = copy.deepcopy(after)
     game_state = cast(dict[str, object], invalid_after["game_state"])
     deck = cast(list[object], game_state["deck"])
-    deck.append({"rank": 1, "suit": "spades"})
+    deck.pop()
 
     with pytest.raises(
         RoundRecordValidationError,
         match="Card multiplicity was not conserved",
     ):
         append_round_record_turn(active, before, invalid_after, turn_record, runtime)
+
+
+def test_round_record_two_turn_prompts_match_pre_decision_turn_numbers() -> None:
+    """Each prompt and structured observation identify the same Turn."""
+    runtime = _build_round_runtime()
+    before_first = capture_round_continuation(runtime, [], next_turn_index=0)
+    first_turn = _execute_play_only_turn(runtime, 0)
+    after_first = capture_round_continuation(runtime, [first_turn], next_turn_index=1)
+    active = create_active_round_record(
+        _manifest(runtime),
+        runtime,
+        effective_round_seed=8675309,
+        batch_round_index=0,
+    )
+    with_first = append_round_record_turn(
+        active,
+        before_first,
+        after_first,
+        first_turn,
+        runtime,
+    )
+    second_turn = _execute_play_only_turn(runtime, 1)
+    after_second = capture_round_continuation(
+        runtime,
+        [first_turn, second_turn],
+        next_turn_index=2,
+    )
+
+    with_second = append_round_record_turn(
+        with_first,
+        after_first,
+        after_second,
+        second_turn,
+        runtime,
+    )
+
+    client = runtime.scientist_client
+    assert isinstance(client, FakeLLMClient)
+    persisted_turns = cast(list[dict[str, object]], with_second["turns"])
+    assert "Turn: 1 / 40" in client.prompts_seen[0]
+    assert "Turn: 2 / 40" in client.prompts_seen[1]
+    assert [
+        cast(dict[str, object], turn["pre_decision_state"])["turn_number"]
+        for turn in persisted_turns
+    ] == [1, 2]
+
+
+def test_round_record_persists_effective_settings_and_schema_errors() -> None:
+    """Strict Round encoding retains credential-free scientific settings."""
+    runtime = _build_round_runtime()
+    before = capture_round_continuation(runtime, [], next_turn_index=0)
+    client = runtime.scientist_client
+    assert isinstance(client, FakeLLMClient)
+    selected = runtime.game_state.player.hand.get_all_cards()[0]
+    client.responses.append(
+        make_action_response(str(selected), confidence_level="not-a-number")
+    )
+    turn_record, _result = execute_round_turn(runtime, 0)
+    after = capture_round_continuation(runtime, [turn_record], next_turn_index=1)
+    active = create_active_round_record(
+        _manifest(runtime),
+        runtime,
+        effective_round_seed=8675309,
+        batch_round_index=0,
+    )
+
+    with_turn = append_round_record_turn(active, before, after, turn_record, runtime)
+    round_tripped = validate_round_record_document(
+        copy.deepcopy(json.loads(json.dumps(with_turn)))
+    )
+
+    settings = cast(dict[str, object], round_tripped["settings"])
+    scientific_config = cast(
+        dict[str, object],
+        _manifest(runtime)["scientific_config"],
+    )
+    assert settings["llm"] == scientific_config["llm"]
+    assert settings["rule_compiler"] == scientific_config["rule_compiler"]
+    turn = cast(list[dict[str, object]], round_tripped["turns"])[0]
+    assert turn["schema_errors"] == ["confidence_type"]
+    invalid = copy.deepcopy(round_tripped)
+    cast(dict[str, object], invalid["settings"])["unknown_setting"] = True
+    with pytest.raises(RoundRecordValidationError, match="extra_forbidden"):
+        validate_round_record_document(invalid)
 
 
 def test_round_record_rejects_state_discontinuity_between_turns() -> None:

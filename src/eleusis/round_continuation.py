@@ -92,6 +92,20 @@ class _GameStateSnapshot(_StrictContinuationModel):
             raise ValueError("sideline position must identify a mainline Card")
         return self
 
+    @model_validator(mode="after")
+    def _validate_two_deck_card_multiplicity(self) -> _GameStateSnapshot:
+        cards = [*self.mainline, *self.deck, *self.player.hand]
+        cards.extend(card for sideline in self.sidelines for card in sideline.cards)
+        counts: dict[tuple[int, str], int] = {}
+        for card in cards:
+            key = (card.rank, card.suit)
+            counts[key] = counts.get(key, 0) + 1
+            if counts[key] > 2:
+                raise ValueError(
+                    "each canonical rank/suit Card may occur at most twice"
+                )
+        return self
+
 
 class _RuleMetadataSnapshot(_StrictContinuationModel):
     name: str | None

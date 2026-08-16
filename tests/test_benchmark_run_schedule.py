@@ -126,6 +126,16 @@ def test_fresh_orchestration_runs_and_finalizes_complete_persisted_schedule(
     exported = json.loads(run_store.export_path.read_text())
     assert exported["derived"]["summary"]["completed_rounds"] == 2
 
+    run_store.export_path.unlink()
+    monkeypatch.setattr(
+        evaluation_orchestrator,
+        "_run_evaluation_round",
+        lambda *_args: (_ for _ in ()).throw(AssertionError("Round replayed")),
+    )
+    evaluation_orchestrator.run_evaluation(Namespace())
+    regenerated = json.loads(run_store.export_path.read_text())
+    assert regenerated == exported
+
 
 def test_resume_after_completed_round_runs_next_persisted_schedule_entry(
     monkeypatch: MonkeyPatch,
@@ -210,6 +220,7 @@ def test_resume_after_completed_round_runs_next_persisted_schedule_entry(
         "average_turns_when_successful": 0.0,
         "total_failed_guesses": 0,
         "average_failed_guesses": 0.0,
+        "schema_compliance_rate": 1.0,
         "usage": {
             "model_attempt_count": 2,
             "provider_call_count": 2,
@@ -289,6 +300,55 @@ def test_named_suite_schedule_preserves_rule_order_and_batch_indices(
             "batch_round_index": 0,
         },
     ]
+
+
+def test_bare_resume_restores_cli_created_suite_from_manifest(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Omitted suite CLI input does not conflict with its stored fixed value."""
+    monkeypatch.chdir(tmp_path)
+    startup, _config, config_path, _rules = _configure_two_round_schedule(tmp_path)
+    startup.suite_name = "focused_suite"
+    startup.config["suite"] = "focused_suite"
+    startup.suite_cases = [("only_even", 2), ("only_red", 0)]
+    state = _initialize_fresh_state(startup)
+    assert state.run_store is not None
+    monkeypatch.setattr(evaluation_startup, "preflight_check", lambda _model: None)
+
+    resumed = resolve_evaluation_startup(
+        _resume_args(config_path, state.run_store.run_folder)
+    )
+
+    assert resumed is not None
+    assert resumed.suite_name == "focused_suite"
+    assert resumed.suite_cases == [("only_even", 2), ("only_red", 0)]
+
+
+def test_bare_resume_restores_cli_batch_offset_from_manifest(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Omitted worker offset does not conflict with its stored fixed value."""
+    monkeypatch.chdir(tmp_path)
+    startup, _config, config_path, _rules = _configure_two_round_schedule(tmp_path)
+    startup.game_config["batch_round_offset"] = 3
+    startup.config["game"]["batch_round_offset"] = 3
+    startup.game_config["num_rounds_per_rule"] = 1
+    startup.config["game"]["num_rounds_per_rule"] = 1
+    state = _initialize_fresh_state(startup)
+    assert state.run_store is not None
+    monkeypatch.setattr(evaluation_startup, "preflight_check", lambda _model: None)
+
+    resumed = resolve_evaluation_startup(
+        _resume_args(config_path, state.run_store.run_folder)
+    )
+
+    assert resumed is not None
+    assert resumed.game_config["batch_round_offset"] == 3
+    assert resumed.run_manifest is not None
+    schedule = cast(list[dict[str, object]], resumed.run_manifest["schedule"])
+    assert {entry["batch_round_index"] for entry in schedule} == {3}
 
 
 def test_live_progress_command_reads_active_round_from_sqlite(

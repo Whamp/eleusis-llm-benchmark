@@ -137,6 +137,7 @@ def _is_behavior_path(path: str) -> bool:
         "models.yaml",
         "pyproject.toml",
         "rules.json",
+        "uv.lock",
         "suites.yaml",
     }
 
@@ -375,6 +376,32 @@ def verify_benchmark_run_resume_compatibility(
         )
 
 
+def _merge_backup_provider_api_keys(
+    stored_compiler: dict[str, object],
+    current_compiler: Mapping[str, object],
+) -> None:
+    """Restore only credentials for matching backup provider/model identities."""
+    stored_backups = stored_compiler.get("backup_providers")
+    current_backups = current_compiler.get("backup_providers")
+    if not isinstance(stored_backups, list) or not isinstance(current_backups, list):
+        return
+    current_by_identity = {
+        (provider.get("provider"), provider.get("model_id")): provider
+        for provider in current_backups
+        if isinstance(provider, Mapping)
+    }
+    for stored_provider in stored_backups:
+        if not isinstance(stored_provider, dict):
+            continue
+        current_provider = current_by_identity.get(
+            (stored_provider.get("provider"), stored_provider.get("model_id"))
+        )
+        if isinstance(current_provider, Mapping) and isinstance(
+            current_provider.get("api_key"), str
+        ):
+            stored_provider["api_key"] = current_provider["api_key"]
+
+
 def restore_benchmark_run_config(
     manifest: Mapping[str, object],
     current_config: BenchmarkConfig,
@@ -392,6 +419,7 @@ def restore_benchmark_run_config(
     compiler = cast(dict[str, object], scientific["rule_compiler"])
     if "api_key" in current_config["rule_compiler"]:
         compiler["api_key"] = current_config["rule_compiler"]["api_key"]
+    _merge_backup_provider_api_keys(compiler, current_config["rule_compiler"])
     if scientific.get("suite") is None:
         scientific.pop("suite", None)
     return parse_benchmark_config(scientific)

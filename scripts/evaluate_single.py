@@ -8,13 +8,10 @@ from eleusis.evaluation_support import (
     apply_cli_overrides,
     generate_output_tag,
     get_integer_metric,
-    load_checkpoint,
     load_config,
     load_rules_from_library,
     logger,
     preflight_check,
-    reconstruct_config_from_checkpoint,
-    restore_rule_from_checkpoint,
     save_evaluation_results,
 )
 
@@ -22,15 +19,12 @@ __all__ = [
     "apply_cli_overrides",
     "generate_output_tag",
     "get_integer_metric",
-    "load_checkpoint",
     "load_config",
     "load_rules_from_library",
     "logger",
     "main",
     "parse_args",
     "preflight_check",
-    "reconstruct_config_from_checkpoint",
-    "restore_rule_from_checkpoint",
     "save_evaluation_results",
 ]
 

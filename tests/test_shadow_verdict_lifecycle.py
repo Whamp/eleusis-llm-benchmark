@@ -150,6 +150,9 @@ def test_offline_shadow_verdicts_are_immutable_exported_sidecars(
         "turns_per_simulation": 2,
         "simulation_seed": 19,
         "compiler_max_retries": 0,
+        "compiler_temperature": 0.25,
+        "llm_max_tokens": 4096,
+        "llm_seed": 23,
     }
 
     added_verdicts = evaluate_and_store_shadow_verdicts(
@@ -216,3 +219,54 @@ def test_offline_shadow_verdicts_are_immutable_exported_sidecars(
     assert exported["completed_round_records"] == [completed]
     assert exported["shadow_verdicts"] == stored_verdicts
     assert "continuation" not in exported
+
+
+def test_shadow_verdict_identity_includes_all_judge_client_settings(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Every setting configuring the judge client changes verdict identity."""
+    from eleusis.shadow_verdict import evaluate_shadow_guess
+
+    _run_store, completed = _complete_offline_shadow_round(monkeypatch, tmp_path)
+    turns = cast(list[dict[str, object]], completed["turns"])
+    proposal = cast(dict[str, object], turns[-1]["guess_attempt"])
+    compiler = FakeLLMClient()
+    compiler.convert_rule_to_code = MagicMock(
+        return_value={
+            "code": "return card.rank % 2 == 0",
+            "status": "success",
+            "attempts": 1,
+            "sleep_cycles": 0,
+            "provider_used": "fake/judge-v1",
+            "cache_hit": False,
+        }
+    )
+    base_settings = {
+        "num_simulations": 1,
+        "turns_per_simulation": 2,
+        "simulation_seed": 19,
+        "compiler_max_retries": 0,
+        "compiler_temperature": 0.25,
+        "llm_max_tokens": 4096,
+        "llm_seed": 23,
+    }
+    verdict_ids = set()
+    for field, value in (
+        ("compiler_temperature", 0.75),
+        ("llm_max_tokens", 8192),
+        ("llm_seed", 99),
+    ):
+        settings = {**base_settings, field: value}
+        verdict = evaluate_shadow_guess(
+            completed,
+            cast(str, proposal["proposal_id"]),
+            compiler,
+            judge_identity={"provider": "fake", "model": "judge-v1"},
+            behavior_fingerprint="a" * 64,
+            settings=settings,
+        )
+        assert verdict["settings"] == settings
+        verdict_ids.add(verdict["verdict_id"])
+
+    assert len(verdict_ids) == 3

@@ -44,7 +44,6 @@ def _startup() -> EvaluationStartup:
     }
     return EvaluationStartup(
         args=Namespace(),
-        checkpoint=None,
         config=config,
         player_model="test-model",
         player_display_name="Test Model",

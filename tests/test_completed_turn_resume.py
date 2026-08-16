@@ -407,6 +407,7 @@ def test_formal_guess_resume_matches_cached_terminal_control(
         "no_stakes_score": 3,
         "first_correct_turn": 1,
         "failed_guesses": 1,
+        "schema_compliance_rate": 1.0,
         "usage": {
             "model_attempt_count": 3,
             "provider_call_count": 3,
