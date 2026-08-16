@@ -696,8 +696,9 @@ class OpenAIClient(BaseLLMClient):
             if argument_run.arguments.strip():
                 # The stream died mid-thought while trickling tool
                 # arguments; a slow runaway behaves like the fast one:
-                # salvage the partial reasoning and continue on a fresh
-                # round rather than discarding it as a capacity failure.
+                # salvage the partial reasoning and continue with a
+                # fresh scratchpad call rather than discarding it as a
+                # capacity failure.
                 raise self._runaway_error(argument_run) from None
             raise
         finally:

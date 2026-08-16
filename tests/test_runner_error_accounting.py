@@ -63,7 +63,8 @@ class TestUnexpectedActionErrorsPropagate:
         """The provider-patience abort survives the runner boundary.
 
         LLMScientist raises RuntimeError after its provider patience window
-        closes so the Run stops resumable-cleanly; the runner boundary must
+        closes so the Benchmark Run stops cleanly and stays resumable;
+        the runner boundary must
         let that propagate rather than turning it into a random card.
         """
         from eleusis.runner import handle_action_error

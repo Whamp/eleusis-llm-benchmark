@@ -167,7 +167,7 @@ class TruncationError(Exception):
 class ProviderUnavailableError(RuntimeError):
     """Raised when the provider cannot serve the request right now.
 
-    Covers transport drops, stalled streams past the wall-clock deadline,
+    Covers transport drops, stalled streams past the inactivity deadline,
     and exhausted transient retries. This is an infrastructure failure,
     never a model failure: callers must not change the prompt in response,
     and must not fabricate fallback content for it.
