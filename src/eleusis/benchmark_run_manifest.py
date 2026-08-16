@@ -345,10 +345,7 @@ def verify_benchmark_run_resume_compatibility(
     effective_settings = cast(Mapping[str, object], validated["effective_settings"])
     current_scientific = create_benchmark_scientific_config(
         current_config,
-        configured_game_seed=cast(
-            int | None,
-            effective_settings["configured_game_seed"],
-        ),
+        configured_game_seed=current_config["game"]["seed"],
     )
     difference = _first_manifest_difference(
         validated["scientific_config"],
