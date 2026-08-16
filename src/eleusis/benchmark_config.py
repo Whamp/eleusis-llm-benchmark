@@ -54,6 +54,7 @@ class ModelConfig(TypedDict):
     reasoning_budget: NotRequired[int]
     reasoning_effort: NotRequired[OpenAIReasoningEffort]
     reasoning_format: NotRequired[str]
+    extra_body: NotRequired[dict[str, object]]
     thinking_level: NotRequired[str]
     temperature: NotRequired[float]
     timeout: NotRequired[int]

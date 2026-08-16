@@ -13,17 +13,80 @@ game:
 
 
 # Rule compiler model configuration (converts natural language rules to code)
+# Primary and fallback chain chosen by the compiler tournament of 2026-08-16;
+# see results/compiler-tournament/20260816/summary.md. Each entry is pinned to
+# one OpenRouter server so routing stays deterministic and reproducible.
 rule_compiler:
   # Model config (inline, not referencing models.yaml)
-  provider: huggingface
+  provider: openai_compat
   model_id: openai/gpt-oss-120b
-  hf_provider: together      # Explicit provider for reproducible first-run setup
-  reasoning_format: separate_field
+  base_url: https://openrouter.ai/api/v1
+  api_key: ${OPENROUTER_API_KEY}
   temperature: 0.7
+  reasoning_effort: medium
+  extra_body:
+    provider:
+      order: [Novita]
+      allow_fallbacks: false
   max_retries: 10             # Retries on compilation failure
   num_simulations: 100        # Number of simulation runs for rule comparison
   turns_per_simulation: 40    # Turns per simulation run
   simulation_seed: 42         # Seed for reproducible simulation RNG
+  # Used only after the primary exhausts its retries; tried in order.
+  backup_providers:
+    - provider: openai_compat
+      model_id: openai/gpt-oss-120b
+      base_url: https://openrouter.ai/api/v1
+      api_key: ${OPENROUTER_API_KEY}
+      temperature: 0.7
+      reasoning_effort: medium
+      extra_body:
+        provider:
+          order: [AkashML]
+          allow_fallbacks: false
+    - provider: openai_compat
+      model_id: openai/gpt-oss-120b
+      base_url: https://openrouter.ai/api/v1
+      api_key: ${OPENROUTER_API_KEY}
+      temperature: 0.7
+      reasoning_effort: medium
+      extra_body:
+        provider:
+          order: [Nebius]
+          allow_fallbacks: false
+    - provider: openai_compat
+      model_id: openai/gpt-oss-120b
+      base_url: https://openrouter.ai/api/v1
+      api_key: ${OPENROUTER_API_KEY}
+      temperature: 0.7
+      reasoning_effort: medium
+      extra_body:
+        provider:
+          order: [Groq]
+          allow_fallbacks: false
+    - provider: openai_compat
+      model_id: openai/gpt-oss-120b
+      base_url: https://openrouter.ai/api/v1
+      api_key: ${OPENROUTER_API_KEY}
+      temperature: 0.7
+      reasoning_effort: medium
+      extra_body:
+        provider:
+          order: [Cerebras]
+          allow_fallbacks: false
+    # Different model as the final link: diversity against a gpt-oss-wide
+    # outage. Cloudflare was the only server that honors temperature for
+    # deepseek-v4-flash-0731; run at its recommended temperature and low effort.
+    - provider: openai_compat
+      model_id: deepseek/deepseek-v4-flash-0731
+      base_url: https://openrouter.ai/api/v1
+      api_key: ${OPENROUTER_API_KEY}
+      temperature: 1.0
+      reasoning_effort: low
+      extra_body:
+        provider:
+          order: [Cloudflare]
+          allow_fallbacks: false
 
 
 # Rule source configuration
