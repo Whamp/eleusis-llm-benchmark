@@ -703,8 +703,9 @@ def test_deadline_mid_argument_salvages_partial_thought(
 ) -> None:
     """H4: deadline during a tool-argument run takes the salvage path.
 
-    A slow runaway trickle must keep its partial reasoning and continue on
-    a fresh round instead of discarding the thought as a capacity failure.
+    A slow runaway trickle must keep its partial reasoning and continue
+    with a fresh scratchpad call instead of discarding the thought as a
+    capacity failure.
     """
     client = _subscription_client(reasoning_extraction="deep_think")
     client.stream_deadline_seconds = 0.2
