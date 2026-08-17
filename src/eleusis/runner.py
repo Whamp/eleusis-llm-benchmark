@@ -5,6 +5,7 @@ import logging
 import random
 import time
 from dataclasses import dataclass
+from typing import NoReturn
 
 from typing_extensions import TypedDict
 
@@ -14,7 +15,6 @@ from eleusis.evaluation_results import TurnRecord
 from eleusis.game import (
     GameEngine,
     GameState,
-    PlayCardAction,
     Rule,
     RuleFactory,
     RuleValidator,
@@ -77,7 +77,7 @@ def handle_action_error(
     error: Exception,
     scientist: LLMScientist,
     game_state: GameState,
-) -> tuple[PlayCardAction, dict[str, str | None]]:
+) -> NoReturn:
     """Propagate unexpected player errors; never fabricate a card.
 
     A card played at this boundary would carry no Model Attempt evidence and
@@ -87,7 +87,7 @@ def handle_action_error(
     LLMScientist after bounded model failures, where explicit Fallback
     Decision evidence is recorded.
 
-    The return type satisfies the historical ActionErrorHandler contract;
+    The signature satisfies the historical ActionErrorHandler contract;
     this implementation always raises.
     """
     raise error
