@@ -1,0 +1,18 @@
+{
+  "metadata": {
+    "description": "Complexity ratio: tentative rule complexity / actual rule complexity",
+    "confidence_threshold": 5,
+    "interpretation": "Ratio > 1 means model overcomplicates, < 1 means oversimplifies"
+  },
+  "models": [
+    {
+      "name": "Gpt 5.6 Luna Deepthink",
+      "color": "#7EA8C4",
+      "is_open": false,
+      "median_ratio": 1.0,
+      "q25": 0.9814505516752708,
+      "q75": 1.0,
+      "count": 26
+    }
+  ]
+}

@@ -1,0 +1,167 @@
+{
+  "models": [
+    {
+      "name": "Gpt 5.6 Luna Deepthink",
+      "color": "#7EA8C4",
+      "is_open": false,
+      "provider": "openai",
+      "tokens_by_turn": [
+        {
+          "turn_number": 1,
+          "avg_output_tokens": 290.6666666666667,
+          "sample_count": 21
+        },
+        {
+          "turn_number": 2,
+          "avg_output_tokens": 304.3333333333333,
+          "sample_count": 21
+        },
+        {
+          "turn_number": 3,
+          "avg_output_tokens": 310.85714285714283,
+          "sample_count": 21
+        },
+        {
+          "turn_number": 4,
+          "avg_output_tokens": 312.4761904761905,
+          "sample_count": 21
+        },
+        {
+          "turn_number": 5,
+          "avg_output_tokens": 298.1904761904762,
+          "sample_count": 21
+        },
+        {
+          "turn_number": 6,
+          "avg_output_tokens": 363.9,
+          "sample_count": 20
+        },
+        {
+          "turn_number": 7,
+          "avg_output_tokens": 375.05,
+          "sample_count": 20
+        },
+        {
+          "turn_number": 8,
+          "avg_output_tokens": 311.11764705882354,
+          "sample_count": 17
+        },
+        {
+          "turn_number": 9,
+          "avg_output_tokens": 346.70588235294116,
+          "sample_count": 17
+        },
+        {
+          "turn_number": 10,
+          "avg_output_tokens": 355.06666666666666,
+          "sample_count": 15
+        },
+        {
+          "turn_number": 11,
+          "avg_output_tokens": 343.2307692307692,
+          "sample_count": 13
+        },
+        {
+          "turn_number": 12,
+          "avg_output_tokens": 312.61538461538464,
+          "sample_count": 13
+        },
+        {
+          "turn_number": 13,
+          "avg_output_tokens": 297.77777777777777,
+          "sample_count": 9
+        },
+        {
+          "turn_number": 14,
+          "avg_output_tokens": 298.5,
+          "sample_count": 8
+        },
+        {
+          "turn_number": 15,
+          "avg_output_tokens": 383.14285714285717,
+          "sample_count": 7
+        },
+        {
+          "turn_number": 16,
+          "avg_output_tokens": 220.42857142857142,
+          "sample_count": 7
+        },
+        {
+          "turn_number": 17,
+          "avg_output_tokens": 258.3333333333333,
+          "sample_count": 6
+        },
+        {
+          "turn_number": 18,
+          "avg_output_tokens": 267.1666666666667,
+          "sample_count": 6
+        },
+        {
+          "turn_number": 19,
+          "avg_output_tokens": 534.6666666666666,
+          "sample_count": 6
+        },
+        {
+          "turn_number": 20,
+          "avg_output_tokens": 512.1666666666666,
+          "sample_count": 6
+        },
+        {
+          "turn_number": 21,
+          "avg_output_tokens": 510.4,
+          "sample_count": 5
+        },
+        {
+          "turn_number": 22,
+          "avg_output_tokens": 482.0,
+          "sample_count": 5
+        },
+        {
+          "turn_number": 23,
+          "avg_output_tokens": 953.4,
+          "sample_count": 5
+        },
+        {
+          "turn_number": 24,
+          "avg_output_tokens": 218.75,
+          "sample_count": 4
+        },
+        {
+          "turn_number": 25,
+          "avg_output_tokens": 517.25,
+          "sample_count": 4
+        },
+        {
+          "turn_number": 26,
+          "avg_output_tokens": 190.0,
+          "sample_count": 4
+        },
+        {
+          "turn_number": 27,
+          "avg_output_tokens": 143.5,
+          "sample_count": 4
+        },
+        {
+          "turn_number": 28,
+          "avg_output_tokens": 80.5,
+          "sample_count": 4
+        },
+        {
+          "turn_number": 29,
+          "avg_output_tokens": 329.5,
+          "sample_count": 4
+        },
+        {
+          "turn_number": 30,
+          "avg_output_tokens": 25.0,
+          "sample_count": 4
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "x_axis": "turn_number",
+    "y_axis": "avg_output_tokens",
+    "description": "Average output tokens by turn index"
+  }
+}

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Literal, cast
@@ -25,10 +26,13 @@ from eleusis.benchmark_run_store import (
     BenchmarkRunStore,
     BenchmarkRunStoreError,
 )
+from eleusis.game.metrics import code_complexity
 from eleusis.round_record import (
     RoundRecordValidationError,
     validate_round_record_document,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def _strict_card_text(card: Mapping[str, object]) -> str:
@@ -199,13 +203,26 @@ def _strict_analysis_document(
         if identity in seen_rules:
             continue
         seen_rules.add(identity)
-        rules_library.append(
-            {
-                "name": scheduled.get("rule_name"),
-                "description": scheduled.get("rule_description"),
-                "code": scheduled.get("rule_code"),
-            }
-        )
+        entry: LegacyRecord = {
+            "name": scheduled.get("rule_name"),
+            "description": scheduled.get("rule_description"),
+            "code": scheduled.get("rule_code"),
+        }
+        rule_code = scheduled.get("rule_code")
+        if isinstance(rule_code, str):
+            # Legacy results embedded static complexity per rule; strict
+            # Records persist only the code, so compute the same metrics.
+            try:
+                complexity = code_complexity(rule_code)
+            except SyntaxError:
+                logger.warning(
+                    "Rule code for %r failed to parse; complexity metrics omitted",
+                    scheduled.get("rule_name"),
+                )
+            else:
+                entry["node_count"] = complexity["node_count"]
+                entry["cyclomatic_complexity"] = complexity["cyclomatic"]
+        rules_library.append(entry)
     consumed_rules = []
     for rule in rules_library:
         rule_code = rule.get("code")

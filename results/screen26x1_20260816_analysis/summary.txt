@@ -1,0 +1,179 @@
+============================================================
+ELEUSIS RESULTS ANALYSIS
+============================================================
+
+Analyzing: results/screen26x1_20260816_analysis
+
+Loading results...
+Loaded 13 evaluation runs:
+  - solo_evaluation_20260816_210723_screen26x1_w0
+  - solo_evaluation_20260816_210723_screen26x1_w1
+  - solo_evaluation_20260816_210723_screen26x1_w10
+  - solo_evaluation_20260816_210723_screen26x1_w11
+  - solo_evaluation_20260816_210723_screen26x1_w12
+  - solo_evaluation_20260816_210723_screen26x1_w2
+  - solo_evaluation_20260816_210723_screen26x1_w3
+  - solo_evaluation_20260816_210723_screen26x1_w4
+  - solo_evaluation_20260816_210723_screen26x1_w5
+  - solo_evaluation_20260816_210723_screen26x1_w6
+  - solo_evaluation_20260816_210723_screen26x1_w7
+  - solo_evaluation_20260816_210723_screen26x1_w8
+  - solo_evaluation_20260816_210723_screen26x1_w9
+Artifact formats: 13 strict Round Record, 0 partial historical
+
+Extracted 26 unique rules from results files
+Built DataFrames: 21 rounds, 318 turns
+Loaded colors for 21 models
+
+============================================================
+BASIC MODEL COMPARISON
+============================================================
+
+                 model  rounds_played  total_score  avg_score  total_floored_score  avg_floored_score  total_turns  total_output_tokens  total_wall_clock  avg_failed_guesses  success_rate  counting_output_tokens  total_no_stakes_score  avg_no_stakes_score  avg_output_tokens_per_turn  wall_clock_per_turn  intra_rule_variance  inter_rule_variance  variance_ratio
+Gpt 5.6 Luna Deepthink             21          311  14.809524                  321          15.285714          308               106135       2520.774594            0.333333      0.809524                  103628                    530            25.238095                  336.454545             8.184333                  NaN            76.914286             NaN
+
+Saved: results/screen26x1_20260816_analysis/basic_metrics.csv
+Saved: results/screen26x1_20260816_analysis/overall_performance.png
+Saved: results/screen26x1_20260816_analysis/overall_performance.json
+Saved: results/screen26x1_20260816_analysis/score_vs_failed_guesses.png
+Saved: results/screen26x1_20260816_analysis/score_vs_failed_guesses.json
+Saved: results/screen26x1_20260816_analysis/calibration_curves.png
+Saved: results/screen26x1_20260816_analysis/calibration_curves.json
+Saved: results/screen26x1_20260816_analysis/guess_rate.png
+Saved: results/screen26x1_20260816_analysis/guess_rate.json
+Saved: results/screen26x1_20260816_analysis/score_stack.png
+Saved: results/screen26x1_20260816_analysis/score_stack.json
+
+============================================================
+COMPLEXITY ANALYSIS
+============================================================
+
+Optimal K for aggregated complexity: 0.01
+  Formula: complexity = cyclomatic + 0.01 * node_count
+  Correlation with success_rate: -0.552
+
+Stats by complexity quartile:
+complexity_bin  count  avg_floored_score  success_rate
+            Q1      6          17.333333           1.0
+            Q2      5          22.000000           1.0
+            Q3      5           9.400000           0.6
+            Q4      5          12.000000           0.6
+
+Saved: results/screen26x1_20260816_analysis/complexity_analysis.png
+Saved: results/screen26x1_20260816_analysis/complexity_analysis.json
+
+============================================================
+BY-RULE ANALYSIS
+============================================================
+
+Score by rule (sorted by avg_floored_score):
+                                                                                                                                            rule_description  count  avg_floored_score  std_floored_score  success_rate
+                                                                                                               Only cards with an even rank (2,4,6,8,10,12).      1               26.0                NaN           1.0
+                                                             The card must be of a different suit than the card just before it. Any card may start the line.      1               24.0                NaN           1.0
+                                           Suits must repeat in the cyclic order hearts → spades → clubs → diamonds → hearts... Any card may start the line.      1               24.0                NaN           1.0
+                                                                             Cards must alternate between red and black colors. Any card may start the line.      1               24.0                NaN           1.0
+                                                                                                                        Only red cards (hearts or diamonds).      1               22.0                NaN           1.0
+                                                                                                                                   Only spades and diamonds.      1               21.0                NaN           1.0
+                                                                                                                              Only cards of the suit spades.      1               21.0                NaN           1.0
+                                                                                                          Only ranks that are prime numbers (2,3,5,7,11,13).      1               20.0                NaN           1.0
+                                                                                                                                 Only face cards (11,12,13).      1               19.0                NaN           1.0
+                                                                                                                       Only cards between 5 and 9 inclusive.      1               19.0                NaN           1.0
+                                           The card must be of a different suit than but same color as the card just before it. Any card may start the line.      1               19.0                NaN           1.0
+                                                                                             Only hearts, clubs, and diamonds allowed. Spades are forbidden.      1               18.0                NaN           1.0
+Suits must appear in pairs: card 1 and 2 same suit, cards 3 and 4 same suit (different from 1 and 2), cards 5 and 6 same suit (different from 3 and 4), etc.      1               17.0                NaN           1.0
+                                                      Card rank must have opposite odd/even parity to the previous card's rank. Any card may start the line.      1               15.0                NaN           1.0
+                                                                                                                       Only cards between 1 and 7 inclusive.      1               13.0                NaN           1.0
+                                                                                                                                        Only Aces (rank 1) .      1               11.0                NaN           1.0
+                                                              Each card must have a rank greater or equal to the previous card. Only Ace can start the line.      1                8.0                NaN           1.0
+                                     Hearts and spades form Group A; clubs and diamonds form Group B. Alternate between groups. Any card may start the line.      1                0.0                NaN           0.0
+                                                                                          Face cards (11-13) must be red; number cards (1-10) must be black.      1                0.0                NaN           0.0
+    If the previous card was red, rank must increase or be equal; if black, rank must decrease or be equal. Starting card must be between 5 and 9 inclusive.      1                0.0                NaN           0.0
+                                                                                                                                      Only black face cards.      1                0.0                NaN           0.0
+
+Saved: results/screen26x1_20260816_analysis/by_rule.png
+Saved: results/screen26x1_20260816_analysis/by_rule.json
+
+============================================================
+EXCESS CAUTION ANALYSIS
+============================================================
+
+Early Correct Turns: consecutive correct shadow guesses before winning guess
+(Only counts successful rounds where model eventually guessed correctly)
+
+                 Model  Rounds  Mean  Median  % with Early
+Gpt 5.6 Luna Deepthink       2   0.0     0.0           0.0
+
+Overall: 0 total early correct turns across 2 successful rounds
+Mean: 0.00, Median: 0.0
+0/2 (0.0%) rounds had at least 1 early correct turn
+
+Saved: results/screen26x1_20260816_analysis/excess_caution.png
+Saved: results/screen26x1_20260816_analysis/excess_caution.json
+Saved: results/screen26x1_20260816_analysis/caution_vs_failed_guesses.png
+Saved: results/screen26x1_20260816_analysis/caution_vs_failed_guesses.json
+Saved: results/screen26x1_20260816_analysis/score_vs_recklessness.png
+Saved: results/screen26x1_20260816_analysis/score_vs_recklessness.json
+
+============================================================
+RECKLESS GUESSING ANALYSIS
+============================================================
+
+Double-Down Rate: After a wrong guess, % of next turns with another guess
+(Only counts official guesses, not shadow/tentative guesses)
+
+                 Model  Wrong Guesses  Next Turn Guesses  Double-Down %
+Gpt 5.6 Luna Deepthink              7                  2           28.6
+
+Wrong Guess Streak Statistics:
+                 Model  Streaks  Mean Length  Max Length  Total Wrong
+Gpt 5.6 Luna Deepthink        6         1.17           2            7
+
+Longest streak: 2 consecutive wrong guesses
+  - Gpt 5.6 Luna Deepthink in round 1
+
+Saved: results/screen26x1_20260816_analysis/reckless_guessing.png
+Saved: results/screen26x1_20260816_analysis/reckless_guessing.json
+
+============================================================
+COMPLEXITY RATIO ANALYSIS
+============================================================
+
+Analyzed 26 tentative rules with confidence >= 5
+Using optimal k = 0.010 for aggregated complexity
+
+Complexity Ratio by Model:
+(Ratio = Tentative Complexity / Actual Complexity)
+
+                 Model  Median   Q25  Q75  Count
+Gpt 5.6 Luna Deepthink     1.0 0.981  1.0     26
+
+Interpretation:
+  - Ratio > 1: Model tends to overcomplicate rules
+  - Ratio < 1: Model tends to oversimplify rules
+  - Ratio ≈ 1: Model matches actual rule complexity
+
+Highest median: Gpt 5.6 Luna Deepthink (1.000)
+Lowest median: Gpt 5.6 Luna Deepthink (1.000)
+
+Saved: results/screen26x1_20260816_analysis/complexity_ratio.png
+Saved: results/screen26x1_20260816_analysis/complexity_ratio.json
+
+============================================================
+OUTPUT TOKENS BY TURN
+============================================================
+
+Saved: results/screen26x1_20260816_analysis/tokens_by_turn.png
+Saved: results/screen26x1_20260816_analysis/tokens_by_turn.json
+
+Tokens trend summary (early vs late turns):
+  Gpt 5.6 Luna Deepthink: early=303, late=154 (-49.3%)
+
+============================================================
+PER-MODEL REPORTS
+============================================================
+
+Saved: results/screen26x1_20260816_analysis/model_gpt_5_6_luna_deepthink.png
+
+============================================================
+Analysis complete! All outputs saved to: results/screen26x1_20260816_analysis
+============================================================

@@ -1,0 +1,27 @@
+{
+  "models": [
+    {
+      "name": "Gpt 5.6 Luna Deepthink",
+      "color": "#7EA8C4",
+      "is_open": false,
+      "provider": "openai",
+      "calibration_points": [
+        {
+          "confidence_level": 8,
+          "actual_success_rate": 0.25,
+          "sample_count": 4
+        },
+        {
+          "confidence_level": 9,
+          "actual_success_rate": 0.8,
+          "sample_count": 20
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "x_axis": "confidence_level",
+    "y_axis": "actual_success_rate",
+    "description": "Calibration curve showing confidence vs actual success rate for rule guesses (counting turns only)"
+  }
+}

@@ -252,6 +252,12 @@ def analyze_complexity(
     tee.write(f"  Correlation with success_rate: {correlation:.3f}\n\n")
 
     # Summary stats by complexity bin
+    if "complexity_bin" not in df.columns or not df["complexity_bin"].notna().any():
+        tee.write(
+            "No rule complexity metrics available; skipping complexity"
+            " quartile stats and heatmap.\n\n"
+        )
+        return df
     df_binned = df.dropna(subset=["complexity_bin"])
     if len(df_binned) > 0:
         df_binned["floored_score"] = df_binned["score"].clip(lower=0)

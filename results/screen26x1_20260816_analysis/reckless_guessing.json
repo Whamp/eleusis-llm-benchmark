@@ -1,0 +1,28 @@
+{
+  "models": [
+    {
+      "name": "Gpt 5.6 Luna Deepthink",
+      "color": "#7EA8C4",
+      "is_open": false,
+      "provider": "openai",
+      "double_down_rate": 0.2857142857142857,
+      "wrong_guesses": 7,
+      "next_turn_guesses": 2,
+      "streaks": [
+        1,
+        2,
+        1,
+        1,
+        1,
+        1
+      ],
+      "mean_streak": 1.1666666666666667,
+      "max_streak": 2
+    }
+  ],
+  "metadata": {
+    "description": "Reckless guessing behavior: double-down rate and wrong guess streaks",
+    "left_panel": "double_down_rate",
+    "right_panel": "streak_length_distribution"
+  }
+}

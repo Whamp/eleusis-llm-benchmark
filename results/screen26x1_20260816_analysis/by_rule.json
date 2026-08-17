@@ -1,0 +1,306 @@
+{
+  "rules": [
+    {
+      "name": "even_ranks_only",
+      "description": "Only cards with an even rank (2,4,6,8,10,12).",
+      "cyclomatic_complexity": 1,
+      "node_count": 12,
+      "aggregated_complexity": 1.12,
+      "avg_floored_score": 26.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Gpt 5.6 Luna Deepthink": [
+          26
+        ]
+      }
+    },
+    {
+      "name": "alternating_colors",
+      "description": "Cards must alternate between red and black colors. Any card may start the line.",
+      "cyclomatic_complexity": 2,
+      "node_count": 24,
+      "aggregated_complexity": 2.24,
+      "avg_floored_score": 24.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Gpt 5.6 Luna Deepthink": [
+          24
+        ]
+      }
+    },
+    {
+      "name": "different_suit",
+      "description": "The card must be of a different suit than the card just before it. Any card may start the line.",
+      "cyclomatic_complexity": 2,
+      "node_count": 28,
+      "aggregated_complexity": 2.2800000000000002,
+      "avg_floored_score": 24.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Gpt 5.6 Luna Deepthink": [
+          24
+        ]
+      }
+    },
+    {
+      "name": "cyclic_suit_order",
+      "description": "Suits must repeat in the cyclic order hearts \u2192 spades \u2192 clubs \u2192 diamonds \u2192 hearts... Any card may start the line.",
+      "cyclomatic_complexity": 2,
+      "node_count": 67,
+      "aggregated_complexity": 2.67,
+      "avg_floored_score": 24.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Gpt 5.6 Luna Deepthink": [
+          24
+        ]
+      }
+    },
+    {
+      "name": "only_red_cards",
+      "description": "Only red cards (hearts or diamonds).",
+      "cyclomatic_complexity": 1,
+      "node_count": 9,
+      "aggregated_complexity": 1.09,
+      "avg_floored_score": 22.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Gpt 5.6 Luna Deepthink": [
+          22
+        ]
+      }
+    },
+    {
+      "name": "spades_only",
+      "description": "Only cards of the suit spades.",
+      "cyclomatic_complexity": 1,
+      "node_count": 11,
+      "aggregated_complexity": 1.11,
+      "avg_floored_score": 21.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Gpt 5.6 Luna Deepthink": [
+          21
+        ]
+      }
+    },
+    {
+      "name": "spades_and_diamonds_only",
+      "description": "Only spades and diamonds.",
+      "cyclomatic_complexity": 1,
+      "node_count": 14,
+      "aggregated_complexity": 1.1400000000000001,
+      "avg_floored_score": 21.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Gpt 5.6 Luna Deepthink": [
+          21
+        ]
+      }
+    },
+    {
+      "name": "prime_ranks_only",
+      "description": "Only ranks that are prime numbers (2,3,5,7,11,13).",
+      "cyclomatic_complexity": 1,
+      "node_count": 20,
+      "aggregated_complexity": 1.2,
+      "avg_floored_score": 20.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Gpt 5.6 Luna Deepthink": [
+          20
+        ]
+      }
+    },
+    {
+      "name": "face_cards_only",
+      "description": "Only face cards (11,12,13).",
+      "cyclomatic_complexity": 1,
+      "node_count": 12,
+      "aggregated_complexity": 1.12,
+      "avg_floored_score": 19.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Gpt 5.6 Luna Deepthink": [
+          19
+        ]
+      }
+    },
+    {
+      "name": "ranks_five_to_nine",
+      "description": "Only cards between 5 and 9 inclusive.",
+      "cyclomatic_complexity": 1,
+      "node_count": 11,
+      "aggregated_complexity": 1.11,
+      "avg_floored_score": 19.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Gpt 5.6 Luna Deepthink": [
+          19
+        ]
+      }
+    },
+    {
+      "name": "different_suit_same_color",
+      "description": "The card must be of a different suit than but same color as the card just before it. Any card may start the line.",
+      "cyclomatic_complexity": 3,
+      "node_count": 45,
+      "aggregated_complexity": 3.45,
+      "avg_floored_score": 19.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Gpt 5.6 Luna Deepthink": [
+          19
+        ]
+      }
+    },
+    {
+      "name": "no_spades",
+      "description": "Only hearts, clubs, and diamonds allowed. Spades are forbidden.",
+      "cyclomatic_complexity": 1,
+      "node_count": 11,
+      "aggregated_complexity": 1.11,
+      "avg_floored_score": 18.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Gpt 5.6 Luna Deepthink": [
+          18
+        ]
+      }
+    },
+    {
+      "name": "paired_suits_alternating",
+      "description": "Suits must appear in pairs: card 1 and 2 same suit, cards 3 and 4 same suit (different from 1 and 2), cards 5 and 6 same suit (different from 3 and 4), etc.",
+      "cyclomatic_complexity": 3,
+      "node_count": 65,
+      "aggregated_complexity": 3.65,
+      "avg_floored_score": 17.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Gpt 5.6 Luna Deepthink": [
+          17
+        ]
+      }
+    },
+    {
+      "name": "opposite_parity",
+      "description": "Card rank must have opposite odd/even parity to the previous card's rank. Any card may start the line.",
+      "cyclomatic_complexity": 2,
+      "node_count": 30,
+      "aggregated_complexity": 2.3,
+      "avg_floored_score": 15.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Gpt 5.6 Luna Deepthink": [
+          15
+        ]
+      }
+    },
+    {
+      "name": "ranks_one_to_seven",
+      "description": "Only cards between 1 and 7 inclusive.",
+      "cyclomatic_complexity": 1,
+      "node_count": 11,
+      "aggregated_complexity": 1.11,
+      "avg_floored_score": 13.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Gpt 5.6 Luna Deepthink": [
+          13
+        ]
+      }
+    },
+    {
+      "name": "only_aces",
+      "description": "Only Aces (rank 1) .",
+      "cyclomatic_complexity": 1,
+      "node_count": 9,
+      "aggregated_complexity": 1.09,
+      "avg_floored_score": 11.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Gpt 5.6 Luna Deepthink": [
+          11
+        ]
+      }
+    },
+    {
+      "name": "rank_non_decreasing_start_ace",
+      "description": "Each card must have a rank greater or equal to the previous card. Only Ace can start the line.",
+      "cyclomatic_complexity": 2,
+      "node_count": 30,
+      "aggregated_complexity": 2.3,
+      "avg_floored_score": 8.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Gpt 5.6 Luna Deepthink": [
+          8
+        ]
+      }
+    },
+    {
+      "name": "alternating_groups",
+      "description": "Hearts and spades form Group A; clubs and diamonds form Group B. Alternate between groups. Any card may start the line.",
+      "cyclomatic_complexity": 2,
+      "node_count": 62,
+      "aggregated_complexity": 2.62,
+      "avg_floored_score": 0.0,
+      "success_rate": 0.0,
+      "floored_scores_by_model": {
+        "Gpt 5.6 Luna Deepthink": [
+          0
+        ]
+      }
+    },
+    {
+      "name": "red_up_black_down",
+      "description": "If the previous card was red, rank must increase or be equal; if black, rank must decrease or be equal. Starting card must be between 5 and 9 inclusive.",
+      "cyclomatic_complexity": 3,
+      "node_count": 56,
+      "aggregated_complexity": 3.56,
+      "avg_floored_score": 0.0,
+      "success_rate": 0.0,
+      "floored_scores_by_model": {
+        "Gpt 5.6 Luna Deepthink": [
+          0
+        ]
+      }
+    },
+    {
+      "name": "black_face_cards",
+      "description": "Only black face cards.",
+      "cyclomatic_complexity": 4,
+      "node_count": 40,
+      "aggregated_complexity": 4.4,
+      "avg_floored_score": 0.0,
+      "success_rate": 0.0,
+      "floored_scores_by_model": {
+        "Gpt 5.6 Luna Deepthink": [
+          0
+        ]
+      }
+    },
+    {
+      "name": "face_cards_red_number_cards_black",
+      "description": "Face cards (11-13) must be red; number cards (1-10) must be black.",
+      "cyclomatic_complexity": 2,
+      "node_count": 25,
+      "aggregated_complexity": 2.25,
+      "avg_floored_score": 0.0,
+      "success_rate": 0.0,
+      "floored_scores_by_model": {
+        "Gpt 5.6 Luna Deepthink": [
+          0
+        ]
+      }
+    }
+  ],
+  "models": [
+    "Gpt 5.6 Luna Deepthink"
+  ],
+  "metadata": {
+    "optimal_k": 0.01,
+    "complexity_formula": "cyclomatic + 0.01 * node_count",
+    "ordering": "descending_avg_score"
+  }
+}

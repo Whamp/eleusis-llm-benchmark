@@ -1,0 +1,2 @@
+model,rounds_played,total_score,avg_score,total_floored_score,avg_floored_score,total_turns,total_output_tokens,total_wall_clock,avg_failed_guesses,success_rate,counting_output_tokens,total_no_stakes_score,avg_no_stakes_score,avg_output_tokens_per_turn,wall_clock_per_turn,intra_rule_variance,inter_rule_variance,variance_ratio
+Gpt 5.6 Luna Deepthink,21,311,14.80952380952381,321,15.285714285714286,308,106135,2520.774594,0.3333333333333333,0.8095238095238095,103628,530,25.238095238095237,336.45454545454544,8.184333097402597,,76.9142857142857,

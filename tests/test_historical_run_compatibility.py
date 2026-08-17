@@ -25,6 +25,7 @@ from eleusis.benchmark_run_store import (
 )
 from eleusis.evaluation_startup import resolve_evaluation_startup
 from eleusis.evaluation_state import EvaluationState, _initialize_fresh_state
+from eleusis.game.metrics import code_complexity
 from eleusis.game.rule_library import RuleLibraryEntry
 from scripts.status_report import load_worker_results
 from tests.conftest import FakeLLMClient, ScriptedResponse, make_action_response
@@ -423,3 +424,27 @@ def test_retry_causes_survive_strict_persistence_and_reports(
     assert turn["retry_causes"] == [{"attempt": 1, "cause": "card_parse_error"}]
     assert "Total LLM retries: 1" in caplog.text
     assert "card_parse_error: 1" in caplog.text
+
+
+def test_strict_analysis_view_computes_rule_complexity_metrics(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Strict views carry static rule complexity like legacy runs did.
+
+    Legacy results.json embedded node_count/cyclomatic_complexity per rule in
+    checkpoint.rules_library. Strict Round Records only persist the rule code,
+    so the analysis view must compute those metrics from the code. Without
+    them, complexity analysis crashes on a missing complexity_bin column.
+    """
+    store = _completed_strict_store(monkeypatch, tmp_path)
+    artifact = read_analysis_run_artifact(store.run_folder)
+    assert artifact.analysis_document is not None
+    library = artifact.analysis_document["checkpoint"]["rules_library"]
+    assert library, "expected at least one scheduled rule"
+    for entry in library:
+        code = entry["code"]
+        assert isinstance(code, str)
+        expected = code_complexity(code)
+        assert entry["node_count"] == expected["node_count"]
+        assert entry["cyclomatic_complexity"] == expected["cyclomatic"]

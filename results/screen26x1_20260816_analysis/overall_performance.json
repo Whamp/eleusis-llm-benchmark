@@ -1,0 +1,16 @@
+{
+  "models": [
+    {
+      "name": "Gpt 5.6 Luna Deepthink",
+      "avg_floored_score": 15.285714285714286,
+      "avg_output_tokens_per_turn": 336.45454545454544,
+      "color": "#7EA8C4",
+      "is_open": false,
+      "provider": "openai"
+    }
+  ],
+  "metadata": {
+    "x_axis": "avg_output_tokens_per_turn",
+    "y_axis": "avg_floored_score"
+  }
+}

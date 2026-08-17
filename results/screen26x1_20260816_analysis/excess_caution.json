@@ -1,0 +1,22 @@
+{
+  "models": [
+    {
+      "name": "Gpt 5.6 Luna Deepthink",
+      "color": "#7EA8C4",
+      "is_open": false,
+      "provider": "openai",
+      "values": [
+        0,
+        0
+      ],
+      "mean": 0.0,
+      "median": 0.0,
+      "std": 0.0,
+      "count": 2
+    }
+  ],
+  "metadata": {
+    "description": "Early correct turns: consecutive shadow guesses that were correct before the winning guess",
+    "y_axis": "early_correct_turns"
+  }
+}
