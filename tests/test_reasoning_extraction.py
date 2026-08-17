@@ -802,6 +802,38 @@ def test_sdk_server_error_is_provider_unavailable(
         client.generate("Pick a card.")
 
 
+@pytest.mark.parametrize("status", [408, 409])
+def test_transient_status_codes_stay_provider_unavailable(
+    monkeypatch: pytest.MonkeyPatch, status: int
+) -> None:
+    """408 and 409 are retryable transients, not permanent refusals.
+
+    The SDK retries both as infrastructure signals (timeout, lock conflict);
+    classifying them as refusals would abort turns on transient contention,
+    and re-raising them bare skips the client retry loop into the generic
+    fallback path.
+    """
+    import httpx
+    from openai import APIStatusError
+
+    client = _subscription_client(reasoning_extraction="deep_think")
+    monkeypatch.setattr(openai_client, "time", _ClientTimeStub())
+
+    request = httpx.Request("POST", "https://chatgpt.com/backend-api")
+
+    def stalling_create(**kwargs: object) -> object:
+        raise APIStatusError(
+            f"HTTP {status}",
+            response=httpx.Response(status, request=request),
+            body=None,
+        )
+
+    monkeypatch.setattr(client.client.responses, "create", stalling_create)
+
+    with pytest.raises(ProviderUnavailableError, match=f"HTTP {status}"):
+        client.generate("Pick a card.")
+
+
 def test_moderation_rejection_is_a_terminal_provider_rejection(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

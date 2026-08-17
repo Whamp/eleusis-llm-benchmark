@@ -7,10 +7,15 @@ from typing import Any, cast
 
 import httpx
 import pytest
-from openai import BadRequestError
+from openai import (
+    APIStatusError,
+    BadRequestError,
+    InternalServerError,
+    RateLimitError,
+)
 
 from eleusis.benchmark_config import ModelConfig
-from eleusis.llm.base import ProviderRejectionError
+from eleusis.llm.base import ProviderRejectionError, ProviderUnavailableError
 from eleusis.llm.client_factory import create_client_from_config
 from eleusis.llm.openai_compat import OpenAICompatClient
 
@@ -106,6 +111,49 @@ def test_permanent_4xx_rejection_is_terminal_without_retry() -> None:
     with pytest.raises(ProviderRejectionError, match="Invalid prompt"):
         client._call_api([{"role": "user", "content": "hello"}])
     assert len(create_calls) == 1
+
+
+@pytest.mark.parametrize(
+    ("status", "error_type"),
+    [
+        (503, InternalServerError),
+        (429, RateLimitError),
+        (408, APIStatusError),
+        (409, APIStatusError),
+    ],
+)
+def test_transient_status_errors_retry_as_provider_unavailable(
+    monkeypatch: pytest.MonkeyPatch, status: int, error_type: type[Exception]
+) -> None:
+    """Transient HTTP statuses keep the client retry loop and capacity class.
+
+    5xx, 429, 408, and 409 are retryable infrastructure signals. A bare
+    re-raise skips the retry loop, lands in the player's generic error path,
+    and can end in a fabricated fallback card — the exact contamination this
+    policy exists to prevent.
+    """
+    from eleusis.llm import openai_compat
+
+    monkeypatch.setattr(openai_compat.time, "sleep", lambda _seconds: None)
+    client = _make_client()
+    client.max_retries = 3
+    request = httpx.Request("POST", "http://test.local/v1/chat/completions")
+    create_calls: list[dict[str, Any]] = []
+
+    def failing_create(**kwargs: object) -> list[_FakeChunk]:
+        create_calls.append(dict(kwargs))
+        body: dict[str, Any] = {"error": {"message": f"HTTP {status}"}}
+        raise error_type(
+            f"HTTP {status}",
+            response=httpx.Response(status, request=request, json=body),
+            body=body,
+        )
+
+    client.client.chat.completions.create = failing_create  # ty: ignore[invalid-assignment]
+
+    with pytest.raises(ProviderUnavailableError, match=f"HTTP {status}"):
+        client._call_api([{"role": "user", "content": "hello"}])
+    assert len(create_calls) == client.max_retries
 
 
 def test_factory_defaults_omit_reasoning_effort_and_extra_body() -> None:

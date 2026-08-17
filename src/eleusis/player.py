@@ -309,10 +309,11 @@ class LLMScientist:
         while model_failures < self.max_retries:
             evidence_number += 1
             attempt_number = evidence_number
-            if provider_streak:
+            if provider_streak and self.last_prompt is not None:
                 # Infrastructure failure: the scientific condition must not
-                # change, so resend the unmodified prompt.
-                prompt = base_prompt
+                # change, so resend the exact prompt that just failed —
+                # which may be a modified retry variant, not the base prompt.
+                prompt = self.last_prompt
             else:
                 prompt = self._retry_prompt(base_prompt, model_failures, last_cause)
             self.last_prompt = prompt

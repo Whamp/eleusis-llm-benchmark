@@ -380,3 +380,36 @@ class TestProviderUnavailableRetry:
 
         assert isinstance(action, PlayCardAction)
         assert action.card == Card(2, Suit.HEARTS)
+
+    def test_capacity_streak_resends_the_failing_prompt_variant(self) -> None:
+        """A capacity streak resends the exact prompt that failed, not base.
+
+        After a provider refusal, recovery happens on the modified retry
+        prompt; if capacity then drops, resending the original flagged
+        base prompt throws away the borderline-flag recovery and can burn
+        the remaining model budget on the refused text.
+        """
+        client = FakeLLMClient(
+            [
+                ProviderRejectionError("Invalid prompt: flagged"),
+                ProviderUnavailableError("peer closed connection"),
+                ProviderUnavailableError("peer closed connection"),
+                make_action_response("2♥"),
+            ]
+        )
+        scientist, _, state = _make_scientist(
+            client,
+            SAMPLE_HAND,
+            max_retries=3,
+            provider_retry_patience_seconds=60.0,
+        )
+
+        action = scientist.get_action(state)
+
+        assert isinstance(action, PlayCardAction)
+        assert action.card == Card(2, Suit.HEARTS)
+        prompts = client.prompts_seen
+        assert len(prompts) == 4
+        assert prompts[1] != prompts[0], "retry after rejection modifies prompt"
+        assert prompts[2] == prompts[1], "capacity streak resends failing variant"
+        assert prompts[3] == prompts[1], "streak continues the same prompt"

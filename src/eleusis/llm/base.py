@@ -185,6 +185,16 @@ class ProviderRejectionError(RuntimeError):
     """
 
 
+def is_permanent_rejection_status(status_code: int) -> bool:
+    """Classify one HTTP status as a permanent provider refusal.
+
+    408 (request timeout), 409 (lock conflict), and 429 (rate limit) are
+    retryable infrastructure signals the SDK itself retries; every other
+    4xx cannot succeed on an identical request.
+    """
+    return 400 <= status_code < 500 and status_code not in (408, 409, 429)
+
+
 class BaseLLMClient(ABC):
     """Abstract base class for LLM clients."""
 

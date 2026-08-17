@@ -40,6 +40,7 @@ from eleusis.llm.base import (
     LLMMessage,
     ProviderRejectionError,
     ProviderUnavailableError,
+    is_permanent_rejection_status,
 )
 from eleusis.llm.pi_auth import CODEX_BACKEND_BASE_URL, PiCodexAuth
 
@@ -374,6 +375,27 @@ class OpenAIClient(BaseLLMClient):
         )
         return choice, metrics
 
+    def _capacity_backoff_or_raise(self, error: Exception, attempt: int) -> None:
+        """Back off one capacity-scale failure, or exhaust to typed error.
+
+        Transport drops, stalled streams, SDK connection failures, 5xx,
+        429, and retryable status codes (408, 409) all mean the provider
+        cannot serve the request right now: back off long enough for
+        congestion to clear, then surface ProviderUnavailableError so the
+        player treats it as infrastructure, never as model behavior.
+        """
+        logger.warning(
+            f"{self.model_name} Attempt {attempt + 1}/{self.max_retries}"
+            f" provider unavailable: {error}"
+        )
+        if attempt < self.max_retries - 1:
+            time.sleep(min(15 * 2**attempt, 120))
+        else:
+            raise ProviderUnavailableError(
+                f"{self.model_name} provider unavailable after"
+                f" {self.max_retries} attempts: {error}"
+            ) from error
+
     def _request_once(
         self,
         input_messages: ResponseInputParam,
@@ -417,31 +439,18 @@ class OpenAIClient(BaseLLMClient):
                 InternalServerError,
                 RateLimitError,
             ) as e:
-                # Transport drops, stalled streams, SDK connection
-                # failures, 5xx, and 429 are provider-capacity failures:
-                # back off long enough for congestion to clear.
-                logger.warning(
-                    f"{self.model_name} Attempt {attempt + 1}/{self.max_retries}"
-                    f" provider unavailable: {e}"
-                )
-                if attempt < self.max_retries - 1:
-                    time.sleep(min(15 * 2**attempt, 120))
-                else:
-                    raise ProviderUnavailableError(
-                        f"{self.model_name} provider unavailable after"
-                        f" {self.max_retries} attempts: {e}"
-                    ) from e
+                self._capacity_backoff_or_raise(e, attempt)
             except APIStatusError as e:
                 # Permanent 4xx refusals (moderation flags, invalid prompts,
                 # auth) cannot succeed on an identical retry: fail the call
-                # immediately with the typed rejection. 5xx and 429 are
-                # capacity failures handled by the clause above.
-                if 400 <= e.status_code < 500 and e.status_code not in (408, 429):
+                # immediately with the typed rejection. Remaining statuses
+                # (408 timeout, 409 lock conflict) are capacity failures.
+                if is_permanent_rejection_status(e.status_code):
                     raise ProviderRejectionError(
                         f"{self.model_name} provider rejected the request"
                         f" (HTTP {e.status_code}): {e}"
                     ) from e
-                raise
+                self._capacity_backoff_or_raise(e, attempt)
             except APIError as e:
                 # The subscription backend has been observed reporting the
                 # moderation refusal without a usable status; match its

@@ -6,7 +6,13 @@ import time
 from collections.abc import Iterable
 from dataclasses import dataclass
 
-from openai import APIError, APIStatusError, OpenAI
+import httpx
+from openai import (
+    APIConnectionError,
+    APIError,
+    APIStatusError,
+    OpenAI,
+)
 from openai.types.chat import ChatCompletionChunk
 from openai.types.completion_usage import CompletionUsage
 
@@ -15,7 +21,9 @@ from eleusis.llm.base import (
     LLMCallMetrics,
     LLMMessage,
     ProviderRejectionError,
+    ProviderUnavailableError,
     estimate_reasoning_tokens,
+    is_permanent_rejection_status,
 )
 from eleusis.llm.openai_messages import build_openai_chat_messages
 
@@ -176,16 +184,26 @@ class OpenAICompatClient(BaseLLMClient):
 
                 return choice, metrics
 
+            except (
+                # Capacity-scale failures: transport drops, SDK-wrapped
+                # connection errors, 5xx, and 429 all mean the provider
+                # cannot serve the request right now.
+                ProviderUnavailableError,
+                httpx.HTTPError,
+                APIConnectionError,
+            ) as e:
+                self._capacity_backoff_or_raise(e, attempt)
             except APIStatusError as e:
                 # Permanent 4xx refusals (moderation, invalid request, auth)
                 # cannot succeed on an identical retry: fail immediately with
-                # the typed rejection. 5xx and 429 stay on the capacity path.
-                if 400 <= e.status_code < 500 and e.status_code not in (408, 429):
+                # the typed rejection. 5xx, 429, 408, and 409 are capacity
+                # failures handled by the backoff path.
+                if is_permanent_rejection_status(e.status_code):
                     raise ProviderRejectionError(
                         f"{self.model_name} provider rejected the request"
                         f" (HTTP {e.status_code}): {e}"
                     ) from e
-                raise
+                self._capacity_backoff_or_raise(e, attempt)
             except APIError as e:
                 logger.warning(
                     f"{self.model_name} Attempt {attempt + 1}/{self.max_retries}"
@@ -197,6 +215,20 @@ class OpenAICompatClient(BaseLLMClient):
                     raise
 
         raise RuntimeError("Max retries exceeded")
+
+    def _capacity_backoff_or_raise(self, error: Exception, attempt: int) -> None:
+        """Back off one capacity-scale failure, or exhaust to typed error."""
+        logger.warning(
+            f"{self.model_name} Attempt {attempt + 1}/{self.max_retries}"
+            f" provider unavailable: {error}"
+        )
+        if attempt < self.max_retries - 1:
+            time.sleep(min(15 * 2**attempt, 120))
+        else:
+            raise ProviderUnavailableError(
+                f"{self.model_name} provider unavailable after"
+                f" {self.max_retries} attempts: {error}"
+            ) from error
 
     @staticmethod
     def _consume_completion_stream(
