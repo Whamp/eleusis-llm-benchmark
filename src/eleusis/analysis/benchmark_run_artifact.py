@@ -31,6 +31,7 @@ from eleusis.round_record import (
     RoundRecordValidationError,
     validate_round_record_document,
 )
+from eleusis.shadow_verdict import validate_shadow_verdict_document
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +66,10 @@ def _strict_board_text(state: Mapping[str, object]) -> str:
     return " ".join(parts)
 
 
-def _strict_guess_legacy_view(guess_value: object) -> LegacyRecord | None:
+def _strict_guess_legacy_view(
+    guess_value: object,
+    verdicts_by_proposal: Mapping[str, Mapping[str, object]],
+) -> LegacyRecord | None:
     """Project one validated Guess Attempt into fields used by existing reports."""
     if not isinstance(guess_value, Mapping):
         return None
@@ -75,13 +79,30 @@ def _strict_guess_legacy_view(guess_value: object) -> LegacyRecord | None:
         return cast(LegacyRecord, guess)
     online = guess.get("online_evaluation")
     guess["shadow"] = True
-    guess["evaluated"] = isinstance(online, Mapping)
     if isinstance(online, Mapping):
+        guess["evaluated"] = True
         guess.update(online)
+        return cast(LegacyRecord, guess)
+    verdict = verdicts_by_proposal.get(cast(str, guess.get("proposal_id")))
+    if verdict is None:
+        guess["evaluated"] = False
+        return cast(LegacyRecord, guess)
+    result = cast(Mapping[str, object], verdict["verdict"])
+    evidence = cast(Mapping[str, object], verdict["evidence"])
+    guess["evaluated"] = True
+    guess["correct"] = result["correct"]
+    guess["reasoning"] = result["reasoning"]
+    guess["guessed_code"] = evidence.get("guessed_code")
+    guess["node_count"] = evidence.get("node_count")
+    guess["cyclomatic_complexity"] = evidence.get("cyclomatic_complexity")
     return cast(LegacyRecord, guess)
 
 
-def _strict_turn_legacy_view(turn: Mapping[str, object], player: str) -> LegacyRecord:
+def _strict_turn_legacy_view(
+    turn: Mapping[str, object],
+    player: str,
+    verdicts_by_proposal: Mapping[str, Mapping[str, object]],
+) -> LegacyRecord:
     """Project one strict Turn into the stable fields consumed by reports."""
     attempts = cast(list[Mapping[str, object]], turn["model_attempts"])
     usable = [
@@ -117,7 +138,9 @@ def _strict_turn_legacy_view(turn: Mapping[str, object], player: str) -> LegacyR
         "hand": [_strict_card_text(card) for card in hand],
         "llm_response": llm_response,
         "action_result": {"accepted": card_outcome["accepted"]},
-        "guess_attempt": _strict_guess_legacy_view(turn.get("guess_attempt")),
+        "guess_attempt": _strict_guess_legacy_view(
+            turn.get("guess_attempt"), verdicts_by_proposal
+        ),
         "tokens": tokens,
         "retry_count": len(retry_causes),
         "retry_causes": retry_causes,
@@ -151,6 +174,7 @@ def _strict_config_legacy_view(manifest: Mapping[str, object]) -> LegacyRecord:
 def _strict_round_legacy_view(
     record: Mapping[str, object],
     player: str,
+    verdicts_by_proposal: Mapping[str, Mapping[str, object]],
 ) -> LegacyRecord:
     """Project a validated completed Round while recomputing every derived value."""
     derived = BenchmarkRunStore.derive_round_values(record)
@@ -182,7 +206,10 @@ def _strict_round_legacy_view(
                 "answer_tokens": usage["answer_tokens"],
             }
         },
-        "turns": [_strict_turn_legacy_view(turn, player) for turn in turns],
+        "turns": [
+            _strict_turn_legacy_view(turn, player, verdicts_by_proposal)
+            for turn in turns
+        ],
         "wall_clock_seconds": usage["duration_seconds"],
     }
 
@@ -190,11 +217,18 @@ def _strict_round_legacy_view(
 def _strict_analysis_document(
     manifest: Mapping[str, object],
     records: list[dict[str, object]],
+    shadow_verdicts: list[dict[str, object]],
 ) -> LegacyRecord:
     """Build the existing report view from strict manifest and Round facts."""
     config = _strict_config_legacy_view(manifest)
     player = cast(str, config["player"])
-    rounds = [_strict_round_legacy_view(record, player) for record in records]
+    verdicts_by_proposal = {
+        cast(str, verdict["proposal_id"]): verdict for verdict in shadow_verdicts
+    }
+    rounds = [
+        _strict_round_legacy_view(record, player, verdicts_by_proposal)
+        for record in records
+    ]
     schedule = cast(list[Mapping[str, object]], manifest["schedule"])
     rules_library: list[LegacyRecord] = []
     seen_rules: set[tuple[object, object]] = set()
@@ -270,6 +304,7 @@ def _strict_artifact(
     *,
     artifact_source: Literal["json", "sqlite"],
     export_is_current: bool | None,
+    shadow_verdicts: list[dict[str, object]],
 ) -> AnalysisRunArtifact:
     """Build a strict analysis artifact and describe coexisting export freshness."""
     diagnostics: list[MigrationDiagnostic] = []
@@ -281,7 +316,7 @@ def _strict_artifact(
                 message="SQLite is authoritative; the coexisting JSON export is stale.",
             )
         )
-    document = _strict_analysis_document(manifest, records)
+    document = _strict_analysis_document(manifest, records, shadow_verdicts)
     document["_analysis_compatibility"] = {
         "source_format": "strict_round_record_export",
         "partial": False,
@@ -360,11 +395,27 @@ def _decode_strict_export(document: Mapping[str, object]) -> AnalysisRunArtifact
                 message=str(error),
             )
         )
+    verdicts_value = document.get("shadow_verdicts")
+    if not isinstance(verdicts_value, list):
+        verdicts_value = []
+    shadow_verdicts: list[dict[str, object]] = []
+    for index, verdict_value in enumerate(verdicts_value):
+        try:
+            shadow_verdicts.append(validate_shadow_verdict_document(verdict_value))
+        except ValueError as error:
+            return _unsupported_artifact(
+                MigrationDiagnostic(
+                    code="invalid_shadow_verdict",
+                    path=f"shadow_verdicts[{index}]",
+                    message=str(error),
+                )
+            )
     return _strict_artifact(
         manifest,
         records,
         artifact_source="json",
         export_is_current=None,
+        shadow_verdicts=shadow_verdicts,
     )
 
 
@@ -380,6 +431,7 @@ def read_analysis_run_artifact(run_folder: Path) -> AnalysisRunArtifact:
                 run_store.read_completed_rounds(),
                 artifact_source="sqlite",
                 export_is_current=status.is_current,
+                shadow_verdicts=run_store.read_shadow_verdicts(),
             )
         except BenchmarkRunStoreError as error:
             raise HistoricalRunCompatibilityError(

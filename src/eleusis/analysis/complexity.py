@@ -123,7 +123,10 @@ def plot_complexity_analysis(
     """
     setup_matplotlib_style()
 
-    df_binned = df.dropna(subset=["complexity_bin", "success_rate"])
+    bin_columns = [
+        column for column in ("complexity_bin", "success_rate") if column in df.columns
+    ]
+    df_binned = df.dropna(subset=bin_columns) if bin_columns else df.iloc[0:0]
 
     # Prepare JSON data
     plot_data = {
@@ -245,6 +248,22 @@ def analyze_complexity(
     tee.write("COMPLEXITY ANALYSIS\n")
     tee.write("=" * 60 + "\n\n")
 
+    complexity_columns = [
+        column
+        for column in ("cyclomatic_complexity", "node_count")
+        if column in df_rounds.columns
+    ]
+    has_complexity = bool(complexity_columns) and bool(
+        df_rounds[complexity_columns].notna().any().any()
+    )
+    if not has_complexity:
+        tee.write(
+            "No rule complexity metrics available; skipping complexity"
+            " trend fitting and quartile stats.\n\n"
+        )
+        plot_complexity_analysis(df_rounds, 0.0, output_folder)
+        return df_rounds
+
     df, optimal_k, correlation = compute_complexity_metrics(df_rounds)
 
     tee.write(f"Optimal K for aggregated complexity: {optimal_k:.2f}\n")
@@ -252,12 +271,6 @@ def analyze_complexity(
     tee.write(f"  Correlation with success_rate: {correlation:.3f}\n\n")
 
     # Summary stats by complexity bin
-    if "complexity_bin" not in df.columns or not df["complexity_bin"].notna().any():
-        tee.write(
-            "No rule complexity metrics available; skipping complexity"
-            " quartile stats and heatmap.\n\n"
-        )
-        return df
     df_binned = df.dropna(subset=["complexity_bin"])
     if len(df_binned) > 0:
         df_binned["floored_score"] = df_binned["score"].clip(lower=0)

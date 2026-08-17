@@ -16,8 +16,8 @@ def test_analyze_complexity_skips_binning_when_metrics_absent(tmp_path: Path) ->
     Loader frames always include the complexity columns, but every value can
     be NaN when no rule metrics were computable (for example historical JSON
     without an embedded rules library). analyze_complexity must skip the
-    binned stats and heatmap with an explicit note instead of crashing on a
-    missing complexity_bin column.
+    misleading optimal-k report and binned stats while still writing the
+    no-data outputs that scripts and the HTML report link to.
     """
     df = pd.DataFrame(
         {
@@ -37,4 +37,6 @@ def test_analyze_complexity_skips_binning_when_metrics_absent(tmp_path: Path) ->
     assert isinstance(enriched, pd.DataFrame)
     text = tee.getvalue()
     assert "No rule complexity metrics" in text
-    assert not (tmp_path / "complexity_analysis.png").exists()
+    assert "Optimal K" not in text
+    assert (tmp_path / "complexity_analysis.png").exists()
+    assert (tmp_path / "complexity_analysis.json").exists()

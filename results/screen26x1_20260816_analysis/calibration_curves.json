@@ -7,14 +7,29 @@
       "provider": "openai",
       "calibration_points": [
         {
+          "confidence_level": 5,
+          "actual_success_rate": 0.0,
+          "sample_count": 15
+        },
+        {
+          "confidence_level": 6,
+          "actual_success_rate": 0.15384615384615385,
+          "sample_count": 39
+        },
+        {
+          "confidence_level": 7,
+          "actual_success_rate": 0.37777777777777777,
+          "sample_count": 45
+        },
+        {
           "confidence_level": 8,
-          "actual_success_rate": 0.25,
-          "sample_count": 4
+          "actual_success_rate": 0.5,
+          "sample_count": 60
         },
         {
           "confidence_level": 9,
-          "actual_success_rate": 0.8,
-          "sample_count": 20
+          "actual_success_rate": 0.7916666666666666,
+          "sample_count": 24
         }
       ]
     }

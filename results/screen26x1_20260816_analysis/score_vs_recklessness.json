@@ -3,9 +3,9 @@
     {
       "name": "Gpt 5.6 Luna Deepthink",
       "avg_floored_score": 15.285714285714286,
-      "recklessness_index": 0.6666666666666666,
+      "recklessness_index": -2.03921568627451,
       "avg_failed_guesses": 0.3333333333333333,
-      "avg_caution": 0.0,
+      "avg_caution": 2.7058823529411766,
       "color": "#7EA8C4",
       "is_open": false,
       "provider": "openai"

@@ -55,7 +55,9 @@ def compute_double_down_rate(df_turns: pd.DataFrame) -> pd.DataFrame:
         wrong_guesses = 0
         next_turn_guesses = 0
 
-        for _round_num, round_turns in model_turns.groupby("round_number"):
+        for (_run, _round_num), round_turns in model_turns.groupby(
+            ["run", "round_number"]
+        ):
             round_wrong, round_follow_ups = _count_round_double_downs(round_turns)
             wrong_guesses += round_wrong
             next_turn_guesses += round_follow_ups
@@ -90,8 +92,8 @@ def compute_wrong_guess_streaks(df_turns: pd.DataFrame) -> pd.DataFrame:
 
     rows = []
 
-    for (model, round_num), round_turns in df_counting.groupby(
-        ["model", "round_number"]
+    for (model, _run, round_num), round_turns in df_counting.groupby(
+        ["model", "run", "round_number"]
     ):
         turns = round_turns.sort_values("turn_number")
 

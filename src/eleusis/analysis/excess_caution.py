@@ -25,8 +25,8 @@ def compute_early_correct_turns(df_turns: pd.DataFrame) -> pd.DataFrame:
     # Only look at successful rounds
     successful_rounds = df_turns[df_turns["round_success"]]
 
-    for (model, round_num), group in successful_rounds.groupby(
-        ["model", "round_number"]
+    for (model, run, round_num), group in successful_rounds.groupby(
+        ["model", "run", "round_number"]
     ):
         # Sort by turn number
         turns = group.sort_values("turn_number")
@@ -54,6 +54,7 @@ def compute_early_correct_turns(df_turns: pd.DataFrame) -> pd.DataFrame:
         rows.append(
             {
                 "model": model,
+                "run": run,
                 "round_number": round_num,
                 "early_correct_turns": early_correct,
                 "winning_turn": winning_turn_num,

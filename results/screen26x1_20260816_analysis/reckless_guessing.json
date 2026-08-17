@@ -10,14 +10,15 @@
       "next_turn_guesses": 2,
       "streaks": [
         1,
-        2,
+        1,
+        1,
         1,
         1,
         1,
         1
       ],
-      "mean_streak": 1.1666666666666667,
-      "max_streak": 2
+      "mean_streak": 1.0,
+      "max_streak": 1
     }
   ],
   "metadata": {

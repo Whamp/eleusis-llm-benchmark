@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 from typing import cast
 from unittest.mock import MagicMock
@@ -270,3 +271,86 @@ def test_shadow_verdict_identity_includes_all_judge_client_settings(
         verdict_ids.add(verdict["verdict_id"])
 
     assert len(verdict_ids) == 3
+
+
+def _store_one_offline_verdict(
+    monkeypatch: MonkeyPatch, tmp_path: Path
+) -> BenchmarkRunStore:
+    """Complete one offline-shadow Round and append its verdict sidecar."""
+    from scripts.evaluate_shadows import evaluate_and_store_shadow_verdicts
+
+    run_store, completed = _complete_offline_shadow_round(monkeypatch, tmp_path)
+    compiler = FakeLLMClient()
+    compiler.convert_rule_to_code = MagicMock(
+        return_value={
+            "code": "return card.rank % 2 == 0",
+            "status": "success",
+            "attempts": 1,
+            "sleep_cycles": 0,
+            "provider_used": "fake/judge-v1",
+            "cache_hit": False,
+        }
+    )
+    evaluate_and_store_shadow_verdicts(
+        run_store,
+        [completed],
+        compiler,
+        judge_identity={"provider": "fake", "model": "judge-v1"},
+        behavior_fingerprint="a" * 64,
+        settings={
+            "num_simulations": 1,
+            "turns_per_simulation": 2,
+            "simulation_seed": 19,
+            "compiler_max_retries": 0,
+            "compiler_temperature": 0.25,
+            "llm_max_tokens": 4096,
+            "llm_seed": 23,
+        },
+    )
+    return run_store
+
+
+def _shadow_guesses(
+    analysis_document: dict[str, object],
+) -> list[dict[str, object]]:
+    return [
+        cast(dict[str, object], turn["guess_attempt"])
+        for round_data in cast(list[dict[str, object]], analysis_document["rounds"])
+        for turn in cast(list[dict[str, object]], round_data["turns"])
+        if isinstance(turn.get("guess_attempt"), dict)
+        and cast(dict[str, object], turn["guess_attempt"]).get("shadow")
+    ]
+
+
+def test_analysis_views_join_offline_shadow_verdicts(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Offline verdict sidecars must reach report guesses in both read paths.
+
+    Strict Rounds persist offline Shadow Guesses unevaluated and store verdicts
+    as immutable sidecars. Analysis views that never join them make every
+    strict-run shadow look unevaluated, which empties early-correct-turn,
+    no-stakes-shadow, and complexity-ratio analyses.
+    """
+    from eleusis.analysis.benchmark_run_artifact import read_analysis_run_artifact
+
+    run_store = _store_one_offline_verdict(monkeypatch, tmp_path)
+
+    artifact = read_analysis_run_artifact(run_store.run_folder)
+    assert artifact.analysis_document is not None
+    shadows = _shadow_guesses(artifact.analysis_document)
+    assert shadows
+    assert all(shadow.get("evaluated") for shadow in shadows)
+    assert all(shadow.get("correct") is True for shadow in shadows)
+    assert all(isinstance(shadow.get("node_count"), int) for shadow in shadows)
+
+    portable = tmp_path / "portable_export_only"
+    shutil.copytree(run_store.run_folder, portable)
+    (portable / "benchmark_run.sqlite3").unlink()
+    json_artifact = read_analysis_run_artifact(portable)
+    assert json_artifact.analysis_document is not None
+    json_shadows = _shadow_guesses(json_artifact.analysis_document)
+    assert json_shadows
+    assert all(shadow.get("evaluated") for shadow in json_shadows)
+    assert all(shadow.get("correct") is True for shadow in json_shadows)

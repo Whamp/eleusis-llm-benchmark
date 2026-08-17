@@ -6,8 +6,8 @@
       "is_open": false,
       "provider": "openai",
       "avg_floored_score": 15.285714285714286,
-      "avg_no_stakes_score": 25.238095238095237,
-      "no_stakes_delta": 9.95238095238095
+      "avg_no_stakes_score": 18.476190476190474,
+      "no_stakes_delta": 3.190476190476188
     }
   ],
   "metadata": {

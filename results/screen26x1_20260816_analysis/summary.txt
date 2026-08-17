@@ -30,7 +30,7 @@ BASIC MODEL COMPARISON
 ============================================================
 
                  model  rounds_played  total_score  avg_score  total_floored_score  avg_floored_score  total_turns  total_output_tokens  total_wall_clock  avg_failed_guesses  success_rate  counting_output_tokens  total_no_stakes_score  avg_no_stakes_score  avg_output_tokens_per_turn  wall_clock_per_turn  intra_rule_variance  inter_rule_variance  variance_ratio
-Gpt 5.6 Luna Deepthink             21          311  14.809524                  321          15.285714          308               106135       2520.774594            0.333333      0.809524                  103628                    530            25.238095                  336.454545             8.184333                  NaN            76.914286             NaN
+Gpt 5.6 Luna Deepthink             21          311  14.809524                  321          15.285714          308               106135       2520.774594            0.333333      0.809524                  103628                  388.0             18.47619                  336.454545             8.184333                  NaN            76.914286             NaN
 
 Saved: results/screen26x1_20260816_analysis/basic_metrics.csv
 Saved: results/screen26x1_20260816_analysis/overall_performance.png
@@ -101,11 +101,11 @@ Early Correct Turns: consecutive correct shadow guesses before winning guess
 (Only counts successful rounds where model eventually guessed correctly)
 
                  Model  Rounds  Mean  Median  % with Early
-Gpt 5.6 Luna Deepthink       2   0.0     0.0           0.0
+Gpt 5.6 Luna Deepthink      17  2.71     1.0          58.8
 
-Overall: 0 total early correct turns across 2 successful rounds
-Mean: 0.00, Median: 0.0
-0/2 (0.0%) rounds had at least 1 early correct turn
+Overall: 46 total early correct turns across 17 successful rounds
+Mean: 2.71, Median: 1.0
+10/17 (58.8%) rounds had at least 1 early correct turn
 
 Saved: results/screen26x1_20260816_analysis/excess_caution.png
 Saved: results/screen26x1_20260816_analysis/excess_caution.json
@@ -126,9 +126,15 @@ Gpt 5.6 Luna Deepthink              7                  2           28.6
 
 Wrong Guess Streak Statistics:
                  Model  Streaks  Mean Length  Max Length  Total Wrong
-Gpt 5.6 Luna Deepthink        6         1.17           2            7
+Gpt 5.6 Luna Deepthink        7          1.0           1            7
 
-Longest streak: 2 consecutive wrong guesses
+Longest streak: 1 consecutive wrong guesses
+  - Gpt 5.6 Luna Deepthink in round 1
+  - Gpt 5.6 Luna Deepthink in round 1
+  - Gpt 5.6 Luna Deepthink in round 1
+  - Gpt 5.6 Luna Deepthink in round 1
+  - Gpt 5.6 Luna Deepthink in round 1
+  - Gpt 5.6 Luna Deepthink in round 1
   - Gpt 5.6 Luna Deepthink in round 1
 
 Saved: results/screen26x1_20260816_analysis/reckless_guessing.png
@@ -138,22 +144,22 @@ Saved: results/screen26x1_20260816_analysis/reckless_guessing.json
 COMPLEXITY RATIO ANALYSIS
 ============================================================
 
-Analyzed 26 tentative rules with confidence >= 5
+Analyzed 185 tentative rules with confidence >= 5
 Using optimal k = 0.010 for aggregated complexity
 
 Complexity Ratio by Model:
 (Ratio = Tentative Complexity / Actual Complexity)
 
-                 Model  Median   Q25  Q75  Count
-Gpt 5.6 Luna Deepthink     1.0 0.981  1.0     26
+                 Model  Median   Q25   Q75  Count
+Gpt 5.6 Luna Deepthink   0.982 0.649 1.281    185
 
 Interpretation:
   - Ratio > 1: Model tends to overcomplicate rules
   - Ratio < 1: Model tends to oversimplify rules
   - Ratio ≈ 1: Model matches actual rule complexity
 
-Highest median: Gpt 5.6 Luna Deepthink (1.000)
-Lowest median: Gpt 5.6 Luna Deepthink (1.000)
+Highest median: Gpt 5.6 Luna Deepthink (0.982)
+Lowest median: Gpt 5.6 Luna Deepthink (0.982)
 
 Saved: results/screen26x1_20260816_analysis/complexity_ratio.png
 Saved: results/screen26x1_20260816_analysis/complexity_ratio.json

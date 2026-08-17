@@ -2,7 +2,7 @@
   "models": [
     {
       "name": "Gpt 5.6 Luna Deepthink",
-      "avg_early_correct_turns": 0.0,
+      "avg_early_correct_turns": 2.7058823529411766,
       "avg_failed_guesses": 0.3333333333333333,
       "color": "#7EA8C4",
       "is_open": false,

@@ -9,10 +9,10 @@
       "name": "Gpt 5.6 Luna Deepthink",
       "color": "#7EA8C4",
       "is_open": false,
-      "median_ratio": 1.0,
-      "q25": 0.9814505516752708,
-      "q75": 1.0,
-      "count": 26
+      "median_ratio": 0.9824561403508771,
+      "q25": 0.6492753623188406,
+      "q75": 1.2808988764044944,
+      "count": 185
     }
   ]
 }

@@ -145,6 +145,7 @@ def build_rounds_dataframe(
                 {
                     "model": model,
                     "model_spec": model_spec,
+                    "run": result.get("_folder", ""),
                     "round_number": round_data["round_number"],
                     "success": round_data["success"],
                     "score": round_data["score"],
@@ -225,6 +226,7 @@ def build_turns_dataframe(results: LegacyResults) -> pd.DataFrame:
                 rows.append(
                     {
                         "model": model,
+                        "run": result.get("_folder", ""),
                         "round_number": round_data["round_number"],
                         "turn_number": turn_num,
                         "confidence_level": llm_resp.get("confidence_level"),

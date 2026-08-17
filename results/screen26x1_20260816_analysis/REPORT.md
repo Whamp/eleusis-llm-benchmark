@@ -3,7 +3,7 @@
 **Run family:** `solo_evaluation_20260816_210723_screen26x1_w{0..12}` · started 2026-08-16
 **Benchmark model:** `gpt-5.6-luna-deepthink` (ChatGPT Codex subscription via pi auth, effort `none`, deep-think scratchpad extraction)
 **Rule compiler:** Novita `openai/gpt-oss-120b` (medium) via OpenRouter, fallback waterfall
-**Code provenance:** workers pinned to revision `fb6a607`; shadow evaluation and this report produced at `cfd7972` + the two analysis fixes below
+**Code provenance:** workers pinned to revision `fb6a607`; shadow evaluation, this report, and the analysis fixes below produced at `2d6ca49` + the review follow-up commit
 **Purpose:** first end-to-end pipeline exercise — gameplay, Round Records, crash-resume, parallel workers, offline Shadow Guess evaluation, and analysis reporting — ahead of the real study.
 
 ## Scope
@@ -38,7 +38,7 @@ reasoning evidence is the deep-think scratchpad text as captured at runtime.
 | Total turns | 318 |
 | Total output tokens | 106,135 (~336 / turn) |
 | Output-token trend, early → late turns | 303 → 154 (−49.3%) |
-| Wrong formal guesses | 7 (max streak 2; double-down rate 28.6%) |
+| Wrong formal guesses | 7 (max streak 1; double-down rate 28.6%) |
 | Complexity → success correlation | −0.552 (Q1–Q2 quartiles 100% win, Q3–Q4 60%) |
 
 Full tables and charts: `summary.txt`, `basic_metrics.csv`, `*.png` / `*.json`
@@ -92,18 +92,39 @@ genuine crash-resume drill), 13-worker parallel execution with per-worker
 seeding, offline Shadow Verdict sidecars with judge-identity provenance,
 SQLite-authoritative analysis views, and full report generation.
 
-Two defects surfaced by this run, fixed test-first (226 tests green):
+Five defects surfaced around this run, all fixed test-first (228 tests green) —
+two during generation, three found by an independent post-commit review:
 
 1. **Strict analysis views lacked rule complexity metrics.** Legacy
    `results.json` embedded `node_count` / `cyclomatic_complexity` per rule;
    strict Round Records persist only the rule code, and the analysis view
    didn't recompute them. Complexity analysis now derives them from the
    scheduled rule code (`benchmark_run_artifact.py`), and
-   `analyze_complexity` skips binning with an explicit note when no
-   complexity data exists instead of raising `KeyError`
-   (`complexity.py`). Tests:
-   `test_strict_analysis_view_computes_rule_complexity_metrics`,
-   `test_analyze_complexity_skips_binning_when_metrics_absent`.
+   `analyze_complexity` skips trend fitting with an explicit note when no
+   complexity data exists instead of raising `KeyError` (`complexity.py`).
+2. **Strict analysis views dropped offline Shadow Verdicts.** The view only
+   projected online evaluations, so every strict-run shadow looked
+   unevaluated and early-correct/no-stakes-shadow/complexity-ratio analyses
+   saw nothing. Both read paths (SQLite and portable export) now join
+   verdict sidecars onto their proposals.
+3. **Round identity collapsed parallel workers.** Analyses grouped rounds by
+   (model, round_number); 13 workers reusing round numbers 1–2 collapsed
+   into 2 pseudo-rounds, contaminating no-stakes scores (failed rounds
+   inherited the fastest worker's first-correct turn) and manufacturing a
+   phantom 2-wrong-guess streak across a round boundary. Rounds are now
+   keyed by run folder as well.
+
+Corrected derived outputs (vs the initially committed ones): excess caution
+now reports 17 successful rounds with 58.8% showing early correct shadow
+turns (mean 2.71 consecutive); avg no-stakes score 18.48 (was 25.24);
+complexity ratio now covers 185 tentative shadow rules (median 0.982,
+Q25 0.649, Q75 1.281) instead of 26 formal guesses; wrong-guess max streak
+is 1 (was 2). Headline metrics (score, success rate, tokens, complexity
+correlation) were unaffected. Tests:
+`test_strict_analysis_view_computes_rule_complexity_metrics`,
+`test_analyze_complexity_skips_binning_when_metrics_absent`,
+`test_analysis_views_join_offline_shadow_verdicts`,
+`test_first_correct_and_no_stakes_stay_per_run`.
 
 ## Artifacts
 
