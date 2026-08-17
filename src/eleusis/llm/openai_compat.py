@@ -6,7 +6,7 @@ import time
 from collections.abc import Iterable
 from dataclasses import dataclass
 
-from openai import APIError, OpenAI
+from openai import APIError, APIStatusError, OpenAI
 from openai.types.chat import ChatCompletionChunk
 from openai.types.completion_usage import CompletionUsage
 
@@ -14,6 +14,7 @@ from eleusis.llm.base import (
     BaseLLMClient,
     LLMCallMetrics,
     LLMMessage,
+    ProviderRejectionError,
     estimate_reasoning_tokens,
 )
 from eleusis.llm.openai_messages import build_openai_chat_messages
@@ -175,6 +176,16 @@ class OpenAICompatClient(BaseLLMClient):
 
                 return choice, metrics
 
+            except APIStatusError as e:
+                # Permanent 4xx refusals (moderation, invalid request, auth)
+                # cannot succeed on an identical retry: fail immediately with
+                # the typed rejection. 5xx and 429 stay on the capacity path.
+                if 400 <= e.status_code < 500 and e.status_code not in (408, 429):
+                    raise ProviderRejectionError(
+                        f"{self.model_name} provider rejected the request"
+                        f" (HTTP {e.status_code}): {e}"
+                    ) from e
+                raise
             except APIError as e:
                 logger.warning(
                     f"{self.model_name} Attempt {attempt + 1}/{self.max_retries}"

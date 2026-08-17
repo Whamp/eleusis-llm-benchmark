@@ -5,7 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, cast
 
+import httpx
+import pytest
+from openai import BadRequestError
+
 from eleusis.benchmark_config import ModelConfig
+from eleusis.llm.base import ProviderRejectionError
 from eleusis.llm.client_factory import create_client_from_config
 from eleusis.llm.openai_compat import OpenAICompatClient
 
@@ -74,6 +79,33 @@ def _call_and_capture(client: OpenAICompatClient) -> dict[str, Any]:
     )
     assert result[0].message.content == "hi"
     return fake.kwargs
+
+
+def test_permanent_4xx_rejection_is_terminal_without_retry() -> None:
+    """A 400 provider refusal must fail the call on its first attempt.
+
+    Retrying an identical rejected request is futile and stretches outages;
+    the player needs the typed ProviderRejectionError to abort instead of
+    fabricating a fallback card.
+    """
+    client = _make_client()
+    client.max_retries = 3
+    request = httpx.Request("POST", "http://test.local/v1/chat/completions")
+    create_calls: list[dict[str, Any]] = []
+
+    def rejected_create(**kwargs: object) -> list[_FakeChunk]:
+        create_calls.append(dict(kwargs))
+        raise BadRequestError(
+            "Invalid prompt: flagged",
+            response=httpx.Response(400, request=request),
+            body=None,
+        )
+
+    client.client.chat.completions.create = rejected_create  # ty: ignore[invalid-assignment]
+
+    with pytest.raises(ProviderRejectionError, match="Invalid prompt"):
+        client._call_api([{"role": "user", "content": "hello"}])
+    assert len(create_calls) == 1
 
 
 def test_factory_defaults_omit_reasoning_effort_and_extra_body() -> None:

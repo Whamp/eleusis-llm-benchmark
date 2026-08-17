@@ -80,6 +80,8 @@ class _ModelAttemptRecord(_StrictRoundRecordModel):
         "truncated",
         "structured_response_parse_error",
         "provider_error",
+        "provider_unavailable",
+        "provider_rejected",
     ]
     retry_cause: str | None
     started_at: float

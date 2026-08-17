@@ -7,7 +7,11 @@ from typing import cast
 import pytest
 
 from eleusis.evaluation_results import TurnRecord
-from eleusis.llm.base import TruncationError
+from eleusis.llm.base import (
+    ProviderRejectionError,
+    ProviderUnavailableError,
+    TruncationError,
+)
 from eleusis.round_continuation import capture_round_continuation
 from eleusis.round_execution import RoundRuntime, execute_round_turn
 from eleusis.round_record import (
@@ -179,6 +183,62 @@ def test_round_record_preserves_model_attempt_outcomes_and_provider_calls() -> N
         "selected_card": selected.to_canonical_card_data(),
         "model_attempt_number": 5,
     }
+
+
+def test_round_record_accepts_provider_class_interpretations(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Provider-capacity and provider-rejection attempts commit with their turns.
+
+    A turn that recovers from a capacity failure and a provider rejection
+    carries both interpretations in its Model Attempts; strict Round Record
+    validation rejected them, wedging every worker whose provider hiccuped
+    mid-turn. They must persist alongside genuine model failures.
+    """
+    runtime = _build_round_runtime()
+    runtime.scientist.max_retries = 5
+    runtime.scientist.provider_retry_patience_seconds = 60.0
+    runtime.scientist.provider_retry_backoff_seconds = 0.0
+    client = runtime.scientist_client
+    assert isinstance(client, FakeLLMClient)
+    selected = runtime.game_state.player.hand.get_all_cards()[0]
+    client.responses.extend(
+        [
+            ProviderUnavailableError("peer closed connection"),
+            ProviderRejectionError("Invalid prompt: flagged"),
+            make_action_response(str(selected)),
+        ]
+    )
+    before = capture_round_continuation(runtime, [], next_turn_index=0)
+
+    turn_record, _result = execute_round_turn(runtime, 0)
+    after = capture_round_continuation(runtime, [turn_record], next_turn_index=1)
+    active = create_active_round_record(
+        _manifest(runtime),
+        runtime,
+        effective_round_seed=8675309,
+        batch_round_index=0,
+    )
+    with_turn = append_round_record_turn(
+        active,
+        before,
+        after,
+        turn_record,
+        runtime,
+    )
+
+    turn = cast(list[dict[str, object]], with_turn["turns"])[0]
+    attempts = cast(list[dict[str, object]], turn["model_attempts"])
+    assert [attempt["interpretation"] for attempt in attempts] == [
+        "provider_unavailable",
+        "provider_rejected",
+        "usable_action",
+    ]
+    assert [attempt["retry_cause"] for attempt in attempts] == [
+        "provider_unavailable",
+        "provider_rejected",
+        None,
+    ]
 
 
 def test_round_record_represents_unavailable_raw_completion_explicitly() -> None:

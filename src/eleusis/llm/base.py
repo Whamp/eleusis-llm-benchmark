@@ -174,6 +174,17 @@ class ProviderUnavailableError(RuntimeError):
     """
 
 
+class ProviderRejectionError(RuntimeError):
+    """Raised when the provider permanently refuses the request.
+
+    Covers 4xx refusals such as moderation flags, invalid prompts, and auth
+    failures. Identical retries cannot succeed, so clients raise this on the
+    first attempt. The player may retry with a modified prompt (borderline
+    flags can clear), but exhaustion must abort the turn rather than
+    fabricate fallback content: the provider never produced model output.
+    """
+
+
 class BaseLLMClient(ABC):
     """Abstract base class for LLM clients."""
 

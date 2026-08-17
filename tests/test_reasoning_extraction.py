@@ -43,7 +43,11 @@ import pytest
 
 from eleusis.benchmark_config import ModelConfig
 from eleusis.llm import openai_client
-from eleusis.llm.base import LLMCallMetrics, ProviderUnavailableError
+from eleusis.llm.base import (
+    LLMCallMetrics,
+    ProviderRejectionError,
+    ProviderUnavailableError,
+)
 from eleusis.llm.client_factory import create_client
 from eleusis.llm.openai_client import (
     DEEP_THINK_TOOL,
@@ -798,13 +802,15 @@ def test_sdk_server_error_is_provider_unavailable(
         client.generate("Pick a card.")
 
 
-def test_moderation_rejection_is_not_provider_unavailable(
+def test_moderation_rejection_is_a_terminal_provider_rejection(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Hardening H2: policy rejections stay model-visible failures.
+    """Hardening H2: policy rejections are terminal, not capacity or model.
 
-    A 400 'Invalid prompt' is a policy failure, not capacity; it must keep
-    the existing APIError path so the player records a model failure.
+    A 400 'Invalid prompt' is a provider refusal. It must surface as
+    ProviderRejectionError on the first attempt — no identical-request retry
+    loop — and stay distinct from ProviderUnavailableError so the player can
+    abort on exhaustion instead of fabricating a fallback card.
     """
     import httpx
     from openai import BadRequestError
@@ -813,8 +819,10 @@ def test_moderation_rejection_is_not_provider_unavailable(
     monkeypatch.setattr(openai_client, "time", _ClientTimeStub())
 
     request = httpx.Request("POST", "https://chatgpt.com/backend-api")
+    create_calls = []
 
     def rejected_create(**kwargs: object) -> object:
+        create_calls.append(kwargs)
         raise BadRequestError(
             "Invalid prompt: flagged",
             response=httpx.Response(400, request=request),
@@ -823,10 +831,9 @@ def test_moderation_rejection_is_not_provider_unavailable(
 
     monkeypatch.setattr(client.client.responses, "create", rejected_create)
 
-    from openai import APIError
-
-    with pytest.raises(APIError):
+    with pytest.raises(ProviderRejectionError, match="Invalid prompt"):
         client.generate("Pick a card.")
+    assert len(create_calls) == 1
 
 
 def test_response_failed_event_is_provider_unavailable(

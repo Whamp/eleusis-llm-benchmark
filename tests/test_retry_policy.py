@@ -16,7 +16,11 @@ import pytest
 from eleusis.game.cards import Card, Suit
 from eleusis.game.engine import GameEngine, PlayCardAction, Rule
 from eleusis.game.state import GameState
-from eleusis.llm.base import ProviderUnavailableError, TruncationError
+from eleusis.llm.base import (
+    ProviderRejectionError,
+    ProviderUnavailableError,
+    TruncationError,
+)
 from eleusis.player import LLMScientist
 from tests.conftest import FakeLLMClient, make_action_response
 
@@ -317,3 +321,62 @@ class TestProviderUnavailableRetry:
         assert isinstance(action, PlayCardAction)
         assert action.card == Card(2, Suit.HEARTS)
         assert len(client.prompts_seen) == 4
+
+    def test_provider_rejection_exhaustion_aborts_instead_of_fallback(self) -> None:
+        """Deterministic provider rejections must never fabricate a card.
+
+        A provider that refuses the prompt (moderation, invalid request) is
+        not model behavior. Exhausting retries on refusals used to play a
+        random fallback card, contaminating 37 turns in the screen26x1 run;
+        the turn must abort so the Round stays resumable instead.
+        """
+        client = FakeLLMClient(
+            [
+                ProviderRejectionError("Invalid prompt: flagged as violating usage"),
+                ProviderRejectionError("Invalid prompt: flagged as violating usage"),
+                ProviderRejectionError("Invalid prompt: flagged as violating usage"),
+            ]
+        )
+        scientist, _, state = _make_scientist(client, SAMPLE_HAND, max_retries=3)
+
+        with pytest.raises(RuntimeError, match="provider rejected"):
+            scientist.get_action(state)
+
+        causes = [attempt["retry_cause"] for attempt in scientist.last_model_attempts]
+        assert causes == ["provider_rejected"] * 3
+
+    def test_provider_rejection_then_model_failure_still_falls_back(self) -> None:
+        """Fallback stays sanctioned when the final failure is model-side.
+
+        A borderine rejection can clear on the modified retry prompt; if the
+        model then produces unparseable output, the retry-exhausted fallback
+        is a recorded model-behavior event and must keep working.
+        """
+        client = FakeLLMClient(
+            [
+                ProviderRejectionError("Invalid prompt: flagged"),
+                make_action_response("not_a_card"),
+                make_action_response("not_a_card"),
+                make_action_response("not_a_card"),
+            ]
+        )
+        scientist, _, state = _make_scientist(client, SAMPLE_HAND, max_retries=3)
+
+        action = scientist.get_action(state)
+
+        assert isinstance(action, PlayCardAction)
+        assert action.card in SAMPLE_HAND
+        causes = [attempt["retry_cause"] for attempt in scientist.last_model_attempts]
+        assert causes == ["provider_rejected", "card_parse_error", "card_parse_error"]
+
+    def test_provider_rejection_recovers_on_modified_prompt(self) -> None:
+        """A single borderline rejection clears on the retry prompt."""
+        client = FakeLLMClient(
+            [ProviderRejectionError("Invalid prompt"), make_action_response("2♥")]
+        )
+        scientist, _, state = _make_scientist(client, SAMPLE_HAND, max_retries=3)
+
+        action = scientist.get_action(state)
+
+        assert isinstance(action, PlayCardAction)
+        assert action.card == Card(2, Suit.HEARTS)

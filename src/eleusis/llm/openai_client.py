@@ -15,6 +15,7 @@ import httpx
 from openai import (
     APIConnectionError,
     APIError,
+    APIStatusError,
     InternalServerError,
     OpenAI,
     RateLimitError,
@@ -37,6 +38,7 @@ from eleusis.llm.base import (
     BaseLLMClient,
     LLMCallMetrics,
     LLMMessage,
+    ProviderRejectionError,
     ProviderUnavailableError,
 )
 from eleusis.llm.pi_auth import CODEX_BACKEND_BASE_URL, PiCodexAuth
@@ -409,8 +411,6 @@ class OpenAIClient(BaseLLMClient):
                 # Capacity-scale failures: transport drops, SDK-wrapped
                 # connection/timeout errors, 5xx, and 429 rate limiting all
                 # mean the provider cannot serve the request right now.
-                # Policy rejections (4xx, moderation) stay on the APIError
-                # path below so the player records a model failure.
                 ProviderUnavailableError,
                 httpx.HTTPError,
                 APIConnectionError,
@@ -431,7 +431,25 @@ class OpenAIClient(BaseLLMClient):
                         f"{self.model_name} provider unavailable after"
                         f" {self.max_retries} attempts: {e}"
                     ) from e
+            except APIStatusError as e:
+                # Permanent 4xx refusals (moderation flags, invalid prompts,
+                # auth) cannot succeed on an identical retry: fail the call
+                # immediately with the typed rejection. 5xx and 429 are
+                # capacity failures handled by the clause above.
+                if 400 <= e.status_code < 500 and e.status_code not in (408, 429):
+                    raise ProviderRejectionError(
+                        f"{self.model_name} provider rejected the request"
+                        f" (HTTP {e.status_code}): {e}"
+                    ) from e
+                raise
             except APIError as e:
+                # The subscription backend has been observed reporting the
+                # moderation refusal without a usable status; match its
+                # wording so it still reaches the typed rejection path.
+                if "invalid prompt" in str(e).lower():
+                    raise ProviderRejectionError(
+                        f"{self.model_name} provider rejected the request: {e}"
+                    ) from e
                 logger.warning(
                     f"{self.model_name} Attempt {attempt + 1}/{self.max_retries}"
                     f" failed: {e}"

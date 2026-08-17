@@ -12,7 +12,11 @@ from typing import TYPE_CHECKING, cast
 from typing_extensions import TypedDict
 
 from eleusis.game.cards import Card, Suit
-from eleusis.llm.base import ProviderUnavailableError, TruncationError
+from eleusis.llm.base import (
+    ProviderRejectionError,
+    ProviderUnavailableError,
+    TruncationError,
+)
 
 __all__ = ["LLMScientist"]
 
@@ -160,6 +164,25 @@ class LLMScientist:
                 "answer_tokens": metric.answer_tokens,
             },
         }
+
+    def _classify_model_failure(
+        self, error: Exception, attempt_number: int
+    ) -> tuple[str, str]:
+        """Classify one model-side failure and log it with stable wording."""
+        if isinstance(error, TruncationError):
+            cause = "max_token_reached"
+            interpretation = "truncated"
+        elif isinstance(error, ProviderRejectionError):
+            cause = "provider_rejected"
+            interpretation = "provider_rejected"
+        else:
+            cause = "structured_response_parse_error"
+            interpretation = "structured_response_parse_error"
+        logger.warning(
+            f"{self.name} attempt {attempt_number}: {cause} -"
+            f" {type(error).__name__}: {error}"
+        )
+        return cause, interpretation
 
     def _record_provider_failure_or_abort(
         self,
@@ -319,18 +342,9 @@ class LLMScientist:
                     f"{self.name} attempt {attempt_number}: {cause} - "
                     f"card='{card_value}'"
                 )
-            except TruncationError as error:
-                cause = "max_token_reached"
-                interpretation = "truncated"
-                logger.warning(
-                    f"{self.name} attempt {attempt_number}: {cause} - {error}"
-                )
-            except (json.JSONDecodeError, TypeError) as error:
-                cause = "structured_response_parse_error"
-                interpretation = "structured_response_parse_error"
-                logger.warning(
-                    f"{self.name} attempt {attempt_number}: {cause} - "
-                    f"{type(error).__name__}: {error}"
+            except (TruncationError, json.JSONDecodeError, TypeError) as error:
+                cause, interpretation = self._classify_model_failure(
+                    error, attempt_number
                 )
             except ProviderUnavailableError as error:
                 # Infrastructure failure: never the model's fault, never a
@@ -357,6 +371,13 @@ class LLMScientist:
                 provider_streak += 1
                 time.sleep(self.provider_retry_backoff_seconds)
                 continue
+            # A provider refusal (moderation, invalid request) is not model
+            # behavior: consume a retry with the modified prompt — borderline
+            # flags can clear — but never end a turn on a fabricated card.
+            except ProviderRejectionError as error:
+                cause, interpretation = self._classify_model_failure(
+                    error, attempt_number
+                )
             # The player retry boundary records arbitrary provider failures.
             except Exception as error:  # ruff: ignore[blind-except]
                 cause = "other_error"
@@ -379,6 +400,28 @@ class LLMScientist:
             self.last_retry_count = attempt_number
             self.last_retry_causes.append({"attempt": attempt_number, "cause": cause})
 
+        return self._retry_exhausted_action(last_cause, hand_cards)
+
+    def _retry_exhausted_action(
+        self,
+        last_cause: str | None,
+        hand_cards: list[Card],
+    ) -> Action:
+        """Finish a turn whose model retries ran out.
+
+        A final provider refusal means the model never produced output, so a
+        random card would fabricate benchmark evidence: abort and leave the
+        Round resumable. Genuine model-output failures keep the sanctioned
+        explicit Fallback Decision.
+        """
+        from eleusis.game.engine import PlayCardAction
+
+        if last_cause == "provider_rejected":
+            raise RuntimeError(
+                f"{self.name} provider rejected the prompt after"
+                f" {self.max_retries} failed attempts; aborting instead of"
+                " playing a random fallback card"
+            )
         logger.warning(
             f"{self.name} using random fallback after {self.max_retries} failed"
             " attempts"
