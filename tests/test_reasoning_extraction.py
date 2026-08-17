@@ -544,13 +544,13 @@ class _ClientTimeStub:
         self.sleeps.append(seconds)
 
 
-def test_stalled_stream_hits_wall_clock_deadline(
+def test_stalled_stream_hits_inactivity_deadline(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """C9: a stream that never delivers events is bounded by a deadline.
 
     A capacity-starved backend can trickle keepalive bytes forever, which
-    resets per-read timeouts; only a wall-clock deadline bounds the attempt.
+    resets per-read timeouts; only an inactivity deadline bounds the attempt.
     """
     import time as time_module
 
@@ -848,6 +848,72 @@ def test_response_failed_event_is_provider_unavailable(
         "create",
         lambda **kw: _ClosableStalledStream([_FailedEvent()], stall_seconds=0.0),
     )
+
+    with pytest.raises(ProviderUnavailableError):
+        client.generate("Pick a card.")
+
+
+def test_response_failed_mid_argument_stays_capacity_abort(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """H5 precision: response.failed never takes the salvage path.
+
+    Only an inactivity deadline during tool-argument trickle may salvage;
+    a provider-reported failure is a capacity abort even mid-argument, so
+    the client retries it as capacity rather than continuing the loop.
+    """
+
+    class _FailedResponse:
+        error = "backend capacity"
+
+    class _FailedEvent:
+        type = "response.failed"
+        response = _FailedResponse()
+
+    client = _subscription_client(reasoning_extraction="deep_think")
+    monkeypatch.setattr(openai_client, "time", _ClientTimeStub())
+    streams: list[Any] = [
+        _ClosableStream(
+            events=[
+                _FakeArgsDeltaEvent(delta='{"thoughts":"partial thinking'),
+                _FailedEvent(),
+            ]
+        ),
+        _ClosableStream(events=_text_round("Play 4C")),
+    ]
+    monkeypatch.setattr(client.client.responses, "create", lambda **kw: streams.pop(0))
+
+    # The failed round retries as capacity and the second round succeeds;
+    # the partial argument text must NOT be salvaged as reasoning evidence
+    # from a provider-failed response.
+    content = client.generate("Pick a card.")
+    assert content == "Play 4C"
+    traces = [m.reasoning_text or "" for m in client.call_metrics]
+    assert not any("partial thinking" in t for t in traces), (
+        f"provider-failed arguments leaked into evidence; traces={traces!r}"
+    )
+
+
+def test_rate_limit_error_is_provider_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """H2: 429 rate limiting is a capacity failure."""
+    import httpx
+    from openai import RateLimitError
+
+    client = _subscription_client(reasoning_extraction="deep_think")
+    monkeypatch.setattr(openai_client, "time", _ClientTimeStub())
+
+    request = httpx.Request("POST", "https://chatgpt.com/backend-api")
+
+    def limited_create(**kwargs: object) -> object:
+        raise RateLimitError(
+            "rate limited",
+            response=httpx.Response(429, request=request),
+            body=None,
+        )
+
+    monkeypatch.setattr(client.client.responses, "create", limited_create)
 
     with pytest.raises(ProviderUnavailableError):
         client.generate("Pick a card.")

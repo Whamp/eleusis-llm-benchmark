@@ -253,6 +253,15 @@ class _CodexArgumentRun:
         self.whitespace_run = self.whitespace_run + 1 if not delta.strip() else 0
 
 
+class _StreamInactivityTimeoutError(ProviderUnavailableError):
+    """The stream went silent between events past the configured deadline.
+
+    Subclassing keeps deadline aborts on the capacity path everywhere while
+    letting _consume_codex_stream distinguish them from response.failed:
+    only a deadline during tool-argument trickle may take the salvage path.
+    """
+
+
 class OpenAIClient(BaseLLMClient):
     """Client for OpenAI GPT API with reasoning effort support.
 
@@ -408,8 +417,9 @@ class OpenAIClient(BaseLLMClient):
                 InternalServerError,
                 RateLimitError,
             ) as e:
-                # Transport drops and stalled streams are provider-capacity
-                # failures: back off long enough for congestion to clear.
+                # Transport drops, stalled streams, SDK connection
+                # failures, 5xx, and 429 are provider-capacity failures:
+                # back off long enough for congestion to clear.
                 logger.warning(
                     f"{self.model_name} Attempt {attempt + 1}/{self.max_retries}"
                     f" provider unavailable: {e}"
@@ -625,14 +635,14 @@ class OpenAIClient(BaseLLMClient):
         while True:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
-                raise ProviderUnavailableError(
+                raise _StreamInactivityTimeoutError(
                     "provider stream exceeded"
                     f" {self.stream_deadline_seconds:.0f}s inactivity deadline"
                 )
             try:
                 item = queue.get(timeout=remaining)
             except Empty:
-                raise ProviderUnavailableError(
+                raise _StreamInactivityTimeoutError(
                     "provider stream exceeded"
                     f" {self.stream_deadline_seconds:.0f}s inactivity deadline"
                 ) from None
@@ -692,13 +702,14 @@ class OpenAIClient(BaseLLMClient):
                 completed = self._apply_codex_stream_event(payload, argument_run, event)
                 if completed is not None:
                     return completed
-        except ProviderUnavailableError:
+        except _StreamInactivityTimeoutError:
             if argument_run.arguments.strip():
-                # The stream died mid-thought while trickling tool
+                # The stream went silent mid-thought while trickling tool
                 # arguments; a slow runaway behaves like the fast one:
                 # salvage the partial reasoning and continue with a
                 # fresh scratchpad call rather than discarding it as a
-                # capacity failure.
+                # capacity failure. Only inactivity timeouts salvage:
+                # response.failed stays a capacity abort even mid-argument.
                 raise self._runaway_error(argument_run) from None
             raise
         finally:
