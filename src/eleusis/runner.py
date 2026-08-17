@@ -20,7 +20,11 @@ from eleusis.game import (
     RuleValidator,
 )
 from eleusis.game.rule_library import RuleLibraryEntry, RuleMetadata
-from eleusis.llm import LLMScientist, create_client, create_client_from_config
+from eleusis.llm import (
+    LLMScientist,
+    create_client,
+    create_client_from_config,
+)
 from eleusis.llm.base import BaseLLMClient
 from eleusis.round_continuation import restore_round_continuation
 from eleusis.round_execution import (

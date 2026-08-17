@@ -231,6 +231,19 @@ class OpenAICompatClient(BaseLLMClient):
             ) from error
 
     @staticmethod
+    def _reported_reasoning_tokens(usage: object | None) -> int | None:
+        """Return the provider-reported reasoning-token count, if any."""
+        if usage is None:
+            return None
+        details = getattr(usage, "completion_tokens_details", None)
+        if details is None:
+            return None
+        value = getattr(details, "reasoning_tokens", None)
+        if isinstance(value, int) and value >= 0:
+            return value
+        return None
+
+    @staticmethod
     def _consume_completion_stream(
         stream: Iterable[ChatCompletionChunk],
     ) -> CompatStreamResult:
@@ -315,18 +328,23 @@ class OpenAICompatClient(BaseLLMClient):
         reasoning_tokens = 0
         output_tokens = api_completion_tokens
 
-        if self.reasoning_format == "reasoning_content":
-            # Separate field (Qwen3 via SGLang/vLLM)
-            if choice.message.reasoning:
-                has_reasoning = True
-                reasoning_text = choice.message.reasoning
-                reasoning_word_count = len(reasoning_text.split())
-                logger.debug(f"[compat] Reasoning field: {reasoning_word_count} words")
+        if self.reasoning_format == "reasoning_content" and choice.message.reasoning:
+            # Separate field (DeepSeek/Qwen3 via OpenAI-compatible servers).
+            # No streamed reasoning means every completion token is answer.
+            has_reasoning = True
+            reasoning_word_count = len(choice.message.reasoning.split())
+            logger.debug(f"[compat] Reasoning field: {reasoning_word_count} words")
 
-            # Estimate answer tokens from visible content
-            content_word_count = len(content.split())
-            answer_tokens = int(content_word_count * 1.3)
-            reasoning_tokens = max(0, output_tokens - answer_tokens)
+            reported_reasoning = self._reported_reasoning_tokens(usage)
+            if reported_reasoning is not None:
+                # The provider already split answer from reasoning tokens.
+                reasoning_tokens = reported_reasoning
+                answer_tokens = max(0, output_tokens - reasoning_tokens)
+            else:
+                # Estimate answer tokens from visible content
+                content_word_count = len(content.split())
+                answer_tokens = int(content_word_count * 1.3)
+                reasoning_tokens = max(0, output_tokens - answer_tokens)
 
         elif self.reasoning_format == "think_tags":
             # Inline <think>...</think> tags
@@ -357,6 +375,7 @@ class OpenAICompatClient(BaseLLMClient):
             throughput_tokens_per_sec=output_tokens / duration if duration > 0 else 0,
             finish_reason=choice.finish_reason,
             has_reasoning=has_reasoning,
+            reasoning_text=choice.message.reasoning,
             timestamp=start_time,
             is_continuation=is_continuation,
             continuation_depth=continuation_depth,

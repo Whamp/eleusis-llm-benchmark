@@ -60,6 +60,7 @@ class ModelConfig(TypedDict):
     thinking_level: NotRequired[str]
     temperature: NotRequired[float]
     timeout: NotRequired[int]
+    max_tokens: NotRequired[int]
 
 
 class RuleCompilerConfig(ModelConfig):

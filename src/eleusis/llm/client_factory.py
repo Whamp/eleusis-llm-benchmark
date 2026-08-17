@@ -88,6 +88,18 @@ def load_model_config(model_key: str) -> ModelConfig:
     return all_models[model_key]
 
 
+def _resolve_model_max_tokens(model_config: ModelConfig, max_tokens: int) -> int:
+    """Apply a models.yaml max_tokens override to the run-level allowance.
+
+    Heavy-thinking models need a larger output budget than the global default;
+    a per-model entry is the stronger, model-specific setting.
+    """
+    model_max_tokens = model_config.get("max_tokens")
+    if model_max_tokens is not None:
+        return int(model_max_tokens)
+    return max_tokens
+
+
 def create_client(
     model_key: str,
     temperature: float = 0.7,
@@ -110,6 +122,7 @@ def create_client(
     config = load_model_config(model_key)
     provider = config["provider"]
     model_id = config["model_id"]
+    max_tokens = _resolve_model_max_tokens(config, max_tokens)
 
     match provider:
         case "anthropic":

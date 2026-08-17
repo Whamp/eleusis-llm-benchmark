@@ -132,6 +132,26 @@ gpt-oss-20b:
   color: "#B2B2B2"  # Light gray
 
 # ============================================================================
+# Hosted OpenAI-Compatible APIs (OpenRouter) - native reasoning exposure
+# ============================================================================
+
+deepseek-v4-flash-0731:
+  provider: openai_compat
+  # :cloudflare pins OpenRouter routing to one provider; empirically verified
+  # to honor temperature (mode share 9/10 at temp 0 vs 6/10 at temp 1) and to
+  # stream native chain-of-thought plus explicit reasoning-token usage.
+  model_id: deepseek/deepseek-v4-flash-0731:cloudflare
+  base_url: https://openrouter.ai/api/v1
+  api_key: ${OPENROUTER_API_KEY}
+  reasoning_format: reasoning_content  # streams delta.reasoning via OpenRouter
+  timeout: 600
+  # DeepSeek v4 Flash deliberates ~8-16K reasoning tokens per game turn; the
+  # run-level 16384 allowance truncated 4 of 10 smoke calls, so the player
+  # gets double the default while compilers keep the run-level allowance.
+  max_tokens: 32768
+  color: "#4A6FA5"  # DeepSeek blue
+
+# ============================================================================
 # Self-Hosted Models - OpenAI-Compatible APIs (SGLang, vLLM)
 # ============================================================================
 
