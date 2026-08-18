@@ -5,7 +5,7 @@ ELEUSIS RESULTS ANALYSIS
 Analyzing: results/260312_all_models_corrected
 
 Loading results...
-Loaded 13 evaluation runs:
+Loaded 39 evaluation runs:
   - solo_evaluation_20260120_091620_gpt_5_2_high
   - solo_evaluation_20260120_091622_gpt_oss_120b
   - solo_evaluation_20260121_070517_claude_haiku_4_5
@@ -19,29 +19,57 @@ Loaded 13 evaluation runs:
   - solo_evaluation_20260126_084210_glm_4_7
   - solo_evaluation_20260202_094341_gemini_3_flash_preview_high
   - solo_evaluation_20260312_qwen3_5_27b_gptq_int4_corrected
+  - solo_evaluation_20260817_203330_screen26x1dsv4_w0
+  - solo_evaluation_20260817_203330_screen26x1dsv4_w14
+  - solo_evaluation_20260817_203331_screen26x1dsv4_w1
+  - solo_evaluation_20260817_203331_screen26x1dsv4_w10
+  - solo_evaluation_20260817_203331_screen26x1dsv4_w11
+  - solo_evaluation_20260817_203331_screen26x1dsv4_w12
+  - solo_evaluation_20260817_203331_screen26x1dsv4_w18
+  - solo_evaluation_20260817_203331_screen26x1dsv4_w19
+  - solo_evaluation_20260817_203331_screen26x1dsv4_w2
+  - solo_evaluation_20260817_203331_screen26x1dsv4_w20
+  - solo_evaluation_20260817_203331_screen26x1dsv4_w23
+  - solo_evaluation_20260817_203331_screen26x1dsv4_w24
+  - solo_evaluation_20260817_203331_screen26x1dsv4_w3
+  - solo_evaluation_20260817_203331_screen26x1dsv4_w5
+  - solo_evaluation_20260817_203331_screen26x1dsv4_w6
+  - solo_evaluation_20260817_203332_screen26x1dsv4_w13
+  - solo_evaluation_20260817_203332_screen26x1dsv4_w15
+  - solo_evaluation_20260817_203332_screen26x1dsv4_w16
+  - solo_evaluation_20260817_203332_screen26x1dsv4_w17
+  - solo_evaluation_20260817_203332_screen26x1dsv4_w21
+  - solo_evaluation_20260817_203332_screen26x1dsv4_w22
+  - solo_evaluation_20260817_203332_screen26x1dsv4_w25
+  - solo_evaluation_20260817_203332_screen26x1dsv4_w4
+  - solo_evaluation_20260817_203332_screen26x1dsv4_w7
+  - solo_evaluation_20260817_203332_screen26x1dsv4_w8
+  - solo_evaluation_20260817_203332_screen26x1dsv4_w9
+Artifact formats: 26 strict Round Record, 13 partial historical
 
 Extracted 26 unique rules from results files
-Built DataFrames: 1014 rounds, 15211 turns
-Loaded colors for 19 models
+Built DataFrames: 1040 rounds, 15493 turns
+Loaded colors for 22 models
 
 ============================================================
 BASIC MODEL COMPARISON
 ============================================================
 
                       model  rounds_played  total_score  avg_score  total_floored_score  avg_floored_score  total_turns  total_output_tokens  total_wall_clock  avg_failed_guesses  success_rate  counting_output_tokens  total_no_stakes_score  avg_no_stakes_score  avg_output_tokens_per_turn  wall_clock_per_turn  intra_rule_variance  inter_rule_variance  variance_ratio
-            Claude Opus 4.5             78         1128  14.461538                 1324          16.974359          756              4333716          86367.64            2.000000      0.833333                 3430535                 1598.0            20.487179                 4537.744709           114.242910            25.000000            81.385983        0.307178
-                    Kimi K2             78          804  10.307692                 1262          16.179487          801             12281540         101346.76            2.038462      0.769231                 5918992                 1481.0            18.987179                 7389.503121           126.525293            25.538462            88.446496        0.288745
-                    Glm 4.7             78          856  10.974359                 1220          15.641026          862             19398173         398026.00            1.935897      0.743590                 5245185                 1443.0            18.500000                 6084.901392           461.747100            41.500000            92.825983        0.447073
-    Grok 4 1 Fast Reasoning             78          737   9.448718                 1182          15.153846          795              8178655         120364.22            2.564103      0.717949                 4559832                 1441.0            18.474359                 5735.637736           151.401535            25.243590           106.499829        0.237029
-      Qwen3.5 27B Gptq Int4             78          841  10.782051                 1180          15.128205          878              8837182         281202.75            2.115385      0.756410                 6524332                 1493.0            19.141026                 7430.902050           320.276481            14.256410            97.618462        0.146042
-               Gpt 5.2 High             78         1158  14.846154                 1174          15.051282         1195              3341037          73525.83            0.282051      0.948718                 3232254                 1505.0            19.294872                 2704.815063            61.527891            24.628205            36.601709        0.672870
-Gemini 3 Flash Preview High             78          786  10.076923                 1096          14.051282         1012             17435375         103053.60            1.743590      0.730769                13082063                 1365.0            17.500000                12926.939723           101.831621            26.948718            75.419487        0.357318
-          Gpt 5 Mini Medium             78          942  12.076923                 1052          13.487179         1163              3618399          58345.97            1.166667      0.705128                 2998454                 1325.0            16.987179                 2578.206363            50.168504            39.141026            82.882051        0.472250
-                Deepseek R1             78          511   6.551282                 1036          13.282051          851              9229131         165334.16            3.192308      0.641026                 5944454                 1331.0            17.064103                 6985.257344           194.282209            29.628205           115.135043        0.257334
- Gemini 3 Flash Preview Low             78          817  10.474359                 1024          13.128205         1207              1581524          12702.02            0.961538      0.705128                 1389850                 1226.0            15.717949                 1151.491301            10.523629            29.923077            83.049573        0.360304
-               Gpt Oss 120B             78          580   7.435897                 1004          12.871795         1041              3190828          24633.15            2.153846      0.679487                 2250622                 1279.0            16.397436                 2161.980788            23.662968            46.692308            78.676239        0.593474
-                Gpt Oss 20B             78          131   1.679487                  927          11.884615          972              7009392          62397.50            2.974359      0.589744                 3234713                 1206.0            15.461538                 3327.894033            64.194959            47.576923            88.239487        0.539180
-           Claude Haiku 4.5             78          -37  -0.474359                  894          11.461538          848              6973411          57734.39            3.948718      0.564103                 4053200                 1198.0            15.358974                 4779.716981            68.083007            45.102564           107.387350        0.419999
+     Deepseek V4 Flash 0731             26          389  14.961538                  442          17.000000          259              7748804      81916.109381            1.961538      0.884615                 6101255                  542.0            20.846154                23556.969112           316.278415                  NaN            90.080000             NaN
+            Claude Opus 4.5             78         1083  13.884615                 1280          16.410256          800              4333716      86367.640000            2.000000      0.833333                 3430535                 1598.0            20.487179                 4288.168750           107.959550            23.653846            75.078291        0.315056
+                    Kimi K2             78          757   9.705128                 1215          15.576923          848              7913754     101346.760000            2.038462      0.769231                 5918992                 1481.0            18.987179                 6979.943396           119.512689            23.076923            82.307179        0.280376
+      Qwen3.5 27B Gptq Int4             78          841  10.782051                 1180          15.128205          878              8542270     281202.750000            2.115385      0.756410                 6524332                 1493.0            19.141026                 7430.902050           320.276481            14.256410            97.618462        0.146042
+                    Glm 4.7             78          799  10.243590                 1171          15.012821          911              6225437     398026.000000            1.935897      0.743590                 5245185                 1443.0            18.500000                 5757.612514           436.911087            39.474359            87.524274        0.451010
+    Grok 4 1 Fast Reasoning             78          704   9.025641                 1152          14.769231          825              8154849     120364.220000            2.564103      0.717949                 4559832                 1441.0            18.474359                 5527.069091           145.896024            24.525641           100.593504        0.243809
+               Gpt 5.2 High             78         1088  13.948718                 1105          14.166667         1264              3341037      73525.830000            0.282051      0.948718                 3232254                 1505.0            19.294872                 2557.162975            58.169169            24.538462            35.371111        0.693743
+Gemini 3 Flash Preview High             78          786  10.076923                 1096          14.051282         1012             16065097     103053.600000            1.743590      0.730769                13082063                 1365.0            17.500000                12926.939723           101.831621            26.948718            75.419487        0.357318
+          Gpt 5 Mini Medium             78          897  11.500000                 1009          12.935897         1205              3618399      58345.970000            1.166667      0.705128                 2998454                 1325.0            16.987179                 2488.343568            48.419892            37.743590            77.626838        0.486218
+                Deepseek R1             78          481   6.166667                 1006          12.897436          880              9025316     165334.160000            3.192308      0.641026                 5944454                 1331.0            17.064103                 6755.061364           187.879727            30.448718           108.104615        0.281660
+ Gemini 3 Flash Preview Low             78          773   9.910256                  981          12.576923         1250              1565144      12702.020000            0.961538      0.705128                 1389850                 1226.0            15.717949                 1111.880000            10.161616            27.653846            76.707179        0.360512
+               Gpt Oss 120B             78          538   6.897436                  964          12.358974         1081              3190828      24633.150000            2.153846      0.679487                 2250622                 1279.0            16.397436                 2081.981499            22.787373            44.217949            73.314872        0.603124
+                Gpt Oss 20B             78           95   1.217949                  893          11.448718         1006              5796976      62397.500000            2.974359      0.589744                 3234713                 1206.0            15.461538                 3215.420477            62.025348            47.461538            82.363932        0.576242
+           Claude Haiku 4.5             78          -61  -0.782051                  871          11.166667          871              6957027      57734.390000            3.948718      0.564103                 4053200                 1198.0            15.358974                 4653.501722            66.285178            43.679487           101.326667        0.431076
 
 Saved: results/260312_all_models_corrected/basic_metrics.csv
 Saved: results/260312_all_models_corrected/overall_performance.png
@@ -61,14 +89,14 @@ COMPLEXITY ANALYSIS
 
 Optimal K for aggregated complexity: 0.21
   Formula: complexity = cyclomatic + 0.21 * node_count
-  Correlation with success_rate: -0.678
+  Correlation with success_rate: -0.677
 
 Stats by complexity quartile:
 complexity_bin  count  avg_floored_score  success_rate
-            Q1    312          20.246795      0.935897
-            Q2    195          15.446154      0.789744
-            Q3    234          15.478632      0.799145
-            Q4    273           5.216117      0.362637
+            Q1    320          19.668750      0.937500
+            Q2    200          15.010000      0.790000
+            Q3    240          15.145833      0.804167
+            Q4    280           5.121429      0.371429
 
 Saved: results/260312_all_models_corrected/complexity_analysis.png
 Saved: results/260312_all_models_corrected/complexity_analysis.json
@@ -79,32 +107,32 @@ BY-RULE ANALYSIS
 
 Score by rule (sorted by avg_floored_score):
                                                                                                                                             rule_description  count  avg_floored_score  std_floored_score  success_rate
-                                                                                                                        Only red cards (hearts or diamonds).     39          25.410256           2.256196      1.000000
-                                                                                                                              Only cards of the suit spades.     39          25.179487           1.998312      1.000000
-                                                                             Cards must alternate between red and black colors. Any card may start the line.     39          25.025641           2.539034      1.000000
-                                                                                                               Only cards with an even rank (2,4,6,8,10,12).     39          24.358974           2.433183      1.000000
-                                                             The card must be of a different suit than the card just before it. Any card may start the line.     39          22.358974           5.783312      0.974359
-                                                                                                                                        Only Aces (rank 1) .     39          21.128205           7.736378      0.948718
-                                                                                             Only hearts, clubs, and diamonds allowed. Spades are forbidden.     39          20.794872           5.079264      0.974359
-                                                      Card rank must have opposite odd/even parity to the previous card's rank. Any card may start the line.     39          20.743590           5.504629      1.000000
-                                           The card must be of a different suit than but same color as the card just before it. Any card may start the line.     39          20.692308           5.277329      0.974359
-                                                                                                                                 Only face cards (11,12,13).     39          20.564103           7.625424      0.923077
-                                                                                                          Only ranks that are prime numbers (2,3,5,7,11,13).     39          20.410256           6.401965      0.948718
-                                                                                                                                   Only spades and diamonds.     39          19.358974           4.227026      1.000000
-                                           Suits must repeat in the cyclic order hearts → spades → clubs → diamonds → hearts... Any card may start the line.     39          17.153846           7.596878      0.897436
-                                                                                                                       Only cards between 1 and 7 inclusive.     39          15.282051           7.144924      0.923077
-                                                                                                                                      Only black face cards.     39          12.846154           8.845274      0.769231
-                                                                                                                       Only cards between 5 and 9 inclusive.     39           9.256410           7.663028      0.717949
-                                                                                                                           Only red cards whose rank is <=7.     39           8.974359           7.516603      0.692308
-                                                                                               Alternate face and number cards. Any card may start the line.     39           8.666667           9.266048      0.564103
-                                 Each card must share at least one property with the previous card: same color, or same parity. Any card may start the line.     39           7.897436           8.807278      0.512821
-                                                              Each card must have a rank greater or equal to the previous card. Only Ace can start the line.     39           7.564103           9.066407      0.512821
-Suits must appear in pairs: card 1 and 2 same suit, cards 3 and 4 same suit (different from 1 and 2), cards 5 and 6 same suit (different from 3 and 4), etc.     39           4.846154           6.401227      0.461538
-                                                                                          Face cards (11-13) must be red; number cards (1-10) must be black.     39           3.461538           5.999325      0.307692
-        Face cards imposes the suit: if a face card is played, the next card must match its suit. Otherwise, the next card must be a different suit than it.     39           2.153846           4.227345      0.256410
-                                     Hearts and spades form Group A; clubs and diamonds form Group B. Alternate between groups. Any card may start the line.     39           2.102564           5.097961      0.179487
-    If the previous card was red, rank must increase or be equal; if black, rank must decrease or be equal. Starting card must be between 5 and 9 inclusive.     39           1.256410           3.574161      0.128205
-                   Rank repeats in pairs: ranks must come in doubles: (x, x), then (y, y) with y different from x, then (z, z) with z different from y, etc.     39           1.102564           3.393452      0.102564
+                                                                                                                        Only red cards (hearts or diamonds).     40             24.675           2.223274         1.000
+                                                                                                                              Only cards of the suit spades.     40             24.350           1.928863         1.000
+                                                                             Cards must alternate between red and black colors. Any card may start the line.     40             24.300           2.533873         1.000
+                                                                                                               Only cards with an even rank (2,4,6,8,10,12).     40             23.725           2.541830         1.000
+                                                             The card must be of a different suit than the card just before it. Any card may start the line.     40             21.675           5.603971         0.975
+                                                                                                                                        Only Aces (rank 1) .     40             20.400           7.652048         0.950
+                                                      Card rank must have opposite odd/even parity to the previous card's rank. Any card may start the line.     40             20.350           5.394917         1.000
+                                                                                             Only hearts, clubs, and diamonds allowed. Spades are forbidden.     40             20.275           5.012740         0.975
+                                           The card must be of a different suit than but same color as the card just before it. Any card may start the line.     40             20.225           5.342080         0.975
+                                                                                                          Only ranks that are prime numbers (2,3,5,7,11,13).     40             20.000           6.344794         0.950
+                                                                                                                                 Only face cards (11,12,13).     40             19.750           7.375462         0.925
+                                                                                                                                   Only spades and diamonds.     40             18.975           4.287654         1.000
+                                           Suits must repeat in the cyclic order hearts → spades → clubs → diamonds → hearts... Any card may start the line.     40             16.800           7.442773         0.900
+                                                                                                                       Only cards between 1 and 7 inclusive.     40             14.950           7.070887         0.925
+                                                                                                                                      Only black face cards.     40             12.700           8.832342         0.775
+                                                                                                                       Only cards between 5 and 9 inclusive.     40              9.225           7.803640         0.725
+                                                                                               Alternate face and number cards. Any card may start the line.     40              8.600           9.026457         0.575
+                                                                                                                           Only red cards whose rank is <=7.     40              8.550           7.288734         0.700
+                                 Each card must share at least one property with the previous card: same color, or same parity. Any card may start the line.     40              7.750           8.484526         0.525
+                                                              Each card must have a rank greater or equal to the previous card. Only Ace can start the line.     40              7.325           8.656960         0.525
+Suits must appear in pairs: card 1 and 2 same suit, cards 3 and 4 same suit (different from 1 and 2), cards 5 and 6 same suit (different from 3 and 4), etc.     40              4.550           6.176672         0.450
+                                                                                          Face cards (11-13) must be red; number cards (1-10) must be black.     40              3.225           5.717663         0.300
+                                     Hearts and spades form Group A; clubs and diamonds form Group B. Alternate between groups. Any card may start the line.     40              2.350           5.294167         0.200
+        Face cards imposes the suit: if a face card is played, the next card must match its suit. Otherwise, the next card must be a different suit than it.     40              2.075           3.983218         0.275
+    If the previous card was red, rank must increase or be equal; if black, rank must decrease or be equal. Starting card must be between 5 and 9 inclusive.     40              1.275           3.404277         0.150
+                   Rank repeats in pairs: ranks must come in doubles: (x, x), then (y, y) with y different from x, then (z, z) with z different from y, etc.     40              1.050           3.304620         0.100
 
 Saved: results/260312_all_models_corrected/by_rule.png
 Saved: results/260312_all_models_corrected/by_rule.json
@@ -130,10 +158,11 @@ Gemini 3 Flash Preview High      63  1.75     1.0          68.3
     Grok 4 1 Fast Reasoning      69  0.75     0.0          44.9
            Claude Haiku 4.5      55  0.53     0.0          38.2
                 Deepseek R1      65  0.49     0.0          33.8
+     Deepseek V4 Flash 0731      25  0.44     0.0          40.0
 
-Overall: 1121 total early correct turns across 836 successful rounds
-Mean: 1.34, Median: 1.0
-496/836 (59.3%) rounds had at least 1 early correct turn
+Overall: 1132 total early correct turns across 861 successful rounds
+Mean: 1.31, Median: 1.0
+506/861 (58.8%) rounds had at least 1 early correct turn
 
 Saved: results/260312_all_models_corrected/excess_caution.png
 Saved: results/260312_all_models_corrected/excess_caution.json
@@ -152,6 +181,7 @@ Double-Down Rate: After a wrong guess, % of next turns with another guess
                       Model  Wrong Guesses  Next Turn Guesses  Double-Down %
     Grok 4 1 Fast Reasoning            200                108           54.0
                 Deepseek R1            249                132           53.0
+     Deepseek V4 Flash 0731             51                 27           52.9
            Claude Haiku 4.5            308                161           52.3
                     Kimi K2            159                 67           42.1
                 Gpt Oss 20B            232                 97           41.8
@@ -168,6 +198,7 @@ Wrong Guess Streak Statistics:
                       Model  Streaks  Mean Length  Max Length  Total Wrong
     Grok 4 1 Fast Reasoning      103         1.94           8          200
                 Deepseek R1      121         2.06           7          249
+     Deepseek V4 Flash 0731       30         1.70           8           51
            Claude Haiku 4.5      157         1.96           7          308
                     Kimi K2      100         1.59           7          159
                 Gpt Oss 20B      141         1.65           7          232
@@ -181,6 +212,7 @@ Gemini 3 Flash Preview High       99         1.37           4          136
                Gpt 5.2 High       22         1.00           1           22
 
 Longest streak: 8 consecutive wrong guesses
+  - Deepseek V4 Flash 0731 in round 1
   - Grok 4 1 Fast Reasoning in round 67
 
 Saved: results/260312_all_models_corrected/reckless_guessing.png
@@ -190,34 +222,35 @@ Saved: results/260312_all_models_corrected/reckless_guessing.json
 COMPLEXITY RATIO ANALYSIS
 ============================================================
 
-Analyzed 12394 tentative rules with confidence >= 5
-Using optimal k = 0.430 for aggregated complexity
+Analyzed 12590 tentative rules with confidence >= 5
+Using optimal k = 0.420 for aggregated complexity
 
 Complexity Ratio by Model:
 (Ratio = Tentative Complexity / Actual Complexity)
 
                       Model  Median   Q25   Q75  Count
-               Gpt Oss 120B   1.320 0.873 2.358   1182
-                Gpt Oss 20B   1.153 0.781 2.065   1219
-           Claude Haiku 4.5   1.053 0.735 2.000   1001
-                Deepseek R1   1.000 0.762 1.755    933
-Gemini 3 Flash Preview High   1.000 0.827 1.629    958
+               Gpt Oss 120B   1.322 0.873 2.355   1182
+                Gpt Oss 20B   1.155 0.782 2.065   1219
+           Claude Haiku 4.5   1.054 0.736 2.000   1001
+Gemini 3 Flash Preview High   1.000 0.827 1.630    958
+ Gemini 3 Flash Preview Low   1.000 0.781 1.519   1016
+                Deepseek R1   1.000 0.762 1.756    933
                Gpt 5.2 High   1.000 0.791 1.187    857
- Gemini 3 Flash Preview Low   1.000 0.780 1.520   1016
-          Gpt 5 Mini Medium   1.000 0.764 1.663    939
-                    Glm 4.7   1.000 0.731 1.306    882
-      Qwen3.5 27B Gptq Int4   1.000 0.693 1.436    920
-    Grok 4 1 Fast Reasoning   1.000 0.775 1.660    938
-            Claude Opus 4.5   0.984 0.708 1.169    664
-                    Kimi K2   0.975 0.622 1.276    885
+    Grok 4 1 Fast Reasoning   1.000 0.777 1.657    938
+          Gpt 5 Mini Medium   1.000 0.765 1.664    939
+                    Glm 4.7   1.000 0.732 1.305    882
+      Qwen3.5 27B Gptq Int4   1.000 0.693 1.438    920
+            Claude Opus 4.5   0.984 0.707 1.169    664
+                    Kimi K2   0.976 0.622 1.275    885
+     Deepseek V4 Flash 0731   0.945 0.502 1.241    196
 
 Interpretation:
   - Ratio > 1: Model tends to overcomplicate rules
   - Ratio < 1: Model tends to oversimplify rules
   - Ratio ≈ 1: Model matches actual rule complexity
 
-Highest median: Gpt Oss 120B (1.320)
-Lowest median: Kimi K2 (0.975)
+Highest median: Gpt Oss 120B (1.322)
+Lowest median: Deepseek V4 Flash 0731 (0.945)
 
 Saved: results/260312_all_models_corrected/complexity_ratio.png
 Saved: results/260312_all_models_corrected/complexity_ratio.json
@@ -233,6 +266,7 @@ Tokens trend summary (early vs late turns):
   Claude Haiku 4.5: early=3191, late=5889 (+84.5%)
   Claude Opus 4.5: early=2649, late=8447 (+218.9%)
   Deepseek R1: early=5083, late=10946 (+115.3%)
+  Deepseek V4 Flash 0731: early=16406, late=55940 (+241.0%)
   Gemini 3 Flash Preview High: early=10023, late=15704 (+56.7%)
   Gemini 3 Flash Preview Low: early=1046, late=1351 (+29.1%)
   Glm 4.7: early=3885, late=4457 (+14.7%)
@@ -261,6 +295,7 @@ Saved: results/260312_all_models_corrected/model_kimi_k2.png
 Saved: results/260312_all_models_corrected/model_glm_4_7.png
 Saved: results/260312_all_models_corrected/model_gemini_3_flash_preview_high.png
 Saved: results/260312_all_models_corrected/model_qwen3_5_27b_gptq_int4.png
+Saved: results/260312_all_models_corrected/model_deepseek_v4_flash_0731.png
 
 ============================================================
 Analysis complete! All outputs saved to: results/260312_all_models_corrected
