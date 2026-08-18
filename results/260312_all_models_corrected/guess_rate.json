@@ -133,6 +133,50 @@
       ]
     },
     {
+      "name": "Deepseek V4 Flash 0731",
+      "color": "#4A6FA5",
+      "is_open": true,
+      "provider": "openai_compat",
+      "distribution": [
+        {
+          "confidence_level": 5,
+          "guess_rate": 0.0,
+          "total_turns": 41,
+          "guess_count": 0
+        },
+        {
+          "confidence_level": 6,
+          "guess_rate": 0.0,
+          "total_turns": 48,
+          "guess_count": 0
+        },
+        {
+          "confidence_level": 7,
+          "guess_rate": 0.3,
+          "total_turns": 20,
+          "guess_count": 6
+        },
+        {
+          "confidence_level": 8,
+          "guess_rate": 1.0,
+          "total_turns": 42,
+          "guess_count": 42
+        },
+        {
+          "confidence_level": 9,
+          "guess_rate": 1.0,
+          "total_turns": 24,
+          "guess_count": 24
+        },
+        {
+          "confidence_level": 10,
+          "guess_rate": 1.0,
+          "total_turns": 2,
+          "guess_count": 2
+        }
+      ]
+    },
+    {
       "name": "Gemini 3 Flash Preview High",
       "color": "#8EADF6",
       "is_open": false,

@@ -1,22 +1,31 @@
 {
   "models": [
     {
+      "name": "Deepseek V4 Flash 0731",
+      "color": "#4A6FA5",
+      "is_open": true,
+      "provider": "openai_compat",
+      "avg_floored_score": 17.0,
+      "avg_no_stakes_score": 20.846153846153847,
+      "no_stakes_delta": 3.8461538461538467
+    },
+    {
       "name": "Claude Opus 4.5",
       "color": "#C1755A",
       "is_open": false,
       "provider": "anthropic",
-      "avg_floored_score": 16.974358974358974,
+      "avg_floored_score": 16.41025641025641,
       "avg_no_stakes_score": 20.487179487179485,
-      "no_stakes_delta": 3.512820512820511
+      "no_stakes_delta": 4.076923076923077
     },
     {
       "name": "Gpt 5.2 High",
       "color": "#8CB3A8",
       "is_open": false,
       "provider": "openai",
-      "avg_floored_score": 15.051282051282051,
+      "avg_floored_score": 14.166666666666666,
       "avg_no_stakes_score": 19.294871794871796,
-      "no_stakes_delta": 4.2435897435897445
+      "no_stakes_delta": 5.1282051282051295
     },
     {
       "name": "Qwen3.5 27B Gptq Int4",
@@ -32,27 +41,27 @@
       "color": "#CCCC00",
       "is_open": true,
       "provider": "huggingface",
-      "avg_floored_score": 16.17948717948718,
+      "avg_floored_score": 15.576923076923077,
       "avg_no_stakes_score": 18.987179487179485,
-      "no_stakes_delta": 2.8076923076923066
+      "no_stakes_delta": 3.410256410256409
     },
     {
       "name": "Glm 4.7",
       "color": "#FF7777",
       "is_open": true,
       "provider": "huggingface",
-      "avg_floored_score": 15.64102564102564,
+      "avg_floored_score": 15.012820512820513,
       "avg_no_stakes_score": 18.5,
-      "no_stakes_delta": 2.8589743589743595
+      "no_stakes_delta": 3.4871794871794872
     },
     {
       "name": "Grok 4 1 Fast Reasoning",
       "color": "#1A1A1A",
       "is_open": false,
       "provider": "xai",
-      "avg_floored_score": 15.153846153846153,
+      "avg_floored_score": 14.76923076923077,
       "avg_no_stakes_score": 18.474358974358974,
-      "no_stakes_delta": 3.320512820512821
+      "no_stakes_delta": 3.7051282051282044
     },
     {
       "name": "Gemini 3 Flash Preview High",
@@ -68,54 +77,54 @@
       "color": "#5A6AF7",
       "is_open": true,
       "provider": "huggingface",
-      "avg_floored_score": 13.282051282051283,
+      "avg_floored_score": 12.897435897435898,
       "avg_no_stakes_score": 17.064102564102566,
-      "no_stakes_delta": 3.782051282051283
+      "no_stakes_delta": 4.166666666666668
     },
     {
       "name": "Gpt 5 Mini Medium",
       "color": "#99BDB4",
       "is_open": false,
       "provider": "openai",
-      "avg_floored_score": 13.487179487179487,
+      "avg_floored_score": 12.935897435897436,
       "avg_no_stakes_score": 16.987179487179485,
-      "no_stakes_delta": 3.4999999999999982
+      "no_stakes_delta": 4.051282051282049
     },
     {
       "name": "Gpt Oss 120B",
       "color": "#707070",
       "is_open": true,
       "provider": "huggingface",
-      "avg_floored_score": 12.871794871794872,
+      "avg_floored_score": 12.35897435897436,
       "avg_no_stakes_score": 16.397435897435898,
-      "no_stakes_delta": 3.5256410256410255
+      "no_stakes_delta": 4.038461538461538
     },
     {
       "name": "Gemini 3 Flash Preview Low",
       "color": "#AEC3F9",
       "is_open": false,
       "provider": "google",
-      "avg_floored_score": 13.128205128205128,
+      "avg_floored_score": 12.576923076923077,
       "avg_no_stakes_score": 15.717948717948717,
-      "no_stakes_delta": 2.5897435897435894
+      "no_stakes_delta": 3.1410256410256405
     },
     {
       "name": "Gpt Oss 20B",
       "color": "#B2B2B2",
       "is_open": true,
       "provider": "huggingface",
-      "avg_floored_score": 11.884615384615385,
+      "avg_floored_score": 11.448717948717949,
       "avg_no_stakes_score": 15.461538461538462,
-      "no_stakes_delta": 3.5769230769230766
+      "no_stakes_delta": 4.012820512820513
     },
     {
       "name": "Claude Haiku 4.5",
       "color": "#D08E76",
       "is_open": false,
       "provider": "anthropic",
-      "avg_floored_score": 11.461538461538462,
+      "avg_floored_score": 11.166666666666666,
       "avg_no_stakes_score": 15.35897435897436,
-      "no_stakes_delta": 3.897435897435898
+      "no_stakes_delta": 4.192307692307693
     }
   ],
   "metadata": {

@@ -1,8 +1,16 @@
 {
   "models": [
     {
+      "name": "Deepseek V4 Flash 0731",
+      "avg_floored_score": 17.0,
+      "avg_failed_guesses": 1.9615384615384615,
+      "color": "#4A6FA5",
+      "is_open": true,
+      "provider": "openai_compat"
+    },
+    {
       "name": "Claude Opus 4.5",
-      "avg_floored_score": 16.974358974358974,
+      "avg_floored_score": 16.41025641025641,
       "avg_failed_guesses": 2.0,
       "color": "#C1755A",
       "is_open": false,
@@ -10,27 +18,11 @@
     },
     {
       "name": "Kimi K2",
-      "avg_floored_score": 16.17948717948718,
+      "avg_floored_score": 15.576923076923077,
       "avg_failed_guesses": 2.0384615384615383,
       "color": "#CCCC00",
       "is_open": true,
       "provider": "huggingface"
-    },
-    {
-      "name": "Glm 4.7",
-      "avg_floored_score": 15.64102564102564,
-      "avg_failed_guesses": 1.935897435897436,
-      "color": "#FF7777",
-      "is_open": true,
-      "provider": "huggingface"
-    },
-    {
-      "name": "Grok 4 1 Fast Reasoning",
-      "avg_floored_score": 15.153846153846153,
-      "avg_failed_guesses": 2.5641025641025643,
-      "color": "#1A1A1A",
-      "is_open": false,
-      "provider": "xai"
     },
     {
       "name": "Qwen3.5 27B Gptq Int4",
@@ -41,8 +33,24 @@
       "provider": "openai_compat"
     },
     {
+      "name": "Glm 4.7",
+      "avg_floored_score": 15.012820512820513,
+      "avg_failed_guesses": 1.935897435897436,
+      "color": "#FF7777",
+      "is_open": true,
+      "provider": "huggingface"
+    },
+    {
+      "name": "Grok 4 1 Fast Reasoning",
+      "avg_floored_score": 14.76923076923077,
+      "avg_failed_guesses": 2.5641025641025643,
+      "color": "#1A1A1A",
+      "is_open": false,
+      "provider": "xai"
+    },
+    {
       "name": "Gpt 5.2 High",
-      "avg_floored_score": 15.051282051282051,
+      "avg_floored_score": 14.166666666666666,
       "avg_failed_guesses": 0.28205128205128205,
       "color": "#8CB3A8",
       "is_open": false,
@@ -58,7 +66,7 @@
     },
     {
       "name": "Gpt 5 Mini Medium",
-      "avg_floored_score": 13.487179487179487,
+      "avg_floored_score": 12.935897435897436,
       "avg_failed_guesses": 1.1666666666666667,
       "color": "#99BDB4",
       "is_open": false,
@@ -66,7 +74,7 @@
     },
     {
       "name": "Deepseek R1",
-      "avg_floored_score": 13.282051282051283,
+      "avg_floored_score": 12.897435897435898,
       "avg_failed_guesses": 3.1923076923076925,
       "color": "#5A6AF7",
       "is_open": true,
@@ -74,7 +82,7 @@
     },
     {
       "name": "Gemini 3 Flash Preview Low",
-      "avg_floored_score": 13.128205128205128,
+      "avg_floored_score": 12.576923076923077,
       "avg_failed_guesses": 0.9615384615384616,
       "color": "#AEC3F9",
       "is_open": false,
@@ -82,7 +90,7 @@
     },
     {
       "name": "Gpt Oss 120B",
-      "avg_floored_score": 12.871794871794872,
+      "avg_floored_score": 12.35897435897436,
       "avg_failed_guesses": 2.1538461538461537,
       "color": "#707070",
       "is_open": true,
@@ -90,7 +98,7 @@
     },
     {
       "name": "Gpt Oss 20B",
-      "avg_floored_score": 11.884615384615385,
+      "avg_floored_score": 11.448717948717949,
       "avg_failed_guesses": 2.9743589743589745,
       "color": "#B2B2B2",
       "is_open": true,
@@ -98,7 +106,7 @@
     },
     {
       "name": "Claude Haiku 4.5",
-      "avg_floored_score": 11.461538461538462,
+      "avg_floored_score": 11.166666666666666,
       "avg_failed_guesses": 3.948717948717949,
       "color": "#D08E76",
       "is_open": false,

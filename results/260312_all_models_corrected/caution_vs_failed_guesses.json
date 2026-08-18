@@ -25,6 +25,14 @@
       "provider": "huggingface"
     },
     {
+      "name": "Deepseek V4 Flash 0731",
+      "avg_early_correct_turns": 0.44,
+      "avg_failed_guesses": 1.9615384615384615,
+      "color": "#4A6FA5",
+      "is_open": true,
+      "provider": "openai_compat"
+    },
+    {
       "name": "Gemini 3 Flash Preview High",
       "avg_early_correct_turns": 1.746031746031746,
       "avg_failed_guesses": 1.7435897435897436,
