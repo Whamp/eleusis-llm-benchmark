@@ -1,0 +1,376 @@
+{
+  "rules": [
+    {
+      "name": "alternating_colors",
+      "description": "Cards must alternate between red and black colors. Any card may start the line.",
+      "cyclomatic_complexity": 2,
+      "node_count": 24,
+      "aggregated_complexity": 4.16,
+      "avg_floored_score": 28.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Deepseek V4 Flash 0731": [
+          28
+        ]
+      }
+    },
+    {
+      "name": "prime_ranks_only",
+      "description": "Only ranks that are prime numbers (2,3,5,7,11,13).",
+      "cyclomatic_complexity": 1,
+      "node_count": 20,
+      "aggregated_complexity": 2.8,
+      "avg_floored_score": 28.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Deepseek V4 Flash 0731": [
+          28
+        ]
+      }
+    },
+    {
+      "name": "only_red_cards",
+      "description": "Only red cards (hearts or diamonds).",
+      "cyclomatic_complexity": 1,
+      "node_count": 9,
+      "aggregated_complexity": 1.81,
+      "avg_floored_score": 27.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Deepseek V4 Flash 0731": [
+          27
+        ]
+      }
+    },
+    {
+      "name": "even_ranks_only",
+      "description": "Only cards with an even rank (2,4,6,8,10,12).",
+      "cyclomatic_complexity": 1,
+      "node_count": 12,
+      "aggregated_complexity": 2.08,
+      "avg_floored_score": 26.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Deepseek V4 Flash 0731": [
+          26
+        ]
+      }
+    },
+    {
+      "name": "opposite_parity",
+      "description": "Card rank must have opposite odd/even parity to the previous card's rank. Any card may start the line.",
+      "cyclomatic_complexity": 2,
+      "node_count": 30,
+      "aggregated_complexity": 4.699999999999999,
+      "avg_floored_score": 26.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Deepseek V4 Flash 0731": [
+          26
+        ]
+      }
+    },
+    {
+      "name": "different_suit_same_color",
+      "description": "The card must be of a different suit than but same color as the card just before it. Any card may start the line.",
+      "cyclomatic_complexity": 3,
+      "node_count": 45,
+      "aggregated_complexity": 7.05,
+      "avg_floored_score": 26.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Deepseek V4 Flash 0731": [
+          26
+        ]
+      }
+    },
+    {
+      "name": "spades_and_diamonds_only",
+      "description": "Only spades and diamonds.",
+      "cyclomatic_complexity": 1,
+      "node_count": 14,
+      "aggregated_complexity": 2.26,
+      "avg_floored_score": 25.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Deepseek V4 Flash 0731": [
+          25
+        ]
+      }
+    },
+    {
+      "name": "black_face_cards",
+      "description": "Only black face cards.",
+      "cyclomatic_complexity": 4,
+      "node_count": 40,
+      "aggregated_complexity": 7.6,
+      "avg_floored_score": 24.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Deepseek V4 Flash 0731": [
+          24
+        ]
+      }
+    },
+    {
+      "name": "spades_only",
+      "description": "Only cards of the suit spades.",
+      "cyclomatic_complexity": 1,
+      "node_count": 11,
+      "aggregated_complexity": 1.99,
+      "avg_floored_score": 24.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Deepseek V4 Flash 0731": [
+          24
+        ]
+      }
+    },
+    {
+      "name": "no_spades",
+      "description": "Only hearts, clubs, and diamonds allowed. Spades are forbidden.",
+      "cyclomatic_complexity": 1,
+      "node_count": 11,
+      "aggregated_complexity": 1.99,
+      "avg_floored_score": 24.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Deepseek V4 Flash 0731": [
+          24
+        ]
+      }
+    },
+    {
+      "name": "ranks_one_to_seven",
+      "description": "Only cards between 1 and 7 inclusive.",
+      "cyclomatic_complexity": 1,
+      "node_count": 11,
+      "aggregated_complexity": 1.99,
+      "avg_floored_score": 22.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Deepseek V4 Flash 0731": [
+          22
+        ]
+      }
+    },
+    {
+      "name": "ranks_five_to_nine",
+      "description": "Only cards between 5 and 9 inclusive.",
+      "cyclomatic_complexity": 1,
+      "node_count": 11,
+      "aggregated_complexity": 1.99,
+      "avg_floored_score": 22.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Deepseek V4 Flash 0731": [
+          22
+        ]
+      }
+    },
+    {
+      "name": "only_aces",
+      "description": "Only Aces (rank 1) .",
+      "cyclomatic_complexity": 1,
+      "node_count": 9,
+      "aggregated_complexity": 1.81,
+      "avg_floored_score": 21.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Deepseek V4 Flash 0731": [
+          21
+        ]
+      }
+    },
+    {
+      "name": "different_suit",
+      "description": "The card must be of a different suit than the card just before it. Any card may start the line.",
+      "cyclomatic_complexity": 2,
+      "node_count": 28,
+      "aggregated_complexity": 4.52,
+      "avg_floored_score": 19.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Deepseek V4 Flash 0731": [
+          19
+        ]
+      }
+    },
+    {
+      "name": "cyclic_suit_order",
+      "description": "Suits must repeat in the cyclic order hearts \u2192 spades \u2192 clubs \u2192 diamonds \u2192 hearts... Any card may start the line.",
+      "cyclomatic_complexity": 2,
+      "node_count": 67,
+      "aggregated_complexity": 8.03,
+      "avg_floored_score": 17.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Deepseek V4 Flash 0731": [
+          17
+        ]
+      }
+    },
+    {
+      "name": "face_cards_only",
+      "description": "Only face cards (11,12,13).",
+      "cyclomatic_complexity": 1,
+      "node_count": 12,
+      "aggregated_complexity": 2.08,
+      "avg_floored_score": 16.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Deepseek V4 Flash 0731": [
+          16
+        ]
+      }
+    },
+    {
+      "name": "alternating_groups",
+      "description": "Hearts and spades form Group A; clubs and diamonds form Group B. Alternate between groups. Any card may start the line.",
+      "cyclomatic_complexity": 2,
+      "node_count": 62,
+      "aggregated_complexity": 7.58,
+      "avg_floored_score": 15.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Deepseek V4 Flash 0731": [
+          15
+        ]
+      }
+    },
+    {
+      "name": "alternating_face_number",
+      "description": "Alternate face and number cards. Any card may start the line.",
+      "cyclomatic_complexity": 3,
+      "node_count": 42,
+      "aggregated_complexity": 6.779999999999999,
+      "avg_floored_score": 14.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Deepseek V4 Flash 0731": [
+          14
+        ]
+      }
+    },
+    {
+      "name": "share_color_or_parity",
+      "description": "Each card must share at least one property with the previous card: same color, or same parity. Any card may start the line.",
+      "cyclomatic_complexity": 3,
+      "node_count": 57,
+      "aggregated_complexity": 8.129999999999999,
+      "avg_floored_score": 13.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Deepseek V4 Flash 0731": [
+          13
+        ]
+      }
+    },
+    {
+      "name": "rank_non_decreasing_start_ace",
+      "description": "Each card must have a rank greater or equal to the previous card. Only Ace can start the line.",
+      "cyclomatic_complexity": 2,
+      "node_count": 30,
+      "aggregated_complexity": 4.699999999999999,
+      "avg_floored_score": 11.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Deepseek V4 Flash 0731": [
+          11
+        ]
+      }
+    },
+    {
+      "name": "red_up_black_down",
+      "description": "If the previous card was red, rank must increase or be equal; if black, rank must decrease or be equal. Starting card must be between 5 and 9 inclusive.",
+      "cyclomatic_complexity": 3,
+      "node_count": 56,
+      "aggregated_complexity": 8.04,
+      "avg_floored_score": 6.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Deepseek V4 Flash 0731": [
+          6
+        ]
+      }
+    },
+    {
+      "name": "red_rank_up_to_seven",
+      "description": "Only red cards whose rank is <=7.",
+      "cyclomatic_complexity": 2,
+      "node_count": 18,
+      "aggregated_complexity": 3.62,
+      "avg_floored_score": 4.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Deepseek V4 Flash 0731": [
+          4
+        ]
+      }
+    },
+    {
+      "name": "face_card_imposes_suit",
+      "description": "Face cards imposes the suit: if a face card is played, the next card must match its suit. Otherwise, the next card must be a different suit than it.",
+      "cyclomatic_complexity": 3,
+      "node_count": 60,
+      "aggregated_complexity": 8.399999999999999,
+      "avg_floored_score": 3.0,
+      "success_rate": 1.0,
+      "floored_scores_by_model": {
+        "Deepseek V4 Flash 0731": [
+          3
+        ]
+      }
+    },
+    {
+      "name": "face_cards_red_number_cards_black",
+      "description": "Face cards (11-13) must be red; number cards (1-10) must be black.",
+      "cyclomatic_complexity": 2,
+      "node_count": 25,
+      "aggregated_complexity": 4.25,
+      "avg_floored_score": 1.0,
+      "success_rate": 0.0,
+      "floored_scores_by_model": {
+        "Deepseek V4 Flash 0731": [
+          1
+        ]
+      }
+    },
+    {
+      "name": "paired_suits_alternating",
+      "description": "Suits must appear in pairs: card 1 and 2 same suit, cards 3 and 4 same suit (different from 1 and 2), cards 5 and 6 same suit (different from 3 and 4), etc.",
+      "cyclomatic_complexity": 3,
+      "node_count": 65,
+      "aggregated_complexity": 8.85,
+      "avg_floored_score": 0.0,
+      "success_rate": 0.0,
+      "floored_scores_by_model": {
+        "Deepseek V4 Flash 0731": [
+          0
+        ]
+      }
+    },
+    {
+      "name": "paired_ranks_distinct",
+      "description": "Rank repeats in pairs: ranks must come in doubles: (x, x), then (y, y) with y different from x, then (z, z) with z different from y, etc.",
+      "cyclomatic_complexity": 3,
+      "node_count": 57,
+      "aggregated_complexity": 8.129999999999999,
+      "avg_floored_score": 0.0,
+      "success_rate": 0.0,
+      "floored_scores_by_model": {
+        "Deepseek V4 Flash 0731": [
+          0
+        ]
+      }
+    }
+  ],
+  "models": [
+    "Deepseek V4 Flash 0731"
+  ],
+  "metadata": {
+    "optimal_k": 0.09,
+    "complexity_formula": "cyclomatic + 0.09 * node_count",
+    "ordering": "descending_avg_score"
+  }
+}

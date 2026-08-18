@@ -1,0 +1,19 @@
+{
+  "models": [
+    {
+      "name": "Deepseek V4 Flash 0731",
+      "avg_floored_score": 17.0,
+      "recklessness_index": 3.483076923076923,
+      "avg_failed_guesses": 1.9615384615384615,
+      "avg_caution": 0.44,
+      "color": "#4A6FA5",
+      "is_open": true,
+      "provider": "openai_compat"
+    }
+  ],
+  "metadata": {
+    "x_axis": "recklessness_index",
+    "y_axis": "avg_floored_score",
+    "description": "Recklessness index = 2 * avg_failed_guesses - avg_caution"
+  }
+}

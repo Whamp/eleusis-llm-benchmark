@@ -1,0 +1,25 @@
+{
+  "models": [
+    {
+      "name": "Deepseek V4 Flash 0731",
+      "quartile_scores": {
+        "Q1": 1.0,
+        "Q2": 0.8,
+        "Q3": 1.0,
+        "Q4": 0.7142857142857143
+      }
+    }
+  ],
+  "quartiles": [
+    "Q1",
+    "Q2",
+    "Q3",
+    "Q4"
+  ],
+  "metadata": {
+    "optimal_k": 0.09999999999999999,
+    "complexity_formula": "cyclomatic + 0.10 * node_count",
+    "value": "success_rate",
+    "description": "Success rate = per-model success rate for rules in each quartile."
+  }
+}

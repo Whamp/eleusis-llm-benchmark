@@ -1,0 +1,2 @@
+model,rounds_played,total_score,avg_score,total_floored_score,avg_floored_score,total_turns,total_output_tokens,total_wall_clock,avg_failed_guesses,success_rate,counting_output_tokens,total_no_stakes_score,avg_no_stakes_score,avg_output_tokens_per_turn,wall_clock_per_turn,intra_rule_variance,inter_rule_variance,variance_ratio
+Deepseek V4 Flash 0731,26,389,14.961538461538462,442,17.0,259,7748804,81916.109381,1.9615384615384615,0.8846153846153846,6101255,542.0,20.846153846153847,23556.969111969112,316.2784145984556,,90.07999999999998,

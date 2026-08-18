@@ -1,0 +1,47 @@
+{
+  "models": [
+    {
+      "name": "Deepseek V4 Flash 0731",
+      "color": "#4A6FA5",
+      "is_open": true,
+      "provider": "openai_compat",
+      "calibration_points": [
+        {
+          "confidence_level": 5,
+          "actual_success_rate": 0.12195121951219512,
+          "sample_count": 41
+        },
+        {
+          "confidence_level": 6,
+          "actual_success_rate": 0.16666666666666666,
+          "sample_count": 48
+        },
+        {
+          "confidence_level": 7,
+          "actual_success_rate": 0.2,
+          "sample_count": 20
+        },
+        {
+          "confidence_level": 8,
+          "actual_success_rate": 0.2619047619047619,
+          "sample_count": 42
+        },
+        {
+          "confidence_level": 9,
+          "actual_success_rate": 0.3333333333333333,
+          "sample_count": 24
+        },
+        {
+          "confidence_level": 10,
+          "actual_success_rate": 1.0,
+          "sample_count": 2
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "x_axis": "confidence_level",
+    "y_axis": "actual_success_rate",
+    "description": "Calibration curve showing confidence vs actual success rate for rule guesses (counting turns only)"
+  }
+}

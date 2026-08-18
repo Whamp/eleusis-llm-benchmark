@@ -1,0 +1,18 @@
+{
+  "metadata": {
+    "description": "Complexity ratio: tentative rule complexity / actual rule complexity",
+    "confidence_threshold": 5,
+    "interpretation": "Ratio > 1 means model overcomplicates, < 1 means oversimplifies"
+  },
+  "models": [
+    {
+      "name": "Deepseek V4 Flash 0731",
+      "color": "#4A6FA5",
+      "is_open": true,
+      "median_ratio": 1.0,
+      "q25": 0.5494959839064709,
+      "q75": 1.2725249273769335,
+      "count": 196
+    }
+  ]
+}

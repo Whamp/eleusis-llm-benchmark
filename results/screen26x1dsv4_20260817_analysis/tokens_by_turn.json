@@ -1,0 +1,167 @@
+{
+  "models": [
+    {
+      "name": "Deepseek V4 Flash 0731",
+      "color": "#4A6FA5",
+      "is_open": true,
+      "provider": "openai_compat",
+      "tokens_by_turn": [
+        {
+          "turn_number": 1,
+          "avg_output_tokens": 11542.73076923077,
+          "sample_count": 26
+        },
+        {
+          "turn_number": 2,
+          "avg_output_tokens": 15266.038461538461,
+          "sample_count": 26
+        },
+        {
+          "turn_number": 3,
+          "avg_output_tokens": 19976.53846153846,
+          "sample_count": 26
+        },
+        {
+          "turn_number": 4,
+          "avg_output_tokens": 16833.166666666668,
+          "sample_count": 24
+        },
+        {
+          "turn_number": 5,
+          "avg_output_tokens": 18709.08695652174,
+          "sample_count": 23
+        },
+        {
+          "turn_number": 6,
+          "avg_output_tokens": 25543.8,
+          "sample_count": 20
+        },
+        {
+          "turn_number": 7,
+          "avg_output_tokens": 28513.894736842107,
+          "sample_count": 19
+        },
+        {
+          "turn_number": 8,
+          "avg_output_tokens": 23461.0,
+          "sample_count": 16
+        },
+        {
+          "turn_number": 9,
+          "avg_output_tokens": 34384.333333333336,
+          "sample_count": 15
+        },
+        {
+          "turn_number": 10,
+          "avg_output_tokens": 33115.153846153844,
+          "sample_count": 13
+        },
+        {
+          "turn_number": 11,
+          "avg_output_tokens": 28991.9,
+          "sample_count": 10
+        },
+        {
+          "turn_number": 12,
+          "avg_output_tokens": 33567.88888888889,
+          "sample_count": 9
+        },
+        {
+          "turn_number": 13,
+          "avg_output_tokens": 40647.125,
+          "sample_count": 8
+        },
+        {
+          "turn_number": 14,
+          "avg_output_tokens": 46949.0,
+          "sample_count": 7
+        },
+        {
+          "turn_number": 15,
+          "avg_output_tokens": 35888.142857142855,
+          "sample_count": 7
+        },
+        {
+          "turn_number": 16,
+          "avg_output_tokens": 49840.166666666664,
+          "sample_count": 6
+        },
+        {
+          "turn_number": 17,
+          "avg_output_tokens": 47350.0,
+          "sample_count": 4
+        },
+        {
+          "turn_number": 18,
+          "avg_output_tokens": 46273.666666666664,
+          "sample_count": 3
+        },
+        {
+          "turn_number": 19,
+          "avg_output_tokens": 22588.5,
+          "sample_count": 2
+        },
+        {
+          "turn_number": 20,
+          "avg_output_tokens": 59992.5,
+          "sample_count": 2
+        },
+        {
+          "turn_number": 21,
+          "avg_output_tokens": 75832.5,
+          "sample_count": 2
+        },
+        {
+          "turn_number": 22,
+          "avg_output_tokens": 62930.0,
+          "sample_count": 2
+        },
+        {
+          "turn_number": 23,
+          "avg_output_tokens": 81293.5,
+          "sample_count": 2
+        },
+        {
+          "turn_number": 24,
+          "avg_output_tokens": 39501.5,
+          "sample_count": 2
+        },
+        {
+          "turn_number": 25,
+          "avg_output_tokens": 89778.5,
+          "sample_count": 2
+        },
+        {
+          "turn_number": 26,
+          "avg_output_tokens": 37031.5,
+          "sample_count": 2
+        },
+        {
+          "turn_number": 27,
+          "avg_output_tokens": 87927.0,
+          "sample_count": 1
+        },
+        {
+          "turn_number": 28,
+          "avg_output_tokens": 98304.0,
+          "sample_count": 1
+        },
+        {
+          "turn_number": 29,
+          "avg_output_tokens": 53862.0,
+          "sample_count": 1
+        },
+        {
+          "turn_number": 30,
+          "avg_output_tokens": 21484.0,
+          "sample_count": 1
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "x_axis": "turn_number",
+    "y_axis": "avg_output_tokens",
+    "description": "Average output tokens by turn index"
+  }
+}
