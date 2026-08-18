@@ -1,0 +1,5 @@
+{
+  "name": "Eleusis LLM Benchmark",
+  "user": "ubuntu",
+  "install": "./.cursor/install.sh"
+}
